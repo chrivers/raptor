@@ -1,0 +1,85 @@
+FILE = {
+    SOI ~ STATEMENT* ~ EOI
+}
+
+STATEMENT = _{
+    NEWLINE
+  | (FROM   ~ NEWLINE)
+  | (RENDER ~ NEWLINE)
+  | (COPY   ~ NEWLINE)
+}
+
+WHITESPACE = _{ " " | "\\\n" }
+
+COMMENT = {
+    "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE
+}
+
+quoted_string = _{ PUSH("\"") ~ string ~ POP }
+
+string = @{
+    (string_non_escape | string_escape_seq)*
+}
+
+string_non_escape = {
+    (!("\\" | PEEK) ~ ANY)+
+}
+
+string_escape_seq = ${ "\\" ~ char_escape }
+
+char_escape = @{ "\\" | "\"" | "n" | "r" | "t" }
+
+literal_string = ${
+    (
+        '0'..'9'
+      | 'a'..'z'
+      | 'A' .. 'Z'
+      | '!' .. '['
+      | ']' .. '~'
+    )+
+}
+
+literal_path = _ { literal_string }
+
+filename = {
+    quoted_string | literal_path
+}
+
+mb_eq = _{ "="? }
+
+IDENT_START = _{ ASCII_ALPHA | "_" }
+IDENT_CHAR  = _{ ASCII_ALPHA | "_" | ASCII_DIGIT }
+ident = _{ IDENT_START ~ IDENT_CHAR* }
+
+user_spec  = { ident }
+group_spec = { ident }
+
+option_chown = ${ user_spec ~ (":" ~ group_spec?)? }
+option_chmod = ${ ASCII_OCT_DIGIT{3,4} }
+
+copy_options = {
+    ("--chown" ~ mb_eq ~ option_chown)
+  | ("--chmod" ~ mb_eq ~ option_chmod)
+}
+
+COPY = {
+    "COPY"
+    ~ copy_options*
+    ~ filename{2,}
+}
+
+render_options = {
+    ("--chown" ~ mb_eq ~ option_chown)
+  | ("--chmod" ~ mb_eq ~ option_chmod)
+}
+
+RENDER = {
+    "RENDER"
+    ~ render_options*
+    ~ filename{2,}
+}
+
+FROM = {
+    "FROM"
+    ~ ident
+}
