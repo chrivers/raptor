@@ -9,6 +9,7 @@ clap = { version = "4.5.20", features = ["derive"] }
 colog = "1.3.0"
 hand = "0.1.2"
 log = "0.4.22"
+minijinja = { version = "2.4.0", features = ["custom_syntax", "loader"] }
 pest = { version = "2.7.14", features = ["miette-error", "pretty-print"] }
 pest_ascii_tree = "0.1.0"
 pest_consume = "1.1.3"
