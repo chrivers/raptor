@@ -1,8 +1,7 @@
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use log::info;
-use pest::Parser;
-use raptor::parser::raptorfile::{RaptorFileParser, Rule};
+use raptor::RaptorResult;
 
 #[derive(clap::Parser, Debug)]
 #[command(about, long_about = None)]
@@ -34,18 +33,7 @@ struct Mode {
     show: bool,
 }
 
-#[derive(thiserror::Error, Debug)]
-enum RaptorError {
-    #[error(transparent)]
-    IoError(#[from] std::io::Error),
-
-    #[error(transparent)]
-    PestError(#[from] pest::error::Error<Rule>),
-}
-
-type Result<T> = std::result::Result<T, RaptorError>;
-
-fn main() -> Result<()> {
+fn main() -> RaptorResult<()> {
     colog::init();
     info!("Raptor");
 
@@ -53,10 +41,10 @@ fn main() -> Result<()> {
 
     for file in args.input {
         let source = std::fs::read_to_string(file)?;
-        let mut ast = RaptorFileParser::parse(Rule::FILE, &source)?;
-        for node in ast.next().unwrap().into_inner() {
-            println!("ast: {node}");
-            println!("--------------------------------------------------------------------------------");
+        let ast = raptor::parser::ast::parse(&source)?;
+
+        for thing in ast {
+            println!("{thing:?}");
         }
     }
 
