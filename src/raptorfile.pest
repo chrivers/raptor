@@ -6,6 +6,7 @@ STATEMENT = {
     NEWLINE
   | (FROM   ~ NEWLINE)
   | (RENDER ~ NEWLINE)
+  | (WRITE  ~ NEWLINE)
   | (COPY   ~ NEWLINE)
 }
 
@@ -81,6 +82,13 @@ RENDER = {
     "RENDER"
     ~ file_options
     ~ filename{2}
+}
+
+WRITE = {
+    "WRITE"
+    ~ file_options
+    ~ filename
+    ~ quoted_string
 }
 
 FROM = {

@@ -1,6 +1,6 @@
 use pest_consume::{match_nodes, Parser};
 
-use crate::dsl::{Chown, InstCopy, InstFrom, InstRender, Instruction};
+use crate::dsl::{Chown, InstCopy, InstFrom, InstRender, InstWrite, Instruction};
 use crate::parser::{RaptorFileParser, Rule};
 use crate::RaptorResult;
 
@@ -147,6 +147,20 @@ impl RaptorFileParser {
         )
     }
 
+    fn WRITE(input: Node) -> Result<InstWrite> {
+        match_nodes!(
+            input.into_children();
+            [file_options((chmod, chown)), filename(dest), string(body)] => {
+                Ok(InstWrite {
+                    dest,
+                    body,
+                    chmod,
+                    chown,
+                })
+            },
+        )
+    }
+
     fn ident(input: Node) -> Result<String> {
         Ok(input.as_str().to_string())
     }
@@ -163,6 +177,7 @@ impl RaptorFileParser {
             input.into_children();
             [FROM(stmt)] => Some(Instruction::From(stmt)),
             [COPY(stmt)] => Some(Instruction::Copy(stmt)),
+            [WRITE(stmt)] => Some(Instruction::Write(stmt)),
             [RENDER(stmt)] => Some(Instruction::Render(stmt)),
             [] => None,
         ))

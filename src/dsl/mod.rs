@@ -1,8 +1,10 @@
 mod copy;
 mod render;
+mod write;
 
 pub use copy::*;
 pub use render::*;
+pub use write::*;
 
 use std::fmt::{Debug, Display};
 
@@ -33,4 +35,5 @@ pub enum Instruction {
     From(InstFrom),
     Copy(InstCopy),
     Render(InstRender),
+    Write(InstWrite),
 }
