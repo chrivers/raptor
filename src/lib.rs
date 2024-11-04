@@ -16,6 +16,7 @@
 
 pub mod dsl;
 pub mod parser;
+pub mod template;
 
 use crate::parser::Rule;
 
@@ -23,6 +24,9 @@ use crate::parser::Rule;
 pub enum RaptorError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
+
+    #[error(transparent)]
+    MinijinjaError(#[from] minijinja::Error),
 
     #[error(transparent)]
     PestError(Box<pest::error::Error<Rule>>),
