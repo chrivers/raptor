@@ -1,8 +1,10 @@
 mod copy;
+mod include;
 mod render;
 mod write;
 
 pub use copy::*;
+pub use include::*;
 pub use render::*;
 pub use write::*;
 
@@ -36,4 +38,5 @@ pub enum Instruction {
     Copy(InstCopy),
     Render(InstRender),
     Write(InstWrite),
+    Include(InstInclude),
 }
