@@ -17,7 +17,7 @@ COMMENT = _{
 
 quoted_string = _{ PUSH("\"") ~ string ~ POP }
 
-string = @{
+string = {
     (string_non_escape | string_escape_seq)*
 }
 
@@ -27,7 +27,7 @@ string_non_escape = {
 
 string_escape_seq = ${ "\\" ~ char_escape }
 
-char_escape = @{ "\\" | "\"" | "n" | "r" | "t" }
+char_escape = _{ "\\" | "\"" | "n" | "r" | "t" }
 
 literal_string = ${
     (
@@ -62,28 +62,24 @@ option_chown = ${
 }
 option_chmod = ${ ASCII_OCT_DIGIT{3,4} }
 
-copy_option = {
+file_option = {
     ("--chown" ~ mb_eq ~ option_chown)
   | ("--chmod" ~ mb_eq ~ option_chmod)
 }
 
-copy_options = {
-    copy_option*
-}
-
-render_options = {
-    copy_option*
+file_options = {
+    file_option*
 }
 
 COPY = {
     "COPY"
-    ~ copy_options
+    ~ file_options
     ~ filename{2,}
 }
 
 RENDER = {
     "RENDER"
-    ~ render_options
+    ~ file_options
     ~ filename{2}
 }
 

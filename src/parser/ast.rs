@@ -18,8 +18,29 @@ impl RaptorFileParser {
         Ok(())
     }
 
+    fn string_escape_seq(input: Node) -> Result<&str> {
+        match input.as_str() {
+            "\\t" => Ok("\t"),
+            "\\n" => Ok("\n"),
+            x => Err(input.error(format!("Unexpected ecsape: {x}")))
+        }
+    }
+
     fn string(input: Node) -> Result<String> {
-        Ok(input.as_str().to_string())
+        let mut res = String::new();
+
+        for node in input.into_children() {
+            match node.as_rule() {
+                Rule::string_escape_seq => {
+                    res += Self::string_escape_seq(node)?;
+                },
+                Rule::string_non_escape => {
+                    res += node.as_str();
+                },
+                _ => {},
+            }
+        }
+        Ok(res)
     }
 
     fn literal_string(input: Node) -> Result<String> {
@@ -64,7 +85,7 @@ impl RaptorFileParser {
         Ok(u16::from_str_radix(input.as_str(), 8).map_err(|e| input.error(e))?)
     }
 
-    fn copy_option(input: Node) -> Result<(Option<u16>, Option<Chown>)> {
+    fn file_option(input: Node) -> Result<(Option<u16>, Option<Chown>)> {
         match_nodes!(
             input.into_children();
             [option_chown(chown)] => Ok((None, Some(chown))),
@@ -72,30 +93,13 @@ impl RaptorFileParser {
         )
     }
 
-    fn copy_options(input: Node) -> Result<(Option<u16>, Option<Chown>)> {
+    fn file_options(input: Node) -> Result<(Option<u16>, Option<Chown>)> {
         let mut chown = None;
         let mut chmod = None;
 
         let opts: Vec<_> = match_nodes!(
             input.into_children();
-            [copy_option(opt)..] => opt.collect()
-        );
-
-        for (opt_chmod, opt_chown) in opts {
-            chown = opt_chown.or(chown);
-            chmod = opt_chmod.or(chmod);
-        }
-
-        Ok((chmod, chown))
-    }
-
-    fn render_options(input: Node) -> Result<(Option<u16>, Option<Chown>)> {
-        let mut chown = None;
-        let mut chmod = None;
-
-        let opts: Vec<_> = match_nodes!(
-            input.into_children();
-            [copy_option(opt)..] => opt.collect()
+            [file_option(opt)..] => opt.collect()
         );
 
         for (opt_chmod, opt_chown) in opts {
@@ -113,7 +117,7 @@ impl RaptorFileParser {
 
         match_nodes!(
             input.into_children();
-            [copy_options(opts), filename(filenames)..] => {
+            [file_options(opts), filename(filenames)..] => {
                 (chmod, chown) = opts;
                 srcs = filenames.collect();
             },
@@ -132,7 +136,7 @@ impl RaptorFileParser {
     fn RENDER(input: Node) -> Result<InstRender> {
         match_nodes!(
             input.into_children();
-            [render_options((chmod, chown)), filename(src), filename(dest)] => {
+            [file_options((chmod, chown)), filename(src), filename(dest)] => {
                 Ok(InstRender {
                     src,
                     dest,
