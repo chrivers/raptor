@@ -1,6 +1,10 @@
+use minijinja::Value;
 use pest_consume::{match_nodes, Parser};
 
-use crate::dsl::{Chown, InstCopy, InstFrom, InstRender, InstWrite, Instruction};
+use crate::dsl::{
+    Chown, IncludeArg, IncludeArgValue, InstCopy, InstFrom, InstInclude, InstRender, InstWrite,
+    Instruction, Lookup,
+};
 use crate::parser::{RaptorFileParser, Rule};
 use crate::RaptorResult;
 
@@ -22,7 +26,7 @@ impl RaptorFileParser {
         match input.as_str() {
             "\\t" => Ok("\t"),
             "\\n" => Ok("\n"),
-            x => Err(input.error(format!("Unexpected ecsape: {x}")))
+            x => Err(input.error(format!("Unexpected ecsape: {x}"))),
         }
     }
 
@@ -33,11 +37,11 @@ impl RaptorFileParser {
             match node.as_rule() {
                 Rule::string_escape_seq => {
                     res += Self::string_escape_seq(node)?;
-                },
+                }
                 Rule::string_non_escape => {
                     res += node.as_str();
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
         Ok(res)
@@ -172,6 +176,59 @@ impl RaptorFileParser {
         }))
     }
 
+    fn bool(input: Node) -> Result<bool> {
+        match input.as_str() {
+            "true" => Ok(true),
+            "false" => Ok(false),
+            _ => todo!(),
+        }
+    }
+
+    fn identpath(input: Node) -> Result<Value> {
+        Ok(input.as_str().to_string().into())
+    }
+
+    fn number(input: Node) -> Result<i64> {
+        Ok(input.as_str().parse::<i64>().map_err(|e| input.error(e))?)
+    }
+
+    fn value(input: Node) -> Result<IncludeArgValue> {
+        Ok(match_nodes!(
+            input.into_children();
+            [bool(b)] => IncludeArgValue::Value(b.into()),
+            [number(b)] => IncludeArgValue::Value(b.into()),
+            [string(b)] => IncludeArgValue::Value(b.into()),
+            [ident(b)..] => IncludeArgValue::Lookup(Lookup::new(b.collect())),
+        ))
+    }
+
+    fn include_arg(input: Node) -> Result<IncludeArg> {
+        Ok(match_nodes!(
+            input.into_children();
+            [ident(id), value(val)] => IncludeArg {
+                name: id,
+                value: val,
+            }
+        ))
+    }
+
+    fn include_args(input: Node) -> Result<Vec<IncludeArg>> {
+        Ok(match_nodes!(input.into_children();
+        [include_arg(args)..] => args.collect()))
+    }
+
+    fn INCLUDE(input: Node) -> Result<InstInclude> {
+        match_nodes!(
+            input.into_children();
+            [filename(src), include_args(args)] => {
+                Ok(InstInclude {
+                    src,
+                    args,
+                })
+            },
+        )
+    }
+
     fn STATEMENT(input: Node) -> Result<Option<Instruction>> {
         Ok(match_nodes!(
             input.into_children();
@@ -179,6 +236,7 @@ impl RaptorFileParser {
             [COPY(stmt)] => Some(Instruction::Copy(stmt)),
             [WRITE(stmt)] => Some(Instruction::Write(stmt)),
             [RENDER(stmt)] => Some(Instruction::Render(stmt)),
+            [INCLUDE(stmt)] => Some(Instruction::Include(stmt)),
             [] => None,
         ))
     }
