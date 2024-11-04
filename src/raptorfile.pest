@@ -4,10 +4,11 @@ FILE = {
 
 STATEMENT = {
     NEWLINE
-  | (FROM   ~ NEWLINE)
-  | (RENDER ~ NEWLINE)
-  | (WRITE  ~ NEWLINE)
-  | (COPY   ~ NEWLINE)
+  | (FROM    ~ NEWLINE)
+  | (RENDER  ~ NEWLINE)
+  | (WRITE   ~ NEWLINE)
+  | (COPY    ~ NEWLINE)
+  | (INCLUDE ~ NEWLINE)
 }
 
 WHITESPACE = _{ " " | "\\\n" }
@@ -72,6 +73,30 @@ file_options = {
     file_option*
 }
 
+identpath = _{
+    ident ~ ("." ~ ident)*
+}
+
+bool = {
+    "true" | "false"
+}
+
+number = {
+    ('1'..'9') ~ ('0'..'9')*
+}
+
+value = {
+    bool | number | quoted_string | identpath
+}
+
+include_arg = ${
+    ident ~ "=" ~ value
+}
+
+include_args = {
+    include_arg*
+}
+
 COPY = {
     "COPY"
     ~ file_options
@@ -89,6 +114,12 @@ WRITE = {
     ~ file_options
     ~ filename
     ~ quoted_string
+}
+
+INCLUDE = {
+    "INCLUDE"
+    ~ filename
+    ~ include_args
 }
 
 FROM = {
