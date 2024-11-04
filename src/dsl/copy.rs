@@ -19,9 +19,8 @@ impl Debug for InstCopy {
             write!(f, "--chown {chown} ")?;
         }
         for src in &self.srcs {
-            write!(f, "{src} ")?;
+            write!(f, "{src:?} ")?;
         }
-        write!(f, "{}", self.dest)?;
-        Ok(())
+        write!(f, "{:?}", self.dest)
     }
 }

@@ -18,7 +18,6 @@ impl Debug for InstRender {
         if let Some(chown) = &self.chown {
             write!(f, "--chown {chown} ")?;
         }
-        write!(f, "{} {}", self.src, self.dest)?;
-        Ok(())
+        write!(f, "{:?} {:?}", self.src, self.dest)
     }
 }

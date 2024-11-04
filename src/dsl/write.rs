@@ -18,7 +18,7 @@ impl Debug for InstWrite {
         if let Some(chown) = &self.chown {
             write!(f, "--chown {chown} ")?;
         }
-        write!(f, "{} {:?}", self.dest, self.body)?;
+        write!(f, "{:?} {:?}", self.dest, self.body)?;
         Ok(())
     }
 }
