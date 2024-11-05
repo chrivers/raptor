@@ -1,7 +1,10 @@
-use minijinja::{syntax::SyntaxConfig, value::ViaDeserialize, Environment, ErrorKind, UndefinedBehavior};
+use minijinja::syntax::SyntaxConfig;
+use minijinja::value::ViaDeserialize;
+use minijinja::{Environment, ErrorKind, UndefinedBehavior};
 
 use crate::RaptorResult;
 
+#[allow(clippy::needless_pass_by_value)]
 fn hello(arg: ViaDeserialize<String>) {
     log::info!("Hello {:?}", *arg);
 }
