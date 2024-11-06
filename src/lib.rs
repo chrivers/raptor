@@ -14,6 +14,9 @@
     clippy::module_name_repetitions,
 )]
 
+#[macro_use]
+extern crate log;
+
 pub mod dsl;
 pub mod parser;
 pub mod template;

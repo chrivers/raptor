@@ -6,27 +6,27 @@ use crate::RaptorResult;
 
 #[allow(clippy::needless_pass_by_value)]
 fn trace(state: &State, args: Rest<String>) {
-    log::trace!("{} :: {}", state.name(), args.join(" "));
+    trace!("{} :: {}", state.name(), args.join(" "));
 }
 
 #[allow(clippy::needless_pass_by_value)]
 fn debug(state: &State, args: Rest<String>) {
-    log::debug!("{} :: {}", state.name(), args.join(" "));
+    debug!("{} :: {}", state.name(), args.join(" "));
 }
 
 #[allow(clippy::needless_pass_by_value)]
 fn info(state: &State, args: Rest<String>) {
-    log::info!("{} :: {}", state.name(), args.join(" "));
+    info!("{} :: {}", state.name(), args.join(" "));
 }
 
 #[allow(clippy::needless_pass_by_value)]
 fn warning(state: &State, args: Rest<String>) {
-    log::warn!("{} :: {}", state.name(), args.join(" "));
+    warn!("{} :: {}", state.name(), args.join(" "));
 }
 
 #[allow(clippy::needless_pass_by_value)]
 fn error(state: &State, args: Rest<String>) {
-    log::error!("{} :: {}", state.name(), args.join(" "));
+    error!("{} :: {}", state.name(), args.join(" "));
 }
 
 pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
