@@ -22,4 +22,6 @@ pest_ascii_tree = "0.1.0"
 pest_consume = "1.1.3"
 pest_derive = "2.7.14"
 pretty_env_logger = "0.5.0"
+serde = { version = "1.0.214", features = ["serde_derive"] }
+serde_yml = "0.0.12"
 thiserror = "1.0.67"
