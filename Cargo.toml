@@ -2,6 +2,12 @@
 name = "raptor"
 version = "0.1.0"
 edition = "2021"
+license = "GPL-3.0-only"
+readme = "README.md"
+description = "Build disk images, file archives and bootable isos with a simple, docker-inspired syntax"
+categories = ["config", "command-line-utilities", "virtualization", "template-engine"]
+repository = "https://github.com/chrivers/raptor"
+keywords = ["devops", "reproducible", "disk-image", "generation"]
 
 [dependencies]
 camino = "1.1.9"

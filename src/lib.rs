@@ -8,7 +8,6 @@
     clippy::style
 )]
 #![allow(
-    clippy::cargo_common_metadata,
     clippy::multiple_crate_versions,
     clippy::missing_errors_doc,
     clippy::module_name_repetitions,
