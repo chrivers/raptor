@@ -30,6 +30,7 @@ pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
 
     log::add_functions(&mut env);
     file::add_functions(&mut env);
+    args::add_functions(&mut env);
 
     Ok(env)
 }
