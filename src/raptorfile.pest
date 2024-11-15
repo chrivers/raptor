@@ -9,6 +9,7 @@ STATEMENT = {
   | (WRITE   ~ NEWLINE)
   | (COPY    ~ NEWLINE)
   | (INCLUDE ~ NEWLINE)
+  | (INVOKE  ~ NEWLINE)
 }
 
 WHITESPACE = _{ " " | "\\\n" }
@@ -120,6 +121,11 @@ INCLUDE = {
     "INCLUDE"
     ~ filename
     ~ include_args
+}
+
+INVOKE = {
+    "INVOKE"
+    ~ quoted_string+
 }
 
 FROM = {
