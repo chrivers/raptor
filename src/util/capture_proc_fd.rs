@@ -25,7 +25,7 @@ pub fn pipe() -> RaptorResult<(OwnedFd, OwnedFd)> {
 }
 
 /// Command extension to hook a specific file descriptor before executing
-/// process, using dup2()
+/// process, using `libc::dup2()`
 pub trait HookFd {
     fn hook_fd(&mut self, fd: i32, dst: (impl AsRawFd + Send + Sync + 'static)) -> &mut Self;
 }
