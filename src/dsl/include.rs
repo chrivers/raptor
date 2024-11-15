@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 use minijinja::Value;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Lookup {
     pub path: Vec<String>,
 }
@@ -20,18 +20,19 @@ impl Display for Lookup {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum IncludeArgValue {
     Lookup(Lookup),
     Value(Value),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct IncludeArg {
     pub name: String,
     pub value: IncludeArgValue,
 }
 
+#[derive(Clone)]
 pub struct InstInclude {
     pub src: String,
     pub args: Vec<IncludeArg>,

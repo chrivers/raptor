@@ -10,6 +10,7 @@ pub use write::*;
 
 use std::fmt::{Debug, Display};
 
+#[derive(Clone)]
 pub struct Chown {
     pub user: Option<String>,
     pub group: Option<String>,
@@ -27,12 +28,12 @@ impl Display for Chown {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct InstFrom {
     pub from: String,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Instruction {
     From(InstFrom),
     Copy(InstCopy),

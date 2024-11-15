@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use crate::dsl::Chown;
 
+#[derive(Clone)]
 pub struct InstCopy {
     pub srcs: Vec<String>,
     pub dest: String,
