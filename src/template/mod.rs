@@ -1,33 +1,11 @@
+mod args;
+mod file;
+mod log;
+
 use minijinja::syntax::SyntaxConfig;
-use minijinja::value::Rest;
-use minijinja::{Environment, ErrorKind, State, UndefinedBehavior};
+use minijinja::{Environment, ErrorKind, UndefinedBehavior};
 
 use crate::RaptorResult;
-
-#[allow(clippy::needless_pass_by_value)]
-fn trace(state: &State, args: Rest<String>) {
-    trace!("{} :: {}", state.name(), args.join(" "));
-}
-
-#[allow(clippy::needless_pass_by_value)]
-fn debug(state: &State, args: Rest<String>) {
-    debug!("{} :: {}", state.name(), args.join(" "));
-}
-
-#[allow(clippy::needless_pass_by_value)]
-fn info(state: &State, args: Rest<String>) {
-    info!("{} :: {}", state.name(), args.join(" "));
-}
-
-#[allow(clippy::needless_pass_by_value)]
-fn warning(state: &State, args: Rest<String>) {
-    warn!("{} :: {}", state.name(), args.join(" "));
-}
-
-#[allow(clippy::needless_pass_by_value)]
-fn error(state: &State, args: Rest<String>) {
-    error!("{} :: {}", state.name(), args.join(" "));
-}
 
 pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
     let mut env = Environment::new();
@@ -50,11 +28,7 @@ pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
             .build()?,
     );
 
-    env.add_function("trace", trace);
-    env.add_function("debug", debug);
-    env.add_function("info", info);
-    env.add_function("warning", warning);
-    env.add_function("error", error);
+    log::add_functions(&mut env);
 
     Ok(env)
 }
