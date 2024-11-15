@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use clap::{ArgMatches, Command};
-use minijinja::value::{from_args, ArgType, Enumerator, Kwargs, Object, ObjectRepr};
+use minijinja::value::{from_args, Enumerator, Kwargs, Object, ObjectRepr};
 use minijinja::{Environment, Error, State, Value};
 
 use serde::de::Error as _;
