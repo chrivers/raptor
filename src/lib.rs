@@ -20,6 +20,7 @@ extern crate log;
 pub mod dsl;
 pub mod parser;
 pub mod template;
+pub mod util;
 
 use crate::parser::Rule;
 
