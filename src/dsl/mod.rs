@@ -44,3 +44,17 @@ pub enum Instruction {
     Include(InstInclude),
     Invoke(InstInvoke),
 }
+
+impl Instruction {
+    #[must_use]
+    pub const fn name(&self) -> &'static str {
+        match self {
+            Self::From(_) => "FROM",
+            Self::Copy(_) => "COPY",
+            Self::Render(_) => "RENDER",
+            Self::Write(_) => "WRITE",
+            Self::Include(_) => "INCLUDE",
+            Self::Invoke(_) => "INVOKE",
+        }
+    }
+}
