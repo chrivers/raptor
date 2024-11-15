@@ -1,10 +1,12 @@
 mod copy;
 mod include;
+mod invoke;
 mod render;
 mod write;
 
 pub use copy::*;
 pub use include::*;
+pub use invoke::*;
 pub use render::*;
 pub use write::*;
 
@@ -40,4 +42,5 @@ pub enum Instruction {
     Render(InstRender),
     Write(InstWrite),
     Include(InstInclude),
+    Invoke(InstInvoke),
 }
