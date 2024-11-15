@@ -10,7 +10,8 @@
 #![allow(
     clippy::multiple_crate_versions,
     clippy::missing_errors_doc,
-    clippy::module_name_repetitions,
+    clippy::missing_panics_doc,
+    clippy::module_name_repetitions
 )]
 
 #[macro_use]
