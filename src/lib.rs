@@ -11,7 +11,9 @@
     clippy::multiple_crate_versions,
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
-    clippy::module_name_repetitions
+    clippy::module_name_repetitions,
+    clippy::module_inception,
+    clippy::similar_names
 )]
 
 #[macro_use]
