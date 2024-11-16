@@ -24,6 +24,10 @@ struct Mode {
     #[arg(short = 'B', long)]
     build: bool,
 
+    /// Dump mode: show output from templating pass
+    #[arg(short = 'D', long)]
+    dump: bool,
+
     /// Check mode: check validity of input files only
     #[arg(short = 'C', long)]
     check: bool,
