@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Display};
+use std::ops::Range;
 
 use minijinja::Value;
 
@@ -36,6 +37,7 @@ pub struct IncludeArg {
 pub struct InstInclude {
     pub src: String,
     pub args: Vec<IncludeArg>,
+    pub span: Range<usize>,
 }
 
 impl Debug for InstInclude {
