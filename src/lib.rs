@@ -38,6 +38,9 @@ pub enum RaptorError {
 
     #[error(transparent)]
     BincodeError(#[from] bincode::Error),
+
+    #[error(transparent)]
+    VarError(#[from] std::env::VarError),
 }
 
 impl From<pest_consume::Error<Rule>> for RaptorError {
