@@ -14,7 +14,6 @@ const SOCKET_PATH: &str = "/tmp/raptor";
 
 impl Sandbox {
     pub fn new(layers: &[&str]) -> RaptorResult<Self> {
-
         if std::fs::exists(SOCKET_PATH)? {
             std::fs::remove_file(SOCKET_PATH)?;
         }
