@@ -15,6 +15,8 @@ pub use run::*;
 pub use write::*;
 
 use std::fmt::{Debug, Display};
+use std::ops::Range;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct Chown {
@@ -43,6 +45,17 @@ pub enum Instruction {
     Include(InstInclude),
     Invoke(InstInvoke),
     Run(InstRun),
+}
+
+#[derive(Clone, Debug)]
+pub struct Origin {
+    pub path: Arc<String>,
+    pub span: Range<usize>,
+}
+
+pub struct Statement {
+    pub inst: Instruction,
+    pub origin: Origin,
 }
 
 impl Instruction {
