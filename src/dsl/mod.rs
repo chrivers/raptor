@@ -1,10 +1,12 @@
 mod copy;
+mod from;
 mod include;
 mod invoke;
 mod render;
 mod write;
 
 pub use copy::*;
+pub use from::*;
 pub use include::*;
 pub use invoke::*;
 pub use render::*;
@@ -28,11 +30,6 @@ impl Display for Chown {
         }
         Ok(())
     }
-}
-
-#[derive(Clone, Debug)]
-pub struct InstFrom {
-    pub from: String,
 }
 
 #[derive(Clone, Debug)]
