@@ -44,6 +44,9 @@ pub enum RaptorError {
 
     #[error(transparent)]
     VarError(#[from] std::env::VarError),
+
+    #[error("RUN failed: {0}")]
+    RunError(String),
 }
 
 impl From<pest_consume::Error<Rule>> for RaptorError {
