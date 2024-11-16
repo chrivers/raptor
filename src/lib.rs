@@ -21,6 +21,7 @@ pub mod dsl;
 pub mod parser;
 pub mod template;
 pub mod util;
+pub mod client;
 
 use crate::parser::Rule;
 
@@ -34,6 +35,9 @@ pub enum RaptorError {
 
     #[error(transparent)]
     PestError(Box<pest::error::Error<Rule>>),
+
+    #[error(transparent)]
+    BincodeError(#[from] bincode::Error),
 }
 
 impl From<pest_consume::Error<Rule>> for RaptorError {
