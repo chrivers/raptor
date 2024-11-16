@@ -3,6 +3,7 @@ mod from;
 mod include;
 mod invoke;
 mod render;
+mod run;
 mod write;
 
 pub use copy::*;
@@ -10,6 +11,7 @@ pub use from::*;
 pub use include::*;
 pub use invoke::*;
 pub use render::*;
+pub use run::*;
 pub use write::*;
 
 use std::fmt::{Debug, Display};
@@ -40,6 +42,7 @@ pub enum Instruction {
     Write(InstWrite),
     Include(InstInclude),
     Invoke(InstInvoke),
+    Run(InstRun),
 }
 
 impl Instruction {
@@ -52,6 +55,7 @@ impl Instruction {
             Self::Write(_) => "WRITE",
             Self::Include(_) => "INCLUDE",
             Self::Invoke(_) => "INVOKE",
+            Self::Run(_) => "RUN",
         }
     }
 }
