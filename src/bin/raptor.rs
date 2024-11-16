@@ -152,6 +152,7 @@ impl<'source> Engine<'source> {
             .env
             .get_template(name.as_ref())
             .and_then(|tmpl| tmpl.render(ctx))
+            .map(|src| src + "\n")
         {
             Ok(res) => Ok(res),
             Err(err) => {
@@ -174,7 +175,7 @@ impl<'source> Engine<'source> {
     }
 
     fn execute_template(&mut self, path: &str, ctx: &Value) -> RaptorResult<()> {
-        let res = match self.parse_template(path, ctx) {
+        let source = match self.parse_template(path, ctx) {
             Ok(res) => res,
             Err(err) => {
                 info!("foo: {path} {:?}", &self.files);
@@ -183,7 +184,6 @@ impl<'source> Engine<'source> {
             }
         };
 
-        let source = res + "\n";
         let ast = raptor::parser::ast::parse(path, &source)?;
 
         for inst in ast {
@@ -216,7 +216,6 @@ fn raptor() -> RaptorResult<()> {
             continue;
         }
 
-        let source = source + "\n";
         let ast = raptor::parser::ast::parse(file.as_str(), &source)?;
 
         for inst in ast {
