@@ -3,7 +3,7 @@ use pest_consume::{match_nodes, Parser};
 
 use crate::dsl::{
     Chown, IncludeArg, IncludeArgValue, InstCopy, InstFrom, InstInclude, InstInvoke, InstRender,
-    InstWrite, Instruction, Lookup,
+    InstRun, InstWrite, Instruction, Lookup,
 };
 use crate::parser::{RaptorFileParser, Rule};
 use crate::RaptorResult;
@@ -183,6 +183,13 @@ impl RaptorFileParser {
         }))
     }
 
+    fn RUN(input: Node) -> Result<InstRun> {
+        Ok(match_nodes!(input.into_children();
+        [filename(i)..] => InstRun {
+            run: i.collect(),
+        }))
+    }
+
     fn bool(input: Node) -> Result<bool> {
         match input.as_str() {
             "true" => Ok(true),
@@ -225,12 +232,14 @@ impl RaptorFileParser {
     }
 
     fn INCLUDE(input: Node) -> Result<InstInclude> {
+        let span = input.as_span();
         match_nodes!(
             input.into_children();
             [filename(src), include_args(args)] => {
                 Ok(InstInclude {
                     src,
                     args,
+                    span: span.start() .. span.end(),
                 })
             },
         )
@@ -245,6 +254,7 @@ impl RaptorFileParser {
             [RENDER(stmt)] => Some(Instruction::Render(stmt)),
             [INCLUDE(stmt)] => Some(Instruction::Include(stmt)),
             [INVOKE(stmt)] => Some(Instruction::Invoke(stmt)),
+            [RUN(stmt)] => Some(Instruction::Run(stmt)),
             [] => None,
         ))
     }
