@@ -1,15 +1,22 @@
+use std::sync::Arc;
+
 use minijinja::Value;
 use pest_consume::{match_nodes, Parser};
 
 use crate::dsl::{
     Chown, IncludeArg, IncludeArgValue, InstCopy, InstFrom, InstInclude, InstInvoke, InstRender,
-    InstRun, InstWrite, Instruction, Lookup,
+    InstRun, InstWrite, Instruction, Lookup, Origin, Statement,
 };
 use crate::parser::{RaptorFileParser, Rule};
 use crate::RaptorResult;
 
+#[derive(Clone, Debug)]
+struct UserData {
+    path: Arc<String>,
+}
+
 type Result<T> = std::result::Result<T, pest_consume::Error<Rule>>;
-type Node<'i> = pest_consume::Node<'i, Rule, ()>;
+type Node<'i> = pest_consume::Node<'i, Rule, UserData>;
 
 #[allow(non_snake_case, clippy::unnecessary_wraps)]
 #[pest_consume::parser]
@@ -232,34 +239,37 @@ impl RaptorFileParser {
     }
 
     fn INCLUDE(input: Node) -> Result<InstInclude> {
-        let span = input.as_span();
         match_nodes!(
             input.into_children();
             [filename(src), include_args(args)] => {
                 Ok(InstInclude {
                     src,
                     args,
-                    span: span.start() .. span.end(),
                 })
             },
         )
     }
 
-    fn STATEMENT(input: Node) -> Result<Option<Instruction>> {
+    fn STATEMENT(input: Node) -> Result<Option<Statement>> {
+        let span = input.as_span();
+        let origin = Origin {
+            path: input.user_data().path.clone(),
+            span: span.start()..span.end(),
+        };
         Ok(match_nodes!(
             input.into_children();
-            [FROM(stmt)] => Some(Instruction::From(stmt)),
-            [COPY(stmt)] => Some(Instruction::Copy(stmt)),
-            [WRITE(stmt)] => Some(Instruction::Write(stmt)),
-            [RENDER(stmt)] => Some(Instruction::Render(stmt)),
-            [INCLUDE(stmt)] => Some(Instruction::Include(stmt)),
-            [INVOKE(stmt)] => Some(Instruction::Invoke(stmt)),
-            [RUN(stmt)] => Some(Instruction::Run(stmt)),
+            [FROM(stmt)] => Some(Statement { inst: Instruction::From(stmt), origin }),
+            [COPY(stmt)] => Some(Statement { inst: Instruction::Copy(stmt), origin }),
+            [WRITE(stmt)] => Some(Statement { inst: Instruction::Write(stmt), origin }),
+            [RENDER(stmt)] => Some(Statement { inst: Instruction::Render(stmt), origin }),
+            [INCLUDE(stmt)] => Some(Statement { inst: Instruction::Include(stmt), origin }),
+            [INVOKE(stmt)] => Some(Statement { inst: Instruction::Invoke(stmt), origin }),
+            [RUN(stmt)] => Some(Statement { inst: Instruction::Run(stmt), origin }),
             [] => None,
         ))
     }
 
-    fn FILE(input: Node) -> Result<Vec<Instruction>> {
+    fn FILE(input: Node) -> Result<Vec<Statement>> {
         match_nodes!(
             input.into_children();
             [STATEMENT(stmt).., _EOI] => Ok(stmt.flatten().collect())
@@ -267,8 +277,14 @@ impl RaptorFileParser {
     }
 }
 
-pub fn parse(input: &str) -> RaptorResult<Vec<Instruction>> {
-    let inputs = RaptorFileParser::parse(Rule::FILE, input)?;
+pub fn parse(path: &str, input: &str) -> RaptorResult<Vec<Statement>> {
+    let inputs = RaptorFileParser::parse_with_userdata(
+        Rule::FILE,
+        input,
+        UserData {
+            path: Arc::new(path.to_string()),
+        },
+    )?;
     let input = inputs.single()?;
     Ok(RaptorFileParser::FILE(input)?)
 }

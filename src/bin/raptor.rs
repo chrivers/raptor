@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::ops::Range;
 use std::process::Command;
 
 use annotate_snippets::{Level, Renderer, Snippet};
@@ -8,7 +7,7 @@ use clap::Parser as _;
 use log::{debug, error, info};
 use minijinja::{context, Environment, Value};
 
-use raptor::dsl::{IncludeArgValue, Instruction};
+use raptor::dsl::{IncludeArgValue, Instruction, Origin, Statement};
 use raptor::sandbox::Sandbox;
 use raptor::{template, RaptorResult};
 
@@ -86,7 +85,7 @@ fn show_error_context(
 struct Engine<'source> {
     env: Environment<'source>,
     sandbox: Sandbox,
-    files: Vec<String>,
+    files: Vec<Origin>,
 }
 
 impl<'source> Engine<'source> {
@@ -98,28 +97,28 @@ impl<'source> Engine<'source> {
         }
     }
 
-    fn handle(&mut self, inst: &Instruction, rctx: &Value) -> RaptorResult<()> {
-        match inst {
-            Instruction::From(stmt) => {
-                info!("{:?}", stmt);
+    fn handle(&mut self, stmt: &Statement, rctx: &Value) -> RaptorResult<()> {
+        match &stmt.inst {
+            Instruction::From(inst) => {
+                info!("{:?}", inst);
             }
-            Instruction::Copy(stmt) => {
-                info!("{:?}", stmt);
+            Instruction::Copy(inst) => {
+                info!("{:?}", inst);
             }
-            Instruction::Render(stmt) => {
-                info!("{:?}", stmt);
+            Instruction::Render(inst) => {
+                info!("{:?}", inst);
             }
-            Instruction::Write(stmt) => {
-                info!("{:?}", stmt);
+            Instruction::Write(inst) => {
+                info!("{:?}", inst);
             }
-            Instruction::Run(stmt) => {
-                self.sandbox.run(&stmt.run[..])?;
-                debug!("{:?}", stmt);
+            Instruction::Run(inst) => {
+                debug!("{:?}", inst);
+                self.sandbox.run(&inst.run)?;
             }
 
-            Instruction::Include(stmt) => {
+            Instruction::Include(inst) => {
                 let mut map = HashMap::new();
-                for arg in &stmt.args {
+                for arg in &inst.args {
                     match &arg.value {
                         IncludeArgValue::Lookup(lookup) => {
                             let name = &lookup.path[0];
@@ -135,15 +134,13 @@ impl<'source> Engine<'source> {
                     }
                 }
                 let ctx = Value::from(map);
-                let span = stmt.span.clone();
-                self.files
-                    .push(format!("{} {}..{}", stmt.src, span.start, span.end));
-                self.execute_template(&stmt.src, &ctx, stmt.span.clone())?;
+                self.files.push(stmt.origin.clone());
+                self.execute_template(&inst.src, &ctx)?;
                 self.files.pop();
             }
 
-            Instruction::Invoke(stmt) => {
-                Command::new("echo").args(&stmt.args).spawn()?.wait()?;
+            Instruction::Invoke(inst) => {
+                Command::new("echo").args(&inst.args).spawn()?.wait()?;
             }
         }
 
@@ -151,7 +148,6 @@ impl<'source> Engine<'source> {
     }
 
     fn parse_template(&mut self, name: impl AsRef<str>, ctx: &Value) -> RaptorResult<String> {
-        self.files.push(format!("[{}]", name.as_ref()));
         match self
             .env
             .get_template(name.as_ref())
@@ -177,22 +173,18 @@ impl<'source> Engine<'source> {
         }
     }
 
-    fn execute_template(
-        &mut self,
-        src: &str,
-        ctx: &Value,
-        _span: Range<usize>,
-    ) -> RaptorResult<()> {
-        let res = match self.parse_template(src, ctx) {
+    fn execute_template(&mut self, path: &str, ctx: &Value) -> RaptorResult<()> {
+        let res = match self.parse_template(path, ctx) {
             Ok(res) => res,
             Err(err) => {
-                info!("foo: {src} {:?}", &self.files);
-                show_error_context(src, "", &err.to_string(), 0)?;
+                info!("foo: {path} {:?}", &self.files);
+                show_error_context(path, "", &err.to_string(), 0)?;
                 Err(err)?
             }
         };
 
-        let ast = raptor::parser::ast::parse(&(res + "\n"))?;
+        let source = res + "\n";
+        let ast = raptor::parser::ast::parse(path, &source)?;
 
         for inst in ast {
             self.handle(&inst, ctx)?;
@@ -224,7 +216,8 @@ fn raptor() -> RaptorResult<()> {
             continue;
         }
 
-        let ast = raptor::parser::ast::parse(&(source + "\n"))?;
+        let source = source + "\n";
+        let ast = raptor::parser::ast::parse(file.as_str(), &source)?;
 
         for inst in ast {
             eng.handle(&inst, &root_context)?;
