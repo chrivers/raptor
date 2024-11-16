@@ -17,11 +17,11 @@
 #[macro_use]
 extern crate log;
 
+pub mod client;
 pub mod dsl;
 pub mod parser;
 pub mod template;
 pub mod util;
-pub mod client;
 
 use crate::parser::Rule;
 
