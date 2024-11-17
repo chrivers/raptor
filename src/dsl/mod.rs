@@ -36,7 +36,7 @@ impl Display for Chown {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum Instruction {
     From(InstFrom),
     Copy(InstCopy),
@@ -47,7 +47,7 @@ pub enum Instruction {
     Run(InstRun),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Origin {
     pub path: Arc<String>,
     pub span: Range<usize>,
@@ -70,5 +70,29 @@ impl Instruction {
             Self::Invoke(_) => "INVOKE",
             Self::Run(_) => "RUN",
         }
+    }
+}
+
+impl Debug for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::From(inst) => inst.fmt(f),
+            Self::Copy(inst) => inst.fmt(f),
+            Self::Render(inst) => inst.fmt(f),
+            Self::Write(inst) => inst.fmt(f),
+            Self::Include(inst) => inst.fmt(f),
+            Self::Invoke(inst) => inst.fmt(f),
+            Self::Run(inst) => inst.fmt(f),
+        }
+    }
+}
+
+impl Debug for Origin {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "[{:<15} {:>3} .. {:>3}]",
+            self.path, self.span.start, self.span.end
+        )
     }
 }
