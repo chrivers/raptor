@@ -55,6 +55,17 @@ pub struct Origin {
     pub span: Range<usize>,
 }
 
+impl Origin {
+    #[must_use]
+    pub fn from_node(node: &crate::parser::ast::Node) -> Self {
+        let span = node.as_span();
+        Self {
+            path: node.user_data().path.clone(),
+            span: span.start()..span.end(),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Statement {
     pub inst: Instruction,

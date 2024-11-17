@@ -11,12 +11,12 @@ use crate::parser::{RaptorFileParser, Rule};
 use crate::RaptorResult;
 
 #[derive(Clone, Debug)]
-struct UserData {
-    path: Arc<String>,
+pub struct UserData {
+    pub path: Arc<String>,
 }
 
 type Result<T> = std::result::Result<T, pest_consume::Error<Rule>>;
-type Node<'i> = pest_consume::Node<'i, Rule, UserData>;
+pub type Node<'i> = pest_consume::Node<'i, Rule, UserData>;
 
 #[allow(non_snake_case, clippy::unnecessary_wraps)]
 #[pest_consume::parser]
@@ -251,11 +251,7 @@ impl RaptorFileParser {
     }
 
     fn STATEMENT(input: Node) -> Result<Option<Statement>> {
-        let span = input.as_span();
-        let origin = Origin {
-            path: input.user_data().path.clone(),
-            span: span.start()..span.end(),
-        };
+        let origin = Origin::from_node(&input);
         Ok(match_nodes!(
             input.into_children();
             [FROM(stmt)] => Some(Statement { inst: Instruction::From(stmt), origin }),
