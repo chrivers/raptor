@@ -1,15 +1,11 @@
-use std::collections::HashMap;
-use std::process::Command;
-
-use annotate_snippets::{Level, Renderer, Snippet};
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use log::{debug, error, info};
-use minijinja::{context, Environment, Value};
+use log::error;
 
-use raptor::dsl::{IncludeArgValue, Instruction, Origin, Statement};
+use minijinja::{context, ErrorKind};
+use raptor::program::{show_error_context, show_jinja_error_context, Executor, Loader};
 use raptor::sandbox::Sandbox;
-use raptor::{template, RaptorResult};
+use raptor::{template, RaptorError, RaptorResult};
 
 #[derive(clap::Parser, Debug)]
 #[command(about, long_about = None)]
@@ -45,183 +41,81 @@ struct Mode {
     show: bool,
 }
 
-fn show_error_context(
-    name: &str,
-    origin: &str,
-    description: &str,
-    err_line: usize,
-) -> RaptorResult<()> {
-    const CONTEXT_LINES: usize = 3;
-
-    let raw = std::fs::read_to_string(name)?;
-    let lines = raw.lines().collect::<Vec<&str>>();
-    let line = err_line - 1;
-    let line1 = line.saturating_sub(CONTEXT_LINES);
-    let line2 = (line + 1 + CONTEXT_LINES).min(lines.len());
-    let snippet = &lines[line1..line2].join("\n");
-    let span1 = lines[line1..line]
-        .iter()
-        .map(|q| q.as_bytes().len())
-        .sum::<usize>()
-        + (line - line1);
-    let span2 = span1 + lines[line].as_bytes().len();
-
-    let message = Level::Error
-        .title("Error while parsing raptor file")
-        .snippet(
-            Snippet::source(snippet)
-                .line_start(line1 + 1)
-                .origin(origin)
-                .fold(false)
-                .annotation(Level::Error.span(span1..span2).label(description)),
-        );
-
-    let renderer = Renderer::styled();
-    anstream::println!("{}", renderer.render(message));
-
-    Ok(())
-}
-
-struct Engine<'source> {
-    env: Environment<'source>,
-    sandbox: Sandbox,
-    files: Vec<Origin>,
-}
-
-impl<'source> Engine<'source> {
-    pub fn new(env: Environment<'source>, sandbox: Sandbox) -> Self {
-        Self {
-            env,
-            files: vec![],
-            sandbox,
-        }
-    }
-
-    fn handle(&mut self, stmt: &Statement, rctx: &Value) -> RaptorResult<()> {
-        match &stmt.inst {
-            Instruction::From(inst) => {
-                info!("{:?}", inst);
-            }
-            Instruction::Copy(inst) => {
-                info!("{:?}", inst);
-            }
-            Instruction::Render(inst) => {
-                info!("{:?}", inst);
-            }
-            Instruction::Write(inst) => {
-                info!("{:?}", inst);
-            }
-            Instruction::Run(inst) => {
-                debug!("{:?}", inst);
-                self.sandbox.run(&inst.run)?;
-            }
-
-            Instruction::Include(inst) => {
-                let mut map = HashMap::new();
-                for arg in &inst.args {
-                    match &arg.value {
-                        IncludeArgValue::Lookup(lookup) => {
-                            let name = &lookup.path[0];
-                            let val = rctx.get_attr(name)?;
-                            /* let val = rctx.get_value(&Value::from(name)).ok_or( */
-                            /*     RaptorError::InstNameNotFound(Box::new(inst.clone()), name.clone()), */
-                            /* )?; */
-                            map.insert(arg.name.clone(), val.clone());
-                        }
-                        IncludeArgValue::Value(val) => {
-                            map.insert(arg.name.clone(), Value::from_serialize(val));
-                        }
-                    }
-                }
-                let ctx = Value::from(map);
-                self.files.push(stmt.origin.clone());
-                self.execute_template(&inst.src, &ctx)?;
-                self.files.pop();
-            }
-
-            Instruction::Invoke(inst) => {
-                Command::new("echo").args(&inst.args).spawn()?.wait()?;
-            }
-        }
-
-        Ok(())
-    }
-
-    fn parse_template(&mut self, name: impl AsRef<str>, ctx: &Value) -> RaptorResult<String> {
-        match self
-            .env
-            .get_template(name.as_ref())
-            .and_then(|tmpl| tmpl.render(ctx))
-            .map(|src| src + "\n")
-        {
-            Ok(res) => Ok(res),
-            Err(err) => {
-                if let Some(err_line) = err.line() {
-                    let description = err.to_string();
-                    show_error_context(name.as_ref(), err.name().unwrap(), &description, err_line)?;
-                } else {
-                    error!("{err}");
-                    let mut err2 = &err as &dyn std::error::Error;
-                    while let Some(next_err) = err2.source() {
-                        eprintln!();
-                        eprintln!("caused by: {:#}", next_err);
-                        err2 = next_err;
-                    }
-                }
-
-                Err(err)?
-            }
-        }
-    }
-
-    fn execute_template(&mut self, path: &str, ctx: &Value) -> RaptorResult<()> {
-        let source = match self.parse_template(path, ctx) {
-            Ok(res) => res,
-            Err(err) => {
-                info!("foo: {path} {:?}", &self.files);
-                show_error_context(path, "", &err.to_string(), 0)?;
-                Err(err)?
-            }
-        };
-
-        let ast = raptor::parser::ast::parse(path, &source)?;
-
-        for inst in ast {
-            self.handle(&inst, ctx)?;
-        }
-
-        Ok(())
-    }
-
-    pub fn finish(mut self) -> RaptorResult<()> {
-        self.sandbox.close()
-    }
-}
-
 fn raptor() -> RaptorResult<()> {
     let args = Cli::parse();
 
     let root_context = context!();
 
     for file in args.input {
-        let spawn = Sandbox::new(&["layers/build", "layers/adjust"])?;
-        let mut eng = Engine::new(template::make_environment()?, spawn);
-        let source = eng.parse_template(&file, &root_context)?;
+        let mut loader = Loader::new(template::make_environment()?, args.mode.dump);
+        let statements = match loader.parse_template(file.as_str(), &root_context) {
+            Ok(res) => res,
+            Err(RaptorError::ScriptError(desc, origin)) => {
+                for org in loader.origins() {
+                    show_error_context(
+                        &org.path,
+                        "Error while evaluating INCLUDE",
+                        "(included here)",
+                        org.span.clone(),
+                    )?;
+                }
+                show_error_context(&origin.path, "Script Error", &desc, origin.span.clone())?;
+                continue;
+            }
+            Err(RaptorError::MinijinjaError(err)) => {
+                match err.kind() {
+                    ErrorKind::BadInclude => {
+                        let origins = loader.origins();
+                        for org in &origins[..origins.len() - 1] {
+                            show_error_context(
+                                &org.path,
+                                "Error while evaluating INCLUDE",
+                                "(included here)",
+                                org.span.clone(),
+                            )?;
+                        }
 
-        if args.mode.dump {
-            println!("{source}");
+                        let last = origins.last().unwrap();
+                        show_error_context(
+                            &last.path,
+                            "Error while evaluating INCLUDE",
+                            err.detail().unwrap_or("error"),
+                            err.range().unwrap_or(last.span.clone()),
+                        )?;
+                    }
+                    _ => {
+                        for org in loader.origins() {
+                            show_error_context(
+                                &org.path,
+                                "Error while evaluating INCLUDE",
+                                "(included here)",
+                                org.span.clone(),
+                            )?;
+                        }
+                        show_jinja_error_context(&err)?;
+                    }
+                }
+                continue;
+            }
+            Err(err) => panic!("{err}"),
+        };
+
+        for stmt in &statements {
+            println!("{:?} {:?}", stmt.origin, stmt.inst);
         }
 
         if args.no_act {
             continue;
         }
 
-        let ast = raptor::parser::ast::parse(file.as_str(), &source)?;
+        let sandbox = Sandbox::new(&["layers/build", "layers/adjust"])?;
+        let mut exec = Executor::new(sandbox);
 
-        for inst in ast {
-            eng.handle(&inst, &root_context)?;
+        for stmt in &statements {
+            exec.handle(stmt)?;
         }
-        eng.finish()?;
+
+        exec.finish()?;
     }
 
     Ok(())
