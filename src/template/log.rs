@@ -3,27 +3,27 @@ use minijinja::{Environment, State};
 
 #[allow(clippy::needless_pass_by_value)]
 pub fn trace(state: &State, args: Rest<String>) {
-    trace!("{} | {}", state.name(), args.join(" "));
+    trace!("[{}]: {}", state.name(), args.join(" "));
 }
 
 #[allow(clippy::needless_pass_by_value)]
 pub fn debug(state: &State, args: Rest<String>) {
-    debug!("{} | {}", state.name(), args.join(" "));
+    debug!("[{}]: {}", state.name(), args.join(" "));
 }
 
 #[allow(clippy::needless_pass_by_value)]
 pub fn info(state: &State, args: Rest<String>) {
-    info!("{} | {}", state.name(), args.join(" "));
+    info!("[{}]: {}", state.name(), args.join(" "));
 }
 
 #[allow(clippy::needless_pass_by_value)]
 pub fn warning(state: &State, args: Rest<String>) {
-    warn!("{} | {}", state.name(), args.join(" "));
+    warn!("[{}]: {}", state.name(), args.join(" "));
 }
 
 #[allow(clippy::needless_pass_by_value)]
 pub fn error(state: &State, args: Rest<String>) {
-    error!("{} | {}", state.name(), args.join(" "));
+    error!("[{}]: {}", state.name(), args.join(" "));
 }
 
 pub fn add_functions(env: &mut Environment) {
