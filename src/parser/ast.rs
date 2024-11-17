@@ -214,12 +214,13 @@ impl RaptorFileParser {
     }
 
     fn value(input: Node) -> Result<IncludeArgValue> {
+        let origin = Origin::from_node(&input);
         Ok(match_nodes!(
             input.into_children();
             [bool(b)] => IncludeArgValue::Value(b.into()),
             [number(b)] => IncludeArgValue::Value(b.into()),
             [string(b)] => IncludeArgValue::Value(b.into()),
-            [ident(b)..] => IncludeArgValue::Lookup(Lookup::new(b.collect())),
+            [ident(b)..] => IncludeArgValue::Lookup(Lookup::new(b.collect(), origin)),
         ))
     }
 

@@ -2,15 +2,18 @@ use std::fmt::{Debug, Display};
 
 use minijinja::Value;
 
+use crate::dsl::Origin;
+
 #[derive(Clone, Debug)]
 pub struct Lookup {
     pub path: Vec<String>,
+    pub origin: Origin,
 }
 
 impl Lookup {
     #[must_use]
-    pub const fn new(path: Vec<String>) -> Self {
-        Self { path }
+    pub const fn new(path: Vec<String>, origin: Origin) -> Self {
+        Self { path, origin }
     }
 }
 

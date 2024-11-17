@@ -4,7 +4,7 @@ use minijinja::{Environment, Value};
 
 use crate::dsl::{IncludeArgValue, Instruction, Origin, Statement};
 use crate::parser::ast;
-use crate::RaptorResult;
+use crate::{RaptorError, RaptorResult};
 
 pub struct Loader<'source> {
     env: Environment<'source>,
@@ -26,7 +26,7 @@ impl<'source> Loader<'source> {
     fn handle(&mut self, stmt: Statement, rctx: &Value) -> RaptorResult<Vec<Statement>> {
         if let Instruction::Include(inst) = &stmt.inst {
             if self.origins.len() >= MAX_NESTED_INCLUDE {
-                return Err(crate::RaptorError::ScriptError(
+                return Err(RaptorError::ScriptError(
                     "Too many nested includes".to_string(),
                     self.origins.last().unwrap().clone(),
                 ));
@@ -38,7 +38,10 @@ impl<'source> Loader<'source> {
                         let name = &lookup.path[0];
                         let val = rctx.get_attr(name)?;
                         if val.is_undefined() {
-                            stmt.error(format!("Undefined variable {name:?}"))?;
+                            Err(RaptorError::ScriptError(
+                                format!("Undefined variable {name:?}"),
+                                lookup.origin.clone(),
+                            ))?;
                         }
                         map.insert(arg.name.clone(), val.clone());
                     }
