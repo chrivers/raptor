@@ -23,7 +23,6 @@ pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
 
     env.set_syntax(
         SyntaxConfig::builder()
-            .line_comment_prefix("# ")
             .line_statement_prefix("$ ")
             .build()?,
     );
