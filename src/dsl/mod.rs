@@ -18,6 +18,8 @@ use std::fmt::{Debug, Display};
 use std::ops::Range;
 use std::sync::Arc;
 
+use crate::{RaptorError, RaptorResult};
+
 #[derive(Clone)]
 pub struct Chown {
     pub user: Option<String>,
@@ -53,9 +55,16 @@ pub struct Origin {
     pub span: Range<usize>,
 }
 
+#[derive(Clone, Debug)]
 pub struct Statement {
     pub inst: Instruction,
     pub origin: Origin,
+}
+
+impl Statement {
+    pub fn error(&self, msg: String) -> RaptorResult<()> {
+        Err(RaptorError::ScriptError(msg, self.origin.clone()))
+    }
 }
 
 impl Instruction {

@@ -26,7 +26,7 @@ pub mod sandbox;
 pub mod template;
 pub mod util;
 
-use crate::parser::Rule;
+use crate::{dsl::Origin, parser::Rule};
 
 #[derive(thiserror::Error, Debug)]
 pub enum RaptorError {
@@ -44,6 +44,9 @@ pub enum RaptorError {
 
     #[error(transparent)]
     VarError(#[from] std::env::VarError),
+
+    #[error("Script error: {0} {1:?}")]
+    ScriptError(String, Origin),
 
     #[error("RUN failed: {0}")]
     RunError(String),
