@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use clap::{ArgMatches, Command};
 use minijinja::value::{from_args, Enumerator, Kwargs, Object, ObjectRepr};
-use minijinja::{Environment, Error, State, Value};
+use minijinja::{Environment, Error, ErrorKind, State, Value};
 
 use serde::de::Error as _;
 
@@ -113,6 +113,17 @@ pub fn args() -> Result<Value, Error> {
     Ok(Value::from_object(Args(Mutex::new(vec![]))))
 }
 
+#[allow(clippy::unnecessary_wraps)]
+pub fn require(state: &State, name: &str) -> Result<(), Error> {
+    if state.lookup(name).is_some() {
+        Ok(())
+    } else {
+        let msg = format!("Missing field {name:?}");
+        Err(Error::new(ErrorKind::MissingArgument, msg))
+    }
+}
+
 pub fn add_functions(env: &mut Environment) {
     env.add_function("Args", args);
+    env.add_function("require", require);
 }
