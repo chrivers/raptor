@@ -70,8 +70,8 @@ impl Sandbox {
         let listen = UnixListener::bind(ext_socket_path)?;
 
         let proc = SpawnBuilder::new()
-            .quiet()
-            .with_sudo()
+            .quiet(true)
+            .sudo(true)
             .settings(Settings::False)
             .setenv("RAPTOR_NSPAWN_SOCKET", int_socket_path.as_str())
             .root_overlays(layers)

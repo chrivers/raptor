@@ -30,6 +30,7 @@ pub fn escape_colon(path: &str) -> String {
 #[derive(Default)]
 pub struct SpawnBuilder<'a> {
     sudo: bool,
+    quiet: bool,
     args: Vec<String>,
     settings: Option<Settings>,
     directory: Option<String>,
@@ -53,14 +54,15 @@ impl<'a> SpawnBuilder<'a> {
     }
 
     #[must_use]
-    pub const fn with_sudo(mut self) -> Self {
-        self.sudo = true;
+    pub const fn sudo(mut self, sudo: bool) -> Self {
+        self.sudo = sudo;
         self
     }
 
     #[must_use]
-    pub fn quiet(self) -> Self {
-        self.arg("-q")
+    pub const fn quiet(mut self, quiet: bool) -> Self {
+        self.quiet = quiet;
+        self
     }
 
     #[must_use]
@@ -124,6 +126,10 @@ impl<'a> SpawnBuilder<'a> {
         }
 
         res.push("systemd-nspawn".into());
+
+        if self.quiet {
+            res.push("-q".into());
+        }
 
         if let Some(mode) = self.console {
             res.push("--console".into());
