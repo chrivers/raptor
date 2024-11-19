@@ -23,14 +23,23 @@ pub struct SandboxFile<'sb> {
 }
 
 impl<'sb> SandboxFile<'sb> {
-    pub fn new(sandbox: &'sb mut Sandbox, fd: i32) -> Self {
-        Self { sandbox, fd }
+    pub fn new(sandbox: &'sb mut Sandbox, path: &Utf8Path) -> RaptorResult<Self> {
+        let fd = sandbox.rpc(&Request::CreateFile {
+            path: path.to_owned(),
+            user: None,
+            group: None,
+            mode: None,
+        })?;
+        Ok(Self { sandbox, fd })
     }
 }
 
 impl<'sb> Write for SandboxFile<'sb> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        match self.sandbox.write_fd(self.fd, buf) {
+        match self.sandbox.rpc(&Request::WriteFd {
+            fd: self.fd,
+            data: buf.to_vec(),
+        }) {
             Ok(_) => Ok(buf.len()),
             Err(RaptorError::IoError(err)) => Err(err),
             Err(err) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, err)),
@@ -45,7 +54,7 @@ impl<'sb> Write for SandboxFile<'sb> {
 
 impl<'sb> Drop for SandboxFile<'sb> {
     fn drop(&mut self) {
-        let _ = self.sandbox.close_fd(self.fd);
+        let _ = self.sandbox.rpc(&Request::CloseFd { fd: self.fd });
     }
 }
 
@@ -93,7 +102,7 @@ impl Sandbox {
         })
     }
 
-    fn sandbox_rpc(&mut self, req: &Request) -> RaptorResult<i32> {
+    fn rpc(&mut self, req: &Request) -> RaptorResult<i32> {
         self.conn.write_framed(req)?;
         match self.conn.read_framed::<Response>()? {
             Response::Err(err) => Err(RaptorError::RunError(err)),
@@ -102,34 +111,14 @@ impl Sandbox {
     }
 
     pub fn run(&mut self, cmd: &[String]) -> RaptorResult<i32> {
-        self.sandbox_rpc(&Request::Run {
+        self.rpc(&Request::Run {
             arg0: cmd[0].clone(),
             argv: cmd.to_vec(),
         })
     }
 
     pub fn create_file_handle(&mut self, path: &Utf8Path) -> RaptorResult<SandboxFile> {
-        let fd = self.sandbox_rpc(&Request::CreateFile {
-            path: path.to_owned(),
-        })?;
-        Ok(SandboxFile { sandbox: self, fd })
-    }
-
-    pub fn create_file(&mut self, path: &Utf8Path) -> RaptorResult<i32> {
-        self.sandbox_rpc(&Request::CreateFile {
-            path: path.to_owned(),
-        })
-    }
-
-    pub fn write_fd(&mut self, fd: i32, data: &[u8]) -> RaptorResult<i32> {
-        self.sandbox_rpc(&Request::WriteFd {
-            fd,
-            data: data.to_vec(),
-        })
-    }
-
-    pub fn close_fd(&mut self, fd: i32) -> RaptorResult<i32> {
-        self.sandbox_rpc(&Request::CloseFd { fd })
+        SandboxFile::new(self, path)
     }
 
     pub fn close(mut self) -> RaptorResult<()> {

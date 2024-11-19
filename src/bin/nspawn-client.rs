@@ -70,7 +70,7 @@ fn main() -> RaptorResult<()> {
 
         let res = match req {
             Request::Run { arg0, argv } => request_run(&arg0, &argv),
-            Request::CreateFile { path } => request_create_file(&mut files, &path),
+            Request::CreateFile { path, .. } => request_create_file(&mut files, &path),
             Request::WriteFd { fd, data } => request_write_fd(&mut files, fd, &data),
             Request::CloseFd { fd } => request_close_fd(&mut files, fd),
             Request::Shutdown {} => {
