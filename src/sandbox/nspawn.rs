@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{collections::BTreeMap, process::Command};
 
 use serde::{Deserialize, Serialize};
 use serde_variant::to_variant_name;
@@ -28,7 +28,7 @@ pub fn escape_colon(path: &str) -> String {
 }
 
 #[derive(Default)]
-pub struct SpawnBuilder {
+pub struct SpawnBuilder<'a> {
     sudo: bool,
     args: Vec<String>,
     settings: Option<Settings>,
@@ -37,9 +37,10 @@ pub struct SpawnBuilder {
     root_overlay: Vec<String>,
     bind: Vec<(String, String)>,
     bind_ro: Vec<(String, String)>,
+    environment: BTreeMap<&'a str, &'a str>,
 }
 
-impl SpawnBuilder {
+impl<'a> SpawnBuilder<'a> {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -71,6 +72,12 @@ impl SpawnBuilder {
     #[must_use]
     pub const fn settings(mut self, settings: Settings) -> Self {
         self.settings = Some(settings);
+        self
+    }
+
+    #[must_use]
+    pub fn setenv(mut self, key: &'a str, value: &'a str) -> Self {
+        self.environment.insert(key, value);
         self
     }
 
@@ -107,7 +114,7 @@ impl SpawnBuilder {
     }
 }
 
-impl SpawnBuilder {
+impl<'a> SpawnBuilder<'a> {
     #[must_use]
     pub fn build(&self) -> Vec<String> {
         let mut res = vec![];
@@ -146,6 +153,11 @@ impl SpawnBuilder {
         if let Some(dir) = &self.directory {
             res.push("-D".into());
             res.push(dir.clone());
+        }
+
+        for (name, value) in &self.environment {
+            res.push("--setenv".into());
+            res.push(format!("{name}={value}"));
         }
 
         res.extend(self.args.clone());
