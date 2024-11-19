@@ -1,5 +1,9 @@
+use std::io::Write;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::process::Child;
+
+use camino::{Utf8Path, Utf8PathBuf};
+use tempfile::{Builder, TempDir};
 
 use crate::client::{FramedRead, FramedWrite, Request, Response};
 use crate::sandbox::{ConsoleMode, Settings, SpawnBuilder};
@@ -8,53 +12,103 @@ use crate::{RaptorError, RaptorResult};
 pub struct Sandbox {
     proc: Child,
     conn: UnixStream,
+    tempdir: TempDir,
+    int_root: Utf8PathBuf,
+    top_layer: Utf8PathBuf,
 }
-
-const SOCKET_PATH: &str = "/tmp/raptor";
 
 impl Sandbox {
     pub fn new(layers: &[&str]) -> RaptorResult<Self> {
-        if std::fs::exists(SOCKET_PATH)? {
-            std::fs::remove_file(SOCKET_PATH)?;
-        }
+        let tempdir = Builder::new().prefix("raptor-").tempdir()?;
 
-        let listen = UnixListener::bind(SOCKET_PATH)?;
+        let ext_root = Utf8PathBuf::from_path_buf(tempdir.path().to_path_buf()).unwrap();
+        let ext_socket_path = ext_root.join("raptor");
+        let ext_client_path = ext_root.join("nspawn-client");
+
+        let int_root = Utf8PathBuf::from("/").join(ext_root.file_name().unwrap());
+
+        let int_socket_path = int_root.join("raptor");
+        let int_client_path = int_root.join("nspawn-client");
+
+        std::fs::copy(
+            "target/x86_64-unknown-linux-musl/release/nspawn-client",
+            ext_client_path,
+        )?;
+
+        let listen = UnixListener::bind(ext_socket_path)?;
 
         let proc = SpawnBuilder::new()
             .quiet()
             .with_sudo()
             .settings(Settings::False)
             .root_overlays(layers)
-            .bind_ro("target/debug/nspawn-client", "/nspawn-client")
-            .bind_ro(SOCKET_PATH, SOCKET_PATH)
+            .bind_ro(ext_root.as_str(), int_root.as_str())
             .console(ConsoleMode::ReadOnly)
             .directory(layers[0])
-            .arg("/nspawn-client")
-            .arg(SOCKET_PATH)
+            .arg(int_client_path.as_str())
+            .arg(int_socket_path.as_str())
             .command()
             .spawn()?;
 
         let conn = listen.accept()?.0;
 
-        Ok(Self { proc, conn })
+        Ok(Self {
+            proc,
+            conn,
+            tempdir,
+            int_root,
+            top_layer: layers[layers.len() - 1].into(),
+        })
     }
 
-    pub fn run(&mut self, cmd: &[String]) -> RaptorResult<i32> {
-        let req = Request::Run {
-            arg0: cmd[0].clone(),
-            argv: cmd.to_vec(),
-        };
-        self.conn.write_framed(&req)?;
+    fn sandbox_rpc(&mut self, req: &Request) -> RaptorResult<i32> {
+        self.conn.write_framed(req)?;
         match self.conn.read_framed::<Response>()? {
             Response::Err(err) => Err(RaptorError::RunError(err)),
             Response::Ok(res) => Ok(res),
         }
     }
 
-    pub fn close(&mut self) -> RaptorResult<()> {
+    pub fn run(&mut self, cmd: &[String]) -> RaptorResult<i32> {
+        self.sandbox_rpc(&Request::Run {
+            arg0: cmd[0].clone(),
+            argv: cmd.to_vec(),
+        })
+    }
+
+    pub fn create_file_handle(&mut self, path: &Utf8Path) -> RaptorResult<SandboxFile> {
+        let fd = self.sandbox_rpc(&Request::CreateFile {
+            path: path.to_owned(),
+        })?;
+        Ok(SandboxFile { sandbox: self, fd })
+    }
+
+    pub fn create_file(&mut self, path: &Utf8Path) -> RaptorResult<i32> {
+        self.sandbox_rpc(&Request::CreateFile {
+            path: path.to_owned(),
+        })
+    }
+
+    pub fn write_fd(&mut self, fd: i32, data: &[u8]) -> RaptorResult<i32> {
+        self.sandbox_rpc(&Request::WriteFd {
+            fd,
+            data: data.to_vec(),
+        })
+    }
+
+    pub fn close_fd(&mut self, fd: i32) -> RaptorResult<i32> {
+        self.sandbox_rpc(&Request::CloseFd { fd })
+    }
+
+    pub fn close(mut self) -> RaptorResult<()> {
         self.conn.write_framed(Request::Shutdown {})?;
         self.conn.shutdown(std::net::Shutdown::Write)?;
         self.proc.wait()?;
+        self.tempdir.close()?;
+        let mount = self
+            .top_layer
+            .join(self.int_root.strip_prefix("/").unwrap());
+        std::fs::remove_dir(mount)?;
         Ok(())
     }
 }
