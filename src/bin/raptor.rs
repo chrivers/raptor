@@ -65,23 +65,26 @@ fn raptor() -> RaptorResult<()> {
             Err(RaptorError::MinijinjaError(err)) => {
                 match err.kind() {
                     ErrorKind::BadInclude => {
-                        let origins = loader.origins();
-                        for org in &origins[..origins.len() - 1] {
-                            show_error_context(
-                                &org.path,
-                                "Error while evaluating INCLUDE",
-                                "(included here)",
-                                org.span.clone(),
-                            )?;
-                        }
+                        let mut origins = loader.origins().to_vec();
+                        if let Some(last) = origins.pop() {
+                            for org in &origins {
+                                show_error_context(
+                                    &org.path,
+                                    "Error while evaluating INCLUDE",
+                                    "(included here)",
+                                    org.span.clone(),
+                                )?;
+                            }
 
-                        let last = origins.last().unwrap();
-                        show_error_context(
-                            &last.path,
-                            "Error while evaluating INCLUDE",
-                            err.detail().unwrap_or("error"),
-                            err.range().unwrap_or(last.span.clone()),
-                        )?;
+                            show_error_context(
+                                &last.path,
+                                "Error while evaluating INCLUDE",
+                                err.detail().unwrap_or("error"),
+                                err.range().unwrap_or(last.span.clone()),
+                            )?;
+                        } else {
+                            error!("Cannot provide error context: {err}");
+                        }
                     }
                     _ => {
                         for org in loader.origins() {
