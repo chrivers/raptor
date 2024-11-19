@@ -6,42 +6,56 @@ use std::os::unix::net::UnixStream;
 use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::process::Command;
 
-use camino::Utf8Path;
 use log::{error, info, trace};
 
-use raptor::client::{FramedRead, FramedWrite, Request, Response};
+use raptor::client::{
+    FramedRead, FramedWrite, Request, RequestCloseFd, RequestCreateFile, RequestRun,
+    RequestWriteFd, Response,
+};
 use raptor::{RaptorError, RaptorResult};
 
-fn request_run(arg0: &str, argv: &[String]) -> RaptorResult<i32> {
-    info!("Exec {} {:?}", arg0, &argv);
-    Ok(Command::new(&argv[0])
-        .arg0(&argv[0])
-        .args(&argv[1..])
+fn request_run(req: &RequestRun) -> RaptorResult<i32> {
+    info!("Exec {} {:?}", req.arg0, &req.argv);
+    Ok(Command::new(&req.argv[0])
+        .arg0(&req.argv[0])
+        .args(&req.argv[1..])
         .status()
         .map(|code| code.into_raw())?)
 }
 
-fn request_create_file(files: &mut HashMap<i32, File>, path: &Utf8Path) -> RaptorResult<i32> {
-    let file = File::create(path)?;
-    let fd = file.as_raw_fd();
-    files.insert(fd, file);
-    Ok(fd)
-}
+struct FileMap(HashMap<i32, File>);
 
-fn request_write_fd(files: &mut HashMap<i32, File>, fd: i32, data: &[u8]) -> RaptorResult<i32> {
-    if let Some(mut file) = files.get(&fd) {
-        file.write_all(data)?;
-        Ok(0)
-    } else {
-        Err(std::io::Error::new(ErrorKind::InvalidInput, "invalid fd"))?
+impl FileMap {
+    pub fn new() -> Self {
+        Self(HashMap::new())
     }
-}
 
-fn request_close_fd(files: &mut HashMap<i32, File>, fd: i32) -> RaptorResult<i32> {
-    if files.remove(&fd).is_some() {
+    pub fn get(&mut self, fd: i32) -> Result<&mut File, std::io::Error> {
+        if let Some(file) = self.0.get_mut(&fd) {
+            Ok(file)
+        } else {
+            Err(std::io::Error::new(ErrorKind::InvalidInput, "invalid fd"))?
+        }
+    }
+
+    pub fn create_file(&mut self, req: &RequestCreateFile) -> RaptorResult<i32> {
+        let file = File::create(&req.path)?;
+        let fd = file.as_raw_fd();
+        self.0.insert(fd, file);
+        Ok(fd)
+    }
+
+    fn write_fd(&mut self, req: &RequestWriteFd) -> RaptorResult<i32> {
+        self.get(req.fd)?.write_all(&req.data)?;
         Ok(0)
-    } else {
-        Err(std::io::Error::new(ErrorKind::InvalidInput, "invalid fd"))?
+    }
+
+    fn close_fd(&mut self, req: &RequestCloseFd) -> RaptorResult<i32> {
+        if self.0.remove(&req.fd).is_some() {
+            Ok(0)
+        } else {
+            Err(std::io::Error::new(ErrorKind::InvalidInput, "invalid fd"))?
+        }
     }
 }
 
@@ -54,7 +68,7 @@ fn main() -> RaptorResult<()> {
 
     let mut stream = UnixStream::connect(socket_name)?;
 
-    let mut files = HashMap::new();
+    let mut files = FileMap::new();
 
     loop {
         let req: Request = match stream.read_framed() {
@@ -69,10 +83,10 @@ fn main() -> RaptorResult<()> {
         trace!("read request: {req:?}");
 
         let res = match req {
-            Request::Run { arg0, argv } => request_run(&arg0, &argv),
-            Request::CreateFile { path, .. } => request_create_file(&mut files, &path),
-            Request::WriteFd { fd, data } => request_write_fd(&mut files, fd, &data),
-            Request::CloseFd { fd } => request_close_fd(&mut files, fd),
+            Request::Run(req) => request_run(&req),
+            Request::CreateFile(req) => files.create_file(&req),
+            Request::WriteFd(req) => files.write_fd(&req),
+            Request::CloseFd(req) => files.close_fd(&req),
             Request::Shutdown {} => {
                 break;
             }

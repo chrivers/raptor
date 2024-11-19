@@ -12,24 +12,36 @@ pub enum Account {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct RequestRun {
+    pub arg0: String,
+    pub argv: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RequestCreateFile {
+    pub path: Utf8PathBuf,
+    pub user: Option<Account>,
+    pub group: Option<Account>,
+    pub mode: Option<u16>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RequestWriteFd {
+    pub fd: i32,
+    pub data: Vec<u8>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RequestCloseFd {
+    pub fd: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Request {
-    Run {
-        arg0: String,
-        argv: Vec<String>,
-    },
-    CreateFile {
-        path: Utf8PathBuf,
-        user: Option<Account>,
-        group: Option<Account>,
-        mode: Option<u16>,
-    },
-    WriteFd {
-        fd: i32,
-        data: Vec<u8>,
-    },
-    CloseFd {
-        fd: i32,
-    },
+    Run(RequestRun),
+    CreateFile(RequestCreateFile),
+    WriteFd(RequestWriteFd),
+    CloseFd(RequestCloseFd),
     Shutdown {},
 }
 

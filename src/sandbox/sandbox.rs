@@ -5,7 +5,10 @@ use std::process::Child;
 use camino::{Utf8Path, Utf8PathBuf};
 use tempfile::{Builder, TempDir};
 
-use crate::client::{FramedRead, FramedWrite, Request, Response};
+use crate::client::{
+    FramedRead, FramedWrite, Request, RequestCloseFd, RequestCreateFile, RequestRun,
+    RequestWriteFd, Response,
+};
 use crate::sandbox::{ConsoleMode, Settings, SpawnBuilder};
 use crate::{RaptorError, RaptorResult};
 
@@ -24,22 +27,22 @@ pub struct SandboxFile<'sb> {
 
 impl<'sb> SandboxFile<'sb> {
     pub fn new(sandbox: &'sb mut Sandbox, path: &Utf8Path) -> RaptorResult<Self> {
-        let fd = sandbox.rpc(&Request::CreateFile {
+        let fd = sandbox.rpc(&Request::CreateFile(RequestCreateFile {
             path: path.to_owned(),
             user: None,
             group: None,
             mode: None,
-        })?;
+        }))?;
         Ok(Self { sandbox, fd })
     }
 }
 
 impl<'sb> Write for SandboxFile<'sb> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        match self.sandbox.rpc(&Request::WriteFd {
+        match self.sandbox.rpc(&Request::WriteFd(RequestWriteFd {
             fd: self.fd,
             data: buf.to_vec(),
-        }) {
+        })) {
             Ok(_) => Ok(buf.len()),
             Err(RaptorError::IoError(err)) => Err(err),
             Err(err) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, err)),
@@ -54,7 +57,9 @@ impl<'sb> Write for SandboxFile<'sb> {
 
 impl<'sb> Drop for SandboxFile<'sb> {
     fn drop(&mut self) {
-        let _ = self.sandbox.rpc(&Request::CloseFd { fd: self.fd });
+        let _ = self
+            .sandbox
+            .rpc(&Request::CloseFd(RequestCloseFd { fd: self.fd }));
     }
 }
 
@@ -111,10 +116,10 @@ impl Sandbox {
     }
 
     pub fn run(&mut self, cmd: &[String]) -> RaptorResult<i32> {
-        self.rpc(&Request::Run {
+        self.rpc(&Request::Run(RequestRun {
             arg0: cmd[0].clone(),
             argv: cmd.to_vec(),
-        })
+        }))
     }
 
     pub fn create_file_handle(&mut self, path: &Utf8Path) -> RaptorResult<SandboxFile> {

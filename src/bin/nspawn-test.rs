@@ -1,7 +1,7 @@
 use std::os::unix::net::UnixListener;
 
 use log::{error, info};
-use raptor::client::{FramedRead, FramedWrite, Response};
+use raptor::client::{FramedRead, FramedWrite, RequestRun, Response};
 use raptor::{client::Request, RaptorResult};
 
 fn main() -> RaptorResult<()> {
@@ -11,13 +11,13 @@ fn main() -> RaptorResult<()> {
 
     let (mut stream, _addr) = listen.accept()?;
 
-    let req = Request::Run {
+    let req = Request::Run(RequestRun {
         arg0: String::from("sh"),
         argv: ["/bin/sh", "-c", "id"]
             .into_iter()
             .map(ToOwned::to_owned)
             .collect(),
-    };
+    });
 
     info!("writing frame: {req:?}");
     stream.write_framed(req)?;
