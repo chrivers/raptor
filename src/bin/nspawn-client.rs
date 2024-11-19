@@ -47,8 +47,11 @@ fn request_close_fd(files: &mut HashMap<i32, File>, fd: i32) -> RaptorResult<i32
 
 fn main() -> RaptorResult<()> {
     colog::init();
-    /* let socket_name = std::env::var("RAPTOR_NSPAWN_SOCKET")?; */
-    let socket_name = std::env::args().nth(1).unwrap();
+    let Ok(socket_name) = std::env::var("RAPTOR_NSPAWN_SOCKET") else {
+        error!("Missing environment setting: RAPTOR_NSPAWN_SOCKET");
+        std::process::exit(1);
+    };
+
     let mut stream = UnixStream::connect(socket_name)?;
 
     let mut files = HashMap::new();

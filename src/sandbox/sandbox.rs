@@ -73,12 +73,12 @@ impl Sandbox {
             .quiet()
             .with_sudo()
             .settings(Settings::False)
+            .setenv("RAPTOR_NSPAWN_SOCKET", int_socket_path.as_str())
             .root_overlays(layers)
             .bind_ro(ext_root.as_str(), int_root.as_str())
             .console(ConsoleMode::ReadOnly)
             .directory(layers[0])
             .arg(int_client_path.as_str())
-            .arg(int_socket_path.as_str())
             .command()
             .spawn()?;
 
