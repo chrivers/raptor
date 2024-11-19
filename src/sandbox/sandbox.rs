@@ -17,6 +17,38 @@ pub struct Sandbox {
     top_layer: Utf8PathBuf,
 }
 
+pub struct SandboxFile<'sb> {
+    sandbox: &'sb mut Sandbox,
+    fd: i32,
+}
+
+impl<'sb> SandboxFile<'sb> {
+    pub fn new(sandbox: &'sb mut Sandbox, fd: i32) -> Self {
+        Self { sandbox, fd }
+    }
+}
+
+impl<'sb> Write for SandboxFile<'sb> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        match self.sandbox.write_fd(self.fd, buf) {
+            Ok(_) => Ok(buf.len()),
+            Err(RaptorError::IoError(err)) => Err(err),
+            Err(err) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, err)),
+        }
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        dbg!();
+        Ok(())
+    }
+}
+
+impl<'sb> Drop for SandboxFile<'sb> {
+    fn drop(&mut self) {
+        let _ = self.sandbox.close_fd(self.fd);
+    }
+}
+
 impl Sandbox {
     pub fn new(layers: &[&str]) -> RaptorResult<Self> {
         let tempdir = Builder::new().prefix("raptor-").tempdir()?;
