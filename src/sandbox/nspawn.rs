@@ -31,13 +31,13 @@ pub fn escape_colon(path: &str) -> String {
 pub struct SpawnBuilder<'a> {
     sudo: bool,
     quiet: bool,
-    args: Vec<String>,
+    args: Vec<&'a str>,
     settings: Option<Settings>,
-    directory: Option<String>,
     console: Option<ConsoleMode>,
-    root_overlay: Vec<String>,
-    bind: Vec<(String, String)>,
-    bind_ro: Vec<(String, String)>,
+    directory: Option<&'a str>,
+    root_overlay: Vec<&'a str>,
+    bind: Vec<(&'a str, &'a str)>,
+    bind_ro: Vec<(&'a str, &'a str)>,
     environment: BTreeMap<&'a str, &'a str>,
 }
 
@@ -48,8 +48,8 @@ impl<'a> SpawnBuilder<'a> {
     }
 
     #[must_use]
-    pub fn arg(mut self, arg: &str) -> Self {
-        self.args.push(arg.into());
+    pub fn arg(mut self, arg: &'a str) -> Self {
+        self.args.push(arg);
         self
     }
 
@@ -84,34 +84,32 @@ impl<'a> SpawnBuilder<'a> {
     }
 
     #[must_use]
-    pub fn root_overlay(mut self, overlay: &str) -> Self {
-        self.root_overlay.push(escape_colon(overlay));
+    pub fn root_overlay(mut self, overlay: &'a str) -> Self {
+        self.root_overlay.push(overlay);
         self
     }
 
     #[must_use]
-    pub fn root_overlays(mut self, overlays: &[&str]) -> Self {
-        for overlay in overlays {
-            self.root_overlay.push(escape_colon(overlay));
-        }
+    pub fn root_overlays(mut self, overlays: &[&'a str]) -> Self {
+        self.root_overlay.extend(overlays);
         self
     }
 
     #[must_use]
-    pub fn bind(mut self, src: &str, dst: &str) -> Self {
-        self.bind.push((escape_colon(src), escape_colon(dst)));
+    pub fn bind(mut self, src: &'a str, dst: &'a str) -> Self {
+        self.bind.push((src, dst));
         self
     }
 
     #[must_use]
-    pub fn bind_ro(mut self, src: &str, dst: &str) -> Self {
-        self.bind_ro.push((escape_colon(src), escape_colon(dst)));
+    pub fn bind_ro(mut self, src: &'a str, dst: &'a str) -> Self {
+        self.bind_ro.push((src, dst));
         self
     }
 
     #[must_use]
-    pub fn directory(mut self, path: &str) -> Self {
-        self.directory = Some(path.into());
+    pub const fn directory(mut self, path: &'a str) -> Self {
+        self.directory = Some(path);
         self
     }
 }
@@ -143,22 +141,32 @@ impl<'a> SpawnBuilder<'a> {
 
         if !self.root_overlay.is_empty() {
             res.push("--overlay".into());
-            res.push(format!("{}:/", self.root_overlay.join(":")));
+
+            let mut overlays = self
+                .root_overlay
+                .clone()
+                .into_iter()
+                .map(escape_colon)
+                .collect::<Vec<_>>();
+
+            overlays.push("/".into());
+
+            res.push(overlays.join(":"));
         }
 
         for (src, dst) in &self.bind {
             res.push("--bind".into());
-            res.push(format!("{src}:{dst}"));
+            res.push(format!("{}:{}", escape_colon(src), escape_colon(dst)));
         }
 
         for (src, dst) in &self.bind_ro {
             res.push("--bind-ro".into());
-            res.push(format!("{src}:{dst}"));
+            res.push(format!("{}:{}", escape_colon(src), escape_colon(dst)));
         }
 
         if let Some(dir) = &self.directory {
             res.push("-D".into());
-            res.push(dir.clone());
+            res.push((*dir).to_string());
         }
 
         for (name, value) in &self.environment {
@@ -166,7 +174,7 @@ impl<'a> SpawnBuilder<'a> {
             res.push(format!("{name}={value}"));
         }
 
-        res.extend(self.args.clone());
+        res.extend(self.args.iter().map(ToString::to_string));
 
         res
     }
