@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use crate::{RaptorError, RaptorResult};
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Chown {
     pub user: Option<String>,
     pub group: Option<String>,
