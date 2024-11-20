@@ -46,6 +46,9 @@ pub enum RaptorError {
     #[error(transparent)]
     VarError(#[from] std::env::VarError),
 
+    #[error(transparent)]
+    Errno(#[from] nix::Error),
+
     #[error("Script error: {0} {1:?}")]
     ScriptError(String, Origin),
 
