@@ -1,15 +1,18 @@
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{ErrorKind, Write};
+use std::fs::{File, OpenOptions};
+use std::io::{Error, ErrorKind, Write};
 use std::os::fd::AsRawFd;
+use std::os::unix::fs::OpenOptionsExt;
 use std::os::unix::net::UnixStream;
 use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::process::Command;
 
+use nix::unistd::{fchown, Gid, Group, Uid, User};
+
 use log::{error, info, trace};
 
 use raptor::client::{
-    FramedRead, FramedWrite, Request, RequestCloseFd, RequestCreateFile, RequestRun,
+    Account, FramedRead, FramedWrite, Request, RequestCloseFd, RequestCreateFile, RequestRun,
     RequestWriteFd, Response,
 };
 use raptor::{RaptorError, RaptorResult};
@@ -21,6 +24,40 @@ fn request_run(req: &RequestRun) -> RaptorResult<i32> {
         .args(&req.argv[1..])
         .status()
         .map(|code| code.into_raw())?)
+}
+
+fn uid_from_account(acct: &Account) -> RaptorResult<Uid> {
+    match acct {
+        Account::Id(uid) => Ok(Uid::from_raw(*uid)),
+        Account::Name(name) => {
+            let res = User::from_name(name)?;
+            if let Some(user) = res {
+                Ok(user.uid)
+            } else {
+                Err(RaptorError::IoError(Error::new(
+                    ErrorKind::NotFound,
+                    "User not found",
+                )))
+            }
+        }
+    }
+}
+
+fn gid_from_account(acct: &Account) -> RaptorResult<Gid> {
+    match acct {
+        Account::Id(uid) => Ok(Gid::from_raw(*uid)),
+        Account::Name(name) => {
+            let res = Group::from_name(name)?;
+            if let Some(group) = res {
+                Ok(group.gid)
+            } else {
+                Err(RaptorError::IoError(Error::new(
+                    ErrorKind::NotFound,
+                    "User not found",
+                )))
+            }
+        }
+    }
 }
 
 struct FileMap(HashMap<i32, File>);
@@ -39,8 +76,20 @@ impl FileMap {
     }
 
     pub fn create_file(&mut self, req: &RequestCreateFile) -> RaptorResult<i32> {
-        let file = File::create(&req.path)?;
+        let file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .mode(req.mode.unwrap_or(0o750))
+            .open(&req.path)?;
         let fd = file.as_raw_fd();
+
+        let uid = req.user.as_ref().map(uid_from_account).transpose()?;
+        let gid = req.group.as_ref().map(gid_from_account).transpose()?;
+        if uid.is_some() | gid.is_some() {
+            fchown(fd, uid, gid)?;
+        }
+
         self.0.insert(fd, file);
         Ok(fd)
     }
