@@ -21,7 +21,7 @@ indicatif = { version = "0.17.9", features = ["improved_unicode"] }
 libc = "0.2.164"
 log = "0.4.22"
 minijinja = { version = "2.5.0", features = ["custom_syntax", "debug", "loader", "loop_controls"] }
-nix = { version = "0.29.0", features = ["user"] }
+nix = { version = "0.29.0", features = ["fs", "user"] }
 pest = { version = "2.7.14", features = ["miette-error", "pretty-print"] }
 pest_ascii_tree = "0.1.0"
 pest_consume = "1.1.3"
