@@ -6,9 +6,10 @@ use camino::{Utf8Path, Utf8PathBuf};
 use tempfile::{Builder, TempDir};
 
 use crate::client::{
-    FramedRead, FramedWrite, Request, RequestCloseFd, RequestCreateFile, RequestRun,
+    Account, FramedRead, FramedWrite, Request, RequestCloseFd, RequestCreateFile, RequestRun,
     RequestWriteFd, Response,
 };
+use crate::dsl::Chown;
 use crate::sandbox::{ConsoleMode, Settings, SpawnBuilder};
 use crate::{RaptorError, RaptorResult};
 
@@ -26,12 +27,18 @@ pub struct SandboxFile<'sb> {
 }
 
 impl<'sb> SandboxFile<'sb> {
-    pub fn new(sandbox: &'sb mut Sandbox, path: &Utf8Path) -> RaptorResult<Self> {
+    pub fn new(
+        sandbox: &'sb mut Sandbox,
+        path: &Utf8Path,
+        owner: Option<Chown>,
+        mode: Option<u32>,
+    ) -> RaptorResult<Self> {
+        let Chown { user, group } = owner.unwrap_or_default();
         let fd = sandbox.rpc(&Request::CreateFile(RequestCreateFile {
             path: path.to_owned(),
-            user: None,
-            group: None,
-            mode: None,
+            user: user.map(Account::Name),
+            group: group.map(Account::Name),
+            mode,
         }))?;
         Ok(Self { sandbox, fd })
     }
@@ -122,8 +129,13 @@ impl Sandbox {
         }))
     }
 
-    pub fn create_file_handle(&mut self, path: &Utf8Path) -> RaptorResult<SandboxFile> {
-        SandboxFile::new(self, path)
+    pub fn create_file_handle(
+        &mut self,
+        path: &Utf8Path,
+        owner: Option<Chown>,
+        mode: Option<u32>,
+    ) -> RaptorResult<SandboxFile> {
+        SandboxFile::new(self, path, owner, mode)
     }
 
     pub fn close(mut self) -> RaptorResult<()> {

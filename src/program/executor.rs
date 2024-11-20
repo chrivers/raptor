@@ -39,9 +39,11 @@ impl Executor {
             Instruction::Copy(inst) => {
                 info!("{:?}", inst);
                 let mut src = File::open(&inst.srcs[0])?;
-                let fd = self
-                    .sandbox
-                    .create_file_handle(&Utf8PathBuf::from(&inst.dest))?;
+                let fd = self.sandbox.create_file_handle(
+                    &Utf8PathBuf::from(&inst.dest),
+                    inst.chown.clone(),
+                    inst.chmod,
+                )?;
 
                 let pb = Self::progress_bar(src.metadata()?.len());
                 let mut dst = BufWriter::with_capacity(Self::BUFFER_SIZE, pb.wrap_write(fd));
@@ -53,9 +55,11 @@ impl Executor {
             }
             Instruction::Write(inst) => {
                 info!("{:?}", inst);
-                let mut fd = self
-                    .sandbox
-                    .create_file_handle(&Utf8PathBuf::from(&inst.dest))?;
+                let mut fd = self.sandbox.create_file_handle(
+                    &Utf8PathBuf::from(&inst.dest),
+                    inst.chown.clone(),
+                    inst.chmod,
+                )?;
                 fd.write_all(inst.body.as_bytes())?;
             }
             Instruction::Run(inst) => {
