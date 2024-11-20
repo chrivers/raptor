@@ -6,7 +6,7 @@ use crate::dsl::Chown;
 pub struct InstRender {
     pub src: String,
     pub dest: String,
-    pub chmod: Option<u16>,
+    pub chmod: Option<u32>,
     pub chown: Option<Chown>,
 }
 

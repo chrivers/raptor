@@ -6,7 +6,7 @@ use crate::dsl::Chown;
 pub struct InstWrite {
     pub dest: String,
     pub body: String,
-    pub chmod: Option<u16>,
+    pub chmod: Option<u32>,
     pub chown: Option<Chown>,
 }
 

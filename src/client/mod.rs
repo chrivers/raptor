@@ -22,7 +22,7 @@ pub struct RequestCreateFile {
     pub path: Utf8PathBuf,
     pub user: Option<Account>,
     pub group: Option<Account>,
-    pub mode: Option<u16>,
+    pub mode: Option<u32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

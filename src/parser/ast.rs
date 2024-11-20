@@ -92,11 +92,11 @@ impl RaptorFileParser {
         )
     }
 
-    fn option_chmod(input: Node) -> Result<u16> {
-        Ok(u16::from_str_radix(input.as_str(), 8).map_err(|e| input.error(e))?)
+    fn option_chmod(input: Node) -> Result<u32> {
+        Ok(u32::from_str_radix(input.as_str(), 8).map_err(|e| input.error(e))?)
     }
 
-    fn file_option(input: Node) -> Result<(Option<u16>, Option<Chown>)> {
+    fn file_option(input: Node) -> Result<(Option<u32>, Option<Chown>)> {
         match_nodes!(
             input.into_children();
             [option_chown(chown)] => Ok((None, Some(chown))),
@@ -104,7 +104,7 @@ impl RaptorFileParser {
         )
     }
 
-    fn file_options(input: Node) -> Result<(Option<u16>, Option<Chown>)> {
+    fn file_options(input: Node) -> Result<(Option<u32>, Option<Chown>)> {
         let mut chown = None;
         let mut chmod = None;
 
