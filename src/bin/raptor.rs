@@ -100,6 +100,10 @@ fn raptor() -> RaptorResult<()> {
                 }
                 continue;
             }
+            Err(RaptorError::PestError(err)) => {
+                error!("Failed to parse file: {err}");
+                continue;
+            }
             Err(err) => panic!("{err}"),
         };
 
