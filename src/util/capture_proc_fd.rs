@@ -1,38 +1,22 @@
-use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
+use std::os::fd::AsRawFd;
 use std::os::unix::process::CommandExt;
 use std::process::Command;
 
-use crate::RaptorResult;
-
-/// Adapted from rust stdlib (private func)
-pub fn cvt(t: libc::c_int) -> std::io::Result<libc::c_int> {
-    if t == -1 {
-        Err(std::io::Error::last_os_error())
-    } else {
-        Ok(t)
-    }
-}
-
-/// Construct an anonymous (read, write) pipe
-///
-/// Adapted from rust stdlib (private func)
-pub fn pipe() -> RaptorResult<(OwnedFd, OwnedFd)> {
-    let mut fds = [0; 2];
-    unsafe {
-        cvt(libc::pipe2(fds.as_mut_ptr(), libc::O_CLOEXEC))?;
-        Ok((OwnedFd::from_raw_fd(fds[0]), OwnedFd::from_raw_fd(fds[1])))
-    }
-}
-
 /// Command extension to hook a specific file descriptor before executing
-/// process, using `libc::dup2()`
+/// process, using `nix::unistd::dup2()`
 pub trait HookFd {
-    fn hook_fd(&mut self, fd: i32, dst: (impl AsRawFd + Send + Sync + 'static)) -> &mut Self;
+    fn hook_fd(&mut self, fd: i32, dst: impl AsRawFd) -> &mut Self;
 }
 
 impl HookFd for Command {
-    fn hook_fd(&mut self, fd: i32, dst: (impl AsRawFd + Send + Sync + 'static)) -> &mut Self {
-        unsafe { self.pre_exec(move || cvt(libc::dup2(dst.as_raw_fd(), fd)).map(|_| ())) }
+    fn hook_fd(&mut self, fd: i32, dst: impl AsRawFd) -> &mut Self {
+        let dst_fd = dst.as_raw_fd();
+        unsafe {
+            self.pre_exec(move || {
+                nix::unistd::dup2(dst_fd, fd)?;
+                Ok(())
+            })
+        }
     }
 }
 
@@ -42,12 +26,14 @@ mod tests {
     use std::io::Read;
     use std::process::{Command, Stdio};
 
-    use crate::util::capture_proc_fd::{pipe, HookFd};
+    use nix::fcntl::OFlag;
+
+    use crate::util::capture_proc_fd::HookFd;
     use crate::RaptorResult;
 
     #[test]
     fn test_hook_stdout() -> RaptorResult<()> {
-        let (read, write) = pipe()?;
+        let (read, write) = nix::unistd::pipe2(OFlag::O_CLOEXEC)?;
 
         let mut proc = Command::new("/bin/sh")
             .arg("-c")
@@ -76,7 +62,7 @@ mod tests {
 
     #[test]
     fn test_hook_stderr() -> RaptorResult<()> {
-        let (read, write) = pipe()?;
+        let (read, write) = nix::unistd::pipe2(OFlag::O_CLOEXEC)?;
 
         let mut proc = Command::new("/bin/sh")
             .arg("-c")
@@ -104,7 +90,7 @@ mod tests {
 
     #[test]
     fn test_hook_fd_3() -> RaptorResult<()> {
-        let (read, write) = pipe()?;
+        let (read, write) = nix::unistd::pipe2(OFlag::O_CLOEXEC)?;
 
         let mut proc = Command::new("/bin/sh")
             .arg("-c")
