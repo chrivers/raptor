@@ -23,7 +23,7 @@ fn request_run(req: &RequestRun) -> RaptorResult<i32> {
         .arg0(&req.argv[0])
         .args(&req.argv[1..])
         .status()
-        .map(|code| code.into_raw())?)
+        .map(ExitStatusExt::into_raw)?)
 }
 
 fn uid_from_account(acct: &Account) -> RaptorResult<Uid> {
