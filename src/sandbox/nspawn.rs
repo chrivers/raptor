@@ -114,7 +114,7 @@ impl<'a> SpawnBuilder<'a> {
     }
 }
 
-impl<'a> SpawnBuilder<'a> {
+impl SpawnBuilder<'_> {
     #[must_use]
     pub fn build(&self) -> Vec<String> {
         let mut res = vec![];

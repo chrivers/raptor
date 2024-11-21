@@ -44,7 +44,7 @@ impl<'sb> SandboxFile<'sb> {
     }
 }
 
-impl<'sb> Write for SandboxFile<'sb> {
+impl Write for SandboxFile<'_> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         match self.sandbox.rpc(&Request::WriteFd(RequestWriteFd {
             fd: self.fd,
@@ -62,7 +62,7 @@ impl<'sb> Write for SandboxFile<'sb> {
     }
 }
 
-impl<'sb> Drop for SandboxFile<'sb> {
+impl Drop for SandboxFile<'_> {
     fn drop(&mut self) {
         let _ = self
             .sandbox
