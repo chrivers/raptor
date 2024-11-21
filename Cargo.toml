@@ -8,6 +8,7 @@ description = "Build disk images, file archives and bootable isos with a simple,
 categories = ["config", "command-line-utilities", "virtualization", "template-engine"]
 repository = "https://github.com/chrivers/raptor"
 keywords = ["devops", "reproducible", "disk-image", "generation"]
+authors = ["Christian Iversen <ci@iversenit.dk>"]
 
 [lints.rust]
 unstable_features = "forbid"
