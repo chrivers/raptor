@@ -71,26 +71,23 @@ fn raptor() -> RaptorResult<()> {
                 continue;
             }
             Err(RaptorError::MinijinjaError(err)) => {
-                match err.kind() {
-                    ErrorKind::BadInclude => {
-                        let mut origins = loader.origins().to_vec();
-                        if let Some(last) = origins.pop() {
-                            show_include_stack(&origins)?;
+                if err.kind() == ErrorKind::BadInclude {
+                    let mut origins = loader.origins().to_vec();
+                    if let Some(last) = origins.pop() {
+                        show_include_stack(&origins)?;
 
-                            show_error_context(
-                                &last.path,
-                                "Error while evaluating INCLUDE",
-                                err.detail().unwrap_or("error"),
-                                err.range().unwrap_or(last.span.clone()),
-                            )?;
-                        } else {
-                            error!("Cannot provide error context: {err}");
-                        }
+                        show_error_context(
+                            &last.path,
+                            "Error while evaluating INCLUDE",
+                            err.detail().unwrap_or("error"),
+                            err.range().unwrap_or_else(|| last.span.clone()),
+                        )?;
+                    } else {
+                        error!("Cannot provide error context: {err}");
                     }
-                    _ => {
-                        show_include_stack(loader.origins())?;
-                        show_jinja_error_context(&err)?;
-                    }
+                } else {
+                    show_include_stack(loader.origins())?;
+                    show_jinja_error_context(&err)?;
                 }
                 continue;
             }
