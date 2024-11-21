@@ -141,13 +141,11 @@ fn main() -> RaptorResult<()> {
             }
         };
 
-        let resp = match res {
-            Ok(code) => Response::Ok(code),
-            Err(err) => {
-                error!("Error: {err}");
-                Response::Err(err.to_string())
-            }
-        };
+        let resp: Response = res.map_err(|err| {
+            error!("Error: {err}");
+            err.to_string()
+        });
+
         trace!("writing response: {resp:?}");
         stream.write_framed(resp)?;
     }

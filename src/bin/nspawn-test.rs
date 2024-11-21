@@ -25,8 +25,8 @@ fn main() -> RaptorResult<()> {
     let resp: Response = stream.read_framed()?;
 
     match resp {
-        Response::Err(err) => error!("Error: {err}"),
-        Response::Ok(res) => info!("Success: {res}"),
+        Err(err) => error!("Error: {err}"),
+        Ok(res) => info!("Success: {res}"),
     }
 
     Ok(())

@@ -116,10 +116,9 @@ impl Sandbox {
 
     fn rpc(&mut self, req: &Request) -> RaptorResult<i32> {
         self.conn.write_framed(req)?;
-        match self.conn.read_framed::<Response>()? {
-            Response::Err(err) => Err(RaptorError::RunError(err)),
-            Response::Ok(res) => Ok(res),
-        }
+        self.conn
+            .read_framed::<Response>()?
+            .map_err(RaptorError::RunError)
     }
 
     pub fn run(&mut self, cmd: &[String]) -> RaptorResult<i32> {

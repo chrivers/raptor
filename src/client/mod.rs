@@ -45,8 +45,4 @@ pub enum Request {
     Shutdown {},
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum Response {
-    Err(String),
-    Ok(i32),
-}
+pub type Response = Result<i32, String>;
