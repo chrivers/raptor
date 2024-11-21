@@ -24,6 +24,7 @@ struct Cli {
 
 #[derive(clap::Args, Clone, Debug)]
 #[group(multiple = false)]
+#[allow(clippy::struct_excessive_bools)]
 struct Mode {
     /// Build mode: generate output from raptor files
     #[arg(short = 'B', long)]

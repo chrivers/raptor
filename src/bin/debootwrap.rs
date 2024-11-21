@@ -59,6 +59,7 @@ fn main() -> RaptorResult<()> {
             }
             "P" => {
                 let mut parts = value.split_whitespace().collect::<Vec<&str>>();
+                #[allow(clippy::match_same_arms)]
                 match parts.len() {
                     0 | 1 => continue,
                     2 => parts.push(""),
