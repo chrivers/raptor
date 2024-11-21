@@ -3,6 +3,7 @@ use clap::Parser as _;
 use log::error;
 
 use minijinja::{context, ErrorKind};
+use raptor::dsl::Origin;
 use raptor::program::{show_error_context, show_jinja_error_context, Executor, Loader};
 use raptor::sandbox::Sandbox;
 use raptor::{template, RaptorError, RaptorResult};
@@ -41,6 +42,19 @@ struct Mode {
     show: bool,
 }
 
+fn show_include_stack(origins: &[Origin]) -> RaptorResult<()> {
+    for org in origins {
+        show_error_context(
+            &org.path,
+            "Error while evaluating INCLUDE",
+            "(included here)",
+            org.span.clone(),
+        )?;
+    }
+
+    Ok(())
+}
+
 fn raptor() -> RaptorResult<()> {
     let args = Cli::parse();
 
@@ -51,14 +65,7 @@ fn raptor() -> RaptorResult<()> {
         let statements = match loader.parse_template(file.as_str(), &root_context) {
             Ok(res) => res,
             Err(RaptorError::ScriptError(desc, origin)) => {
-                for org in loader.origins() {
-                    show_error_context(
-                        &org.path,
-                        "Error while evaluating INCLUDE",
-                        "(included here)",
-                        org.span.clone(),
-                    )?;
-                }
+                show_include_stack(loader.origins())?;
                 show_error_context(&origin.path, "Script Error", &desc, origin.span.clone())?;
                 continue;
             }
@@ -67,14 +74,7 @@ fn raptor() -> RaptorResult<()> {
                     ErrorKind::BadInclude => {
                         let mut origins = loader.origins().to_vec();
                         if let Some(last) = origins.pop() {
-                            for org in &origins {
-                                show_error_context(
-                                    &org.path,
-                                    "Error while evaluating INCLUDE",
-                                    "(included here)",
-                                    org.span.clone(),
-                                )?;
-                            }
+                            show_include_stack(&origins)?;
 
                             show_error_context(
                                 &last.path,
@@ -87,14 +87,7 @@ fn raptor() -> RaptorResult<()> {
                         }
                     }
                     _ => {
-                        for org in loader.origins() {
-                            show_error_context(
-                                &org.path,
-                                "Error while evaluating INCLUDE",
-                                "(included here)",
-                                org.span.clone(),
-                            )?;
-                        }
+                        show_include_stack(loader.origins())?;
                         show_jinja_error_context(&err)?;
                     }
                 }
