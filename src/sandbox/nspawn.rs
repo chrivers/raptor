@@ -1,5 +1,6 @@
 use std::{collections::BTreeMap, process::Command};
 
+use camino::Utf8Path;
 use serde::{Deserialize, Serialize};
 use serde_variant::to_variant_name;
 
@@ -23,8 +24,8 @@ pub enum Settings {
 }
 
 #[must_use]
-pub fn escape_colon(path: &str) -> String {
-    path.replace(':', "\\:")
+pub fn escape_colon(path: &Utf8Path) -> String {
+    path.as_str().replace(':', "\\:")
 }
 
 #[derive(Default)]
@@ -34,10 +35,10 @@ pub struct SpawnBuilder<'a> {
     args: Vec<&'a str>,
     settings: Option<Settings>,
     console: Option<ConsoleMode>,
-    directory: Option<&'a str>,
-    root_overlay: Vec<&'a str>,
-    bind: Vec<(&'a str, &'a str)>,
-    bind_ro: Vec<(&'a str, &'a str)>,
+    directory: Option<&'a Utf8Path>,
+    root_overlay: Vec<&'a Utf8Path>,
+    bind: Vec<(&'a Utf8Path, &'a Utf8Path)>,
+    bind_ro: Vec<(&'a Utf8Path, &'a Utf8Path)>,
     environment: BTreeMap<&'a str, &'a str>,
 }
 
@@ -84,31 +85,31 @@ impl<'a> SpawnBuilder<'a> {
     }
 
     #[must_use]
-    pub fn root_overlay(mut self, overlay: &'a str) -> Self {
+    pub fn root_overlay(mut self, overlay: &'a Utf8Path) -> Self {
         self.root_overlay.push(overlay);
         self
     }
 
     #[must_use]
-    pub fn root_overlays(mut self, overlays: &[&'a str]) -> Self {
+    pub fn root_overlays(mut self, overlays: &[&'a Utf8Path]) -> Self {
         self.root_overlay.extend(overlays);
         self
     }
 
     #[must_use]
-    pub fn bind(mut self, src: &'a str, dst: &'a str) -> Self {
+    pub fn bind(mut self, src: &'a Utf8Path, dst: &'a Utf8Path) -> Self {
         self.bind.push((src, dst));
         self
     }
 
     #[must_use]
-    pub fn bind_ro(mut self, src: &'a str, dst: &'a str) -> Self {
+    pub fn bind_ro(mut self, src: &'a Utf8Path, dst: &'a Utf8Path) -> Self {
         self.bind_ro.push((src, dst));
         self
     }
 
     #[must_use]
-    pub const fn directory(mut self, path: &'a str) -> Self {
+    pub const fn directory(mut self, path: &'a Utf8Path) -> Self {
         self.directory = Some(path);
         self
     }

@@ -71,7 +71,7 @@ impl Drop for SandboxFile<'_> {
 }
 
 impl Sandbox {
-    pub fn new(layers: &[&str]) -> RaptorResult<Self> {
+    pub fn new(layers: &[&Utf8Path]) -> RaptorResult<Self> {
         let tempdir = Builder::new().prefix("raptor-").tempdir()?;
 
         let ext_root = Utf8PathBuf::from_path_buf(tempdir.path().to_path_buf()).unwrap();
@@ -96,7 +96,7 @@ impl Sandbox {
             .settings(Settings::False)
             .setenv("RAPTOR_NSPAWN_SOCKET", int_socket_path.as_str())
             .root_overlays(layers)
-            .bind_ro(ext_root.as_str(), int_root.as_str())
+            .bind_ro(&ext_root, &int_root)
             .console(ConsoleMode::ReadOnly)
             .directory(layers[0])
             .arg(int_client_path.as_str())
