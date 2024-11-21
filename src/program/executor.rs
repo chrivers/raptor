@@ -28,7 +28,7 @@ impl Executor {
             .unwrap()
             .progress_chars("#>-");
 
-        indicatif::ProgressBar::new(len).with_style(style)
+        ProgressBar::new(len).with_style(style)
     }
 
     pub fn handle(&mut self, stmt: &Statement) -> RaptorResult<()> {

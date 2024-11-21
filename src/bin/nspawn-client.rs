@@ -67,11 +67,11 @@ impl FileMap {
         Self(HashMap::new())
     }
 
-    pub fn get(&mut self, fd: i32) -> Result<&mut File, std::io::Error> {
+    pub fn get(&mut self, fd: i32) -> Result<&mut File, Error> {
         if let Some(file) = self.0.get_mut(&fd) {
             Ok(file)
         } else {
-            Err(std::io::Error::new(ErrorKind::InvalidInput, "invalid fd"))?
+            Err(Error::new(ErrorKind::InvalidInput, "invalid fd"))?
         }
     }
 
@@ -103,7 +103,7 @@ impl FileMap {
         if self.0.remove(&req.fd).is_some() {
             Ok(0)
         } else {
-            Err(std::io::Error::new(ErrorKind::InvalidInput, "invalid fd"))?
+            Err(Error::new(ErrorKind::InvalidInput, "invalid fd"))?
         }
     }
 }

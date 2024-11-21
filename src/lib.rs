@@ -44,4 +44,4 @@ impl From<pest_consume::Error<Rule>> for RaptorError {
     }
 }
 
-pub type RaptorResult<T> = std::result::Result<T, RaptorError>;
+pub type RaptorResult<T> = Result<T, RaptorError>;
