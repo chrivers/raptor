@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
-use minijinja::{Environment, Value};
+use minijinja::{Environment, ErrorKind, Value};
 
 use crate::dsl::{IncludeArgValue, Instruction, Origin, Statement};
 use crate::parser::ast;
+use crate::program::{show_error_context, show_jinja_error_context};
 use crate::{RaptorError, RaptorResult};
 
 pub struct Loader<'source> {
@@ -60,6 +61,55 @@ impl<'source> Loader<'source> {
         } else {
             Ok(vec![stmt])
         }
+    }
+
+    fn show_include_stack(origins: &[Origin]) -> RaptorResult<()> {
+        for org in origins {
+            show_error_context(
+                &org.path,
+                "Error while evaluating INCLUDE",
+                "(included here)",
+                org.span.clone(),
+            )?;
+        }
+
+        Ok(())
+    }
+
+    pub fn explain_error(&self, err: RaptorError) -> RaptorResult<()> {
+        match err {
+            RaptorError::ScriptError(desc, origin) => {
+                Self::show_include_stack(&self.origins)?;
+                show_error_context(&origin.path, "Script Error", &desc, origin.span.clone())?;
+            }
+            RaptorError::MinijinjaError(err) => {
+                let mut origins = self.origins().to_vec();
+                if err.kind() == ErrorKind::BadInclude {
+                    if let Some(last) = origins.pop() {
+                        Self::show_include_stack(&origins)?;
+
+                        show_error_context(
+                            &last.path,
+                            "Error while evaluating INCLUDE",
+                            err.detail().unwrap_or("error"),
+                            err.range().unwrap_or_else(|| last.span.clone()),
+                        )?;
+                    } else {
+                        error!("Cannot provide error context: {err}");
+                    }
+                } else {
+                    Self::show_include_stack(&origins)?;
+                    show_jinja_error_context(&err)?;
+                }
+            }
+            RaptorError::PestError(err) => {
+                error!("Failed to parse file: {err}");
+            }
+            err => {
+                error!("Unexpected error: {err}");
+            }
+        }
+        Ok(())
     }
 
     pub fn origins(&self) -> &[Origin] {

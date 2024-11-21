@@ -2,11 +2,10 @@ use camino::Utf8PathBuf;
 use clap::Parser as _;
 use log::error;
 
-use minijinja::{context, ErrorKind};
-use raptor::dsl::Origin;
-use raptor::program::{show_error_context, show_jinja_error_context, Executor, Loader};
+use minijinja::context;
+use raptor::program::{Executor, Loader};
 use raptor::sandbox::Sandbox;
-use raptor::{template, RaptorError, RaptorResult};
+use raptor::{template, RaptorResult};
 
 #[derive(clap::Parser, Debug)]
 #[command(about, long_about = None)]
@@ -43,19 +42,6 @@ struct Mode {
     show: bool,
 }
 
-fn show_include_stack(origins: &[Origin]) -> RaptorResult<()> {
-    for org in origins {
-        show_error_context(
-            &org.path,
-            "Error while evaluating INCLUDE",
-            "(included here)",
-            org.span.clone(),
-        )?;
-    }
-
-    Ok(())
-}
-
 fn raptor() -> RaptorResult<()> {
     let args = Cli::parse();
 
@@ -65,37 +51,10 @@ fn raptor() -> RaptorResult<()> {
         let mut loader = Loader::new(template::make_environment()?, args.mode.dump);
         let statements = match loader.parse_template(file.as_str(), &root_context) {
             Ok(res) => res,
-            Err(RaptorError::ScriptError(desc, origin)) => {
-                show_include_stack(loader.origins())?;
-                show_error_context(&origin.path, "Script Error", &desc, origin.span.clone())?;
+            Err(err) => {
+                loader.explain_error(err)?;
                 continue;
             }
-            Err(RaptorError::MinijinjaError(err)) => {
-                if err.kind() == ErrorKind::BadInclude {
-                    let mut origins = loader.origins().to_vec();
-                    if let Some(last) = origins.pop() {
-                        show_include_stack(&origins)?;
-
-                        show_error_context(
-                            &last.path,
-                            "Error while evaluating INCLUDE",
-                            err.detail().unwrap_or("error"),
-                            err.range().unwrap_or_else(|| last.span.clone()),
-                        )?;
-                    } else {
-                        error!("Cannot provide error context: {err}");
-                    }
-                } else {
-                    show_include_stack(loader.origins())?;
-                    show_jinja_error_context(&err)?;
-                }
-                continue;
-            }
-            Err(RaptorError::PestError(err)) => {
-                error!("Failed to parse file: {err}");
-                continue;
-            }
-            Err(err) => panic!("{err}"),
         };
 
         for stmt in &statements {

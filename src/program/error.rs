@@ -14,6 +14,24 @@ pub fn line_number_to_span(text: &str, line: usize) -> Range<usize> {
     a..b
 }
 
+fn _show_error_context(
+    raw: &str,
+    source_path: &str,
+    title: &str,
+    label: &str,
+    err_range: Range<usize>,
+) {
+    let message = Level::Error.title(title).snippet(
+        Snippet::source(raw)
+            .fold(false)
+            .origin(source_path)
+            .annotation(Level::Error.span(err_range).label(label)),
+    );
+
+    let renderer = Renderer::styled();
+    anstream::println!("{}", renderer.render(message));
+}
+
 pub fn show_error_context(
     source_path: &str,
     title: &str,
@@ -22,16 +40,7 @@ pub fn show_error_context(
 ) -> RaptorResult<()> {
     let raw = std::fs::read_to_string(source_path)?;
 
-    let message = Level::Error.title(title).snippet(
-        Snippet::source(&raw)
-            .fold(false)
-            .origin(source_path)
-            .annotation(Level::Error.span(err_range).label(label)),
-    );
-
-    let renderer = Renderer::styled();
-    anstream::println!("{}", renderer.render(message));
-
+    _show_error_context(&raw, source_path, title, label, err_range);
     Ok(())
 }
 
@@ -47,15 +56,6 @@ pub fn show_jinja_error_context(err: &minijinja::Error) -> RaptorResult<()> {
         .or_else(|| err.line().map(|line| line_number_to_span(&raw, line)))
         .unwrap_or(0..raw.len() - 1);
 
-    let message = Level::Error.title(title).snippet(
-        Snippet::source(&raw)
-            .fold(false)
-            .origin(source_path)
-            .annotation(Level::Error.span(err_range).label(&label)),
-    );
-
-    let renderer = Renderer::styled();
-    anstream::println!("{}", renderer.render(message));
-
+    _show_error_context(&raw, source_path, title, &label, err_range);
     Ok(())
 }
