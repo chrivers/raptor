@@ -9,6 +9,22 @@ categories = ["config", "command-line-utilities", "virtualization", "template-en
 repository = "https://github.com/chrivers/raptor"
 keywords = ["devops", "reproducible", "disk-image", "generation"]
 
+[lints.clippy]
+all         = { level = "warn", priority = -1 }
+correctness = { level = "warn", priority = -1 }
+pedantic    = { level = "warn", priority = -1 }
+cargo       = { level = "warn", priority = -1 }
+nursery     = { level = "warn", priority = -1 }
+perf        = { level = "warn", priority = -1 }
+style       = { level = "warn", priority = -1 }
+
+multiple_crate_versions = "allow"
+missing_errors_doc      = "allow"
+missing_panics_doc      = "allow"
+module_name_repetitions = "allow"
+module_inception        = "allow"
+similar_names           = "allow"
+
 [dependencies]
 annotate-snippets = "0.11.4"
 anstream = "0.6.18"
