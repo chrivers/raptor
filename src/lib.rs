@@ -31,6 +31,9 @@ pub enum RaptorError {
     #[error(transparent)]
     Errno(#[from] nix::Error),
 
+    #[error("Path is not valid utf-8: {0}")]
+    BadPath(std::path::PathBuf),
+
     #[error("Script error: {0} {1:?}")]
     ScriptError(String, Origin),
 
@@ -41,6 +44,12 @@ pub enum RaptorError {
 impl From<pest_consume::Error<Rule>> for RaptorError {
     fn from(e: pest_consume::Error<Rule>) -> Self {
         Self::PestError(Box::new(e))
+    }
+}
+
+impl From<std::path::PathBuf> for RaptorError {
+    fn from(e: std::path::PathBuf) -> Self {
+        Self::BadPath(e)
     }
 }
 
