@@ -74,7 +74,7 @@ impl Sandbox {
     pub fn new(layers: &[&Utf8Path]) -> RaptorResult<Self> {
         let tempdir = Builder::new().prefix("raptor-").tempdir()?;
 
-        let ext_root = Utf8PathBuf::from_path_buf(tempdir.path().to_path_buf()).unwrap();
+        let ext_root = Utf8PathBuf::from_path_buf(tempdir.path().to_path_buf())?;
         let ext_socket_path = ext_root.join("raptor");
         let ext_client_path = ext_root.join("nspawn-client");
 
