@@ -1,6 +1,7 @@
 use std::ops::Range;
 
 use annotate_snippets::{Level, Renderer, Snippet};
+use pest::error::InputLocation;
 
 use crate::{parser::Rule, RaptorResult};
 
@@ -84,10 +85,8 @@ pub fn show_pest_error_context(err: &pest::error::Error<Rule>) -> RaptorResult<(
     let raw = std::fs::read_to_string(source_path)?;
 
     let span = match err.location {
-        pest::error::InputLocation::Pos(idx) => {
-            index_to_line_remainder(&raw, idx).unwrap_or(0..raw.len() - 1)
-        }
-        pest::error::InputLocation::Span((begin, end)) => begin..end,
+        InputLocation::Pos(idx) => index_to_line_remainder(raw, idx).unwrap_or(0..raw.len() - 1),
+        InputLocation::Span((begin, end)) => begin..end,
     };
 
     _show_error_context(
