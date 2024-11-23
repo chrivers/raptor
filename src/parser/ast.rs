@@ -4,8 +4,9 @@ use minijinja::Value;
 use pest_consume::{match_nodes, Parser};
 
 use crate::dsl::{
-    Chown, IncludeArg, IncludeArgValue, InstCopy, InstFrom, InstInclude, InstInvoke, InstRender,
-    InstRun, InstWrite, Instruction, Lookup, Origin, Statement,
+    Chown, IncludeArg, IncludeArgValue, InstCopy, InstEnv, InstEnvAssign, InstFrom, InstInclude,
+    InstInvoke, InstRender, InstRun, InstWorkdir, InstWrite, Instruction, Lookup, Origin,
+    Statement,
 };
 use crate::parser::{RaptorFileParser, Rule};
 use crate::RaptorResult;
@@ -247,6 +248,28 @@ impl RaptorFileParser {
         [include_arg(args)..] => args.collect()))
     }
 
+    fn env_assign(input: Node) -> Result<InstEnvAssign> {
+        Ok(match_nodes!(input.into_children();
+        [ident(key), string(value)] => InstEnvAssign {
+            key,
+            value,
+        }))
+    }
+
+    fn ENV(input: Node) -> Result<InstEnv> {
+        Ok(match_nodes!(input.into_children();
+        [env_assign(res)..] => InstEnv {
+            env: res.collect(),
+        }))
+    }
+
+    fn WORKDIR(input: Node) -> Result<InstWorkdir> {
+        Ok(match_nodes!(input.into_children();
+        [filename(dir)] => InstWorkdir {
+            dir
+        }))
+    }
+
     fn INCLUDE(input: Node) -> Result<InstInclude> {
         match_nodes!(
             input.into_children();
@@ -270,6 +293,8 @@ impl RaptorFileParser {
             [INCLUDE(stmt)] => Some(Statement { inst: Instruction::Include(stmt), origin }),
             [INVOKE(stmt)] => Some(Statement { inst: Instruction::Invoke(stmt), origin }),
             [RUN(stmt)] => Some(Statement { inst: Instruction::Run(stmt), origin }),
+            [ENV(stmt)] => Some(Statement { inst: Instruction::Env(stmt), origin }),
+            [WORKDIR(stmt)] => Some(Statement { inst: Instruction::Workdir(stmt), origin }),
             [] => None,
         ))
     }

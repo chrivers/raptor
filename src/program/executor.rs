@@ -71,6 +71,14 @@ impl Executor {
                 Command::new("echo").args(&inst.args).spawn()?.wait()?;
             }
 
+            Instruction::Env(inst) => {
+                debug!("{:?}", inst);
+            }
+
+            Instruction::Workdir(inst) => {
+                debug!("{:?}", inst);
+            }
+
             Instruction::Include(_) => unreachable!(),
         }
 

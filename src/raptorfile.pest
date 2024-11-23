@@ -11,6 +11,8 @@ STATEMENT = {
   | (INCLUDE ~ NEWLINE)
   | (INVOKE  ~ NEWLINE)
   | (RUN     ~ NEWLINE)
+  | (ENV     ~ NEWLINE)
+  | (WORKDIR ~ NEWLINE)
 }
 
 WHITESPACE = _{ " " | "\\\n" }
@@ -101,6 +103,10 @@ include_args = {
     include_arg*
 }
 
+env_assign = ${
+    ident ~ "=" ~ string
+}
+
 COPY = {
     "COPY"
     ~ file_options
@@ -139,4 +145,14 @@ RUN = {
 FROM = {
     "FROM"
     ~ ident
+}
+
+ENV = {
+    "ENV"
+    ~ env_assign+
+}
+
+WORKDIR = {
+    "WORKDIR"
+    ~ filename
 }
