@@ -22,8 +22,6 @@ use std::fmt::{Debug, Display};
 use std::ops::Range;
 use std::sync::Arc;
 
-use crate::{RaptorError, RaptorResult};
-
 #[derive(Clone, Default, PartialEq, Eq)]
 pub struct Chown {
     pub user: Option<String>,
@@ -76,12 +74,6 @@ impl Origin {
 pub struct Statement {
     pub inst: Instruction,
     pub origin: Origin,
-}
-
-impl Statement {
-    pub fn error(&self, msg: String) -> RaptorResult<()> {
-        Err(RaptorError::ScriptError(msg, self.origin.clone()))
-    }
 }
 
 impl Instruction {
