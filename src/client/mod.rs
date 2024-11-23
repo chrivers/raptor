@@ -42,7 +42,7 @@ pub enum Request {
     CreateFile(RequestCreateFile),
     WriteFd(RequestWriteFd),
     CloseFd(RequestCloseFd),
-    Shutdown {},
+    Shutdown,
 }
 
 pub type Response = Result<i32, String>;

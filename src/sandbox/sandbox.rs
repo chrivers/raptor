@@ -137,7 +137,7 @@ impl Sandbox {
     }
 
     pub fn close(mut self) -> RaptorResult<()> {
-        self.conn.write_framed(Request::Shutdown {})?;
+        self.conn.write_framed(Request::Shutdown)?;
         self.conn.shutdown(std::net::Shutdown::Write)?;
         self.proc.wait()?;
         self.tempdir.close()?;

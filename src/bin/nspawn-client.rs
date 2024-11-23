@@ -136,7 +136,7 @@ fn main() -> RaptorResult<()> {
             Request::CreateFile(req) => files.create_file(&req),
             Request::WriteFd(req) => files.write_fd(&req),
             Request::CloseFd(req) => files.close_fd(&req),
-            Request::Shutdown {} => {
+            Request::Shutdown => {
                 break;
             }
         };
