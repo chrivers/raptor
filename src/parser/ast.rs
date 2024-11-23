@@ -37,7 +37,7 @@ impl RaptorFileParser {
         }
     }
 
-    fn string(input: Node) -> Result<String> {
+    fn string_inner(input: Node) -> Result<String> {
         let mut res = String::new();
 
         for node in input.into_children() {
@@ -64,6 +64,14 @@ impl RaptorFileParser {
 
     fn group_spec(input: Node) -> Result<String> {
         Ok(input.as_str().to_string())
+    }
+
+    fn string(input: Node) -> Result<String> {
+        Ok(match_nodes!(
+            input.into_children();
+            [string(s)] => Ok(s),
+            [literal_string(s)] => Ok(s),
+        )?)
     }
 
     fn filename(input: Node) -> Result<String> {

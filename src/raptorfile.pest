@@ -19,14 +19,14 @@ COMMENT = _{
     "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE
 }
 
-quoted_string = _{ PUSH("\"") ~ string ~ POP }
+quoted_string = _{ "\"" ~ string_inner ~ "\"" }
 
-string = {
+string_inner = {
     (string_non_escape | string_escape_seq)*
 }
 
 string_non_escape = {
-    (!("\\" | PEEK) ~ ANY)+
+    (!"\\" ~ ANY)+
 }
 
 string_escape_seq = ${ "\\" ~ char_escape }
@@ -44,6 +44,8 @@ literal_string = ${
 }
 
 literal_path = _ { literal_string }
+
+string = {quoted_string | literal_path}
 
 filename = {
     !("--") ~ (quoted_string | literal_path)
