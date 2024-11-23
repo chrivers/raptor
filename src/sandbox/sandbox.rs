@@ -57,7 +57,6 @@ impl Write for SandboxFile<'_> {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        dbg!();
         Ok(())
     }
 }
