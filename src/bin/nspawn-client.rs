@@ -13,8 +13,8 @@ use nix::unistd::{fchown, Gid, Group, Uid, User};
 use log::{error, info, trace};
 
 use raptor::client::{
-    Account, FramedRead, FramedWrite, Request, RequestCloseFd, RequestCreateFile, RequestRun,
-    RequestWriteFd, Response,
+    Account, FramedRead, FramedWrite, Request, RequestChangeDir, RequestCloseFd, RequestCreateFile,
+    RequestRun, RequestSetEnv, RequestWriteFd, Response,
 };
 use raptor::{RaptorError, RaptorResult};
 
@@ -25,6 +25,18 @@ fn request_run(req: &RequestRun) -> RaptorResult<i32> {
         .args(&req.argv[1..])
         .status()
         .map(ExitStatusExt::into_raw)?)
+}
+
+fn request_changedir(req: &RequestChangeDir) -> RaptorResult<i32> {
+    info!("Chdir {:?}", req.cd);
+    std::env::set_current_dir(&req.cd)
+        .map_err(|err| Errno::from_raw(err.raw_os_error().unwrap()))?;
+    Ok(0)
+}
+
+fn request_setenv(req: &RequestSetEnv) {
+    info!("Setenv {:?}={:?}", &req.key, &req.value);
+    std::env::set_var(&req.key, &req.value);
 }
 
 fn uid_from_account(acct: &Account) -> RaptorResult<Uid> {
@@ -139,6 +151,11 @@ fn main() -> RaptorResult<()> {
             Request::CloseFd(req) => files.close_fd(&req),
             Request::Shutdown => {
                 break;
+            }
+            Request::ChangeDir(req) => request_changedir(&req),
+            Request::SetEnv(req) => {
+                request_setenv(&req);
+                Ok(0)
             }
         };
 

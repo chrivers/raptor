@@ -37,8 +37,21 @@ pub struct RequestCloseFd {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct RequestChangeDir {
+    pub cd: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RequestSetEnv {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Request {
     Run(RequestRun),
+    ChangeDir(RequestChangeDir),
+    SetEnv(RequestSetEnv),
     CreateFile(RequestCreateFile),
     WriteFd(RequestWriteFd),
     CloseFd(RequestCloseFd),
