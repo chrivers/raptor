@@ -5,15 +5,14 @@ use std::process::Command;
 /// Command extension to hook a specific file descriptor before executing
 /// process, using `nix::unistd::dup2()`
 pub trait HookFd {
-    fn hook_fd(&mut self, fd: i32, dst: impl AsRawFd) -> &mut Self;
+    fn hook_fd(&mut self, fd: i32, dst: (impl AsRawFd + Send + Sync + 'static)) -> &mut Self;
 }
 
 impl HookFd for Command {
-    fn hook_fd(&mut self, fd: i32, dst: impl AsRawFd) -> &mut Self {
-        let dst_fd = dst.as_raw_fd();
+    fn hook_fd(&mut self, fd: i32, dst: (impl AsRawFd + Send + Sync + 'static)) -> &mut Self {
         unsafe {
             self.pre_exec(move || {
-                nix::unistd::dup2(dst_fd, fd)?;
+                nix::unistd::dup2(dst.as_raw_fd(), fd)?;
                 Ok(())
             })
         }
