@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use crate::dsl::Chown;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct InstCopy {
     pub srcs: Vec<String>,
     pub dest: String,

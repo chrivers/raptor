@@ -1,12 +1,12 @@
 use std::fmt::Debug;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct InstEnvAssign {
     pub key: String,
     pub value: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct InstEnv {
     pub env: Vec<InstEnvAssign>,
 }

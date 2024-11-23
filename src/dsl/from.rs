@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct InstFrom {
     pub from: String,
 }

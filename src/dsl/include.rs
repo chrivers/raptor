@@ -4,7 +4,7 @@ use minijinja::Value;
 
 use crate::dsl::Origin;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Lookup {
     pub path: Vec<String>,
     pub origin: Origin,
@@ -23,19 +23,19 @@ impl Display for Lookup {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum IncludeArgValue {
     Lookup(Lookup),
     Value(Value),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IncludeArg {
     pub name: String,
     pub value: IncludeArgValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct InstInclude {
     pub src: String,
     pub args: Vec<IncludeArg>,

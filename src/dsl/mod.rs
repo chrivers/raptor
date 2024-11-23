@@ -24,7 +24,7 @@ use std::sync::Arc;
 
 use crate::{RaptorError, RaptorResult};
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, PartialEq, Eq)]
 pub struct Chown {
     pub user: Option<String>,
     pub group: Option<String>,
@@ -42,7 +42,7 @@ impl Display for Chown {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Instruction {
     From(InstFrom),
     Copy(InstCopy),
@@ -55,7 +55,7 @@ pub enum Instruction {
     Workdir(InstWorkdir),
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Origin {
     pub path: Arc<String>,
     pub span: Range<usize>,
@@ -72,7 +72,7 @@ impl Origin {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Statement {
     pub inst: Instruction,
     pub origin: Origin,
