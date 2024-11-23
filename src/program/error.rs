@@ -48,7 +48,8 @@ pub fn show_jinja_error_context(err: &minijinja::Error) -> RaptorResult<()> {
     let source_path = err.name().unwrap();
     let raw = std::fs::read_to_string(source_path)?;
 
-    let title = err.detail().unwrap_or("<unknown error>");
+    let kind_desc = err.kind().to_string();
+    let title = err.detail().unwrap_or(&kind_desc);
     let label = format!("{err}");
 
     let err_range = err
