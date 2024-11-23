@@ -33,15 +33,15 @@ pub fn index_to_line_remainder(text: &str, idx: usize) -> Option<Range<usize>> {
     None
 }
 
-fn _show_error_context(
-    raw: &str,
+pub fn show_error_context(
+    source: &str,
     source_path: &str,
     title: &str,
     label: &str,
     err_range: Range<usize>,
 ) {
     let message = Level::Error.title(title).snippet(
-        Snippet::source(raw)
+        Snippet::source(source)
             .fold(false)
             .origin(source_path)
             .annotation(Level::Error.span(err_range).label(label)),
@@ -49,18 +49,6 @@ fn _show_error_context(
 
     let renderer = Renderer::styled();
     anstream::println!("{}", renderer.render(message));
-}
-
-pub fn show_error_context(
-    source_path: &str,
-    title: &str,
-    label: &str,
-    err_range: Range<usize>,
-) -> RaptorResult<()> {
-    let raw = std::fs::read_to_string(source_path)?;
-
-    _show_error_context(&raw, source_path, title, label, err_range);
-    Ok(())
 }
 
 pub fn show_jinja_error_context(err: &minijinja::Error) -> RaptorResult<()> {
@@ -76,21 +64,20 @@ pub fn show_jinja_error_context(err: &minijinja::Error) -> RaptorResult<()> {
         .or_else(|| err.line().map(|line| line_number_to_span(&raw, line)))
         .unwrap_or(0..raw.len() - 1);
 
-    _show_error_context(&raw, source_path, title, &label, err_range);
+    show_error_context(&raw, source_path, title, &label, err_range);
     Ok(())
 }
 
-pub fn show_pest_error_context(err: &pest::error::Error<Rule>) -> RaptorResult<()> {
+pub fn show_pest_error_context(raw: &str, err: &pest::error::Error<Rule>) -> RaptorResult<()> {
     let source_path = err.path().unwrap();
-    let raw = std::fs::read_to_string(source_path)?;
 
     let span = match err.location {
         InputLocation::Pos(idx) => index_to_line_remainder(raw, idx).unwrap_or(0..raw.len() - 1),
         InputLocation::Span((begin, end)) => begin..end,
     };
 
-    _show_error_context(
-        &raw,
+    show_error_context(
+        raw,
         source_path,
         &format!("{}", err.variant),
         &err.variant.message(),

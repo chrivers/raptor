@@ -10,16 +10,18 @@ use crate::{RaptorError, RaptorResult};
 pub struct Loader<'source> {
     env: Environment<'source>,
     dump: bool,
+    sources: HashMap<String, String>,
     origins: Vec<Origin>,
 }
 
 const MAX_NESTED_INCLUDE: usize = 20;
 
 impl<'source> Loader<'source> {
-    pub const fn new(env: Environment<'source>, dump: bool) -> Self {
+    pub fn new(env: Environment<'source>, dump: bool) -> Self {
         Self {
             env,
             dump,
+            sources: HashMap::new(),
             origins: vec![],
         }
     }
@@ -63,47 +65,53 @@ impl<'source> Loader<'source> {
         }
     }
 
-    fn show_include_stack(origins: &[Origin]) -> RaptorResult<()> {
+    fn show_include_stack(&self, origins: &[Origin]) {
         for org in origins {
             show_error_context(
+                &self.sources[org.path.as_str()],
                 &org.path,
                 "Error while evaluating INCLUDE",
                 "(included here)",
                 org.span.clone(),
-            )?;
+            );
         }
-
-        Ok(())
     }
 
     pub fn explain_error(&self, err: RaptorError) -> RaptorResult<()> {
         match err {
             RaptorError::ScriptError(desc, origin) => {
-                Self::show_include_stack(&self.origins)?;
-                show_error_context(&origin.path, "Script Error", &desc, origin.span.clone())?;
+                self.show_include_stack(&self.origins);
+                show_error_context(
+                    &self.sources[origin.path.as_str()],
+                    &origin.path,
+                    "Script Error",
+                    &desc,
+                    origin.span.clone(),
+                );
             }
             RaptorError::MinijinjaError(err) => {
                 let mut origins = self.origins().to_vec();
                 if err.kind() == ErrorKind::BadInclude {
                     if let Some(last) = origins.pop() {
-                        Self::show_include_stack(&origins)?;
+                        self.show_include_stack(&origins);
 
                         show_error_context(
+                            &self.sources[last.path.as_str()],
                             &last.path,
                             "Error while evaluating INCLUDE",
                             err.detail().unwrap_or("error"),
                             err.range().unwrap_or_else(|| last.span.clone()),
-                        )?;
+                        );
                     } else {
                         error!("Cannot provide error context: {err}");
                     }
                 } else {
-                    Self::show_include_stack(&origins)?;
+                    self.show_include_stack(&origins);
                     show_jinja_error_context(&err)?;
                 }
             }
             RaptorError::PestError(err) => {
-                show_pest_error_context(&err)?;
+                show_pest_error_context(&self.sources[err.path().unwrap()], &err)?;
             }
             err => {
                 error!("Unexpected error: {err}");
@@ -127,9 +135,11 @@ impl<'source> Loader<'source> {
             println!("{source}");
         }
 
+        self.sources.insert(path.to_string(), source);
+
         let mut res = vec![];
 
-        for stmt in ast::parse(path, &source).map_err(|err| match err {
+        for stmt in ast::parse(path, &self.sources[path]).map_err(|err| match err {
             RaptorError::PestError(err) => RaptorError::PestError(Box::new(err.with_path(path))),
             err => err,
         })? {
