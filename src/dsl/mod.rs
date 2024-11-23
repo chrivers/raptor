@@ -1,17 +1,21 @@
 mod copy;
+mod env;
 mod from;
 mod include;
 mod invoke;
 mod render;
 mod run;
+mod workdir;
 mod write;
 
 pub use copy::*;
+pub use env::*;
 pub use from::*;
 pub use include::*;
 pub use invoke::*;
 pub use render::*;
 pub use run::*;
+pub use workdir::*;
 pub use write::*;
 
 use std::fmt::{Debug, Display};
@@ -47,6 +51,8 @@ pub enum Instruction {
     Include(InstInclude),
     Invoke(InstInvoke),
     Run(InstRun),
+    Env(InstEnv),
+    Workdir(InstWorkdir),
 }
 
 #[derive(Clone)]
@@ -89,6 +95,8 @@ impl Instruction {
             Self::Include(_) => "INCLUDE",
             Self::Invoke(_) => "INVOKE",
             Self::Run(_) => "RUN",
+            Self::Env(_) => "Env",
+            Self::Workdir(_) => "Workdir",
         }
     }
 }
@@ -103,6 +111,8 @@ impl Debug for Instruction {
             Self::Include(inst) => inst.fmt(f),
             Self::Invoke(inst) => inst.fmt(f),
             Self::Run(inst) => inst.fmt(f),
+            Self::Env(inst) => inst.fmt(f),
+            Self::Workdir(inst) => inst.fmt(f),
         }
     }
 }
