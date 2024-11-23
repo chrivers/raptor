@@ -129,7 +129,10 @@ impl<'source> Loader<'source> {
 
         let mut res = vec![];
 
-        for stmt in ast::parse(path, &source)? {
+        for stmt in ast::parse(path, &source).map_err(|err| match err {
+            RaptorError::PestError(err) => RaptorError::PestError(Box::new(err.with_path(path))),
+            err => err,
+        })? {
             res.extend(self.handle(stmt, ctx)?);
         }
 
