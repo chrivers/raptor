@@ -4,7 +4,7 @@ use minijinja::{Environment, ErrorKind, Value};
 
 use crate::dsl::{IncludeArgValue, Instruction, Origin, Statement};
 use crate::parser::ast;
-use crate::program::{show_error_context, show_jinja_error_context};
+use crate::program::{show_error_context, show_jinja_error_context, show_pest_error_context};
 use crate::{RaptorError, RaptorResult};
 
 pub struct Loader<'source> {
@@ -103,17 +103,7 @@ impl<'source> Loader<'source> {
                 }
             }
             RaptorError::PestError(err) => {
-                let span = match err.location {
-                    pest::error::InputLocation::Pos(idx) => idx..idx + err.line().len(),
-                    pest::error::InputLocation::Span((begin, end)) => begin..end,
-                };
-
-                show_error_context(
-                    err.path().unwrap(),
-                    &format!("{}", err.variant),
-                    &err.variant.message(),
-                    span,
-                )?;
+                show_pest_error_context(&err)?;
             }
             err => {
                 error!("Unexpected error: {err}");
