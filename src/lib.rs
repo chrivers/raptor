@@ -37,6 +37,9 @@ pub enum RaptorError {
     #[error("Script error: {0} {1:?}")]
     ScriptError(String, Origin),
 
+    #[error("Undefined variable: {0}")]
+    UndefinedVarError(String, Origin),
+
     #[error("RUN failed: {0}")]
     RunError(String),
 }

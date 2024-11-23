@@ -16,6 +16,22 @@ pub struct Loader<'source> {
 
 const MAX_NESTED_INCLUDE: usize = 20;
 
+impl IncludeArgValue {
+    fn resolve(self, ctx: &Value) -> RaptorResult<Value> {
+        match self {
+            Self::Lookup(lookup) => {
+                let name = &lookup.path[0];
+                let val = ctx.get_attr(name)?;
+                if val.is_undefined() {
+                    return Err(RaptorError::UndefinedVarError(name.into(), lookup.origin));
+                }
+                Ok(val)
+            }
+            Self::Value(val) => Ok(val),
+        }
+    }
+}
+
 impl<'source> Loader<'source> {
     pub fn new(env: Environment<'source>, dump: bool) -> Self {
         Self {
@@ -27,36 +43,21 @@ impl<'source> Loader<'source> {
     }
 
     fn handle(&mut self, stmt: Statement, rctx: &Value) -> RaptorResult<Vec<Statement>> {
-        if let Instruction::Include(inst) = &stmt.inst {
+        if let Instruction::Include(inst) = stmt.inst {
             if self.origins.len() >= MAX_NESTED_INCLUDE {
                 return Err(RaptorError::ScriptError(
-                    "Too many nested includes".to_string(),
+                    "Too many nested includes".into(),
                     self.origins.last().unwrap().clone(),
                 ));
             }
-            let mut map = HashMap::new();
-            for arg in &inst.args {
-                match &arg.value {
-                    IncludeArgValue::Lookup(lookup) => {
-                        let name = &lookup.path[0];
-                        let val = rctx.get_attr(name)?;
-                        if val.is_undefined() {
-                            Err(RaptorError::ScriptError(
-                                format!("Undefined variable {name:?}"),
-                                lookup.origin.clone(),
-                            ))?;
-                        }
-                        map.insert(arg.name.clone(), val.clone());
-                    }
-                    IncludeArgValue::Value(val) => {
-                        map.insert(arg.name.clone(), Value::from_serialize(val));
-                    }
-                }
-            }
+            let map = inst
+                .args
+                .into_iter()
+                .map(|arg| Ok((arg.name, arg.value.resolve(rctx)?)))
+                .collect::<RaptorResult<HashMap<_, _>>>()?;
 
-            let ctx = Value::from(map);
-            self.origins.push(stmt.origin.clone());
-            let statements = self.parse_template(&inst.src, &ctx)?;
+            self.origins.push(stmt.origin);
+            let statements = self.parse_template(&inst.src, &Value::from(map))?;
             self.origins.pop();
 
             Ok(statements)
