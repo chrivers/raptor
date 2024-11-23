@@ -55,6 +55,13 @@ impl RaptorFileParser {
         Ok(res)
     }
 
+    fn quoted_string(input: Node) -> Result<String> {
+        Ok(match_nodes!(
+            input.into_children();
+            [string_inner(s)] => Ok(s),
+        )?)
+    }
+
     fn literal_string(input: Node) -> Result<String> {
         Ok(input.as_str().to_string())
     }
@@ -70,7 +77,7 @@ impl RaptorFileParser {
     fn string(input: Node) -> Result<String> {
         Ok(match_nodes!(
             input.into_children();
-            [string(s)] => Ok(s),
+            [quoted_string(s)] => Ok(s),
             [literal_string(s)] => Ok(s),
         )?)
     }
@@ -170,7 +177,7 @@ impl RaptorFileParser {
     fn WRITE(input: Node) -> Result<InstWrite> {
         match_nodes!(
             input.into_children();
-            [file_options((chmod, chown)), filename(dest), string(body)] => {
+            [file_options((chmod, chown)), filename(dest), quoted_string(body)] => {
                 Ok(InstWrite {
                     dest,
                     body,

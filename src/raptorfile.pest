@@ -21,14 +21,14 @@ COMMENT = _{
     "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE
 }
 
-quoted_string = _{ "\"" ~ string_inner ~ "\"" }
+quoted_string = ${ "\"" ~ string_inner ~ "\"" }
 
 string_inner = {
     (string_non_escape | string_escape_seq)*
 }
 
-string_non_escape = {
-    (!"\\" ~ ANY)+
+string_non_escape = ${
+    (!("\\" | "\"") ~ ANY)+
 }
 
 string_escape_seq = ${ "\\" ~ char_escape }
@@ -36,21 +36,22 @@ string_escape_seq = ${ "\\" ~ char_escape }
 char_escape = _{ "\\" | "\"" | "n" | "r" | "t" }
 
 literal_string = ${
-    (
-        '0'..'9'
-      | 'a'..'z'
-      | 'A' .. 'Z'
+    // for literal strings, the first character must be "reasonable", as
+    // otherwise it gets very difficult to provide good error messages
+    (ASCII_ALPHANUMERIC | "." | "_" | "/" | "-")
+
+    // after this, we allow most printable characters
+    ~ (
+        ASCII_ALPHANUMERIC
       | '!' .. '['
       | ']' .. '~'
-    )+
+    )*
 }
 
-literal_path = _ { literal_string }
-
-string = {quoted_string | literal_path}
+string = {quoted_string | literal_string}
 
 filename = {
-    !("--") ~ (quoted_string | literal_path)
+    string
 }
 
 mb_eq = _{ "="? }
@@ -92,7 +93,7 @@ number = {
 }
 
 value = {
-    bool | number | quoted_string | identpath
+    bool | number | identpath | string
 }
 
 include_arg = ${
