@@ -69,7 +69,10 @@ fn raptor() -> RaptorResult<()> {
         let mut exec = Executor::new(sandbox);
 
         for stmt in &statements {
-            exec.handle(stmt)?;
+            if let Err(err) = exec.handle(stmt) {
+                loader.explain_exec_error(stmt, &err)?;
+                return Err(err);
+            }
         }
 
         exec.finish()?;
