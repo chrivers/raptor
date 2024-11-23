@@ -4,7 +4,9 @@ use minijinja::{Environment, ErrorKind, Value};
 
 use crate::dsl::{IncludeArgValue, Instruction, Origin, Statement};
 use crate::parser::ast;
-use crate::program::{show_error_context, show_jinja_error_context, show_pest_error_context};
+use crate::program::{
+    show_error_context, show_jinja_error_context, show_pest_error_context, Program,
+};
 use crate::{RaptorError, RaptorResult};
 
 pub struct Loader<'source> {
@@ -57,7 +59,7 @@ impl<'source> Loader<'source> {
                 .collect::<RaptorResult<HashMap<_, _>>>()?;
 
             self.origins.push(stmt.origin);
-            let statements = self.parse_template(&inst.src, &Value::from(map))?;
+            let statements = self.parse_template(&inst.src, &Value::from(map))?.0;
             self.origins.pop();
 
             Ok(statements)
@@ -153,7 +155,7 @@ impl<'source> Loader<'source> {
         &self.origins
     }
 
-    pub fn parse_template(&mut self, path: &str, ctx: &Value) -> RaptorResult<Vec<Statement>> {
+    pub fn parse_template(&mut self, path: &str, ctx: &Value) -> RaptorResult<Program> {
         let source = self
             .env
             .get_template(path)
@@ -175,6 +177,6 @@ impl<'source> Loader<'source> {
             res.extend(self.handle(stmt, ctx)?);
         }
 
-        Ok(res)
+        Ok(Program(res))
     }
 }
