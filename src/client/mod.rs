@@ -45,4 +45,4 @@ pub enum Request {
     Shutdown,
 }
 
-pub type Response = Result<i32, String>;
+pub type Response = Result<i32, i32>;

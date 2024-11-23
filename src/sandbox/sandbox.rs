@@ -1,8 +1,10 @@
 use std::io::Write;
 use std::os::unix::net::{UnixListener, UnixStream};
-use std::process::Child;
+use std::os::unix::process::ExitStatusExt;
+use std::process::{Child, ExitStatus};
 
 use camino::{Utf8Path, Utf8PathBuf};
+use nix::errno::Errno;
 use tempfile::{Builder, TempDir};
 
 use crate::client::{
@@ -117,14 +119,18 @@ impl Sandbox {
         self.conn.write_framed(req)?;
         self.conn
             .read_framed::<Response>()?
-            .map_err(RaptorError::RunError)
+            .map_err(|errno| RaptorError::SandboxRequestError(Errno::from_raw(errno)))
     }
 
-    pub fn run(&mut self, cmd: &[String]) -> RaptorResult<i32> {
-        self.rpc(&Request::Run(RequestRun {
+    pub fn run(&mut self, cmd: &[String]) -> RaptorResult<()> {
+        match self.rpc(&Request::Run(RequestRun {
             arg0: cmd[0].clone(),
             argv: cmd.to_vec(),
-        }))
+        })) {
+            Ok(0) => Ok(()),
+            Ok(n) => Err(RaptorError::SandboxRunError(ExitStatus::from_raw(n))),
+            Err(err) => Err(err),
+        }
     }
 
     pub fn create_file_handle(

@@ -7,6 +7,7 @@ use std::os::unix::net::UnixStream;
 use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::process::Command;
 
+use nix::errno::Errno;
 use nix::unistd::{fchown, Gid, Group, Uid, User};
 
 use log::{error, info, trace};
@@ -103,7 +104,7 @@ impl FileMap {
         if self.0.remove(&req.fd).is_some() {
             Ok(0)
         } else {
-            Err(Error::new(ErrorKind::InvalidInput, "invalid fd"))?
+            Err(RaptorError::SandboxRequestError(Errno::EBADF))?
         }
     }
 }
@@ -141,9 +142,15 @@ fn main() -> RaptorResult<()> {
             }
         };
 
-        let resp: Response = res.map_err(|err| {
-            error!("Error: {err}");
-            err.to_string()
+        let resp: Response = res.map_err(|err| match err {
+            RaptorError::IoError(err) => {
+                error!("Error: {err}");
+                err.raw_os_error().unwrap_or(Errno::EIO as i32)
+            }
+            err => {
+                error!("Error: {err}");
+                Errno::EIO as i32
+            }
         });
 
         trace!("writing response: {resp:?}");

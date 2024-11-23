@@ -9,6 +9,10 @@ pub mod sandbox;
 pub mod template;
 pub mod util;
 
+use std::process::ExitStatus;
+
+use nix::errno::Errno;
+
 use crate::{dsl::Origin, parser::Rule};
 
 #[derive(thiserror::Error, Debug)]
@@ -40,8 +44,11 @@ pub enum RaptorError {
     #[error("Undefined variable: {0}")]
     UndefinedVarError(String, Origin),
 
-    #[error("RUN failed: {0}")]
-    RunError(String),
+    #[error("Sandbox error: {0}")]
+    SandboxRequestError(Errno),
+
+    #[error("process exit status {0}")]
+    SandboxRunError(ExitStatus),
 }
 
 impl From<pest_consume::Error<Rule>> for RaptorError {
