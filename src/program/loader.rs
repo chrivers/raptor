@@ -103,7 +103,17 @@ impl<'source> Loader<'source> {
                 }
             }
             RaptorError::PestError(err) => {
-                error!("Failed to parse file: {err}");
+                let span = match err.location {
+                    pest::error::InputLocation::Pos(idx) => idx..idx + err.line().len(),
+                    pest::error::InputLocation::Span((begin, end)) => begin..end,
+                };
+
+                show_error_context(
+                    err.path().unwrap(),
+                    &format!("{}", err.variant),
+                    &err.variant.message(),
+                    span,
+                )?;
             }
             err => {
                 error!("Unexpected error: {err}");
