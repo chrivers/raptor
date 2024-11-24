@@ -8,6 +8,7 @@ use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::process::Command;
 
 use nix::errno::Errno;
+use nix::sys::stat::{umask, Mode};
 use nix::unistd::{fchown, Gid, Group, Uid, User};
 
 use log::{error, info, trace};
@@ -16,6 +17,7 @@ use raptor::client::{
     Account, FramedRead, FramedWrite, Request, RequestChangeDir, RequestCloseFd, RequestCreateFile,
     RequestRun, RequestSetEnv, RequestWriteFd, Response,
 };
+use raptor::util::umask_proc::Umask;
 use raptor::{RaptorError, RaptorResult};
 
 fn request_run(req: &RequestRun) -> RaptorResult<i32> {
@@ -23,6 +25,7 @@ fn request_run(req: &RequestRun) -> RaptorResult<i32> {
     Ok(Command::new(&req.argv[0])
         .arg0(&req.argv[0])
         .args(&req.argv[1..])
+        .umask(Mode::S_IWGRP | Mode::S_IWOTH)
         .status()
         .map(ExitStatusExt::into_raw)?)
 }
@@ -131,6 +134,8 @@ fn main() -> RaptorResult<()> {
     let mut stream = UnixStream::connect(socket_name)?;
 
     let mut files = FileMap::new();
+
+    umask(Mode::empty());
 
     loop {
         let req: Request = match stream.read_framed() {
