@@ -24,6 +24,17 @@ pub enum Settings {
     Trusted,
 }
 
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum LinkJournal {
+    No,
+    Host,
+    TryHost,
+    Guest,
+    TryGuest,
+    Auto,
+}
+
 #[must_use]
 pub fn escape_colon(path: &Utf8Path) -> String {
     path.as_str().replace(':', "\\:")
@@ -37,6 +48,7 @@ pub struct SpawnBuilder<'a> {
     uuid: Option<Uuid>,
     settings: Option<Settings>,
     console: Option<ConsoleMode>,
+    link_journal: Option<LinkJournal>,
     directory: Option<&'a Utf8Path>,
     root_overlay: Vec<&'a Utf8Path>,
     bind: Vec<(&'a Utf8Path, &'a Utf8Path)>,
@@ -83,6 +95,12 @@ impl<'a> SpawnBuilder<'a> {
     #[must_use]
     pub const fn settings(mut self, settings: Settings) -> Self {
         self.settings = Some(settings);
+        self
+    }
+
+    #[must_use]
+    pub const fn link_journal(mut self, link_journal: LinkJournal) -> Self {
+        self.link_journal = Some(link_journal);
         self
     }
 
@@ -146,6 +164,11 @@ impl SpawnBuilder<'_> {
         if let Some(settings) = self.settings {
             res.push("--settings".into());
             res.push(to_variant_name(&settings).unwrap().into());
+        }
+
+        if let Some(link_journal) = self.link_journal {
+            res.push("--link-journal".into());
+            res.push(to_variant_name(&link_journal).unwrap().into());
         }
 
         if !self.root_overlay.is_empty() {
