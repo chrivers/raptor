@@ -116,7 +116,7 @@ fn nspawn_setenv() -> RaptorResult<()> {
 
 #[test]
 fn nspawn_write_data() -> RaptorResult<()> {
-    let mut sbx = spawn_sandbox("write")?;
+    let mut sbx = spawn_sandbox("write_data")?;
     let mut fd = sbx.create_file_handle("/tmp/a".into(), None, None)?;
     fd.write_all(b"Hello world\n")?;
     drop(fd);
@@ -132,8 +132,8 @@ fn nspawn_write_data() -> RaptorResult<()> {
 }
 
 #[test]
-fn nspawn_write_opts() -> RaptorResult<()> {
-    let mut sbx = spawn_sandbox("write_opts")?;
+fn nspawn_write_chown() -> RaptorResult<()> {
+    let mut sbx = spawn_sandbox("write_chown")?;
 
     let mut fd = sbx.create_file_handle("/etc/passwd".into(), None, None)?;
     fd.write_all(b"root:x:0:0:root:/root:/bin/sh\n")?;
