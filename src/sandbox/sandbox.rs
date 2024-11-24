@@ -76,6 +76,21 @@ impl Drop for SandboxFile<'_> {
     }
 }
 
+fn copy_file(from: impl AsRef<Utf8Path>, to: impl AsRef<Utf8Path>) -> RaptorResult<()> {
+    let mut src = File::open(from.as_ref())?;
+    let mode = src.metadata()?.permissions().mode();
+    let dst = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .mode(mode)
+        .open(to.as_ref())?;
+
+    std::io::copy(&mut src, &mut BufWriter::with_capacity(128 * 1024, dst))?;
+
+    Ok(())
+}
+
 impl Sandbox {
     const START_TIMEOUT: Duration = Duration::from_secs(2);
     const CHECK_TIMEOUT: Duration = Duration::from_millis(100);
@@ -122,7 +137,7 @@ impl Sandbox {
         let int_socket_path = int_root.join("raptor");
         let int_client_path = int_root.join("nspawn-client");
 
-        std::fs::copy(Self::NSPAWN_CLIENT_PATH, ext_client_path)?;
+        copy_file(Self::NSPAWN_CLIENT_PATH, ext_client_path)?;
 
         let listen = UnixListener::bind(ext_socket_path)?;
 
