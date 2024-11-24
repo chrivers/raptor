@@ -42,7 +42,7 @@ impl SandboxExt for Sandbox {
         mode: Option<u32>,
         data: impl AsRef<[u8]>,
     ) -> RaptorResult<()> {
-        let mut fd = self.create_file_handle(path.as_ref(), owner, mode)?;
+        let mut fd = self.create_file(path.as_ref(), owner, mode)?;
         fd.write_all(data.as_ref())?;
         drop(fd);
         Ok(())
@@ -117,11 +117,11 @@ fn nspawn_setenv() -> RaptorResult<()> {
 #[test]
 fn nspawn_write_data() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("write_data")?;
-    let mut fd = sbx.create_file_handle("/tmp/a".into(), None, None)?;
+    let mut fd = sbx.create_file("/tmp/a".into(), None, None)?;
     fd.write_all(b"Hello world\n")?;
     drop(fd);
 
-    fd = sbx.create_file_handle("/tmp/b".into(), None, None)?;
+    fd = sbx.create_file("/tmp/b".into(), None, None)?;
     fd.write_all("f0ef7081e1539ac00ef5b761b4fb01b3  a\n".as_bytes())?;
     drop(fd);
 
@@ -135,12 +135,12 @@ fn nspawn_write_data() -> RaptorResult<()> {
 fn nspawn_write_chown() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("write_chown")?;
 
-    let mut fd = sbx.create_file_handle("/etc/passwd".into(), None, None)?;
+    let mut fd = sbx.create_file("/etc/passwd".into(), None, None)?;
     fd.write_all(b"root:x:0:0:root:/root:/bin/sh\n")?;
     fd.write_all(b"user:x:1000:1000:user:/home/user:/bin/sh\n")?;
     drop(fd);
 
-    let mut fd = sbx.create_file_handle(
+    let mut fd = sbx.create_file(
         "/tmp/c".into(),
         Some(Chown {
             user: Some("root".into()),
@@ -153,7 +153,7 @@ fn nspawn_write_chown() -> RaptorResult<()> {
 
     sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
 
-    let mut fd = sbx.create_file_handle(
+    let mut fd = sbx.create_file(
         "/tmp/c".into(),
         Some(Chown {
             user: Some("user".into()),

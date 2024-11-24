@@ -39,7 +39,7 @@ impl Executor {
             Instruction::Copy(inst) => {
                 info!("{:?}", inst);
                 let mut src = File::open(&inst.srcs[0])?;
-                let fd = self.sandbox.create_file_handle(
+                let fd = self.sandbox.create_file(
                     &Utf8PathBuf::from(&inst.dest),
                     inst.chown.clone(),
                     inst.chmod,
@@ -55,7 +55,7 @@ impl Executor {
             }
             Instruction::Write(inst) => {
                 info!("{:?}", inst);
-                let mut fd = self.sandbox.create_file_handle(
+                let mut fd = self.sandbox.create_file(
                     &Utf8PathBuf::from(&inst.dest),
                     inst.chown.clone(),
                     inst.chmod,

@@ -238,7 +238,7 @@ impl Sandbox {
         }
     }
 
-    pub fn create_file_handle(
+    pub fn create_file(
         &mut self,
         path: &Utf8Path,
         owner: Option<Chown>,
