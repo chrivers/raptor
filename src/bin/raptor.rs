@@ -50,7 +50,7 @@ fn raptor() -> RaptorResult<()> {
     for file in args.input {
         let mut loader = Loader::new(template::make_environment()?, args.mode.dump);
         let statements = match loader.parse_template(file.as_str(), &root_context) {
-            Ok(res) => res.0,
+            Ok(res) => res.code,
             Err(err) => {
                 loader.explain_error(err)?;
                 continue;

@@ -59,7 +59,7 @@ impl<'source> Loader<'source> {
                 .collect::<RaptorResult<HashMap<_, _>>>()?;
 
             self.origins.push(stmt.origin);
-            let statements = self.parse_template(&inst.src, &Value::from(map))?.0;
+            let statements = self.parse_template(&inst.src, &Value::from(map))?.code;
             self.origins.pop();
 
             Ok(statements)
@@ -179,6 +179,6 @@ impl<'source> Loader<'source> {
             res.extend(self.handle(stmt, ctx)?);
         }
 
-        Ok(Program(res))
+        Ok(Program::new(res))
     }
 }

@@ -22,7 +22,7 @@ fn assert_single_inst_eq(path: &str, size: usize, res: &Program, inst: Instructi
         span: 0..size,
     };
 
-    assert_eq!(&res.0, &[Statement { inst, origin }]);
+    assert_eq!(&res.code, &[Statement { inst, origin }]);
 }
 
 #[allow(clippy::cast_possible_truncation)]
