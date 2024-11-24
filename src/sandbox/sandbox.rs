@@ -288,6 +288,17 @@ impl Sandbox {
 
 impl Drop for Sandbox {
     fn drop(&mut self) {
-        let _ = self.close();
+        if let Some(mount) = &self.mount {
+            let _ = self.conn.write_framed(Request::Shutdown);
+            let _ = self.conn.shutdown(std::net::Shutdown::Write);
+            let _ = self.proc.wait();
+            let _ = std::fs::remove_dir(mount);
+            if let Some(tempdir) = self.tempdir.take() {
+                let _ = tempdir.close();
+            }
+            if let Some(mount) = self.mount.take() {
+                let _ = std::fs::remove_dir(mount);
+            }
+        }
     }
 }
