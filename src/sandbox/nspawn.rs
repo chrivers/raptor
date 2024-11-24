@@ -40,7 +40,7 @@ pub fn escape_colon(path: &Utf8Path) -> String {
     path.as_str().replace(':', "\\:")
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct SpawnBuilder<'a> {
     sudo: bool,
     quiet: bool,
