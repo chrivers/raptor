@@ -2,6 +2,8 @@ use std::io::Write;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::os::unix::process::ExitStatusExt;
 use std::process::{Child, ExitStatus};
+use std::sync::mpsc::{self, RecvTimeoutError};
+use std::time::Duration;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use nix::errno::Errno;
@@ -75,6 +77,33 @@ impl Drop for SandboxFile<'_> {
 }
 
 impl Sandbox {
+    const START_TIMEOUT: Duration = Duration::from_secs(2);
+    const CHECK_TIMEOUT: Duration = Duration::from_millis(100);
+
+    fn wait_for_startup(listen: UnixListener, proc: &mut Child) -> RaptorResult<UnixStream> {
+        let (tx, rx) = mpsc::channel();
+
+        /* Spawn a thread that waits for the sandbox to start up, and the
+         * nspawn-client to connect from inside the namespace */
+        std::thread::spawn(move || -> RaptorResult<_> { Ok(tx.send(listen.accept()?.0)?) });
+
+        /* Loop until START_TIMEOUT is reached, checking the sandbox process
+         * every time CHECK_TIMEOUT has passed */
+        for _ in 0..(Self::START_TIMEOUT.as_millis() / Self::CHECK_TIMEOUT.as_millis()) {
+            if let Some(status) = proc.try_wait()? {
+                return Err(RaptorError::SandboxRunError(status));
+            }
+
+            match rx.recv_timeout(Self::CHECK_TIMEOUT) {
+                Ok(conn) => return Ok(conn),
+                Err(RecvTimeoutError::Timeout) => continue,
+                Err(err) => Err(err)?,
+            };
+        }
+
+        Err(RaptorError::SandboxRequestError(Errno::ECONNABORTED))
+    }
+
     pub fn new(layers: &[&Utf8Path]) -> RaptorResult<Self> {
         let tempdir = Builder::new().prefix("raptor-").tempdir()?;
 
@@ -94,7 +123,7 @@ impl Sandbox {
 
         let listen = UnixListener::bind(ext_socket_path)?;
 
-        let proc = SpawnBuilder::new()
+        let mut proc = SpawnBuilder::new()
             .quiet(true)
             .sudo(true)
             .uuid(Uuid::new_v4())
@@ -108,15 +137,22 @@ impl Sandbox {
             .command()
             .spawn()?;
 
-        let conn = listen.accept()?.0;
-
-        Ok(Self {
-            proc,
-            conn,
-            tempdir: Some(tempdir),
-            int_root,
-            top_layer: layers[layers.len() - 1].into(),
-        })
+        match Self::wait_for_startup(listen, &mut proc) {
+            Ok(conn) => Ok(Self {
+                proc,
+                conn,
+                tempdir: Some(tempdir),
+                int_root,
+                top_layer: layers[layers.len() - 1].into(),
+            }),
+            Err(err) => {
+                /* if we arrive here, the sandbox did not start within the timeout, so
+                 * kill the half-started container and report the error */
+                proc.kill()?;
+                proc.wait()?;
+                Err(err)
+            }
+        }
     }
 
     fn rpc(&mut self, req: &Request) -> RaptorResult<i32> {
