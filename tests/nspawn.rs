@@ -12,15 +12,21 @@ fn spawn_sandbox(name: &str) -> RaptorResult<Sandbox> {
     )
 }
 
-fn run(sbx: &mut Sandbox, cmd: &[&str]) -> RaptorResult<()> {
-    let mut args = vec!["/bin/sh", "-c"];
-    args.extend(cmd);
-    sbx.run(
-        &args
-            .into_iter()
-            .map(ToString::to_string)
-            .collect::<Vec<_>>(),
-    )
+trait ShellRun {
+    fn shell(&mut self, cmd: &[&str]) -> RaptorResult<()>;
+}
+
+impl ShellRun for Sandbox {
+    fn shell(&mut self, cmd: &[&str]) -> RaptorResult<()> {
+        let mut args = vec!["/bin/sh", "-c"];
+        args.extend(cmd);
+        self.run(
+            &args
+                .into_iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>(),
+        )
+    }
 }
 
 #[test]
@@ -33,14 +39,16 @@ fn test_nspawn_basic() -> RaptorResult<()> {
 #[test]
 fn test_nspawn_run() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("run")?;
-    run(&mut sbx, &["true"])?;
+
+    sbx.shell(&["true"])?;
+
     assert!(matches!(
-            run(&mut sbx, &["false"]).unwrap_err(),
-            RaptorError::SandboxRunError(es) if es.code() == Some(1)
+        sbx.shell(&["false"]).unwrap_err(),
+        RaptorError::SandboxRunError(es) if es.code() == Some(1)
     ));
     assert!(matches!(
-            run(&mut sbx, &["exit 100"]).unwrap_err(),
-            RaptorError::SandboxRunError(es) if es.code() == Some(100)
+        sbx.shell(&["exit 100"]).unwrap_err(),
+        RaptorError::SandboxRunError(es) if es.code() == Some(100)
     ));
     sbx.close()?;
     Ok(())
@@ -49,13 +57,13 @@ fn test_nspawn_run() -> RaptorResult<()> {
 #[test]
 fn test_nspawn_workdir() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("workdir")?;
-    run(&mut sbx, &["[ $PWD == / ]"])?;
+    sbx.shell(&["[ $PWD == / ]"])?;
     sbx.chdir("/bin")?;
-    run(&mut sbx, &["[ $PWD == /bin ]"])?;
+    sbx.shell(&["[ $PWD == /bin ]"])?;
     sbx.chdir("../usr")?;
-    run(&mut sbx, &["[ $PWD == /usr ]"])?;
+    sbx.shell(&["[ $PWD == /usr ]"])?;
     sbx.chdir("..")?;
-    run(&mut sbx, &["[ $PWD == / ]"])?;
+    sbx.shell(&["[ $PWD == / ]"])?;
     sbx.close()?;
     Ok(())
 }
@@ -63,11 +71,11 @@ fn test_nspawn_workdir() -> RaptorResult<()> {
 #[test]
 fn test_nspawn_setenv() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("setenv")?;
-    run(&mut sbx, &["[ x${FOO} == x ]"])?;
+    sbx.shell(&["[ x${FOO} == x ]"])?;
     sbx.setenv("FOO", "BAR")?;
-    run(&mut sbx, &["[ x${FOO} == xBAR ]"])?;
+    sbx.shell(&["[ x${FOO} == xBAR ]"])?;
     sbx.setenv("FOO", "OTHER")?;
-    run(&mut sbx, &["[ x${FOO} == xOTHER ]"])?;
+    sbx.shell(&["[ x${FOO} == xOTHER ]"])?;
     sbx.close()?;
     Ok(())
 }
@@ -83,7 +91,7 @@ fn test_nspawn_write() -> RaptorResult<()> {
     fd.write_all("f0ef7081e1539ac00ef5b761b4fb01b3  a\n".as_bytes())?;
     drop(fd);
 
-    run(&mut sbx, &["cd /tmp && md5sum -cs b"])?;
+    sbx.shell(&["cd /tmp && md5sum -cs b"])?;
 
     sbx.close()?;
     Ok(())
@@ -109,7 +117,7 @@ fn test_nspawn_write_opts() -> RaptorResult<()> {
     fd.write_all(b"Hello world\n")?;
     drop(fd);
 
-    run(&mut sbx, &["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
+    sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
 
     let mut fd = sbx.create_file_handle(
         "/tmp/c".into(),
@@ -122,7 +130,7 @@ fn test_nspawn_write_opts() -> RaptorResult<()> {
     fd.write_all(b"Hello world\n")?;
     drop(fd);
 
-    run(&mut sbx, &["[ $(stat -c %u /tmp/c) -eq 1000 ]"])?;
+    sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 1000 ]"])?;
 
     sbx.close()?;
     Ok(())
