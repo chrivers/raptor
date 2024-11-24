@@ -18,7 +18,7 @@ use crate::{RaptorError, RaptorResult};
 pub struct Sandbox {
     proc: Child,
     conn: UnixStream,
-    tempdir: TempDir,
+    tempdir: Option<TempDir>,
     int_root: Utf8PathBuf,
     top_layer: Utf8PathBuf,
 }
@@ -109,7 +109,7 @@ impl Sandbox {
         Ok(Self {
             proc,
             conn,
-            tempdir,
+            tempdir: Some(tempdir),
             int_root,
             top_layer: layers[layers.len() - 1].into(),
         })
@@ -142,15 +142,23 @@ impl Sandbox {
         SandboxFile::new(self, path, owner, mode)
     }
 
-    pub fn close(mut self) -> RaptorResult<()> {
+    pub fn close(&mut self) -> RaptorResult<()> {
         self.conn.write_framed(Request::Shutdown)?;
         self.conn.shutdown(std::net::Shutdown::Write)?;
         self.proc.wait()?;
-        self.tempdir.close()?;
+        if let Some(tempdir) = self.tempdir.take() {
+            tempdir.close()?;
+        }
         let mount = self
             .top_layer
             .join(self.int_root.strip_prefix("/").unwrap());
         std::fs::remove_dir(mount)?;
         Ok(())
+    }
+}
+
+impl Drop for Sandbox {
+    fn drop(&mut self) {
+        let _ = self.close();
     }
 }

@@ -85,7 +85,7 @@ impl Executor {
         Ok(())
     }
 
-    pub fn finish(self) -> RaptorResult<()> {
+    pub fn finish(mut self) -> RaptorResult<()> {
         self.sandbox.close()
     }
 }
