@@ -6,8 +6,8 @@ use std::sync::mpsc::{self, RecvTimeoutError};
 use std::time::Duration;
 
 use camino::{Utf8Path, Utf8PathBuf};
+use camino_tempfile::{Builder, Utf8TempDir};
 use nix::errno::Errno;
-use tempfile::{Builder, TempDir};
 use uuid::Uuid;
 
 use crate::client::{
@@ -22,7 +22,7 @@ use crate::{RaptorError, RaptorResult};
 pub struct Sandbox {
     proc: Child,
     conn: UnixStream,
-    tempdir: Option<TempDir>,
+    tempdir: Option<Utf8TempDir>,
     int_root: Utf8PathBuf,
     top_layer: Utf8PathBuf,
 }
@@ -107,11 +107,14 @@ impl Sandbox {
     pub fn new(layers: &[&Utf8Path]) -> RaptorResult<Self> {
         let tempdir = Builder::new().prefix("raptor-").tempdir()?;
 
-        let ext_root = Utf8PathBuf::from_path_buf(tempdir.path().to_path_buf())?;
+        /* external root is the absolute path of the tempdir */
+        let ext_root = tempdir.path();
+
+        /* internal root is the namespace path where the tempdir will be mounted */
+        let int_root = Utf8Path::new("/").join(ext_root.file_name().unwrap());
+
         let ext_socket_path = ext_root.join("raptor");
         let ext_client_path = ext_root.join("nspawn-client");
-
-        let int_root = Utf8PathBuf::from("/").join(ext_root.file_name().unwrap());
 
         let int_socket_path = int_root.join("raptor");
         let int_client_path = int_root.join("nspawn-client");
@@ -130,7 +133,7 @@ impl Sandbox {
             .settings(Settings::False)
             .setenv("RAPTOR_NSPAWN_SOCKET", int_socket_path.as_str())
             .root_overlays(layers)
-            .bind_ro(&ext_root, &int_root)
+            .bind_ro(ext_root, &int_root)
             .console(ConsoleMode::ReadOnly)
             .directory(layers[0])
             .arg(int_client_path.as_str())
