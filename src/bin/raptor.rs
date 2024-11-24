@@ -65,7 +65,7 @@ fn raptor() -> RaptorResult<()> {
             continue;
         }
 
-        let sandbox = Sandbox::new(&["layers/build".into(), "layers/adjust".into()])?;
+        let sandbox = Sandbox::new(&["layers/build".into()], "layers/tmp".into())?;
         let mut exec = Executor::new(sandbox);
 
         for stmt in &statements {

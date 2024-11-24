@@ -1,4 +1,6 @@
-use std::io::{Error, ErrorKind, Write};
+use std::fs::{File, OpenOptions};
+use std::io::{BufWriter, Error, ErrorKind, Write};
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::os::unix::process::ExitStatusExt;
 use std::process::{Child, ExitStatus};
@@ -15,16 +17,15 @@ use crate::client::{
     RequestRun, RequestSetEnv, RequestWriteFd, Response,
 };
 use crate::dsl::Chown;
-use crate::sandbox::{ConsoleMode, Settings, SpawnBuilder};
+use crate::sandbox::{ConsoleMode, LinkJournal, Settings, SpawnBuilder};
 use crate::{RaptorError, RaptorResult};
 
 #[derive(Debug)]
 pub struct Sandbox {
     proc: Child,
     conn: UnixStream,
+    mount: Option<Utf8PathBuf>,
     tempdir: Option<Utf8TempDir>,
-    int_root: Utf8PathBuf,
-    top_layer: Utf8PathBuf,
 }
 
 #[derive(Debug)]
@@ -122,14 +123,57 @@ impl Sandbox {
         Err(RaptorError::SandboxRequestError(Errno::ECONNABORTED))
     }
 
-    pub fn new(layers: &[&Utf8Path]) -> RaptorResult<Self> {
-        let tempdir = Builder::new().prefix("raptor-").tempdir()?;
+    pub fn new(layers: &[&Utf8Path], rootdir: &Utf8Path) -> RaptorResult<Self> {
+        /*
+        For the sandbox, we need two directories, "temp" and "conn".
+
+        The whole stack of layers is mounted as overlayfs "lowerdirs", with the
+        rootdir as the "upperdir" (see overlayfs man page).
+
+        We tell systemd-nspawn to mount this stack on "/", i.e. the root
+        directory of the container, but it still requires us to specify a
+        directory to mount as the root.
+
+        This directory ends up being unused, but is still required.
+
+        Even sillier, this directory is checked for the existence of `/usr`, so
+        we have to create it, to make sure systemd-nspawn is happy, so it can go
+        on to ignore it completely.
+
+        This dir with an ampty `/usr` dir, is the `tempdir`.
+
+        The `conndir` serves an actual purpose. It contains a copy of the raptor
+        `nspawn-client` binary, as well as the unix socket that the
+        `nspawn-client` will connect to. This directory is then bind-mounted
+        into the container.
+
+        temp:
+          - /usr (<-- empty dir)
+
+        conn:
+          - /raptor (<-- socket)
+          - /nspawn-client (<-- client binary)
+
+         */
+        let tempdir = Builder::new().prefix("raptor-temp-").tempdir()?;
+        let conndir = Builder::new().prefix("raptor-conn-").tempdir()?;
+
+        let uuid = Uuid::new_v4();
+        let uuid_name = uuid.as_simple().to_string();
+
+        /* ensure the build directory exists before we start the build (with
+         * sudo). This ensures the build root is owned by the current user, thus
+         * allowing our cleanup rmdir() to succeed */
+        std::fs::create_dir_all(rootdir)?;
+
+        /* the ephemeral root directory needs to have /usr for systemd-nspawn to accept it */
+        std::fs::create_dir(tempdir.path().join("usr"))?;
 
         /* external root is the absolute path of the tempdir */
-        let ext_root = tempdir.path();
+        let ext_root = conndir.path();
 
         /* internal root is the namespace path where the tempdir will be mounted */
-        let int_root = Utf8Path::new("/").join(ext_root.file_name().unwrap());
+        let int_root = Utf8PathBuf::from(format!("/raptor-{uuid_name}"));
 
         let ext_socket_path = ext_root.join("raptor");
         let ext_client_path = ext_root.join("nspawn-client");
@@ -141,27 +185,30 @@ impl Sandbox {
 
         let listen = UnixListener::bind(ext_socket_path)?;
 
-        let mut proc = SpawnBuilder::new()
+        let spawn = SpawnBuilder::new()
             .quiet(true)
             .sudo(true)
-            .uuid(Uuid::new_v4())
+            .uuid(uuid)
+            .link_journal(LinkJournal::No)
             .settings(Settings::False)
             .setenv("RAPTOR_NSPAWN_SOCKET", int_socket_path.as_str())
             .root_overlays(layers)
+            .root_overlay(rootdir)
             .bind_ro(ext_root, &int_root)
             .console(ConsoleMode::ReadOnly)
-            .directory(layers[0])
-            .arg(int_client_path.as_str())
-            .command()
-            .spawn()?;
+            .directory(tempdir.path())
+            .arg(int_client_path.as_str());
+
+        debug!("Starting sandbox: {:?}", spawn.build().join(" "));
+
+        let mut proc = spawn.command().spawn()?;
 
         match Self::wait_for_startup(listen, &mut proc) {
             Ok(conn) => Ok(Self {
                 proc,
                 conn,
+                mount: Some(rootdir.join(int_root.strip_prefix("/").unwrap())),
                 tempdir: Some(tempdir),
-                int_root,
-                top_layer: layers[layers.len() - 1].into(),
             }),
             Err(err) => {
                 /* if we arrive here, the sandbox did not start within the timeout, so
@@ -222,10 +269,9 @@ impl Sandbox {
         if let Some(tempdir) = self.tempdir.take() {
             tempdir.close()?;
         }
-        let mount = self
-            .top_layer
-            .join(self.int_root.strip_prefix("/").unwrap());
-        std::fs::remove_dir(mount)?;
+        if let Some(mount) = self.mount.take() {
+            std::fs::remove_dir(mount)?;
+        }
         Ok(())
     }
 }
