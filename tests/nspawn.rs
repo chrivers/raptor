@@ -30,7 +30,7 @@ impl ShellRun for Sandbox {
 }
 
 #[test]
-fn test_nspawn_basic() -> RaptorResult<()> {
+fn nspawn_basic() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("basic")?;
     assert_ne!(sbx.get_mount_dir(), None);
     assert_ne!(sbx.get_temp_dir(), None);
@@ -41,8 +41,8 @@ fn test_nspawn_basic() -> RaptorResult<()> {
 }
 
 #[test]
-fn test_nspawn_run() -> RaptorResult<()> {
-    let mut sbx = spawn_sandbox("run")?;
+fn nspawn_exit_status() -> RaptorResult<()> {
+    let mut sbx = spawn_sandbox("exit_status")?;
 
     sbx.shell(&["true"])?;
 
@@ -59,7 +59,7 @@ fn test_nspawn_run() -> RaptorResult<()> {
 }
 
 #[test]
-fn test_nspawn_workdir() -> RaptorResult<()> {
+fn nspawn_workdir() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("workdir")?;
     sbx.shell(&["[ $PWD == / ]"])?;
     sbx.chdir("/bin")?;
@@ -73,7 +73,7 @@ fn test_nspawn_workdir() -> RaptorResult<()> {
 }
 
 #[test]
-fn test_nspawn_setenv() -> RaptorResult<()> {
+fn nspawn_setenv() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("setenv")?;
     sbx.shell(&["[ x${FOO} == x ]"])?;
     sbx.setenv("FOO", "BAR")?;
@@ -85,7 +85,7 @@ fn test_nspawn_setenv() -> RaptorResult<()> {
 }
 
 #[test]
-fn test_nspawn_write() -> RaptorResult<()> {
+fn nspawn_write_data() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("write")?;
     let mut fd = sbx.create_file_handle("/tmp/a".into(), None, None)?;
     fd.write_all(b"Hello world\n")?;
@@ -102,7 +102,7 @@ fn test_nspawn_write() -> RaptorResult<()> {
 }
 
 #[test]
-fn test_nspawn_write_opts() -> RaptorResult<()> {
+fn nspawn_write_opts() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("write_opts")?;
 
     let mut fd = sbx.create_file_handle("/etc/passwd".into(), None, None)?;
