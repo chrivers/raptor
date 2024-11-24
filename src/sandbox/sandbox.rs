@@ -6,6 +6,7 @@ use std::process::{Child, ExitStatus};
 use camino::{Utf8Path, Utf8PathBuf};
 use nix::errno::Errno;
 use tempfile::{Builder, TempDir};
+use uuid::Uuid;
 
 use crate::client::{
     Account, FramedRead, FramedWrite, Request, RequestChangeDir, RequestCloseFd, RequestCreateFile,
@@ -96,6 +97,7 @@ impl Sandbox {
         let proc = SpawnBuilder::new()
             .quiet(true)
             .sudo(true)
+            .uuid(Uuid::new_v4())
             .settings(Settings::False)
             .setenv("RAPTOR_NSPAWN_SOCKET", int_socket_path.as_str())
             .root_overlays(layers)
