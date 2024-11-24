@@ -80,6 +80,9 @@ impl Sandbox {
     const START_TIMEOUT: Duration = Duration::from_secs(2);
     const CHECK_TIMEOUT: Duration = Duration::from_millis(100);
 
+    /* TODO: ugly hack, but works for testing */
+    const NSPAWN_CLIENT_PATH: &str = "target/x86_64-unknown-linux-musl/release/nspawn-client";
+
     fn wait_for_startup(listen: UnixListener, proc: &mut Child) -> RaptorResult<UnixStream> {
         let (tx, rx) = mpsc::channel();
 
@@ -119,10 +122,7 @@ impl Sandbox {
         let int_socket_path = int_root.join("raptor");
         let int_client_path = int_root.join("nspawn-client");
 
-        std::fs::copy(
-            "target/x86_64-unknown-linux-musl/release/nspawn-client",
-            ext_client_path,
-        )?;
+        std::fs::copy(Self::NSPAWN_CLIENT_PATH, ext_client_path)?;
 
         let listen = UnixListener::bind(ext_socket_path)?;
 
