@@ -11,7 +11,7 @@ use nix::errno::Errno;
 use nix::sys::stat::{umask, Mode};
 use nix::unistd::{fchown, Gid, Group, Uid, User};
 
-use log::{error, info, trace};
+use log::{debug, error, trace};
 
 use raptor::client::{
     Account, FramedRead, FramedWrite, Request, RequestChangeDir, RequestCloseFd, RequestCreateFile,
@@ -21,7 +21,7 @@ use raptor::util::umask_proc::Umask;
 use raptor::{RaptorError, RaptorResult};
 
 fn request_run(req: &RequestRun) -> RaptorResult<i32> {
-    info!("Exec {} {:?}", req.arg0, &req.argv);
+    debug!("Exec {} {:?}", req.arg0, &req.argv);
     Ok(Command::new(&req.argv[0])
         .arg0(&req.argv[0])
         .args(&req.argv[1..])
@@ -31,14 +31,14 @@ fn request_run(req: &RequestRun) -> RaptorResult<i32> {
 }
 
 fn request_changedir(req: &RequestChangeDir) -> RaptorResult<i32> {
-    info!("Chdir {:?}", req.cd);
+    debug!("Chdir {:?}", req.cd);
     std::env::set_current_dir(&req.cd)
         .map_err(|err| Errno::from_raw(err.raw_os_error().unwrap()))?;
     Ok(0)
 }
 
 fn request_setenv(req: &RequestSetEnv) {
-    info!("Setenv {:?}={:?}", &req.key, &req.value);
+    debug!("Setenv {:?}={:?}", &req.key, &req.value);
     std::env::set_var(&req.key, &req.value);
 }
 
