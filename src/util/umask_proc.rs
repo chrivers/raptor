@@ -32,7 +32,7 @@ mod tests {
         Command::new("/bin/sh")
             .arg("-c")
             .umask(Mode::from_bits_truncate(mask))
-            .arg(&format!("[ $(umask) = {mask:03o} ]"))
+            .arg(format!("[ $(umask) = {mask:03o} ]"))
             .status()?;
 
         Ok(())
