@@ -3,6 +3,7 @@ use std::{collections::BTreeMap, process::Command};
 use camino::Utf8Path;
 use serde::{Deserialize, Serialize};
 use serde_variant::to_variant_name;
+use uuid::Uuid;
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -33,6 +34,7 @@ pub struct SpawnBuilder<'a> {
     sudo: bool,
     quiet: bool,
     args: Vec<&'a str>,
+    uuid: Option<Uuid>,
     settings: Option<Settings>,
     console: Option<ConsoleMode>,
     directory: Option<&'a Utf8Path>,
@@ -63,6 +65,12 @@ impl<'a> SpawnBuilder<'a> {
     #[must_use]
     pub const fn quiet(mut self, quiet: bool) -> Self {
         self.quiet = quiet;
+        self
+    }
+
+    #[must_use]
+    pub const fn uuid(mut self, uuid: Uuid) -> Self {
+        self.uuid = Some(uuid);
         self
     }
 
@@ -164,6 +172,13 @@ impl SpawnBuilder<'_> {
             res.push("--bind-ro".into());
             res.push(format!("{}:{}", escape_colon(src), escape_colon(dst)));
         }
+
+        let uuid = &self.uuid.unwrap_or_else(Uuid::new_v4);
+        res.push("--machine".into());
+        res.push(format!("raptor-{uuid}"));
+
+        res.push("--uuid".into());
+        res.push(format!("{uuid}"));
 
         if let Some(dir) = &self.directory {
             res.push("-D".into());
