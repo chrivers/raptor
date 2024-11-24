@@ -8,8 +8,8 @@ use nix::errno::Errno;
 use tempfile::{Builder, TempDir};
 
 use crate::client::{
-    Account, FramedRead, FramedWrite, Request, RequestCloseFd, RequestCreateFile, RequestRun,
-    RequestWriteFd, Response,
+    Account, FramedRead, FramedWrite, Request, RequestChangeDir, RequestCloseFd, RequestCreateFile,
+    RequestRun, RequestSetEnv, RequestWriteFd, Response,
 };
 use crate::dsl::Chown;
 use crate::sandbox::{ConsoleMode, Settings, SpawnBuilder};
@@ -142,6 +142,21 @@ impl Sandbox {
         mode: Option<u32>,
     ) -> RaptorResult<SandboxFile> {
         SandboxFile::new(self, path, owner, mode)
+    }
+
+    pub fn chdir(&mut self, dir: &str) -> RaptorResult<()> {
+        self.rpc(&Request::ChangeDir(RequestChangeDir {
+            cd: dir.to_string(),
+        }))?;
+        Ok(())
+    }
+
+    pub fn setenv(&mut self, key: &str, value: &str) -> RaptorResult<()> {
+        self.rpc(&Request::SetEnv(RequestSetEnv {
+            key: key.to_string(),
+            value: value.to_string(),
+        }))?;
+        Ok(())
     }
 
     pub fn close(&mut self) -> RaptorResult<()> {
