@@ -19,6 +19,15 @@ impl Program {
     }
 }
 
+impl IntoIterator for Program {
+    type Item = Statement;
+    type IntoIter = <Vec<Statement> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.code.into_iter()
+    }
+}
+
 impl<'a> IntoIterator for &'a Program {
     type Item = &'a Statement;
     type IntoIter = <&'a Vec<Statement> as IntoIterator>::IntoIter;
