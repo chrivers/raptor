@@ -169,3 +169,41 @@ fn nspawn_write_chown() -> RaptorResult<()> {
     sbx.close()?;
     Ok(())
 }
+
+#[test]
+fn nspawn_write_chmod() -> RaptorResult<()> {
+    let mut sbx = spawn_sandbox("write_chmod")?;
+
+    let mut test_chmod = |mode: u32| -> RaptorResult<()> {
+        const DATA: &[u8] = b"Hello world\n";
+        sbx.write_file("/a", None, Some(mode), DATA)?;
+        sbx.shell(&[&format!(
+            "[ $(stat -c '%04a' /a) = {mode:04o} ] || {{ stat /a; stat -c '%04a' /a; exit 1; }}"
+        )])?;
+        sbx.shell(&[&format!(
+            "[ $(stat -c '%s' /a) -eq {} ] || {{ stat /a; exit 1; }}; rm -f /a",
+            DATA.len()
+        )])?;
+        Ok(())
+    };
+
+    test_chmod(0o0000)?; // ---------
+    test_chmod(0o0777)?; // rwxrwxrwx
+    test_chmod(0o0700)?; // rwx------
+    test_chmod(0o0070)?; // ---rwx---
+    test_chmod(0o0007)?; // ------rwx
+    test_chmod(0o0750)?; // rwxr-x---
+    test_chmod(0o0755)?; // rwxr-xr-x
+    test_chmod(0o0775)?; // rwxrwxr-x
+
+    test_chmod(0o1777)?; // rwxrwxrwt
+    test_chmod(0o2777)?; // rwxrwsrwt
+    test_chmod(0o4777)?; // rwsrwxrwx
+
+    test_chmod(0o1000)?; // --------T
+    test_chmod(0o2000)?; // -----S---
+    test_chmod(0o4000)?; // --S------
+
+    sbx.close()?;
+    Ok(())
+}
