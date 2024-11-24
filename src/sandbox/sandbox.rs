@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::io::{Error, ErrorKind, Write};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::os::unix::process::ExitStatusExt;
 use std::process::{Child, ExitStatus};
@@ -59,7 +59,7 @@ impl Write for SandboxFile<'_> {
         })) {
             Ok(_) => Ok(buf.len()),
             Err(RaptorError::IoError(err)) => Err(err),
-            Err(err) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, err)),
+            Err(err) => Err(Error::new(ErrorKind::BrokenPipe, err)),
         }
     }
 
