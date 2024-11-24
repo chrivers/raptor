@@ -12,11 +12,18 @@ fn spawn_sandbox(name: &str) -> RaptorResult<Sandbox> {
     )
 }
 
-trait ShellRun {
+trait SandboxExt {
     fn shell(&mut self, cmd: &[&str]) -> RaptorResult<()>;
+    fn write_file(
+        &mut self,
+        path: impl AsRef<Utf8Path>,
+        owner: Option<Chown>,
+        mode: Option<u32>,
+        data: impl AsRef<[u8]>,
+    ) -> RaptorResult<()>;
 }
 
-impl ShellRun for Sandbox {
+impl SandboxExt for Sandbox {
     fn shell(&mut self, cmd: &[&str]) -> RaptorResult<()> {
         let mut args = vec!["/bin/sh", "-c"];
         args.extend(cmd);
@@ -26,6 +33,19 @@ impl ShellRun for Sandbox {
                 .map(ToString::to_string)
                 .collect::<Vec<_>>(),
         )
+    }
+
+    fn write_file(
+        &mut self,
+        path: impl AsRef<Utf8Path>,
+        owner: Option<Chown>,
+        mode: Option<u32>,
+        data: impl AsRef<[u8]>,
+    ) -> RaptorResult<()> {
+        let mut fd = self.create_file_handle(path.as_ref(), owner, mode)?;
+        fd.write_all(data.as_ref())?;
+        drop(fd);
+        Ok(())
     }
 }
 
