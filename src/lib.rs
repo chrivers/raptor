@@ -9,7 +9,9 @@ pub mod sandbox;
 pub mod template;
 pub mod util;
 
+use std::os::unix::net::UnixStream;
 use std::process::ExitStatus;
+use std::sync::mpsc::{self, SendError};
 
 use nix::errno::Errno;
 
@@ -34,6 +36,12 @@ pub enum RaptorError {
 
     #[error(transparent)]
     Errno(#[from] nix::Error),
+
+    #[error(transparent)]
+    MpscTimeout(#[from] mpsc::RecvTimeoutError),
+
+    #[error(transparent)]
+    SendError(#[from] SendError<UnixStream>),
 
     #[error("Path is not valid utf-8: {0}")]
     BadPath(std::path::PathBuf),

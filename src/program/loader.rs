@@ -138,6 +138,8 @@ impl<'source> Loader<'source> {
             RaptorError::UndefinedVarError(_, _) => "Undefined variable",
             RaptorError::SandboxRequestError(_) => "Sandbox request error",
             RaptorError::SandboxRunError(_) => "Sandbox run error",
+            RaptorError::MpscTimeout(_) => "Channel error",
+            RaptorError::SendError(_) => "Send error",
         };
 
         show_error_context(
