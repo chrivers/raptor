@@ -73,10 +73,14 @@ impl Executor {
 
             Instruction::Env(inst) => {
                 debug!("{:?}", inst);
+                for env in &inst.env {
+                    self.sandbox.setenv(&env.key, &env.value)?;
+                }
             }
 
             Instruction::Workdir(inst) => {
                 debug!("{:?}", inst);
+                self.sandbox.chdir(&inst.dir)?;
             }
 
             Instruction::Include(_) => unreachable!(),
