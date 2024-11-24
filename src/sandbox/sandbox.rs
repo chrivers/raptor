@@ -274,6 +274,16 @@ impl Sandbox {
         }
         Ok(())
     }
+
+    #[must_use]
+    pub fn get_mount_dir(&self) -> Option<&Utf8Path> {
+        self.mount.as_deref()
+    }
+
+    #[must_use]
+    pub fn get_temp_dir(&self) -> Option<&Utf8Path> {
+        self.tempdir.as_ref().map(Utf8TempDir::path)
+    }
 }
 
 impl Drop for Sandbox {
