@@ -1,0 +1,3 @@
+# line 1
+INCLUDE test/error-missing-include.rapt
+# line 3

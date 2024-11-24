@@ -1,0 +1,6 @@
+# line 1
+FLORG --foo "bar"
+$ for x in [1,2,3,4,5]
+RUN ls -l
+$ endfor
+# line 4

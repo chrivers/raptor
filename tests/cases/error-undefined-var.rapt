@@ -1,0 +1,5 @@
+# line 1
+$ for x in missing
+RUN echo {{x}}
+$ endfor
+# line 3
