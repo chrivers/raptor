@@ -41,6 +41,16 @@ fn nspawn_basic() -> RaptorResult<()> {
 }
 
 #[test]
+fn nspawn_drop() -> RaptorResult<()> {
+    let sbx = spawn_sandbox("drop")?;
+    let mount_path = sbx.get_mount_dir().unwrap().to_owned();
+    assert!(mount_path.exists());
+    drop(sbx);
+    assert!(!mount_path.exists());
+    Ok(())
+}
+
+#[test]
 fn nspawn_exit_status() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("exit_status")?;
 
