@@ -48,8 +48,10 @@ fn uid_from_account(acct: &Account) -> RaptorResult<Uid> {
         Account::Name(name) => {
             let res = User::from_name(name)?;
             if let Some(user) = res {
+                debug!("resolved unix user {name:?} to {user:?}");
                 Ok(user.uid)
             } else {
+                error!("could not resolve unix user {name:?}");
                 Err(RaptorError::IoError(Error::new(
                     ErrorKind::NotFound,
                     "User not found",
@@ -65,8 +67,10 @@ fn gid_from_account(acct: &Account) -> RaptorResult<Gid> {
         Account::Name(name) => {
             let res = Group::from_name(name)?;
             if let Some(group) = res {
+                debug!("resolved unix group {name:?} to {group:?}");
                 Ok(group.gid)
             } else {
+                error!("could not resolve unix group {name:?}");
                 Err(RaptorError::IoError(Error::new(
                     ErrorKind::NotFound,
                     "User not found",
