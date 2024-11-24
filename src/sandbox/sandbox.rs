@@ -15,6 +15,7 @@ use crate::dsl::Chown;
 use crate::sandbox::{ConsoleMode, Settings, SpawnBuilder};
 use crate::{RaptorError, RaptorResult};
 
+#[derive(Debug)]
 pub struct Sandbox {
     proc: Child,
     conn: UnixStream,
@@ -23,6 +24,7 @@ pub struct Sandbox {
     top_layer: Utf8PathBuf,
 }
 
+#[derive(Debug)]
 pub struct SandboxFile<'sb> {
     sandbox: &'sb mut Sandbox,
     fd: i32,
