@@ -32,7 +32,11 @@ impl ShellRun for Sandbox {
 #[test]
 fn test_nspawn_basic() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("basic")?;
+    assert_ne!(sbx.get_mount_dir(), None);
+    assert_ne!(sbx.get_temp_dir(), None);
     sbx.close()?;
+    assert_eq!(sbx.get_mount_dir(), None);
+    assert_eq!(sbx.get_temp_dir(), None);
     Ok(())
 }
 
