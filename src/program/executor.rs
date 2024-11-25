@@ -1,5 +1,4 @@
 use std::fs::File;
-use std::io::Write;
 use std::process::Command;
 
 use camino::Utf8PathBuf;
@@ -8,7 +7,7 @@ use minijinja::Value;
 
 use crate::dsl::{Instruction, Item, ResolveArgs, Statement};
 use crate::program::{Loader, Program};
-use crate::sandbox::Sandbox;
+use crate::sandbox::{Sandbox, SandboxExt};
 use crate::util::io_fast_copy;
 use crate::{template, RaptorResult};
 
@@ -60,21 +59,21 @@ impl Executor {
                     .and_then(|tmpl| tmpl.render(Value::from(map)))
                     .map(|src| src + "\n")?;
 
-                let mut fd = self.sandbox.create_file(
-                    &Utf8PathBuf::from(&inst.dest),
+                self.sandbox.write_file(
+                    &inst.dest,
                     inst.chown.clone(),
                     inst.chmod,
+                    source.as_bytes(),
                 )?;
-                fd.write_all(source.as_bytes())?;
             }
             Instruction::Write(inst) => {
                 info!("{:?}", inst);
-                let mut fd = self.sandbox.create_file(
-                    &Utf8PathBuf::from(&inst.dest),
+                self.sandbox.write_file(
+                    &inst.dest,
                     inst.chown.clone(),
                     inst.chmod,
+                    inst.body.as_bytes(),
                 )?;
-                fd.write_all(inst.body.as_bytes())?;
             }
             Instruction::Run(inst) => {
                 debug!("{:?}", inst);
