@@ -107,21 +107,7 @@ impl<'source> Loader<'source> {
     pub fn explain_exec_error(&self, stmt: &Statement, err: &RaptorError) -> RaptorResult<()> {
         let origin = &stmt.origin;
 
-        let prefix = match err {
-            RaptorError::IoError(_) => "IO Error",
-            RaptorError::MinijinjaError(_) => "Template error",
-            RaptorError::PestError(_) => "Parser error",
-            RaptorError::BincodeError(_) => "Encoding error",
-            RaptorError::VarError(_) => "Environment error",
-            RaptorError::Errno(_) => "Errno",
-            RaptorError::BadPath(_) => "Path encoding error",
-            RaptorError::ScriptError(_, _) => "Script error",
-            RaptorError::UndefinedVarError(_, _) => "Undefined variable",
-            RaptorError::SandboxRequestError(_) => "Sandbox request error",
-            RaptorError::SandboxRunError(_) => "Sandbox run error",
-            RaptorError::MpscTimeout(_) => "Channel error",
-            RaptorError::SendError(_) => "Send error",
-        };
+        let prefix = err.category();
 
         show_error_context(
             &self.sources[origin.path.as_str()],

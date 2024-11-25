@@ -71,4 +71,25 @@ impl From<std::path::PathBuf> for RaptorError {
     }
 }
 
+impl RaptorError {
+    #[must_use]
+    pub const fn category(&self) -> &'static str {
+        match self {
+            Self::IoError(_) => "IO Error",
+            Self::MinijinjaError(_) => "Template error",
+            Self::PestError(_) => "Parser error",
+            Self::BincodeError(_) => "Encoding error",
+            Self::VarError(_) => "Environment error",
+            Self::Errno(_) => "Errno",
+            Self::BadPath(_) => "Path encoding error",
+            Self::ScriptError(_, _) => "Script error",
+            Self::UndefinedVarError(_, _) => "Undefined variable",
+            Self::SandboxRequestError(_) => "Sandbox request error",
+            Self::SandboxRunError(_) => "Sandbox run error",
+            Self::MpscTimeout(_) => "Channel error",
+            Self::SendError(_) => "Send error",
+        }
+    }
+}
+
 pub type RaptorResult<T> = Result<T, RaptorError>;
