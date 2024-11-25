@@ -3,9 +3,7 @@ use std::os::unix::fs::MetadataExt;
 use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::context;
 
-use raptor::dsl::{
-    Chown, IncludeArg, IncludeArgValue, InstEnvAssign, Instruction, Item, Origin, Program,
-};
+use raptor::dsl::{Chown, IncludeArg, InstEnvAssign, Instruction, Item, Origin, Program};
 use raptor::program::Loader;
 use raptor::RaptorResult;
 
@@ -91,7 +89,7 @@ fn parse_render02() -> RaptorResult<()> {
             "/a",
             None,
             None,
-            [IncludeArg::make("what", IncludeArgValue::value("world"))],
+            [IncludeArg::value("what", "world")],
         ),
     )
 }
@@ -109,9 +107,10 @@ fn parse_render03() -> RaptorResult<()> {
                     "/a",
                     None,
                     None,
-                    [IncludeArg::make(
+                    [IncludeArg::lookup(
                         "what",
-                        IncludeArgValue::lookup(&["what"], Origin::make("render03.rinc", 39..43)),
+                        &["what"],
+                        Origin::make("render03.rinc", 39..43),
                     )],
                 ),
                 Origin::make("render03.rinc", 0..44)
@@ -145,18 +144,19 @@ fn parse_include01() -> RaptorResult<()> {
 fn parse_include02() -> RaptorResult<()> {
     let program = load_file("include02.rapt")?;
 
-    let origin = Origin::make("write01.rapt", 0..17);
-
-    let inst = Instruction::write("/foo", "bar", None, None);
-
-    let ctx = context! {};
-
-    let inst = vec![Item::statement(inst, origin)];
-    let code = vec![Item::program(inst, ctx)];
-
-    let ctx = context! {};
-
-    assert_eq!(&program.code, &[Item::program(code, ctx)]);
+    assert_eq!(
+        &program.code,
+        &[Item::program(
+            [Item::program(
+                [Item::statement(
+                    Instruction::write("/foo", "bar", None, None),
+                    Origin::make("write01.rapt", 0..17)
+                )],
+                context! {}
+            )],
+            context! {}
+        )]
+    );
 
     Ok(())
 }
@@ -165,15 +165,16 @@ fn parse_include02() -> RaptorResult<()> {
 fn parse_include03() -> RaptorResult<()> {
     let program = load_file("include03.rapt")?;
 
-    let origin = Origin::make("include/run01.rinc", 0..7);
-
-    let inst = Instruction::run(&["id"]);
-
-    let code = vec![Item::statement(inst, origin)];
-
-    let ctx = context! {};
-
-    assert_eq!(&program.code, &[Item::program(code, ctx)]);
+    assert_eq!(
+        &program.code,
+        &[Item::program(
+            [Item::statement(
+                Instruction::run(&["id"]),
+                Origin::make("include/run01.rinc", 0..7)
+            )],
+            context! {}
+        )]
+    );
 
     Ok(())
 }

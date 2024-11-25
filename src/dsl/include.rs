@@ -32,21 +32,6 @@ pub enum IncludeArgValue {
     Value(Value),
 }
 
-impl IncludeArgValue {
-    #[must_use]
-    pub fn lookup(path: &[impl ToString], origin: Origin) -> Self {
-        Self::Lookup(Lookup {
-            path: path.iter().map(ToString::to_string).collect(),
-            origin,
-        })
-    }
-
-    #[must_use]
-    pub fn value(value: impl Serialize) -> Self {
-        Self::Value(Value::from_serialize(value))
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IncludeArg {
     pub name: String,
@@ -58,6 +43,23 @@ impl IncludeArg {
         Self {
             name: name.as_ref().to_string(),
             value,
+        }
+    }
+
+    pub fn lookup(name: impl AsRef<str>, path: &[impl ToString], origin: Origin) -> Self {
+        Self {
+            name: name.as_ref().to_string(),
+            value: IncludeArgValue::Lookup(Lookup {
+                path: path.iter().map(ToString::to_string).collect(),
+                origin,
+            }),
+        }
+    }
+
+    pub fn value(name: impl AsRef<str>, value: impl Serialize) -> Self {
+        Self {
+            name: name.as_ref().to_string(),
+            value: IncludeArgValue::Value(Value::from_serialize(value)),
         }
     }
 }
