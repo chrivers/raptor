@@ -151,12 +151,12 @@ impl Sandbox {
             .resolv_conf(ResolvConf::Off)
             .timezone(Timezone::Off)
             .settings(Settings::False)
-            .setenv("RAPTOR_NSPAWN_SOCKET", int_socket_path.as_str())
+            .console(ConsoleMode::ReadOnly)
             .root_overlays(layers)
             .root_overlay(rootdir)
             .bind_ro(ext_root, &int_root)
-            .console(ConsoleMode::ReadOnly)
             .directory(tempdir.path())
+            .setenv("RAPTOR_NSPAWN_SOCKET", int_socket_path.as_str())
             .arg(int_client_path.as_str());
 
         debug!("Starting sandbox: {:?}", spawn.build().join(" "));
