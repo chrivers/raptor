@@ -53,34 +53,47 @@ impl Instruction {
         })
     }
 
-    pub fn write(
-        dest: impl AsRef<str>,
-        body: impl AsRef<str>,
-        chmod: Option<u32>,
-        chown: Option<Chown>,
-    ) -> Self {
+    pub fn write(dest: impl AsRef<str>, body: impl AsRef<str>) -> Self {
         Self::Write(InstWrite {
             dest: dest.as_ref().to_string(),
             body: body.as_ref().to_string(),
-            chmod,
-            chown,
+            chmod: None,
+            chown: None,
         })
     }
 
     pub fn render(
         src: impl AsRef<str>,
         dest: impl AsRef<str>,
-        chmod: Option<u32>,
-        chown: Option<Chown>,
         args: impl IntoIterator<Item = IncludeArg>,
     ) -> Self {
         Self::Render(InstRender {
             src: src.as_ref().to_string(),
             dest: dest.as_ref().to_string(),
             args: args.into_iter().collect(),
-            chmod,
-            chown,
+            chmod: None,
+            chown: None,
         })
+    }
+
+    #[must_use]
+    pub fn chmod(self, chmod: Option<u32>) -> Self {
+        match self {
+            Self::Copy(inst) => Self::Copy(InstCopy { chmod, ..inst }),
+            Self::Write(inst) => Self::Write(InstWrite { chmod, ..inst }),
+            Self::Render(inst) => Self::Render(InstRender { chmod, ..inst }),
+            _ => self,
+        }
+    }
+
+    #[must_use]
+    pub fn chown(self, chown: Option<Chown>) -> Self {
+        match self {
+            Self::Copy(inst) => Self::Copy(InstCopy { chown, ..inst }),
+            Self::Write(inst) => Self::Write(InstWrite { chown, ..inst }),
+            Self::Render(inst) => Self::Render(InstRender { chown, ..inst }),
+            _ => self,
+        }
     }
 }
 

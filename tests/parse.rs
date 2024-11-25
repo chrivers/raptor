@@ -34,17 +34,14 @@ fn test_single_inst_parse(filename: &str, inst: Instruction) -> RaptorResult<()>
 
 #[test]
 fn parse_write01() -> RaptorResult<()> {
-    test_single_inst_parse(
-        "write01.rapt",
-        Instruction::write("/foo", "bar", None, None),
-    )
+    test_single_inst_parse("write01.rapt", Instruction::write("/foo", "bar"))
 }
 
 #[test]
 fn parse_write02() -> RaptorResult<()> {
     test_single_inst_parse(
         "write02.rapt",
-        Instruction::write("/foo", "bar", None, Some(Chown::new("user", "group"))),
+        Instruction::write("/foo", "bar").chown(Some(Chown::new("user", "group"))),
     )
 }
 
@@ -76,7 +73,7 @@ fn parse_workdir01() -> RaptorResult<()> {
 fn parse_render01() -> RaptorResult<()> {
     test_single_inst_parse(
         "render01.rapt",
-        Instruction::render("include/template01.tmpl", "/a", None, None, []),
+        Instruction::render("include/template01.tmpl", "/a", []),
     )
 }
 
@@ -87,8 +84,6 @@ fn parse_render02() -> RaptorResult<()> {
         Instruction::render(
             "include/template02.tmpl",
             "/a",
-            None,
-            None,
             [IncludeArg::value("what", "world")],
         ),
     )
@@ -105,8 +100,6 @@ fn parse_render03() -> RaptorResult<()> {
                 Instruction::render(
                     "include/template02.tmpl",
                     "/a",
-                    None,
-                    None,
                     [IncludeArg::lookup(
                         "what",
                         &["what"],
@@ -130,7 +123,7 @@ fn parse_include01() -> RaptorResult<()> {
         &program.code,
         &[Item::program(
             vec![Item::statement(
-                Instruction::write("/foo", "bar", None, None),
+                Instruction::write("/foo", "bar"),
                 Origin::make("write01.rapt", 0..17)
             )],
             context! {}
@@ -149,7 +142,7 @@ fn parse_include02() -> RaptorResult<()> {
         &[Item::program(
             [Item::program(
                 [Item::statement(
-                    Instruction::write("/foo", "bar", None, None),
+                    Instruction::write("/foo", "bar"),
                     Origin::make("write01.rapt", 0..17)
                 )],
                 context! {}
