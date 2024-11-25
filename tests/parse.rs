@@ -164,3 +164,69 @@ fn parse_render03() -> RaptorResult<()> {
 
     Ok(())
 }
+
+#[test]
+fn parse_include01() -> RaptorResult<()> {
+    let program = load_file("include01.rapt")?;
+
+    let origin = Origin::make("write01.rapt", 0..17);
+
+    let inst = Instruction::Write(InstWrite {
+        dest: "/foo".into(),
+        body: "bar".into(),
+        chmod: None,
+        chown: None,
+    });
+
+    let code = vec![Item::statement(inst, origin)];
+
+    let ctx = context! {};
+
+    assert_eq!(&program.code, &[Item::program(code, ctx)]);
+
+    Ok(())
+}
+
+#[test]
+fn parse_include02() -> RaptorResult<()> {
+    let program = load_file("include02.rapt")?;
+
+    let origin = Origin::make("write01.rapt", 0..17);
+
+    let inst = Instruction::Write(InstWrite {
+        dest: "/foo".into(),
+        body: "bar".into(),
+        chmod: None,
+        chown: None,
+    });
+
+    let ctx = context! {};
+
+    let inst = vec![Item::statement(inst, origin)];
+    let code = vec![Item::program(inst, ctx)];
+
+    let ctx = context! {};
+
+    assert_eq!(&program.code, &[Item::program(code, ctx)]);
+
+    Ok(())
+}
+
+#[test]
+fn parse_include03() -> RaptorResult<()> {
+    let program = load_file("include03.rapt")?;
+
+    let origin = Origin::make("include/run01.rinc", 0..7);
+
+    let inst = Instruction::Run(InstRun {
+        run: vec!["id".into()],
+    });
+
+    let code = vec![Item::statement(inst, origin)];
+
+    let ctx = context! {};
+
+    assert_eq!(&program.code, &[Item::program(code, ctx)]);
+
+    Ok(())
+}
