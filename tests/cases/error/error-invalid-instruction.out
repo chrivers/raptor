@@ -1,0 +1,12 @@
+error: parsing error: expected FILE
+ --> error-invalid-instruction.rapt:1:1
+  |
+1 | FLORG --foo "bar"
+  | ^^^^^^^^^^^^^^^^^ expected FILE
+2 | RUN ls -l
+3 | RUN ls -l
+4 | RUN ls -l
+5 | RUN ls -l
+6 | RUN ls -l
+7 | 
+  |

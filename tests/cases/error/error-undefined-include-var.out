@@ -1,0 +1,7 @@
+error: Script Error
+ --> error-undefined-include-var.rapt:1:24
+  |
+1 | INCLUDE dummy.rapt foo=bar
+  |                        ^^^ bar
+2 | 
+  |

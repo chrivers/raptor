@@ -1,0 +1,14 @@
+error: Error while evaluating INCLUDE
+ --> error-missing-include-level-2.rapt:1:1
+  |
+1 | INCLUDE error-missing-include.rapt
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
+2 | 
+  |
+error: Error while evaluating INCLUDE
+ --> error-missing-include.rapt:1:1
+  |
+1 | INCLUDE missing-file
+  | ^^^^^^^^^^^^^^^^^^^^ Could not open [tests/cases/error/missing-file]: No such file or directory (os error 2)
+2 | 
+  |
