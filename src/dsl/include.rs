@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 
 use minijinja::Value;
 
 use crate::dsl::Origin;
+use crate::{RaptorError, RaptorResult};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Lookup {
@@ -39,6 +41,34 @@ pub struct IncludeArg {
 pub struct InstInclude {
     pub src: String,
     pub args: Vec<IncludeArg>,
+}
+
+impl IncludeArgValue {
+    pub fn resolve(self, ctx: &Value) -> RaptorResult<Value> {
+        match self {
+            Self::Lookup(lookup) => {
+                let name = &lookup.path[0];
+                let val = ctx.get_attr(name)?;
+                if val.is_undefined() {
+                    return Err(RaptorError::UndefinedVarError(name.into(), lookup.origin));
+                }
+                Ok(val)
+            }
+            Self::Value(val) => Ok(val),
+        }
+    }
+}
+
+pub trait ResolveArgs {
+    fn resolve_args(self, ctx: &Value) -> RaptorResult<HashMap<String, Value>>;
+}
+
+impl ResolveArgs for Vec<IncludeArg> {
+    fn resolve_args(self, ctx: &Value) -> RaptorResult<HashMap<String, Value>> {
+        self.into_iter()
+            .map(|IncludeArg { name, value }| Ok((name, value.resolve(ctx)?)))
+            .collect()
+    }
 }
 
 impl Display for IncludeArg {
