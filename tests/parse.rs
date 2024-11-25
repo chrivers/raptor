@@ -109,3 +109,73 @@ fn test_parse_workdir01() -> RaptorResult<()> {
         Instruction::Workdir(InstWorkdir { dir: "/foo".into() }),
     )
 }
+
+#[test]
+fn test_parse_render01() -> RaptorResult<()> {
+    test_single_inst_parse(
+        "render01.rapt",
+        Instruction::Render(InstRender {
+            src: "include/template01.tmpl".into(),
+            dest: "/a".into(),
+            chmod: None,
+            chown: None,
+            args: vec![],
+        }),
+    )
+}
+
+#[test]
+fn test_parse_render02() -> RaptorResult<()> {
+    test_single_inst_parse(
+        "render02.rapt",
+        Instruction::Render(InstRender {
+            src: "include/template02.tmpl".into(),
+            dest: "/a".into(),
+            chmod: None,
+            chown: None,
+            args: vec![IncludeArg {
+                name: "what".into(),
+                value: IncludeArgValue::Value(Value::from("world")),
+            }],
+        }),
+    )
+}
+
+#[test]
+fn test_parse_render03() -> RaptorResult<()> {
+    std::env::set_current_dir("tests/cases")?;
+
+    let path = test_path("render03.rapt");
+    let program = load_file(&path)?;
+
+    let name = "what".into();
+
+    let value = IncludeArgValue::Lookup(Lookup::new(
+        vec!["what".into()],
+        Origin {
+            path: Arc::new("render03.rinc".into()),
+            span: 39..43,
+        },
+    ));
+
+    let inst = Instruction::Render(InstRender {
+        src: "include/template02.tmpl".into(),
+        dest: "/a".into(),
+        chmod: None,
+        chown: None,
+        args: vec![IncludeArg { name, value }],
+    });
+
+    let origin = Origin {
+        path: Arc::new("render03.rinc".into()),
+        span: 0..44,
+    };
+
+    let code = vec![Item::Statement(Statement { inst, origin })];
+
+    let ctx = context! { what => "world" };
+
+    assert_eq!(&program.code, &[Item::Program(Program { code, ctx })]);
+
+    Ok(())
+}
