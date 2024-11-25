@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 
 use crate::dsl::{
-    InstCopy, InstEnv, InstFrom, InstInclude, InstInvoke, InstRender, InstRun, InstWorkdir,
-    InstWrite,
+    Chown, IncludeArg, InstCopy, InstEnv, InstEnvAssign, InstFrom, InstInclude, InstInvoke,
+    InstRender, InstRun, InstWorkdir, InstWrite,
 };
 
 #[derive(Clone, PartialEq, Eq)]
@@ -32,6 +32,53 @@ impl Instruction {
             Self::Env(_) => "ENV",
             Self::Workdir(_) => "WORKDIR",
         }
+    }
+
+    pub fn workdir(dir: impl AsRef<str>) -> Self {
+        Self::Workdir(InstWorkdir {
+            dir: dir.as_ref().to_string(),
+        })
+    }
+
+    #[must_use]
+    pub const fn env(env: Vec<InstEnvAssign>) -> Self {
+        Self::Env(InstEnv { env })
+    }
+
+    pub fn run(run: &[impl AsRef<str>]) -> Self {
+        Self::Run(InstRun {
+            run: run.iter().map(|s| s.as_ref().to_string()).collect(),
+        })
+    }
+
+    pub fn write(
+        dest: impl AsRef<str>,
+        body: impl AsRef<str>,
+        chmod: Option<u32>,
+        chown: Option<Chown>,
+    ) -> Self {
+        Self::Write(InstWrite {
+            dest: dest.as_ref().to_string(),
+            body: body.as_ref().to_string(),
+            chmod,
+            chown,
+        })
+    }
+
+    pub fn render(
+        src: impl AsRef<str>,
+        dest: impl AsRef<str>,
+        chmod: Option<u32>,
+        chown: Option<Chown>,
+        args: Vec<IncludeArg>,
+    ) -> Self {
+        Self::Render(InstRender {
+            src: src.as_ref().to_string(),
+            dest: dest.as_ref().to_string(),
+            args,
+            chmod,
+            chown,
+        })
     }
 }
 
