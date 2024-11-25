@@ -14,7 +14,7 @@ use raptor::RaptorResult;
 
 fn test_path(filename: &str) -> Utf8PathBuf {
     Utf8Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/cases")
+        .join("tests/cases/inst")
         .join(filename)
 }
 
@@ -143,7 +143,7 @@ fn parse_render02() -> RaptorResult<()> {
 
 #[test]
 fn parse_render03() -> RaptorResult<()> {
-    std::env::set_current_dir("tests/cases")?;
+    std::env::set_current_dir("tests/cases/inst")?;
 
     let path = test_path("render03.rapt");
     let program = load_file(&path)?;
