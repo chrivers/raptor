@@ -93,8 +93,8 @@ fn nspawn_write_data() -> RaptorResult<()> {
 }
 
 #[test]
-fn nspawn_write_chown() -> RaptorResult<()> {
-    let mut sbx = spawn_sandbox("write_chown")?;
+fn nspawn_write_chown_user() -> RaptorResult<()> {
+    let mut sbx = spawn_sandbox("write_chown_user")?;
 
     sbx.write_file(
         "/etc/passwd",
@@ -103,31 +103,14 @@ fn nspawn_write_chown() -> RaptorResult<()> {
         concat!(
             "root:x:0:0:root:/root:/bin/sh\n",
             "user:x:1000:1000:user:/home/user:/bin/sh\n"
-        )
-        .as_bytes(),
+        ),
     )?;
 
-    sbx.write_file(
-        "/tmp/c",
-        Some(Chown {
-            user: Some("root".into()),
-            group: None,
-        }),
-        None,
-        b"Hello world\n",
-    )?;
+    sbx.write_file("/tmp/c", Some(Chown::user("root")), None, b"Hello world\n")?;
 
     sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
 
-    sbx.write_file(
-        "/tmp/c",
-        Some(Chown {
-            user: Some("user".into()),
-            group: None,
-        }),
-        None,
-        b"Hello world\n",
-    )?;
+    sbx.write_file("/tmp/c", Some(Chown::user("user")), None, b"Hello world\n")?;
 
     sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 1000 ]"])?;
 
