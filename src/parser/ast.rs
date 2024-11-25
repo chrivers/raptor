@@ -163,12 +163,13 @@ impl RaptorFileParser {
     fn RENDER(input: Node) -> Result<InstRender> {
         match_nodes!(
             input.into_children();
-            [file_options((chmod, chown)), filename(src), filename(dest)] => {
+            [file_options((chmod, chown)), filename(src), filename(dest), include_args(args)] => {
                 Ok(InstRender {
                     src,
                     dest,
                     chmod,
                     chown,
+                    args
                 })
             },
         )

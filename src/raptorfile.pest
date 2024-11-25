@@ -118,6 +118,7 @@ RENDER = {
     "RENDER"
     ~ file_options
     ~ filename{2}
+    ~ include_args
 }
 
 WRITE = {

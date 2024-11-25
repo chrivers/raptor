@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::dsl::Chown;
+use crate::dsl::{Chown, IncludeArg};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct InstRender {
@@ -8,6 +8,7 @@ pub struct InstRender {
     pub dest: String,
     pub chmod: Option<u32>,
     pub chown: Option<Chown>,
+    pub args: Vec<IncludeArg>,
 }
 
 impl Debug for InstRender {
@@ -19,6 +20,10 @@ impl Debug for InstRender {
         if let Some(chown) = &self.chown {
             write!(f, "--chown {chown} ")?;
         }
-        write!(f, "{:?} {:?}", self.src, self.dest)
+        write!(f, "{:?} {:?}", self.src, self.dest)?;
+        for arg in &self.args {
+            write!(f, " {arg}")?;
+        }
+        Ok(())
     }
 }

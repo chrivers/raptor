@@ -41,6 +41,22 @@ pub struct InstInclude {
     pub args: Vec<IncludeArg>,
 }
 
+impl Display for IncludeArg {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}={}", self.name, self.value)?;
+        Ok(())
+    }
+}
+
+impl Display for IncludeArgValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Lookup(l) => write!(f, "{l}"),
+            Self::Value(v) => write!(f, "{v:?}"),
+        }
+    }
+}
+
 impl Debug for InstInclude {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "INCLUDE {}", self.src)?;
