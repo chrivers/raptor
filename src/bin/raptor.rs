@@ -52,7 +52,7 @@ fn raptor() -> RaptorResult<()> {
         let statements = match loader.parse_template(file.as_str(), &root_context) {
             Ok(res) => res.code,
             Err(err) => {
-                loader.explain_error(err)?;
+                loader.explain_error(&err)?;
                 continue;
             }
         };

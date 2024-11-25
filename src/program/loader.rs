@@ -80,7 +80,7 @@ impl<'source> Loader<'source> {
         }
     }
 
-    pub fn explain_error(&self, err: RaptorError) -> RaptorResult<()> {
+    pub fn explain_error(&self, err: &RaptorError) -> RaptorResult<()> {
         match err {
             RaptorError::ScriptError(desc, origin) => {
                 self.show_include_stack(&self.origins);
@@ -88,7 +88,7 @@ impl<'source> Loader<'source> {
                     &self.sources[origin.path.as_str()],
                     &origin.path,
                     "Script Error",
-                    &desc,
+                    desc,
                     origin.span.clone(),
                 );
             }
@@ -110,11 +110,11 @@ impl<'source> Loader<'source> {
                     }
                 } else {
                     self.show_include_stack(&origins);
-                    show_jinja_error_context(&err)?;
+                    show_jinja_error_context(err)?;
                 }
             }
             RaptorError::PestError(err) => {
-                show_pest_error_context(&self.sources[err.path().unwrap()], &err)?;
+                show_pest_error_context(&self.sources[err.path().unwrap()], err)?;
             }
             err => {
                 error!("Unexpected error: {err}");
