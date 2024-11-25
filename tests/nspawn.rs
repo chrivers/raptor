@@ -153,7 +153,7 @@ fn nspawn_write_chown_group() -> RaptorResult<()> {
 #[test]
 fn nspawn_write_chown_both() -> RaptorResult<()> {
     colog::init();
-    let mut sbx = spawn_sandbox("write_chown_group")?;
+    let mut sbx = spawn_sandbox("write_chown_both")?;
 
     write_etc_passwd(&mut sbx)?;
     write_etc_group(&mut sbx)?;
