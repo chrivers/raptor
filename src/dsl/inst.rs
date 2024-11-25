@@ -41,8 +41,10 @@ impl Instruction {
     }
 
     #[must_use]
-    pub const fn env(env: Vec<InstEnvAssign>) -> Self {
-        Self::Env(InstEnv { env })
+    pub fn env(env: impl IntoIterator<Item = InstEnvAssign>) -> Self {
+        Self::Env(InstEnv {
+            env: env.into_iter().collect(),
+        })
     }
 
     pub fn run(run: &[impl AsRef<str>]) -> Self {
@@ -70,12 +72,12 @@ impl Instruction {
         dest: impl AsRef<str>,
         chmod: Option<u32>,
         chown: Option<Chown>,
-        args: Vec<IncludeArg>,
+        args: impl IntoIterator<Item = IncludeArg>,
     ) -> Self {
         Self::Render(InstRender {
             src: src.as_ref().to_string(),
             dest: dest.as_ref().to_string(),
-            args,
+            args: args.into_iter().collect(),
             chmod,
             chown,
         })

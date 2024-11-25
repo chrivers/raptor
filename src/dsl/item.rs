@@ -12,8 +12,11 @@ pub enum Item {
 
 impl Item {
     #[must_use]
-    pub const fn program(code: Vec<Self>, ctx: Value) -> Self {
-        Self::Program(Program { code, ctx })
+    pub fn program(code: impl IntoIterator<Item = Self>, ctx: Value) -> Self {
+        Self::Program(Program {
+            code: code.into_iter().collect(),
+            ctx,
+        })
     }
 
     #[must_use]

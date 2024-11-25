@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 
 use minijinja::Value;
+use serde::Serialize;
 
 use crate::dsl::Origin;
 use crate::{RaptorError, RaptorResult};
@@ -31,10 +32,34 @@ pub enum IncludeArgValue {
     Value(Value),
 }
 
+impl IncludeArgValue {
+    #[must_use]
+    pub fn lookup(path: &[impl ToString], origin: Origin) -> Self {
+        Self::Lookup(Lookup {
+            path: path.iter().map(ToString::to_string).collect(),
+            origin,
+        })
+    }
+
+    #[must_use]
+    pub fn value(value: impl Serialize) -> Self {
+        Self::Value(Value::from_serialize(value))
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IncludeArg {
     pub name: String,
     pub value: IncludeArgValue,
+}
+
+impl IncludeArg {
+    pub fn make(name: impl AsRef<str>, value: IncludeArgValue) -> Self {
+        Self {
+            name: name.as_ref().to_string(),
+            value,
+        }
+    }
 }
 
 #[derive(Clone, PartialEq, Eq)]
