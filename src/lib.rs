@@ -12,12 +12,10 @@ pub mod util;
 
 use std::os::unix::net::UnixStream;
 use std::process::ExitStatus;
-use std::sync::mpsc::{self, SendError};
+use std::sync::mpsc;
 
-use camino::Utf8PathBuf;
-use nix::errno::Errno;
-
-use crate::{dsl::Origin, parser::Rule};
+use crate::dsl::Origin;
+use crate::parser::Rule;
 
 #[derive(thiserror::Error, Debug)]
 pub enum RaptorError {
@@ -43,13 +41,13 @@ pub enum RaptorError {
     MpscTimeout(#[from] mpsc::RecvTimeoutError),
 
     #[error(transparent)]
-    SendError(#[from] SendError<UnixStream>),
+    SendError(#[from] mpsc::SendError<UnixStream>),
 
     #[error("Path is not valid utf-8: {0}")]
     BadPath(std::path::PathBuf),
 
     #[error("Cannot get parent path from {0:?}")]
-    BadPathNoParent(Utf8PathBuf),
+    BadPathNoParent(camino::Utf8PathBuf),
 
     #[error("Script error: {0} {1:?}")]
     ScriptError(String, Origin),
@@ -58,7 +56,7 @@ pub enum RaptorError {
     UndefinedVarError(String, Origin),
 
     #[error("Sandbox error: {0}")]
-    SandboxRequestError(Errno),
+    SandboxRequestError(nix::errno::Errno),
 
     #[error("process exit status {0}")]
     SandboxRunError(ExitStatus),
