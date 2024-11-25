@@ -3,6 +3,7 @@ mod env;
 mod from;
 mod include;
 mod invoke;
+mod item;
 mod render;
 mod run;
 mod workdir;
@@ -13,6 +14,7 @@ pub use env::*;
 pub use from::*;
 pub use include::*;
 pub use invoke::*;
+pub use item::*;
 pub use render::*;
 pub use run::*;
 pub use workdir::*;
@@ -23,8 +25,6 @@ use camino::{Utf8Path, Utf8PathBuf};
 use std::fmt::{Debug, Display};
 use std::ops::Range;
 use std::sync::Arc;
-
-use crate::program::Program;
 
 #[derive(Clone, Default, PartialEq, Eq)]
 pub struct Chown {
@@ -101,12 +101,6 @@ impl Origin {
 pub struct Statement {
     pub inst: Instruction,
     pub origin: Origin,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Item {
-    Statement(Statement),
-    Program(Program),
 }
 
 impl Instruction {
