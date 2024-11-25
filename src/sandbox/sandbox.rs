@@ -1,5 +1,4 @@
 use std::fs::{File, OpenOptions};
-use std::io::{Error, ErrorKind, Write};
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::os::unix::process::ExitStatusExt;
@@ -13,11 +12,12 @@ use nix::errno::Errno;
 use uuid::Uuid;
 
 use crate::client::{
-    Account, FramedRead, FramedWrite, Request, RequestChangeDir, RequestCloseFd, RequestCreateFile,
-    RequestRun, RequestSetEnv, RequestWriteFd, Response,
+    FramedRead, FramedWrite, Request, RequestChangeDir, RequestRun, RequestSetEnv, Response,
 };
 use crate::dsl::Chown;
-use crate::sandbox::{ConsoleMode, LinkJournal, ResolvConf, Settings, SpawnBuilder, Timezone};
+use crate::sandbox::{
+    ConsoleMode, LinkJournal, ResolvConf, SandboxFile, Settings, SpawnBuilder, Timezone,
+};
 use crate::util::io_fast_copy;
 use crate::{RaptorError, RaptorResult};
 
@@ -27,55 +27,6 @@ pub struct Sandbox {
     conn: UnixStream,
     mount: Option<Utf8PathBuf>,
     tempdir: Option<Utf8TempDir>,
-}
-
-#[derive(Debug)]
-pub struct SandboxFile<'sb> {
-    sandbox: &'sb mut Sandbox,
-    fd: i32,
-}
-
-impl<'sb> SandboxFile<'sb> {
-    pub fn new(
-        sandbox: &'sb mut Sandbox,
-        path: &Utf8Path,
-        owner: Option<Chown>,
-        mode: Option<u32>,
-    ) -> RaptorResult<Self> {
-        let Chown { user, group } = owner.unwrap_or_default();
-        let fd = sandbox.rpc(&Request::CreateFile(RequestCreateFile {
-            path: path.to_owned(),
-            user: user.map(Account::Name),
-            group: group.map(Account::Name),
-            mode,
-        }))?;
-        Ok(Self { sandbox, fd })
-    }
-}
-
-impl Write for SandboxFile<'_> {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        match self.sandbox.rpc(&Request::WriteFd(RequestWriteFd {
-            fd: self.fd,
-            data: buf.to_vec(),
-        })) {
-            Ok(_) => Ok(buf.len()),
-            Err(RaptorError::IoError(err)) => Err(err),
-            Err(err) => Err(Error::new(ErrorKind::BrokenPipe, err)),
-        }
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        Ok(())
-    }
-}
-
-impl Drop for SandboxFile<'_> {
-    fn drop(&mut self) {
-        let _ = self
-            .sandbox
-            .rpc(&Request::CloseFd(RequestCloseFd { fd: self.fd }));
-    }
 }
 
 fn copy_file(from: impl AsRef<Utf8Path>, to: impl AsRef<Utf8Path>) -> RaptorResult<()> {
@@ -229,7 +180,7 @@ impl Sandbox {
         }
     }
 
-    fn rpc(&mut self, req: &Request) -> RaptorResult<i32> {
+    pub fn rpc(&mut self, req: &Request) -> RaptorResult<i32> {
         self.conn.write_framed(req)?;
         self.conn
             .read_framed::<Response>()?
