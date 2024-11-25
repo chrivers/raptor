@@ -1,10 +1,21 @@
-use std::{collections::VecDeque, io::stdin};
+use std::collections::VecDeque;
+use std::fs::File;
+use std::io::{BufRead, BufReader, Write};
+use std::process::Command;
 
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use raptor::RaptorResult;
+use nix::fcntl::OFlag;
+
+use raptor::{util::capture_proc_fd::HookFd, RaptorResult};
 
 fn main() -> RaptorResult<()> {
-    let fd = stdin();
+    let (read, write) = nix::unistd::pipe2(OFlag::O_CLOEXEC)?;
+
+    Command::new("debootstrap")
+        .arg("--debian-installer")
+        .hook_fd(3, write)
+        .args(std::env::args().skip(1))
+        .spawn()?;
 
     let pbm = MultiProgress::new();
 
@@ -30,8 +41,13 @@ fn main() -> RaptorResult<()> {
     let mut maxpkgs = 0;
     let mut offset = 0;
 
-    for line in fd.lines() {
+    let mut log = File::create("plog")?;
+
+    for line in BufReader::new(File::from(read)).lines() {
         let line = line?;
+        log.write_all(line.as_bytes())?;
+        log.write_all(b"\n")?;
+
         let Some((key, value)) = line.split_once(": ") else {
             continue;
         };
