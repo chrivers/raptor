@@ -5,7 +5,7 @@ use log::error;
 use minijinja::context;
 use raptor::program::{Executor, Loader};
 use raptor::sandbox::Sandbox;
-use raptor::{template, RaptorResult};
+use raptor::RaptorResult;
 
 #[derive(clap::Parser, Debug)]
 #[command(about, long_about = None)]
@@ -48,8 +48,9 @@ fn raptor() -> RaptorResult<()> {
     let root_context = context!();
 
     for file in args.input {
-        let mut loader = Loader::new(template::make_environment()?, args.mode.dump);
-        let program = match loader.parse_template(file.as_str(), &root_context) {
+        let path = Utf8PathBuf::from(&file);
+        let mut loader = Loader::new(path.parent().unwrap(), args.mode.dump)?;
+        let program = match loader.parse_template(path.file_name().unwrap(), &root_context) {
             Ok(res) => res,
             Err(err) => {
                 loader.explain_error(&err)?;
@@ -57,9 +58,7 @@ fn raptor() -> RaptorResult<()> {
             }
         };
 
-        for stmt in &program.code {
-            println!("{stmt:?}");
-        }
+        println!("{program:?}");
 
         if args.no_act {
             continue;

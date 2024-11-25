@@ -5,22 +5,19 @@ use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::{context, Value};
 
 use raptor::dsl::{
-    Chown, IncludeArg, IncludeArgValue, InstEnv, InstEnvAssign, InstRender, InstWorkdir, InstWrite,
-    Instruction, Item, Lookup, Origin, Statement,
+    Chown, IncludeArg, IncludeArgValue, InstEnv, InstEnvAssign, InstRender, InstRun, InstWorkdir,
+    InstWrite, Instruction, Item, Lookup, Origin, Statement,
 };
 use raptor::program::{Loader, Program};
-use raptor::template::make_environment;
 use raptor::RaptorResult;
 
-fn test_path(filename: &str) -> Utf8PathBuf {
-    Utf8Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/cases/inst")
-        .join(filename)
+fn base_path() -> Utf8PathBuf {
+    Utf8Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/cases/inst")
 }
 
-fn load_file(path: &Utf8Path) -> RaptorResult<Program> {
-    let mut loader = Loader::new(make_environment()?, false);
-    loader.parse_template(path.as_str(), &context! {})
+fn load_file(path: impl AsRef<Utf8Path>) -> RaptorResult<Program> {
+    let mut loader = Loader::new(base_path(), false)?;
+    loader.parse_template(dbg!(path.as_ref().file_name().unwrap()), &context! {})
 }
 
 fn assert_single_inst_eq(path: &Utf8Path, size: usize, res: &Program, inst: Instruction) {
@@ -34,10 +31,11 @@ fn assert_single_inst_eq(path: &Utf8Path, size: usize, res: &Program, inst: Inst
 
 #[allow(clippy::cast_possible_truncation)]
 fn test_single_inst_parse(filename: &str, inst: Instruction) -> RaptorResult<()> {
-    let path = test_path(filename);
-    let program = load_file(&path)?;
-    let size = std::fs::File::open(&path)?.metadata()?.size();
-    assert_single_inst_eq(&path, size as usize, &program, inst);
+    let program = load_file(filename)?;
+    let size = std::fs::File::open(base_path().join(filename))?
+        .metadata()?
+        .size();
+    assert_single_inst_eq(filename.into(), size as usize, &program, inst);
     Ok(())
 }
 
@@ -143,10 +141,7 @@ fn parse_render02() -> RaptorResult<()> {
 
 #[test]
 fn parse_render03() -> RaptorResult<()> {
-    std::env::set_current_dir("tests/cases/inst")?;
-
-    let path = test_path("render03.rapt");
-    let program = load_file(&path)?;
+    let program = load_file("render03.rapt")?;
 
     let name = "what".into();
 

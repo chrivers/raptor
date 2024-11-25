@@ -3,7 +3,9 @@ use std::ops::Range;
 use annotate_snippets::{Level, Renderer, Snippet};
 use pest::error::InputLocation;
 
-use crate::{parser::Rule, RaptorResult};
+use crate::dsl::Origin;
+use crate::parser::Rule;
+use crate::RaptorResult;
 
 #[must_use]
 pub fn line_number_to_span(text: &str, line: usize) -> Range<usize> {
@@ -35,7 +37,7 @@ pub fn index_to_line_remainder(text: &str, idx: usize) -> Option<Range<usize>> {
 
 pub fn show_error_context(
     source: &str,
-    source_path: &str,
+    source_path: impl AsRef<str>,
     title: &str,
     label: &str,
     err_range: Range<usize>,
@@ -43,12 +45,22 @@ pub fn show_error_context(
     let message = Level::Error.title(title).snippet(
         Snippet::source(source)
             .fold(false)
-            .origin(source_path)
+            .origin(source_path.as_ref())
             .annotation(Level::Error.span(err_range).label(label)),
     );
 
     let renderer = Renderer::styled();
     anstream::println!("{}", renderer.render(message));
+}
+
+pub fn show_origin_error_context(source: &str, origin: &Origin, title: &str, label: &str) {
+    show_error_context(
+        source,
+        origin.path.as_ref(),
+        title,
+        label,
+        origin.span.clone(),
+    );
 }
 
 pub fn show_jinja_error_context(err: &minijinja::Error) -> RaptorResult<()> {

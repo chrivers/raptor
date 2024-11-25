@@ -18,6 +18,8 @@ pub use run::*;
 pub use workdir::*;
 pub use write::*;
 
+use camino::{Utf8Path, Utf8PathBuf};
+
 use std::fmt::{Debug, Display};
 use std::ops::Range;
 use std::sync::Arc;
@@ -80,7 +82,7 @@ pub enum Instruction {
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Origin {
-    pub path: Arc<String>,
+    pub path: Arc<Utf8PathBuf>,
     pub span: Range<usize>,
 }
 

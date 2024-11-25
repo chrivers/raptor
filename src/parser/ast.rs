@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::Value;
 use pest_consume::{match_nodes, Parser};
 
@@ -13,7 +14,7 @@ use crate::RaptorResult;
 
 #[derive(Clone, Debug)]
 pub struct UserData {
-    pub path: Arc<String>,
+    pub path: Arc<Utf8PathBuf>,
 }
 
 type Result<T> = std::result::Result<T, pest_consume::Error<Rule>>;
@@ -315,12 +316,12 @@ impl RaptorFileParser {
     }
 }
 
-pub fn parse(path: &str, input: &str) -> RaptorResult<Vec<Statement>> {
+pub fn parse(path: impl AsRef<Utf8Path>, input: &str) -> RaptorResult<Vec<Statement>> {
     let inputs = RaptorFileParser::parse_with_userdata(
         Rule::FILE,
         input,
         UserData {
-            path: Arc::new(path.to_string()),
+            path: Arc::new(path.as_ref().into()),
         },
     )?;
     let input = inputs.single()?;

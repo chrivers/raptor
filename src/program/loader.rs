@@ -1,31 +1,40 @@
 use std::collections::HashMap;
 
+use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::{Environment, ErrorKind, Value};
 
-use crate::dsl::{InstInclude, Instruction, Item, Origin, ResolveArgs, Statement};
+use crate::dsl::{InstInclude, Instruction, Origin, ResolveArgs, Statement};
 use crate::parser::ast;
 use crate::program::{
-    show_error_context, show_jinja_error_context, show_pest_error_context, Program,
+    show_error_context, show_jinja_error_context, show_origin_error_context,
+    show_pest_error_context, Item, Program,
 };
+use crate::template::make_environment;
 use crate::{RaptorError, RaptorResult};
 
 pub struct Loader<'source> {
     env: Environment<'source>,
     dump: bool,
     sources: HashMap<String, String>,
+    base: Utf8PathBuf,
     origins: Vec<Origin>,
 }
 
 const MAX_NESTED_INCLUDE: usize = 20;
 
 impl<'source> Loader<'source> {
-    pub fn new(env: Environment<'source>, dump: bool) -> Self {
-        Self {
-            env,
+    pub fn new(base: impl AsRef<Utf8Path>, dump: bool) -> RaptorResult<Self> {
+        Ok(Self {
+            env: make_environment()?,
             dump,
+            base: base.as_ref().into(),
             sources: HashMap::new(),
             origins: vec![],
-        }
+        })
+    }
+
+    pub fn base(&self) -> &Utf8Path {
+        &self.base
     }
 
     fn handle(&mut self, stmt: Statement, rctx: &Value) -> RaptorResult<Item> {
@@ -40,7 +49,7 @@ impl<'source> Loader<'source> {
             let map = args.resolve_args(rctx)?;
 
             self.origins.push(stmt.origin);
-            let program = self.parse_template(&src, &Value::from(map))?;
+            let program = self.parse_template(src, &Value::from(map))?;
             self.origins.pop();
 
             Ok(Item::Program(program))
@@ -51,26 +60,25 @@ impl<'source> Loader<'source> {
 
     fn show_include_stack(&self, origins: &[Origin]) {
         for org in origins {
-            show_error_context(
+            show_origin_error_context(
                 &self.sources[org.path.as_str()],
-                &org.path,
+                org,
                 "Error while evaluating INCLUDE",
                 "(included here)",
-                org.span.clone(),
             );
         }
     }
 
     pub fn explain_error(&self, err: &RaptorError) -> RaptorResult<()> {
         match err {
-            RaptorError::ScriptError(desc, origin) => {
+            RaptorError::ScriptError(desc, origin)
+            | RaptorError::UndefinedVarError(desc, origin) => {
                 self.show_include_stack(&self.origins);
-                show_error_context(
+                show_origin_error_context(
                     &self.sources[origin.path.as_str()],
-                    &origin.path,
+                    origin,
                     "Script Error",
                     desc,
-                    origin.span.clone(),
                 );
             }
             RaptorError::MinijinjaError(err) => {
@@ -81,7 +89,7 @@ impl<'source> Loader<'source> {
 
                         show_error_context(
                             &self.sources[last.path.as_str()],
-                            &last.path,
+                            last.path.as_ref(),
                             "Error while evaluating INCLUDE",
                             err.detail().unwrap_or("error"),
                             err.range().unwrap_or_else(|| last.span.clone()),
@@ -109,12 +117,11 @@ impl<'source> Loader<'source> {
 
         let prefix = err.category();
 
-        show_error_context(
+        show_origin_error_context(
             &self.sources[origin.path.as_str()],
-            &origin.path,
+            origin,
             "Error while executing instruction",
             &format!("{prefix}: {err}"),
-            origin.span.clone(),
         );
 
         if let RaptorError::MinijinjaError(_) = err {
@@ -128,10 +135,14 @@ impl<'source> Loader<'source> {
         &self.origins
     }
 
-    pub fn parse_template(&mut self, path: &str, ctx: &Value) -> RaptorResult<Program> {
+    pub fn parse_template(
+        &mut self,
+        path: impl AsRef<Utf8Path>,
+        ctx: &Value,
+    ) -> RaptorResult<Program> {
         let source = self
             .env
-            .get_template(path)
+            .get_template(self.base.join(&path).as_str())
             .and_then(|tmpl| tmpl.render(ctx))
             .map(|src| src + "\n")?;
 
@@ -139,12 +150,16 @@ impl<'source> Loader<'source> {
             println!("{source}");
         }
 
-        self.sources.insert(path.to_string(), source);
+        let filename = path.as_ref().as_str();
+
+        self.sources.insert(filename.into(), source);
 
         let mut res = vec![];
 
-        for stmt in ast::parse(path, &self.sources[path]).map_err(|err| match err {
-            RaptorError::PestError(err) => RaptorError::PestError(Box::new(err.with_path(path))),
+        for stmt in ast::parse(filename, &self.sources[filename]).map_err(|err| match err {
+            RaptorError::PestError(err) => {
+                RaptorError::PestError(Box::new(err.with_path(filename)))
+            }
             err => err,
         })? {
             res.push(self.handle(stmt, ctx)?);
