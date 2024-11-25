@@ -150,6 +150,10 @@ impl<'source> Loader<'source> {
             origin.span.clone(),
         );
 
+        if let RaptorError::MinijinjaError(_) = err {
+            self.explain_error(err)?;
+        }
+
         Ok(())
     }
 
