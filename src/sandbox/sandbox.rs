@@ -17,7 +17,7 @@ use crate::client::{
     RequestRun, RequestSetEnv, RequestWriteFd, Response,
 };
 use crate::dsl::Chown;
-use crate::sandbox::{ConsoleMode, LinkJournal, Settings, SpawnBuilder};
+use crate::sandbox::{ConsoleMode, LinkJournal, ResolvConf, Settings, SpawnBuilder, Timezone};
 use crate::util::io_fast_copy;
 use crate::{RaptorError, RaptorResult};
 
@@ -197,6 +197,8 @@ impl Sandbox {
             .sudo(true)
             .uuid(uuid)
             .link_journal(LinkJournal::No)
+            .resolv_conf(ResolvConf::Off)
+            .timezone(Timezone::Off)
             .settings(Settings::False)
             .setenv("RAPTOR_NSPAWN_SOCKET", int_socket_path.as_str())
             .root_overlays(layers)
