@@ -12,6 +12,15 @@ pub struct Origin {
 
 impl Origin {
     #[must_use]
+    pub const fn new(path: Arc<Utf8PathBuf>, span: Range<usize>) -> Self {
+        Self { path, span }
+    }
+
+    pub fn make(path: impl AsRef<Utf8Path>, span: Range<usize>) -> Self {
+        Self::new(Arc::new(path.as_ref().into()), span)
+    }
+
+    #[must_use]
     pub fn from_node(node: &crate::parser::ast::Node) -> Self {
         let span = node.as_span();
         Self {
