@@ -122,7 +122,7 @@ fn parse_include01() -> RaptorResult<()> {
     assert_eq!(
         &program.code,
         &[Item::program(
-            vec![Item::statement(
+            [Item::statement(
                 Instruction::write("/foo", "bar"),
                 Origin::make("write01.rapt", 0..17)
             )],
