@@ -42,7 +42,7 @@ fn test_single_inst_parse(filename: &str, inst: Instruction) -> RaptorResult<()>
 }
 
 #[test]
-fn test_parse_write01() -> RaptorResult<()> {
+fn parse_write01() -> RaptorResult<()> {
     test_single_inst_parse(
         "write01.rapt",
         Instruction::Write(InstWrite {
@@ -55,7 +55,7 @@ fn test_parse_write01() -> RaptorResult<()> {
 }
 
 #[test]
-fn test_parse_write02() -> RaptorResult<()> {
+fn parse_write02() -> RaptorResult<()> {
     test_single_inst_parse(
         "write02.rapt",
         Instruction::Write(InstWrite {
@@ -71,7 +71,7 @@ fn test_parse_write02() -> RaptorResult<()> {
 }
 
 #[test]
-fn test_parse_env01() -> RaptorResult<()> {
+fn parse_env01() -> RaptorResult<()> {
     test_single_inst_parse(
         "env01.rapt",
         Instruction::Env(InstEnv {
@@ -84,7 +84,7 @@ fn test_parse_env01() -> RaptorResult<()> {
 }
 
 #[test]
-fn test_parse_env02() -> RaptorResult<()> {
+fn parse_env02() -> RaptorResult<()> {
     test_single_inst_parse(
         "env02.rapt",
         Instruction::Env(InstEnv {
@@ -103,7 +103,7 @@ fn test_parse_env02() -> RaptorResult<()> {
 }
 
 #[test]
-fn test_parse_workdir01() -> RaptorResult<()> {
+fn parse_workdir01() -> RaptorResult<()> {
     test_single_inst_parse(
         "workdir01.rapt",
         Instruction::Workdir(InstWorkdir { dir: "/foo".into() }),
@@ -111,7 +111,7 @@ fn test_parse_workdir01() -> RaptorResult<()> {
 }
 
 #[test]
-fn test_parse_render01() -> RaptorResult<()> {
+fn parse_render01() -> RaptorResult<()> {
     test_single_inst_parse(
         "render01.rapt",
         Instruction::Render(InstRender {
@@ -125,7 +125,7 @@ fn test_parse_render01() -> RaptorResult<()> {
 }
 
 #[test]
-fn test_parse_render02() -> RaptorResult<()> {
+fn parse_render02() -> RaptorResult<()> {
     test_single_inst_parse(
         "render02.rapt",
         Instruction::Render(InstRender {
@@ -142,7 +142,7 @@ fn test_parse_render02() -> RaptorResult<()> {
 }
 
 #[test]
-fn test_parse_render03() -> RaptorResult<()> {
+fn parse_render03() -> RaptorResult<()> {
     std::env::set_current_dir("tests/cases")?;
 
     let path = test_path("render03.rapt");
