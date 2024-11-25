@@ -1,12 +1,11 @@
 use std::os::unix::fs::MetadataExt;
-use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::{context, Value};
 
 use raptor::dsl::{
     Chown, IncludeArg, IncludeArgValue, InstEnv, InstEnvAssign, InstRender, InstRun, InstWorkdir,
-    InstWrite, Instruction, Item, Lookup, Origin, Program, Statement,
+    InstWrite, Instruction, Item, Lookup, Origin, Program,
 };
 use raptor::program::Loader;
 use raptor::RaptorResult;
@@ -21,12 +20,9 @@ fn load_file(path: impl AsRef<Utf8Path>) -> RaptorResult<Program> {
 }
 
 fn assert_single_inst_eq(path: &Utf8Path, size: usize, res: &Program, inst: Instruction) {
-    let origin = Origin {
-        path: Arc::new(path.to_string()),
-        span: 0..size,
-    };
+    let origin = Origin::make(path, 0..size);
 
-    assert_eq!(&res.code, &[Item::Statement(Statement { inst, origin })]);
+    assert_eq!(&res.code, &[Item::statement(inst, origin)]);
 }
 
 #[allow(clippy::cast_possible_truncation)]
@@ -147,10 +143,7 @@ fn parse_render03() -> RaptorResult<()> {
 
     let value = IncludeArgValue::Lookup(Lookup::new(
         vec!["what".into()],
-        Origin {
-            path: Arc::new("render03.rinc".into()),
-            span: 39..43,
-        },
+        Origin::make("render03.rinc", 39..43),
     ));
 
     let inst = Instruction::Render(InstRender {
@@ -161,16 +154,13 @@ fn parse_render03() -> RaptorResult<()> {
         args: vec![IncludeArg { name, value }],
     });
 
-    let origin = Origin {
-        path: Arc::new("render03.rinc".into()),
-        span: 0..44,
-    };
+    let origin = Origin::make("render03.rinc", 0..44);
 
-    let code = vec![Item::Statement(Statement { inst, origin })];
+    let code = vec![Item::statement(inst, origin)];
 
     let ctx = context! { what => "world" };
 
-    assert_eq!(&program.code, &[Item::Program(Program { code, ctx })]);
+    assert_eq!(&program.code, &[Item::program(code, ctx)]);
 
     Ok(())
 }
