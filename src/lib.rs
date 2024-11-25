@@ -4,6 +4,7 @@ extern crate log;
 pub mod client;
 pub mod dsl;
 pub mod parser;
+pub mod print;
 pub mod program;
 pub mod sandbox;
 pub mod template;

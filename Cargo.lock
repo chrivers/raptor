@@ -567,6 +567,7 @@ dependencies = [
  "camino-tempfile",
  "clap",
  "colog",
+ "colored",
  "indicatif",
  "log",
  "minijinja",
