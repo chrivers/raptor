@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::Write;
 use std::process::Command;
 
 use camino::Utf8PathBuf;
@@ -9,6 +9,7 @@ use minijinja::Value;
 use crate::dsl::{Instruction, Item, ResolveArgs, Statement};
 use crate::program::{Loader, Program};
 use crate::sandbox::Sandbox;
+use crate::util::io_fast_copy;
 use crate::{template, RaptorResult};
 
 pub struct Executor {
@@ -16,8 +17,6 @@ pub struct Executor {
 }
 
 impl Executor {
-    const BUFFER_SIZE: usize = 128 * 1024;
-
     const PROGRESS_STYLE: &str = "[{elapsed_precise}] {bar:40.cyan/blue} {bytes:>7}/{total_bytes:7} {binary_bytes_per_sec} {msg}";
 
     #[must_use]
@@ -40,7 +39,7 @@ impl Executor {
             }
             Instruction::Copy(inst) => {
                 info!("{:?}", inst);
-                let mut src = File::open(&inst.srcs[0])?;
+                let src = File::open(&inst.srcs[0])?;
                 let fd = self.sandbox.create_file(
                     &Utf8PathBuf::from(&inst.dest),
                     inst.chown.clone(),
@@ -48,9 +47,8 @@ impl Executor {
                 )?;
 
                 let pb = Self::progress_bar(src.metadata()?.len());
-                let mut dst = BufWriter::with_capacity(Self::BUFFER_SIZE, pb.wrap_write(fd));
-
-                std::io::copy(&mut src, &mut dst)?;
+                let dst = pb.wrap_write(fd);
+                io_fast_copy(src, dst)?;
             }
             Instruction::Render(inst) => {
                 info!("{:?}", inst);

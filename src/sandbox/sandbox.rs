@@ -1,5 +1,5 @@
 use std::fs::{File, OpenOptions};
-use std::io::{BufWriter, Error, ErrorKind, Write};
+use std::io::{Error, ErrorKind, Write};
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::os::unix::process::ExitStatusExt;
@@ -18,6 +18,7 @@ use crate::client::{
 };
 use crate::dsl::Chown;
 use crate::sandbox::{ConsoleMode, LinkJournal, Settings, SpawnBuilder};
+use crate::util::io_fast_copy;
 use crate::{RaptorError, RaptorResult};
 
 #[derive(Debug)]
@@ -78,7 +79,7 @@ impl Drop for SandboxFile<'_> {
 }
 
 fn copy_file(from: impl AsRef<Utf8Path>, to: impl AsRef<Utf8Path>) -> RaptorResult<()> {
-    let mut src = File::open(from.as_ref())?;
+    let src = File::open(from.as_ref())?;
     let mode = src.metadata()?.permissions().mode();
     let dst = OpenOptions::new()
         .write(true)
@@ -87,9 +88,7 @@ fn copy_file(from: impl AsRef<Utf8Path>, to: impl AsRef<Utf8Path>) -> RaptorResu
         .mode(mode)
         .open(to.as_ref())?;
 
-    std::io::copy(&mut src, &mut BufWriter::with_capacity(128 * 1024, dst))?;
-
-    Ok(())
+    io_fast_copy(src, dst)
 }
 
 impl Sandbox {
