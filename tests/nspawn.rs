@@ -83,7 +83,7 @@ fn nspawn_write_data() -> RaptorResult<()> {
         "/tmp/b",
         None,
         None,
-        "f0ef7081e1539ac00ef5b761b4fb01b3  a\n".as_bytes(),
+        "f0ef7081e1539ac00ef5b761b4fb01b3  a\n",
     )?;
 
     sbx.shell(&["cd /tmp && md5sum -cs b"])?;
