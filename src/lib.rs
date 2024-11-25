@@ -13,6 +13,7 @@ use std::os::unix::net::UnixStream;
 use std::process::ExitStatus;
 use std::sync::mpsc::{self, SendError};
 
+use camino::Utf8PathBuf;
 use nix::errno::Errno;
 
 use crate::{dsl::Origin, parser::Rule};
@@ -45,6 +46,9 @@ pub enum RaptorError {
 
     #[error("Path is not valid utf-8: {0}")]
     BadPath(std::path::PathBuf),
+
+    #[error("Cannot get parent path from {0:?}")]
+    BadPathNoParent(Utf8PathBuf),
 
     #[error("Script error: {0} {1:?}")]
     ScriptError(String, Origin),
@@ -82,6 +86,7 @@ impl RaptorError {
             Self::VarError(_) => "Environment error",
             Self::Errno(_) => "Errno",
             Self::BadPath(_) => "Path encoding error",
+            Self::BadPathNoParent(_) => "Path error",
             Self::ScriptError(_, _) => "Script error",
             Self::UndefinedVarError(_, _) => "Undefined variable",
             Self::SandboxRequestError(_) => "Sandbox request error",

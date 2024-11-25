@@ -4,6 +4,8 @@ use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 
+use crate::RaptorResult;
+
 #[derive(Clone, PartialEq, Eq)]
 pub struct Origin {
     pub path: Arc<Utf8PathBuf>,
@@ -27,6 +29,12 @@ impl Origin {
             path: node.user_data().path.clone(),
             span: span.start()..span.end(),
         }
+    }
+
+    pub fn basedir(&self) -> RaptorResult<&Utf8Path> {
+        self.path
+            .parent()
+            .ok_or_else(|| crate::RaptorError::BadPathNoParent(self.path.as_ref().clone()))
     }
 }
 
