@@ -13,7 +13,8 @@ fn base_path() -> Utf8PathBuf {
 
 fn load_file(path: impl AsRef<Utf8Path>) -> RaptorResult<Program> {
     let mut loader = Loader::new(base_path(), false)?;
-    loader.parse_template(path.as_ref().file_name().unwrap(), &context! {})
+
+    loader.parse_template(path, &context! {})
 }
 
 fn assert_single_inst_eq(path: &Utf8Path, size: usize, res: &Program, inst: Instruction) {
