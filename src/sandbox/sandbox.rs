@@ -153,6 +153,14 @@ impl Sandbox {
           - /raptor (<-- socket)
           - /nspawn-client (<-- client binary)
 
+          | external path         | internal path  | note                            |
+          |-----------------------|----------------|---------------------------------|
+          | $TMP/raptor-temp-{id} | /              | 1. contains /usr                |
+          |                       |                | 2. is hidden by root overlay    |
+          |                       |                |                                 |
+          | $TMP/raptor-conn-{id} | /raptor-{uuid} | 1. has nspawn-client and socket |
+          |                       |                | 2. is mounted read-only         |
+
          */
         let tempdir = Builder::new().prefix("raptor-temp-").tempdir()?;
         let conndir = Builder::new().prefix("raptor-conn-").tempdir()?;
@@ -171,7 +179,7 @@ impl Sandbox {
         /* external root is the absolute path of the tempdir */
         let ext_root = conndir.path();
 
-        /* internal root is the namespace path where the tempdir will be mounted */
+        /* internal root is the namespace path where the conndir will be mounted */
         let int_root = Utf8PathBuf::from(format!("/raptor-{uuid_name}"));
 
         let ext_socket_path = ext_root.join("raptor");
