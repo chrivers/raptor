@@ -55,6 +55,24 @@ impl Executor {
             }
             Instruction::Render(inst) => {
                 info!("{:?}", inst);
+
+                let map = inst
+                    .args
+                    .iter()
+                    .map(|arg| Ok((arg.name.to_string(), arg.value.clone().resolve(ctx)?)))
+                    .collect::<RaptorResult<HashMap<_, _>>>()?;
+
+                let source = template::make_environment()?
+                    .get_template(&inst.src)
+                    .and_then(|tmpl| tmpl.render(Value::from(map)))
+                    .map(|src| src + "\n")?;
+
+                let mut fd = self.sandbox.create_file(
+                    &Utf8PathBuf::from(&inst.dest),
+                    inst.chown.clone(),
+                    inst.chmod,
+                )?;
+                fd.write_all(source.as_bytes())?;
             }
             Instruction::Write(inst) => {
                 info!("{:?}", inst);
