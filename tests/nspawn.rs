@@ -1,5 +1,3 @@
-use std::io::Write;
-
 use camino::Utf8Path;
 use raptor::dsl::Chown;
 use raptor::sandbox::{Sandbox, SandboxExt};
@@ -80,13 +78,13 @@ fn nspawn_setenv() -> RaptorResult<()> {
 #[test]
 fn nspawn_write_data() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("write_data")?;
-    let mut fd = sbx.create_file("/tmp/a".into(), None, None)?;
-    fd.write_all(b"Hello world\n")?;
-    drop(fd);
-
-    fd = sbx.create_file("/tmp/b".into(), None, None)?;
-    fd.write_all("f0ef7081e1539ac00ef5b761b4fb01b3  a\n".as_bytes())?;
-    drop(fd);
+    sbx.write_file("/tmp/a", None, None, b"Hello world\n")?;
+    sbx.write_file(
+        "/tmp/b",
+        None,
+        None,
+        "f0ef7081e1539ac00ef5b761b4fb01b3  a\n".as_bytes(),
+    )?;
 
     sbx.shell(&["cd /tmp && md5sum -cs b"])?;
 
@@ -98,34 +96,38 @@ fn nspawn_write_data() -> RaptorResult<()> {
 fn nspawn_write_chown() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("write_chown")?;
 
-    let mut fd = sbx.create_file("/etc/passwd".into(), None, None)?;
-    fd.write_all(b"root:x:0:0:root:/root:/bin/sh\n")?;
-    fd.write_all(b"user:x:1000:1000:user:/home/user:/bin/sh\n")?;
-    drop(fd);
+    sbx.write_file(
+        "/etc/passwd",
+        None,
+        None,
+        concat!(
+            "root:x:0:0:root:/root:/bin/sh\n",
+            "user:x:1000:1000:user:/home/user:/bin/sh\n"
+        )
+        .as_bytes(),
+    )?;
 
-    let mut fd = sbx.create_file(
-        "/tmp/c".into(),
+    sbx.write_file(
+        "/tmp/c",
         Some(Chown {
             user: Some("root".into()),
             group: None,
         }),
         None,
+        b"Hello world\n",
     )?;
-    fd.write_all(b"Hello world\n")?;
-    drop(fd);
 
     sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
 
-    let mut fd = sbx.create_file(
-        "/tmp/c".into(),
+    sbx.write_file(
+        "/tmp/c",
         Some(Chown {
             user: Some("user".into()),
             group: None,
         }),
         None,
+        b"Hello world\n",
     )?;
-    fd.write_all(b"Hello world\n")?;
-    drop(fd);
 
     sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 1000 ]"])?;
 
