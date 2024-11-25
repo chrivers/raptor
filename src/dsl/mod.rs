@@ -30,6 +30,15 @@ pub struct Chown {
     pub group: Option<String>,
 }
 
+impl Chown {
+    pub fn user(user: impl AsRef<str>) -> Self {
+        Self {
+            user: Some(user.as_ref().to_owned()),
+            group: None,
+        }
+    }
+}
+
 impl Display for Chown {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(user) = &self.user {
