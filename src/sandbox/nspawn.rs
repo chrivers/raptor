@@ -35,6 +35,37 @@ pub enum LinkJournal {
     Auto,
 }
 
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ResolvConf {
+    Off,
+    CopyHost,
+    CopyStatic,
+    CopyUplink,
+    CopyStub,
+    ReplaceHost,
+    ReplaceStatic,
+    ReplaceUplink,
+    ReplaceStub,
+    BindHost,
+    BindStatic,
+    BindUplink,
+    BindStub,
+    Delete,
+    Auto,
+}
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Timezone {
+    Off,
+    Copy,
+    Bind,
+    Symlink,
+    Delete,
+    Auto,
+}
+
 #[must_use]
 pub fn escape_colon(path: &Utf8Path) -> String {
     path.as_str().replace(':', "\\:")
@@ -49,6 +80,8 @@ pub struct SpawnBuilder<'a> {
     settings: Option<Settings>,
     console: Option<ConsoleMode>,
     link_journal: Option<LinkJournal>,
+    resolv_conf: Option<ResolvConf>,
+    timezone: Option<Timezone>,
     directory: Option<&'a Utf8Path>,
     root_overlay: Vec<&'a Utf8Path>,
     bind: Vec<(&'a Utf8Path, &'a Utf8Path)>,
@@ -101,6 +134,18 @@ impl<'a> SpawnBuilder<'a> {
     #[must_use]
     pub const fn link_journal(mut self, link_journal: LinkJournal) -> Self {
         self.link_journal = Some(link_journal);
+        self
+    }
+
+    #[must_use]
+    pub const fn resolv_conf(mut self, resolv_conf: ResolvConf) -> Self {
+        self.resolv_conf = Some(resolv_conf);
+        self
+    }
+
+    #[must_use]
+    pub const fn timezone(mut self, timezone: Timezone) -> Self {
+        self.timezone = Some(timezone);
         self
     }
 
@@ -169,6 +214,16 @@ impl SpawnBuilder<'_> {
         if let Some(link_journal) = self.link_journal {
             res.push("--link-journal".into());
             res.push(to_variant_name(&link_journal).unwrap().into());
+        }
+
+        if let Some(resolv_conf) = self.resolv_conf {
+            res.push("--resolv-conf".into());
+            res.push(to_variant_name(&resolv_conf).unwrap().into());
+        }
+
+        if let Some(timezone) = self.timezone {
+            res.push("--timezone".into());
+            res.push(to_variant_name(&timezone).unwrap().into());
         }
 
         if !self.root_overlay.is_empty() {
