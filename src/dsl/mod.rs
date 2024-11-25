@@ -1,9 +1,12 @@
+use std::fmt::{Debug, Display};
+
 mod copy;
 mod env;
 mod from;
 mod include;
 mod invoke;
 mod item;
+mod origin;
 mod render;
 mod run;
 mod workdir;
@@ -15,16 +18,11 @@ pub use from::*;
 pub use include::*;
 pub use invoke::*;
 pub use item::*;
+pub use origin::*;
 pub use render::*;
 pub use run::*;
 pub use workdir::*;
 pub use write::*;
-
-use camino::{Utf8Path, Utf8PathBuf};
-
-use std::fmt::{Debug, Display};
-use std::ops::Range;
-use std::sync::Arc;
 
 #[derive(Clone, Default, PartialEq, Eq)]
 pub struct Chown {
@@ -80,23 +78,6 @@ pub enum Instruction {
     Workdir(InstWorkdir),
 }
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct Origin {
-    pub path: Arc<Utf8PathBuf>,
-    pub span: Range<usize>,
-}
-
-impl Origin {
-    #[must_use]
-    pub fn from_node(node: &crate::parser::ast::Node) -> Self {
-        let span = node.as_span();
-        Self {
-            path: node.user_data().path.clone(),
-            span: span.start()..span.end(),
-        }
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Statement {
     pub inst: Instruction,
@@ -133,15 +114,5 @@ impl Debug for Instruction {
             Self::Env(inst) => inst.fmt(f),
             Self::Workdir(inst) => inst.fmt(f),
         }
-    }
-}
-
-impl Debug for Origin {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "[{:<15} {:>3} .. {:>3}]",
-            self.path, self.span.start, self.span.end
-        )
     }
 }
