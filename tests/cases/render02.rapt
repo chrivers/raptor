@@ -1,0 +1,1 @@
+RENDER include/template02.tmpl /a what="world"
