@@ -87,8 +87,8 @@ impl Instruction {
             Self::Include(_) => "INCLUDE",
             Self::Invoke(_) => "INVOKE",
             Self::Run(_) => "RUN",
-            Self::Env(_) => "Env",
-            Self::Workdir(_) => "Workdir",
+            Self::Env(_) => "ENV",
+            Self::Workdir(_) => "WORKDIR",
         }
     }
 }
