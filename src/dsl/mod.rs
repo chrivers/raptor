@@ -22,6 +22,8 @@ use std::fmt::{Debug, Display};
 use std::ops::Range;
 use std::sync::Arc;
 
+use crate::program::Program;
+
 #[derive(Clone, Default, PartialEq, Eq)]
 pub struct Chown {
     pub user: Option<String>,
@@ -74,6 +76,12 @@ impl Origin {
 pub struct Statement {
     pub inst: Instruction,
     pub origin: Origin,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Item {
+    Statement(Statement),
+    Program(Program),
 }
 
 impl Instruction {
