@@ -19,7 +19,7 @@ pub struct Loader<'source> {
 const MAX_NESTED_INCLUDE: usize = 20;
 
 impl IncludeArgValue {
-    fn resolve(self, ctx: &Value) -> RaptorResult<Value> {
+    pub fn resolve(self, ctx: &Value) -> RaptorResult<Value> {
         match self {
             Self::Lookup(lookup) => {
                 let name = &lookup.path[0];
