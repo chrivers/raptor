@@ -109,7 +109,8 @@ fn parse_render03() -> RaptorResult<()> {
                 ),
                 Origin::make("render03.rinc", 0..44)
             )],
-            context! { what => "world" }
+            context! { what => "world" },
+            Origin::make("render03.rinc", 0..44)
         )]
     );
 
@@ -127,7 +128,8 @@ fn parse_include01() -> RaptorResult<()> {
                 Instruction::write("/foo", "bar"),
                 Origin::make("write01.rapt", 0..17)
             )],
-            context! {}
+            context! {},
+            Origin::make("write01.rapt", 0..17)
         )]
     );
 
@@ -146,9 +148,11 @@ fn parse_include02() -> RaptorResult<()> {
                     Instruction::write("/foo", "bar"),
                     Origin::make("write01.rapt", 0..17)
                 )],
-                context! {}
+                context! {},
+                Origin::make("write01.rapt", 0..17)
             )],
-            context! {}
+            context! {},
+            Origin::make("include01.rapt", 0..23)
         )]
     );
 
@@ -166,7 +170,8 @@ fn parse_include03() -> RaptorResult<()> {
                 Instruction::run(&["id"]),
                 Origin::make("include/run01.rinc", 0..7)
             )],
-            context! {}
+            context! {},
+            Origin::make("include/run01.rinc", 0..7)
         )]
     );
 
@@ -185,9 +190,11 @@ fn parse_include04() -> RaptorResult<()> {
                     Instruction::run(&["id"]),
                     Origin::make("include/run01.rinc", 0..7)
                 )],
-                context! {}
+                context! {},
+                Origin::make("include/run01.rinc", 0..7)
             )],
-            context! {}
+            context! {},
+            Origin::make("include/include01.rinc", 0..21)
         )]
     );
 

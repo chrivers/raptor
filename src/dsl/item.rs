@@ -12,10 +12,11 @@ pub enum Item {
 
 impl Item {
     #[must_use]
-    pub fn program(code: impl IntoIterator<Item = Self>, ctx: Value) -> Self {
+    pub fn program(code: impl IntoIterator<Item = Self>, ctx: Value, origin: Origin) -> Self {
         Self::Program(Program {
             code: code.into_iter().collect(),
             ctx,
+            origin,
         })
     }
 

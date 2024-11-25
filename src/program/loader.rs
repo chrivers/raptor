@@ -154,6 +154,7 @@ impl<'source> Loader<'source> {
         }
 
         let filename = path.as_ref().as_str();
+        let origin = Origin::make(filename, 0..source.len());
 
         self.sources.insert(filename.into(), source);
 
@@ -168,6 +169,6 @@ impl<'source> Loader<'source> {
             res.push(self.handle(stmt, ctx)?);
         }
 
-        Ok(Program::new(res, ctx.clone()))
+        Ok(Program::new(res, ctx.clone(), origin))
     }
 }

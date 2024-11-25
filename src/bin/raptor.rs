@@ -58,7 +58,7 @@ fn raptor() -> RaptorResult<()> {
             }
         };
 
-        println!("{program}");
+        print!("{program}");
 
         if args.no_act {
             continue;

@@ -3,18 +3,19 @@ use std::fmt::{self, Display};
 use colored::Colorize;
 use minijinja::Value;
 
-use crate::dsl::Item;
+use crate::dsl::{Item, Origin};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Program {
     pub code: Vec<Item>,
     pub ctx: Value,
+    pub origin: Origin,
 }
 
 impl Program {
     #[must_use]
-    pub const fn new(code: Vec<Item>, ctx: Value) -> Self {
-        Self { code, ctx }
+    pub const fn new(code: Vec<Item>, ctx: Value, origin: Origin) -> Self {
+        Self { code, ctx, origin }
     }
 }
 
@@ -38,18 +39,23 @@ impl<'a> IntoIterator for &'a Program {
 
 impl Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for item in &self.code {
-            match item {
-                Item::Statement(stmt) => {
-                    writeln!(f, "{}", stmt.inst)?;
-                }
-                Item::Program(prog) => {
-                    writeln!(f, "{}", "# include".dimmed())?;
-                    write!(f, "{prog}")?;
+        fn dump(f: &mut fmt::Formatter<'_>, program: &Program, level: usize) -> fmt::Result {
+            let indent = " ".repeat(level * 4);
+            writeln!(f, "{indent}{}{}", "# file ".dimmed(), program.origin.path)?;
+            for item in &program.code {
+                match item {
+                    Item::Statement(stmt) => {
+                        writeln!(f, "{indent}{}", stmt.inst)?;
+                    }
+                    Item::Program(prog) => {
+                        dump(f, prog, level + 1)?;
+                    }
                 }
             }
+            Ok(())
         }
-        Ok(())
+
+        dump(f, self, 0)
     }
 }
 
