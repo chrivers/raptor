@@ -49,16 +49,16 @@ fn raptor() -> RaptorResult<()> {
 
     for file in args.input {
         let mut loader = Loader::new(template::make_environment()?, args.mode.dump);
-        let statements = match loader.parse_template(file.as_str(), &root_context) {
-            Ok(res) => res.code,
+        let program = match loader.parse_template(file.as_str(), &root_context) {
+            Ok(res) => res,
             Err(err) => {
                 loader.explain_error(&err)?;
                 continue;
             }
         };
 
-        for stmt in &statements {
-            println!("{:?} {:?}", stmt.origin, stmt.inst);
+        for stmt in &program.code {
+            println!("{stmt:?}");
         }
 
         if args.no_act {
@@ -68,12 +68,7 @@ fn raptor() -> RaptorResult<()> {
         let sandbox = Sandbox::new(&["layers/build".into()], "layers/tmp".into())?;
         let mut exec = Executor::new(sandbox);
 
-        for stmt in &statements {
-            if let Err(err) = exec.handle(stmt) {
-                loader.explain_exec_error(stmt, &err)?;
-                return Err(err);
-            }
-        }
+        exec.run(&loader, &program)?;
 
         exec.finish()?;
     }

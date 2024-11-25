@@ -1,13 +1,16 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::process::Command;
 
 use camino::Utf8PathBuf;
 use indicatif::{ProgressBar, ProgressStyle};
+use minijinja::Value;
 
-use crate::dsl::{Instruction, Statement};
+use crate::dsl::{Instruction, Item, Statement};
+use crate::program::{Loader, Program};
 use crate::sandbox::Sandbox;
-use crate::RaptorResult;
+use crate::{template, RaptorResult};
 
 pub struct Executor {
     sandbox: Sandbox,
@@ -31,7 +34,7 @@ impl Executor {
         ProgressBar::new(len).with_style(style)
     }
 
-    pub fn handle(&mut self, stmt: &Statement) -> RaptorResult<()> {
+    pub fn handle(&mut self, stmt: &Statement, ctx: &Value) -> RaptorResult<()> {
         match &stmt.inst {
             Instruction::From(inst) => {
                 info!("{:?}", inst);
@@ -86,6 +89,21 @@ impl Executor {
             Instruction::Include(_) => unreachable!(),
         }
 
+        Ok(())
+    }
+
+    pub fn run(&mut self, loader: &Loader, program: &Program) -> RaptorResult<()> {
+        for stmt in &program.code {
+            match &stmt {
+                Item::Statement(stmt) => {
+                    if let Err(err) = self.handle(stmt, &program.ctx) {
+                        loader.explain_exec_error(stmt, &err)?;
+                        return Err(err);
+                    }
+                }
+                Item::Program(prog) => self.run(loader, prog)?,
+            }
+        }
         Ok(())
     }
 

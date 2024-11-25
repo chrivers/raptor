@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use minijinja::{Environment, ErrorKind, Value};
 
-use crate::dsl::{IncludeArgValue, Instruction, Origin, Statement};
+use crate::dsl::{IncludeArgValue, Instruction, Item, Origin, Statement};
 use crate::parser::ast;
 use crate::program::{
     show_error_context, show_jinja_error_context, show_pest_error_context, Program,
@@ -44,7 +44,7 @@ impl<'source> Loader<'source> {
         }
     }
 
-    fn handle(&mut self, stmt: Statement, rctx: &Value) -> RaptorResult<Vec<Statement>> {
+    fn handle(&mut self, stmt: Statement, rctx: &Value) -> RaptorResult<Item> {
         if let Instruction::Include(inst) = stmt.inst {
             if self.origins.len() >= MAX_NESTED_INCLUDE {
                 return Err(RaptorError::ScriptError(
@@ -59,12 +59,12 @@ impl<'source> Loader<'source> {
                 .collect::<RaptorResult<HashMap<_, _>>>()?;
 
             self.origins.push(stmt.origin);
-            let statements = self.parse_template(&inst.src, &Value::from(map))?.code;
+            let program = self.parse_template(&inst.src, &Value::from(map))?;
             self.origins.pop();
 
-            Ok(statements)
+            Ok(Item::Program(program))
         } else {
-            Ok(vec![stmt])
+            Ok(Item::Statement(stmt))
         }
     }
 
@@ -180,9 +180,9 @@ impl<'source> Loader<'source> {
             RaptorError::PestError(err) => RaptorError::PestError(Box::new(err.with_path(path))),
             err => err,
         })? {
-            res.extend(self.handle(stmt, ctx)?);
+            res.push(self.handle(stmt, ctx)?);
         }
 
-        Ok(Program::new(res))
+        Ok(Program::new(res, ctx.clone()))
     }
 }

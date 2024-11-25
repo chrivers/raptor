@@ -1,38 +1,43 @@
 use std::os::unix::fs::MetadataExt;
 use std::sync::Arc;
 
-use camino::Utf8Path;
-use minijinja::context;
+use camino::{Utf8Path, Utf8PathBuf};
+use minijinja::{context, Value};
 
 use raptor::dsl::{
-    Chown, InstEnv, InstEnvAssign, InstWorkdir, InstWrite, Instruction, Origin, Statement,
+    Chown, IncludeArg, IncludeArgValue, InstEnv, InstEnvAssign, InstRender, InstWorkdir, InstWrite,
+    Instruction, Item, Lookup, Origin, Statement,
 };
 use raptor::program::{Loader, Program};
 use raptor::template::make_environment;
 use raptor::RaptorResult;
 
-fn load_file(name: &str) -> RaptorResult<Program> {
-    let mut loader = Loader::new(make_environment()?, false);
-    loader.parse_template(name, &context! {})
+fn test_path(filename: &str) -> Utf8PathBuf {
+    Utf8Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/cases")
+        .join(filename)
 }
 
-fn assert_single_inst_eq(path: &str, size: usize, res: &Program, inst: Instruction) {
+fn load_file(path: &Utf8Path) -> RaptorResult<Program> {
+    let mut loader = Loader::new(make_environment()?, false);
+    loader.parse_template(path.as_str(), &context! {})
+}
+
+fn assert_single_inst_eq(path: &Utf8Path, size: usize, res: &Program, inst: Instruction) {
     let origin = Origin {
-        path: Arc::new(path.into()),
+        path: Arc::new(path.to_string()),
         span: 0..size,
     };
 
-    assert_eq!(&res.code, &[Statement { inst, origin }]);
+    assert_eq!(&res.code, &[Item::Statement(Statement { inst, origin })]);
 }
 
 #[allow(clippy::cast_possible_truncation)]
 fn test_single_inst_parse(filename: &str, inst: Instruction) -> RaptorResult<()> {
-    let path = Utf8Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/cases")
-        .join(filename);
+    let path = test_path(filename);
+    let program = load_file(&path)?;
     let size = std::fs::File::open(&path)?.metadata()?.size();
-    let res = load_file(path.as_str())?;
-    assert_single_inst_eq(path.as_str(), size as usize, &res, inst);
+    assert_single_inst_eq(&path, size as usize, &program, inst);
     Ok(())
 }
 

@@ -5,23 +5,26 @@ mod loader;
 pub use error::*;
 pub use executor::*;
 pub use loader::*;
+use minijinja::Value;
 
-use crate::dsl::Statement;
+use crate::dsl::Item;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Program {
-    pub code: Vec<Statement>,
+    pub code: Vec<Item>,
+    pub ctx: Value,
 }
 
 impl Program {
     #[must_use]
-    pub const fn new(code: Vec<Statement>) -> Self {
-        Self { code }
+    pub const fn new(code: Vec<Item>, ctx: Value) -> Self {
+        Self { code, ctx }
     }
 }
 
 impl IntoIterator for Program {
-    type Item = Statement;
-    type IntoIter = <Vec<Statement> as IntoIterator>::IntoIter;
+    type Item = Item;
+    type IntoIter = <Vec<Item> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.code.into_iter()
@@ -29,8 +32,8 @@ impl IntoIterator for Program {
 }
 
 impl<'a> IntoIterator for &'a Program {
-    type Item = &'a Statement;
-    type IntoIter = <&'a Vec<Statement> as IntoIterator>::IntoIter;
+    type Item = &'a Item;
+    type IntoIter = <&'a Vec<Item> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.code.iter()
@@ -38,7 +41,7 @@ impl<'a> IntoIterator for &'a Program {
 }
 
 impl Program {
-    pub fn iter(&self) -> std::slice::Iter<Statement> {
+    pub fn iter(&self) -> std::slice::Iter<Item> {
         self.code.iter()
     }
 }
