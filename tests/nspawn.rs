@@ -92,10 +92,7 @@ fn nspawn_write_data() -> RaptorResult<()> {
     Ok(())
 }
 
-#[test]
-fn nspawn_write_chown_user() -> RaptorResult<()> {
-    let mut sbx = spawn_sandbox("write_chown_user")?;
-
+fn write_etc_passwd(sbx: &mut Sandbox) -> RaptorResult<()> {
     sbx.write_file(
         "/etc/passwd",
         None,
@@ -104,15 +101,78 @@ fn nspawn_write_chown_user() -> RaptorResult<()> {
             "root:x:0:0:root:/root:/bin/sh\n",
             "user:x:1000:1000:user:/home/user:/bin/sh\n"
         ),
-    )?;
+    )
+}
+
+fn write_etc_group(sbx: &mut Sandbox) -> RaptorResult<()> {
+    sbx.write_file(
+        "/etc/group",
+        None,
+        None,
+        concat!("root:x:0:\n", "user:x:1000:\n"),
+    )
+}
+
+#[test]
+fn nspawn_write_chown_user() -> RaptorResult<()> {
+    let mut sbx = spawn_sandbox("write_chown_user")?;
+
+    write_etc_passwd(&mut sbx)?;
 
     sbx.write_file("/tmp/c", Some(Chown::user("root")), None, b"Hello world\n")?;
-
     sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
+    sbx.shell(&["[ $(stat -c %g /tmp/c) -eq 0 ]"])?;
 
     sbx.write_file("/tmp/c", Some(Chown::user("user")), None, b"Hello world\n")?;
-
     sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 1000 ]"])?;
+    sbx.shell(&["[ $(stat -c %g /tmp/c) -eq 0 ]"])?;
+
+    sbx.close()?;
+    Ok(())
+}
+
+#[test]
+fn nspawn_write_chown_group() -> RaptorResult<()> {
+    let mut sbx = spawn_sandbox("write_chown_group")?;
+
+    write_etc_passwd(&mut sbx)?;
+    write_etc_group(&mut sbx)?;
+
+    sbx.write_file("/tmp/c", Some(Chown::group("root")), None, b"Hello world\n")?;
+    sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
+    sbx.shell(&["[ $(stat -c %g /tmp/c) -eq 0 ]"])?;
+
+    sbx.write_file("/tmp/c", Some(Chown::group("user")), None, b"Hello world\n")?;
+    sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
+    sbx.shell(&["[ $(stat -c %g /tmp/c) -eq 1000 ]"])?;
+
+    sbx.close()?;
+    Ok(())
+}
+
+#[test]
+fn nspawn_write_chown_both() -> RaptorResult<()> {
+    colog::init();
+    let mut sbx = spawn_sandbox("write_chown_group")?;
+
+    write_etc_passwd(&mut sbx)?;
+    write_etc_group(&mut sbx)?;
+
+    sbx.write_file("/tmp/a", Some(Chown::new("root", "root")), None, b"Hello\n")?;
+    sbx.shell(&["[ $(stat -c %u /tmp/a) -eq 0 ]"])?;
+    sbx.shell(&["[ $(stat -c %g /tmp/a) -eq 0 ]"])?;
+
+    sbx.write_file("/tmp/b", Some(Chown::new("user", "user")), None, b"Hello\n")?;
+    sbx.shell(&["[ $(stat -c %u /tmp/b) -eq 1000 ]"])?;
+    sbx.shell(&["[ $(stat -c %g /tmp/b) -eq 1000 ]"])?;
+
+    sbx.write_file("/tmp/c", Some(Chown::new("root", "user")), None, b"Hello\n")?;
+    sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
+    sbx.shell(&["[ $(stat -c %g /tmp/c) -eq 1000 ]"])?;
+
+    sbx.write_file("/tmp/d", Some(Chown::new("user", "root")), None, b"Hello\n")?;
+    sbx.shell(&["[ $(stat -c %u /tmp/d) -eq 1000 ]"])?;
+    sbx.shell(&["[ $(stat -c %g /tmp/d) -eq 0 ]"])?;
 
     sbx.close()?;
     Ok(())
