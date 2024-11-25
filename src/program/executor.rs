@@ -54,8 +54,10 @@ impl Executor {
 
                 let map = inst.args.clone().resolve_args(ctx)?;
 
+                let srcname = stmt.origin.basedir()?.join(&inst.src);
+
                 let source = template::make_environment()?
-                    .get_template(&inst.src)
+                    .get_template(srcname.as_str())
                     .and_then(|tmpl| tmpl.render(Value::from(map)))
                     .map(|src| src + "\n")?;
 

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::{Environment, ErrorKind, Value};
 
-use crate::dsl::{InstInclude, Instruction, Item, Origin, Program, ResolveArgs, Statement};
+use crate::dsl::{Instruction, Item, Origin, Program, ResolveArgs, Statement};
 use crate::parser::ast;
 use crate::program::{
     show_error_context, show_jinja_error_context, show_origin_error_context,
@@ -38,7 +38,9 @@ impl<'source> Loader<'source> {
     }
 
     fn handle(&mut self, stmt: Statement, rctx: &Value) -> RaptorResult<Item> {
-        if let Instruction::Include(InstInclude { src, args }) = stmt.inst {
+        let Statement { inst, origin } = stmt;
+
+        if let Instruction::Include(inst) = inst {
             if self.origins.len() >= MAX_NESTED_INCLUDE {
                 return Err(RaptorError::ScriptError(
                     "Too many nested includes".into(),
@@ -46,15 +48,16 @@ impl<'source> Loader<'source> {
                 ));
             }
 
-            let map = args.resolve_args(rctx)?;
+            let map = inst.args.resolve_args(rctx)?;
+            let src = &origin.basedir()?.join(inst.src);
 
-            self.origins.push(stmt.origin);
+            self.origins.push(origin);
             let program = self.parse_template(src, &Value::from(map))?;
             self.origins.pop();
 
             Ok(Item::Program(program))
         } else {
-            Ok(Item::Statement(stmt))
+            Ok(Item::Statement(Statement { inst, origin }))
         }
     }
 
