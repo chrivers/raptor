@@ -31,10 +31,24 @@ pub struct Chown {
 }
 
 impl Chown {
+    pub fn new(user: impl AsRef<str>, group: impl AsRef<str>) -> Self {
+        Self {
+            user: Some(user.as_ref().to_owned()),
+            group: Some(group.as_ref().to_owned()),
+        }
+    }
+
     pub fn user(user: impl AsRef<str>) -> Self {
         Self {
             user: Some(user.as_ref().to_owned()),
             group: None,
+        }
+    }
+
+    pub fn group(group: impl AsRef<str>) -> Self {
+        Self {
+            user: None,
+            group: Some(group.as_ref().to_owned()),
         }
     }
 }
