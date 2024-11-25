@@ -1,10 +1,10 @@
 use std::os::unix::fs::MetadataExt;
 
 use camino::{Utf8Path, Utf8PathBuf};
-use minijinja::{context, Value};
+use minijinja::context;
 
 use raptor::dsl::{
-    Chown, IncludeArg, IncludeArgValue, InstEnvAssign, Instruction, Item, Lookup, Origin, Program,
+    Chown, IncludeArg, IncludeArgValue, InstEnvAssign, Instruction, Item, Origin, Program,
 };
 use raptor::program::Loader;
 use raptor::RaptorResult;
@@ -15,7 +15,7 @@ fn base_path() -> Utf8PathBuf {
 
 fn load_file(path: impl AsRef<Utf8Path>) -> RaptorResult<Program> {
     let mut loader = Loader::new(base_path(), false)?;
-    loader.parse_template(dbg!(path.as_ref().file_name().unwrap()), &context! {})
+    loader.parse_template(path.as_ref().file_name().unwrap(), &context! {})
 }
 
 fn assert_single_inst_eq(path: &Utf8Path, size: usize, res: &Program, inst: Instruction) {
@@ -54,7 +54,7 @@ fn parse_write02() -> RaptorResult<()> {
 fn parse_env01() -> RaptorResult<()> {
     test_single_inst_parse(
         "env01.rapt",
-        Instruction::env(vec![InstEnvAssign::new("foo", "bar")]),
+        Instruction::env([InstEnvAssign::new("foo", "bar")]),
     )
 }
 
@@ -62,7 +62,7 @@ fn parse_env01() -> RaptorResult<()> {
 fn parse_env02() -> RaptorResult<()> {
     test_single_inst_parse(
         "env02.rapt",
-        Instruction::env(vec![
+        Instruction::env([
             InstEnvAssign::new("foo1", "bar1"),
             InstEnvAssign::new("foo2", "bar2"),
         ]),
@@ -78,7 +78,7 @@ fn parse_workdir01() -> RaptorResult<()> {
 fn parse_render01() -> RaptorResult<()> {
     test_single_inst_parse(
         "render01.rapt",
-        Instruction::render("include/template01.tmpl", "/a", None, None, vec![]),
+        Instruction::render("include/template01.tmpl", "/a", None, None, []),
     )
 }
 
@@ -91,10 +91,7 @@ fn parse_render02() -> RaptorResult<()> {
             "/a",
             None,
             None,
-            vec![IncludeArg {
-                name: "what".into(),
-                value: IncludeArgValue::Value(Value::from("world")),
-            }],
+            [IncludeArg::make("what", IncludeArgValue::value("world"))],
         ),
     )
 }
@@ -103,28 +100,25 @@ fn parse_render02() -> RaptorResult<()> {
 fn parse_render03() -> RaptorResult<()> {
     let program = load_file("render03.rapt")?;
 
-    let name = "what".into();
-
-    let value = IncludeArgValue::Lookup(Lookup::new(
-        vec!["what".into()],
-        Origin::make("render03.rinc", 39..43),
-    ));
-
-    let inst = Instruction::render(
-        "include/template02.tmpl",
-        "/a",
-        None,
-        None,
-        vec![IncludeArg { name, value }],
+    assert_eq!(
+        &program.code,
+        &[Item::program(
+            [Item::statement(
+                Instruction::render(
+                    "include/template02.tmpl",
+                    "/a",
+                    None,
+                    None,
+                    [IncludeArg::make(
+                        "what",
+                        IncludeArgValue::lookup(&["what"], Origin::make("render03.rinc", 39..43)),
+                    )],
+                ),
+                Origin::make("render03.rinc", 0..44)
+            )],
+            context! { what => "world" }
+        )]
     );
-
-    let origin = Origin::make("render03.rinc", 0..44);
-
-    let code = vec![Item::statement(inst, origin)];
-
-    let ctx = context! { what => "world" };
-
-    assert_eq!(&program.code, &[Item::program(code, ctx)]);
 
     Ok(())
 }
@@ -133,15 +127,16 @@ fn parse_render03() -> RaptorResult<()> {
 fn parse_include01() -> RaptorResult<()> {
     let program = load_file("include01.rapt")?;
 
-    let origin = Origin::make("write01.rapt", 0..17);
-
-    let inst = Instruction::write("/foo", "bar", None, None);
-
-    let code = vec![Item::statement(inst, origin)];
-
-    let ctx = context! {};
-
-    assert_eq!(&program.code, &[Item::program(code, ctx)]);
+    assert_eq!(
+        &program.code,
+        &[Item::program(
+            vec![Item::statement(
+                Instruction::write("/foo", "bar", None, None),
+                Origin::make("write01.rapt", 0..17)
+            )],
+            context! {}
+        )]
+    );
 
     Ok(())
 }
