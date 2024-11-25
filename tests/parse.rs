@@ -4,8 +4,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::{context, Value};
 
 use raptor::dsl::{
-    Chown, IncludeArg, IncludeArgValue, InstEnv, InstEnvAssign, InstRender, InstRun, InstWorkdir,
-    InstWrite, Instruction, Item, Lookup, Origin, Program,
+    Chown, IncludeArg, IncludeArgValue, InstEnvAssign, Instruction, Item, Lookup, Origin, Program,
 };
 use raptor::program::Loader;
 use raptor::RaptorResult;
@@ -39,12 +38,7 @@ fn test_single_inst_parse(filename: &str, inst: Instruction) -> RaptorResult<()>
 fn parse_write01() -> RaptorResult<()> {
     test_single_inst_parse(
         "write01.rapt",
-        Instruction::Write(InstWrite {
-            dest: "/foo".into(),
-            body: "bar".into(),
-            chmod: None,
-            chown: None,
-        }),
+        Instruction::write("/foo", "bar", None, None),
     )
 }
 
@@ -52,15 +46,7 @@ fn parse_write01() -> RaptorResult<()> {
 fn parse_write02() -> RaptorResult<()> {
     test_single_inst_parse(
         "write02.rapt",
-        Instruction::Write(InstWrite {
-            dest: "/foo".into(),
-            body: "bar".into(),
-            chmod: None,
-            chown: Some(Chown {
-                user: Some("user".into()),
-                group: Some("group".into()),
-            }),
-        }),
+        Instruction::write("/foo", "bar", None, Some(Chown::new("user", "group"))),
     )
 }
 
@@ -68,12 +54,7 @@ fn parse_write02() -> RaptorResult<()> {
 fn parse_env01() -> RaptorResult<()> {
     test_single_inst_parse(
         "env01.rapt",
-        Instruction::Env(InstEnv {
-            env: vec![InstEnvAssign {
-                key: "foo".into(),
-                value: "bar".into(),
-            }],
-        }),
+        Instruction::env(vec![InstEnvAssign::new("foo", "bar")]),
     )
 }
 
@@ -81,40 +62,23 @@ fn parse_env01() -> RaptorResult<()> {
 fn parse_env02() -> RaptorResult<()> {
     test_single_inst_parse(
         "env02.rapt",
-        Instruction::Env(InstEnv {
-            env: vec![
-                InstEnvAssign {
-                    key: "foo1".into(),
-                    value: "bar1".into(),
-                },
-                InstEnvAssign {
-                    key: "foo2".into(),
-                    value: "bar2".into(),
-                },
-            ],
-        }),
+        Instruction::env(vec![
+            InstEnvAssign::new("foo1", "bar1"),
+            InstEnvAssign::new("foo2", "bar2"),
+        ]),
     )
 }
 
 #[test]
 fn parse_workdir01() -> RaptorResult<()> {
-    test_single_inst_parse(
-        "workdir01.rapt",
-        Instruction::Workdir(InstWorkdir { dir: "/foo".into() }),
-    )
+    test_single_inst_parse("workdir01.rapt", Instruction::workdir("/foo"))
 }
 
 #[test]
 fn parse_render01() -> RaptorResult<()> {
     test_single_inst_parse(
         "render01.rapt",
-        Instruction::Render(InstRender {
-            src: "include/template01.tmpl".into(),
-            dest: "/a".into(),
-            chmod: None,
-            chown: None,
-            args: vec![],
-        }),
+        Instruction::render("include/template01.tmpl", "/a", None, None, vec![]),
     )
 }
 
@@ -122,16 +86,16 @@ fn parse_render01() -> RaptorResult<()> {
 fn parse_render02() -> RaptorResult<()> {
     test_single_inst_parse(
         "render02.rapt",
-        Instruction::Render(InstRender {
-            src: "include/template02.tmpl".into(),
-            dest: "/a".into(),
-            chmod: None,
-            chown: None,
-            args: vec![IncludeArg {
+        Instruction::render(
+            "include/template02.tmpl",
+            "/a",
+            None,
+            None,
+            vec![IncludeArg {
                 name: "what".into(),
                 value: IncludeArgValue::Value(Value::from("world")),
             }],
-        }),
+        ),
     )
 }
 
@@ -146,13 +110,13 @@ fn parse_render03() -> RaptorResult<()> {
         Origin::make("render03.rinc", 39..43),
     ));
 
-    let inst = Instruction::Render(InstRender {
-        src: "include/template02.tmpl".into(),
-        dest: "/a".into(),
-        chmod: None,
-        chown: None,
-        args: vec![IncludeArg { name, value }],
-    });
+    let inst = Instruction::render(
+        "include/template02.tmpl",
+        "/a",
+        None,
+        None,
+        vec![IncludeArg { name, value }],
+    );
 
     let origin = Origin::make("render03.rinc", 0..44);
 
@@ -171,12 +135,7 @@ fn parse_include01() -> RaptorResult<()> {
 
     let origin = Origin::make("write01.rapt", 0..17);
 
-    let inst = Instruction::Write(InstWrite {
-        dest: "/foo".into(),
-        body: "bar".into(),
-        chmod: None,
-        chown: None,
-    });
+    let inst = Instruction::write("/foo", "bar", None, None);
 
     let code = vec![Item::statement(inst, origin)];
 
@@ -193,12 +152,7 @@ fn parse_include02() -> RaptorResult<()> {
 
     let origin = Origin::make("write01.rapt", 0..17);
 
-    let inst = Instruction::Write(InstWrite {
-        dest: "/foo".into(),
-        body: "bar".into(),
-        chmod: None,
-        chown: None,
-    });
+    let inst = Instruction::write("/foo", "bar", None, None);
 
     let ctx = context! {};
 
@@ -218,9 +172,7 @@ fn parse_include03() -> RaptorResult<()> {
 
     let origin = Origin::make("include/run01.rinc", 0..7);
 
-    let inst = Instruction::Run(InstRun {
-        run: vec!["id".into()],
-    });
+    let inst = Instruction::run(&["id"]);
 
     let code = vec![Item::statement(inst, origin)];
 
