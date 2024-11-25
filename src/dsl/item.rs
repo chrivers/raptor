@@ -2,8 +2,7 @@ use std::fmt::Debug;
 
 use minijinja::Value;
 
-use crate::dsl::{Instruction, Origin, Statement};
-use crate::program::Program;
+use crate::dsl::{Instruction, Origin, Program, Statement};
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum Item {

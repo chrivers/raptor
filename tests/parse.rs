@@ -6,9 +6,9 @@ use minijinja::{context, Value};
 
 use raptor::dsl::{
     Chown, IncludeArg, IncludeArgValue, InstEnv, InstEnvAssign, InstRender, InstRun, InstWorkdir,
-    InstWrite, Instruction, Item, Lookup, Origin, Statement,
+    InstWrite, Instruction, Item, Lookup, Origin, Program, Statement,
 };
-use raptor::program::{Loader, Program};
+use raptor::program::Loader;
 use raptor::RaptorResult;
 
 fn base_path() -> Utf8PathBuf {

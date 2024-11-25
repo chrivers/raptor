@@ -5,8 +5,8 @@ use camino::Utf8PathBuf;
 use indicatif::{ProgressBar, ProgressStyle};
 use minijinja::Value;
 
-use crate::dsl::{Instruction, Item, ResolveArgs, Statement};
-use crate::program::{Loader, Program};
+use crate::dsl::{Instruction, Item, Program, ResolveArgs, Statement};
+use crate::program::Loader;
 use crate::sandbox::{Sandbox, SandboxExt};
 use crate::util::io_fast_copy;
 use crate::{template, RaptorResult};
