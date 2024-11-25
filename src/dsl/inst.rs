@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 use crate::dsl::{
     Chown, IncludeArg, InstCopy, InstEnv, InstEnvAssign, InstFrom, InstInclude, InstInvoke,
@@ -97,18 +97,34 @@ impl Instruction {
     }
 }
 
+impl Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::From(inst) => Display::fmt(inst, f),
+            Self::Copy(inst) => Display::fmt(inst, f),
+            Self::Render(inst) => Display::fmt(inst, f),
+            Self::Write(inst) => Display::fmt(inst, f),
+            Self::Include(inst) => Display::fmt(inst, f),
+            Self::Invoke(inst) => Display::fmt(inst, f),
+            Self::Run(inst) => Display::fmt(inst, f),
+            Self::Env(inst) => Display::fmt(inst, f),
+            Self::Workdir(inst) => Display::fmt(inst, f),
+        }
+    }
+}
+
 impl Debug for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::From(inst) => inst.fmt(f),
-            Self::Copy(inst) => inst.fmt(f),
-            Self::Render(inst) => inst.fmt(f),
-            Self::Write(inst) => inst.fmt(f),
-            Self::Include(inst) => inst.fmt(f),
-            Self::Invoke(inst) => inst.fmt(f),
-            Self::Run(inst) => inst.fmt(f),
-            Self::Env(inst) => inst.fmt(f),
-            Self::Workdir(inst) => inst.fmt(f),
+            Self::From(inst) => Debug::fmt(inst, f),
+            Self::Copy(inst) => Debug::fmt(inst, f),
+            Self::Render(inst) => Debug::fmt(inst, f),
+            Self::Write(inst) => Debug::fmt(inst, f),
+            Self::Include(inst) => Debug::fmt(inst, f),
+            Self::Invoke(inst) => Debug::fmt(inst, f),
+            Self::Run(inst) => Debug::fmt(inst, f),
+            Self::Env(inst) => Debug::fmt(inst, f),
+            Self::Workdir(inst) => Debug::fmt(inst, f),
         }
     }
 }

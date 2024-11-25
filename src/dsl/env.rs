@@ -1,4 +1,6 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
+
+use crate::print::Theme;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct InstEnvAssign {
@@ -23,6 +25,16 @@ impl InstEnvAssign {
 impl Debug for InstEnvAssign {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}={}", self.key, self.value)
+    }
+}
+
+impl Display for InstEnv {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.keyword("ENV")?;
+        for env in &self.env {
+            f.env_arg(env)?;
+        }
+        Ok(())
     }
 }
 

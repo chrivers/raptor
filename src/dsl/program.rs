@@ -1,3 +1,6 @@
+use std::fmt::{self, Display};
+
+use colored::Colorize;
 use minijinja::Value;
 
 use crate::dsl::Item;
@@ -30,6 +33,23 @@ impl<'a> IntoIterator for &'a Program {
 
     fn into_iter(self) -> Self::IntoIter {
         self.code.iter()
+    }
+}
+
+impl Display for Program {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for item in &self.code {
+            match item {
+                Item::Statement(stmt) => {
+                    writeln!(f, "{}", stmt.inst)?;
+                }
+                Item::Program(prog) => {
+                    writeln!(f, "{}", "# include".dimmed())?;
+                    write!(f, "{prog}")?;
+                }
+            }
+        }
+        Ok(())
     }
 }
 

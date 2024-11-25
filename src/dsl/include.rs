@@ -1,10 +1,11 @@
 use std::collections::HashMap;
-use std::fmt::{Debug, Display};
+use std::fmt::{self, Debug, Display};
 
 use minijinja::Value;
 use serde::Serialize;
 
 use crate::dsl::Origin;
+use crate::print::Theme;
 use crate::{RaptorError, RaptorResult};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -21,7 +22,7 @@ impl Lookup {
 }
 
 impl Display for Lookup {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", &self.path.join("."))
     }
 }
@@ -99,14 +100,14 @@ impl ResolveArgs for Vec<IncludeArg> {
 }
 
 impl Display for IncludeArg {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}={}", self.name, self.value)?;
         Ok(())
     }
 }
 
 impl Display for IncludeArgValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Lookup(l) => write!(f, "{l}"),
             Self::Value(v) => write!(f, "{v:?}"),
@@ -114,8 +115,18 @@ impl Display for IncludeArgValue {
     }
 }
 
+impl Display for InstInclude {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.keyword("INCLUDE")?;
+        for arg in &self.args {
+            f.include_arg(arg)?;
+        }
+        Ok(())
+    }
+}
+
 impl Debug for InstInclude {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "INCLUDE {}", self.src)?;
         for arg in &self.args {
             write!(f, " {arg:?}")?;

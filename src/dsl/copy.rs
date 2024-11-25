@@ -1,6 +1,7 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 use crate::dsl::Chown;
+use crate::print::Theme;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct InstCopy {
@@ -8,6 +9,18 @@ pub struct InstCopy {
     pub dest: String,
     pub chmod: Option<u32>,
     pub chown: Option<Chown>,
+}
+
+impl Display for InstCopy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.keyword("COPY")?;
+        f.chmod(&self.chmod)?;
+        f.chown(&self.chown)?;
+        for src in &self.srcs {
+            f.src(src)?;
+        }
+        f.dest(&self.dest)
+    }
 }
 
 impl Debug for InstCopy {

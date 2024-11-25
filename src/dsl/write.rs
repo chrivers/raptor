@@ -1,6 +1,7 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 use crate::dsl::Chown;
+use crate::print::Theme;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct InstWrite {
@@ -8,6 +9,17 @@ pub struct InstWrite {
     pub body: String,
     pub chmod: Option<u32>,
     pub chown: Option<Chown>,
+}
+
+impl Display for InstWrite {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.keyword("WRITE")?;
+        f.chmod(&self.chmod)?;
+        f.chown(&self.chown)?;
+        f.dest(&self.dest)?;
+        f.value(&self.body)?;
+        Ok(())
+    }
 }
 
 impl Debug for InstWrite {
