@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use minijinja::{Environment, ErrorKind, Value};
 
-use crate::dsl::{IncludeArgValue, Instruction, Item, Origin, Statement};
+use crate::dsl::{InstInclude, Instruction, Item, Origin, ResolveArgs, Statement};
 use crate::parser::ast;
 use crate::program::{
     show_error_context, show_jinja_error_context, show_pest_error_context, Program,
@@ -18,22 +18,6 @@ pub struct Loader<'source> {
 
 const MAX_NESTED_INCLUDE: usize = 20;
 
-impl IncludeArgValue {
-    pub fn resolve(self, ctx: &Value) -> RaptorResult<Value> {
-        match self {
-            Self::Lookup(lookup) => {
-                let name = &lookup.path[0];
-                let val = ctx.get_attr(name)?;
-                if val.is_undefined() {
-                    return Err(RaptorError::UndefinedVarError(name.into(), lookup.origin));
-                }
-                Ok(val)
-            }
-            Self::Value(val) => Ok(val),
-        }
-    }
-}
-
 impl<'source> Loader<'source> {
     pub fn new(env: Environment<'source>, dump: bool) -> Self {
         Self {
@@ -45,21 +29,18 @@ impl<'source> Loader<'source> {
     }
 
     fn handle(&mut self, stmt: Statement, rctx: &Value) -> RaptorResult<Item> {
-        if let Instruction::Include(inst) = stmt.inst {
+        if let Instruction::Include(InstInclude { src, args }) = stmt.inst {
             if self.origins.len() >= MAX_NESTED_INCLUDE {
                 return Err(RaptorError::ScriptError(
                     "Too many nested includes".into(),
                     self.origins.last().unwrap().clone(),
                 ));
             }
-            let map = inst
-                .args
-                .into_iter()
-                .map(|arg| Ok((arg.name, arg.value.resolve(rctx)?)))
-                .collect::<RaptorResult<HashMap<_, _>>>()?;
+
+            let map = args.resolve_args(rctx)?;
 
             self.origins.push(stmt.origin);
-            let program = self.parse_template(&inst.src, &Value::from(map))?;
+            let program = self.parse_template(&src, &Value::from(map))?;
             self.origins.pop();
 
             Ok(Item::Program(program))

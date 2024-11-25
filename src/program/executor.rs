@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::process::Command;
@@ -7,7 +6,7 @@ use camino::Utf8PathBuf;
 use indicatif::{ProgressBar, ProgressStyle};
 use minijinja::Value;
 
-use crate::dsl::{Instruction, Item, Statement};
+use crate::dsl::{Instruction, Item, ResolveArgs, Statement};
 use crate::program::{Loader, Program};
 use crate::sandbox::Sandbox;
 use crate::{template, RaptorResult};
@@ -56,11 +55,7 @@ impl Executor {
             Instruction::Render(inst) => {
                 info!("{:?}", inst);
 
-                let map = inst
-                    .args
-                    .iter()
-                    .map(|arg| Ok((arg.name.to_string(), arg.value.clone().resolve(ctx)?)))
-                    .collect::<RaptorResult<HashMap<_, _>>>()?;
+                let map = inst.args.clone().resolve_args(ctx)?;
 
                 let source = template::make_environment()?
                     .get_template(&inst.src)
