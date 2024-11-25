@@ -172,3 +172,24 @@ fn parse_include03() -> RaptorResult<()> {
 
     Ok(())
 }
+
+#[test]
+fn parse_include04() -> RaptorResult<()> {
+    let program = load_file("include04.rapt")?;
+
+    assert_eq!(
+        &program.code,
+        &[Item::program(
+            [Item::program(
+                [Item::statement(
+                    Instruction::run(&["id"]),
+                    Origin::make("include/run01.rinc", 0..7)
+                )],
+                context! {}
+            )],
+            context! {}
+        )]
+    );
+
+    Ok(())
+}
