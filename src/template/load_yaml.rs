@@ -1,15 +1,14 @@
 use std::fs::File;
 
-use minijinja::{Environment, Error, ErrorKind, Value};
+use minijinja::{Environment, Error, Value};
+
+use crate::template::AdaptError;
 
 #[allow(clippy::unnecessary_wraps)]
 pub fn load_yaml(filename: &str) -> Result<Value, Error> {
-    let file = File::open(filename).map_err(|err| {
-        Error::new(ErrorKind::InvalidOperation, "Failed to open file").with_source(err)
-    })?;
-    let yml: serde_yml::Value = serde_yml::from_reader(&file).map_err(|err| {
-        Error::new(ErrorKind::InvalidOperation, "Failed to parse yaml").with_source(err)
-    })?;
+    let file = File::open(filename).adapt_err("Failed to open file")?;
+    let yml: serde_yml::Value = serde_yml::from_reader(&file).adapt_err("Failed to parse yaml")?;
+
     Ok(Value::from_serialize(yml))
 }
 

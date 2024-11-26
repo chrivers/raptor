@@ -3,10 +3,25 @@ mod file;
 mod load_yaml;
 mod log;
 
+use std::borrow::Cow;
+
 use minijinja::syntax::SyntaxConfig;
-use minijinja::{Environment, ErrorKind, UndefinedBehavior};
+use minijinja::{Environment, Error, ErrorKind, UndefinedBehavior};
 
 use crate::RaptorResult;
+
+trait AdaptError<T> {
+    fn adapt_err(self, msg: impl Into<Cow<'static, str>>) -> Result<T, Error>;
+}
+
+impl<T, E> AdaptError<T> for Result<T, E>
+where
+    E: std::error::Error + Send + Sync + 'static,
+{
+    fn adapt_err(self, msg: impl Into<Cow<'static, str>>) -> Result<T, Error> {
+        self.map_err(|err| Error::new(ErrorKind::InvalidOperation, msg).with_source(err))
+    }
+}
 
 pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
     let mut env = Environment::new();
@@ -15,7 +30,7 @@ pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
 
     env.set_loader(|name| {
         Ok(Some(std::fs::read_to_string(name).map_err(|e| {
-            minijinja::Error::new(
+            Error::new(
                 ErrorKind::BadInclude,
                 format!("Could not open [{name}]: {e}"),
             )
