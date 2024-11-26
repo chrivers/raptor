@@ -1,0 +1,13 @@
+# load data1.yaml into "data"
+$ set data = load_yaml("data1.yaml")
+
+$ set other = {"foo": "bar"}
+
+# pass arguments by names
+INCLUDE write_arg.rapt what=data.what where=data.where
+
+# pass arguments as dict (named data on both sides)
+INCLUDE write_dict.rapt data=data
+
+# shorter syntax for data=data
+INCLUDE write_dict.rapt data

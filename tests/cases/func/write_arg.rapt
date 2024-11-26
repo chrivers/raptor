@@ -1,0 +1,5 @@
+# build dictionary from incoming arguments
+$ set data = {"what": what, "where": where}
+
+# then pass this on to write_dict:
+INCLUDE write_dict.rapt data
