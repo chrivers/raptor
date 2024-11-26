@@ -4,7 +4,7 @@ use camino::Utf8PathBuf;
 use colored::Colorize;
 use minijinja::Value;
 
-use crate::dsl::Item;
+use crate::dsl::{Item, Statement};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Program {
@@ -17,6 +17,17 @@ impl Program {
     #[must_use]
     pub const fn new(code: Vec<Item>, ctx: Value, path: Utf8PathBuf) -> Self {
         Self { code, ctx, path }
+    }
+
+    pub fn traverse(&self, visitor: &mut impl FnMut(&Statement)) {
+        for stmt in &self.code {
+            match stmt {
+                Item::Statement(stmt) => visitor(stmt),
+                Item::Program(prog) => {
+                    prog.traverse(visitor);
+                }
+            }
+        }
     }
 }
 
