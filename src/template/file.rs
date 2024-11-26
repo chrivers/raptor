@@ -17,6 +17,9 @@ impl Object for PathWrap {
         () = from_args(args)?;
         match method {
             "exists" => Ok(Value::from(self.0.exists())),
+            "is_dir" => Ok(Value::from(self.0.is_dir())),
+            "is_file" => Ok(Value::from(self.0.is_file())),
+            "is_symlink" => Ok(Value::from(self.0.is_symlink())),
             _ => Err(Error::from(ErrorKind::UnknownMethod)),
         }
     }
