@@ -33,11 +33,8 @@ impl Executor {
 
     pub fn handle(&mut self, stmt: &Statement, ctx: &Value) -> RaptorResult<()> {
         match &stmt.inst {
-            Instruction::From(inst) => {
-                info!("{:?}", inst);
-            }
+            Instruction::From(_) => {}
             Instruction::Copy(inst) => {
-                info!("{:?}", inst);
                 let src = File::open(&inst.srcs[0])?;
                 let fd = self.sandbox.create_file(
                     &Utf8PathBuf::from(&inst.dest),
@@ -50,8 +47,6 @@ impl Executor {
                 io_fast_copy(src, dst)?;
             }
             Instruction::Render(inst) => {
-                info!("{:?}", inst);
-
                 let map = inst.args.clone().resolve_args(ctx)?;
 
                 let srcname = stmt.origin.basedir()?.join(&inst.src);
@@ -69,7 +64,6 @@ impl Executor {
                 )?;
             }
             Instruction::Write(inst) => {
-                info!("{:?}", inst);
                 self.sandbox.write_file(
                     &inst.dest,
                     inst.chown.clone(),
@@ -78,7 +72,6 @@ impl Executor {
                 )?;
             }
             Instruction::Run(inst) => {
-                debug!("{:?}", inst);
                 self.sandbox.run(&inst.run)?;
             }
 
@@ -87,14 +80,12 @@ impl Executor {
             }
 
             Instruction::Env(inst) => {
-                debug!("{:?}", inst);
                 for env in &inst.env {
                     self.sandbox.setenv(&env.key, &env.value)?;
                 }
             }
 
             Instruction::Workdir(inst) => {
-                debug!("{:?}", inst);
                 self.sandbox.chdir(&inst.dir)?;
             }
 
@@ -108,6 +99,7 @@ impl Executor {
         for stmt in &program.code {
             match &stmt {
                 Item::Statement(stmt) => {
+                    info!("{}", stmt.inst);
                     if let Err(err) = self.handle(stmt, &program.ctx) {
                         loader.explain_exec_error(stmt, &err)?;
                         return Err(err);
