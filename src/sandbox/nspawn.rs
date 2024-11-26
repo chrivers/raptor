@@ -162,8 +162,8 @@ impl<'a> SpawnBuilder<'a> {
     }
 
     #[must_use]
-    pub fn root_overlays(mut self, overlays: &[&'a Utf8Path]) -> Self {
-        self.root_overlay.extend(overlays);
+    pub fn root_overlays(mut self, overlays: &'a [impl AsRef<Utf8Path>]) -> Self {
+        self.root_overlay.extend(overlays.iter().map(AsRef::as_ref));
         self
     }
 

@@ -73,7 +73,7 @@ impl Sandbox {
         Err(RaptorError::SandboxRequestError(Errno::ECONNABORTED))
     }
 
-    pub fn new(layers: &[&Utf8Path], rootdir: &Utf8Path) -> RaptorResult<Self> {
+    pub fn new(layers: &[impl AsRef<Utf8Path>], rootdir: &Utf8Path) -> RaptorResult<Self> {
         /*
         For the sandbox, we need two directories, "temp" and "conn".
 
