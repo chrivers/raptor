@@ -45,6 +45,7 @@ clap = { version = "4.5.21", features = ["cargo", "derive", "string"] }
 colog = "1.3.0"
 colored = "2.1.0"
 indicatif = { version = "0.17.9", features = ["improved_unicode"] }
+itertools = "0.13.0"
 log = "0.4.22"
 minijinja = { version = "2.5.0", features = ["custom_syntax", "debug", "loader", "loop_controls"] }
 nix = { version = "0.29.0", features = ["fs", "user"] }
