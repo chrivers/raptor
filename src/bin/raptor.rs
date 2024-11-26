@@ -1,8 +1,8 @@
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use log::error;
+use log::{error, info};
 
-use raptor::build::RaptorBuilder;
+use raptor::build::{Cacher, RaptorBuilder};
 use raptor::program::Loader;
 use raptor::RaptorResult;
 
@@ -49,6 +49,9 @@ fn raptor() -> RaptorResult<()> {
 
     for file in args.input {
         let program = builder.load(file)?;
+
+        let hash = Cacher::cache_key(&program)?;
+        info!("Hash: {hash:X}");
 
         print!("{program}");
 
