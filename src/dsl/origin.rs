@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 
+use crate::util::SafeParent;
 use crate::RaptorResult;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -32,8 +33,6 @@ impl Origin {
     }
 
     pub fn basedir(&self) -> RaptorResult<&Utf8Path> {
-        self.path
-            .parent()
-            .ok_or_else(|| crate::RaptorError::BadPathNoParent(self.path.as_ref().clone()))
+        self.path.try_parent()
     }
 }
