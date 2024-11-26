@@ -98,7 +98,7 @@ impl Instruction {
 }
 
 impl Display for Instruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::From(inst) => Display::fmt(inst, f),
             Self::Copy(inst) => Display::fmt(inst, f),
@@ -114,7 +114,7 @@ impl Display for Instruction {
 }
 
 impl Debug for Instruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::From(inst) => Debug::fmt(inst, f),
             Self::Copy(inst) => Debug::fmt(inst, f),

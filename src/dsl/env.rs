@@ -23,7 +23,7 @@ impl InstEnvAssign {
 }
 
 impl Display for InstEnv {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.keyword("ENV")?;
         for env in &self.env {
             f.env_arg(env)?;

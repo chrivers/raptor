@@ -8,7 +8,7 @@ pub struct InstFrom {
 }
 
 impl Display for InstFrom {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.keyword("FROM")?;
         f.src(&self.from)
     }

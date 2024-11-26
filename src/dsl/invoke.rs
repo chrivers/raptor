@@ -8,7 +8,7 @@ pub struct InstInvoke {
 }
 
 impl Display for InstInvoke {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.keyword("INVOKE")?;
         for arg in &self.args {
             f.src(arg)?;

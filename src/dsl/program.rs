@@ -50,8 +50,8 @@ impl<'a> IntoIterator for &'a Program {
 }
 
 impl Display for Program {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fn dump(f: &mut fmt::Formatter<'_>, program: &Program, level: usize) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fn dump(f: &mut fmt::Formatter, program: &Program, level: usize) -> fmt::Result {
             let indent = " ".repeat(level * 4);
             writeln!(f, "{indent}{}{}", "# file ".dimmed(), program.path)?;
             for item in &program.code {

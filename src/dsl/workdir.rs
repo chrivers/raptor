@@ -8,7 +8,7 @@ pub struct InstWorkdir {
 }
 
 impl Display for InstWorkdir {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.keyword("WORKDIR")?;
         f.dest(&self.dir)
     }

@@ -12,7 +12,7 @@ pub struct InstWrite {
 }
 
 impl Display for InstWrite {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.keyword("WRITE")?;
         f.chmod(&self.chmod)?;
         f.chown(&self.chown)?;

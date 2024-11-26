@@ -12,7 +12,7 @@ pub struct InstCopy {
 }
 
 impl Display for InstCopy {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.keyword("COPY")?;
         f.chmod(&self.chmod)?;
         f.chown(&self.chown)?;
