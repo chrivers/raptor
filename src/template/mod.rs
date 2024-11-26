@@ -1,5 +1,6 @@
 mod args;
 mod file;
+mod load_yaml;
 mod log;
 
 use minijinja::syntax::SyntaxConfig;
@@ -31,6 +32,7 @@ pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
     log::add_functions(&mut env);
     file::add_functions(&mut env);
     args::add_functions(&mut env);
+    load_yaml::add_functions(&mut env);
 
     Ok(env)
 }
