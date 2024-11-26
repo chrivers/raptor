@@ -26,6 +26,11 @@ impl Cacher {
     }
 
     #[must_use]
+    pub fn layer_name(prog: &Program, hash: u64) -> String {
+        format!("{}-{hash:016X}", prog.path.file_stem().unwrap())
+    }
+
+    #[must_use]
     pub fn sources(prog: &Program) -> Vec<String> {
         let mut res = HashSet::<String>::new();
         let data = &mut res;
