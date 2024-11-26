@@ -77,7 +77,10 @@ impl IncludeArgValue {
             Self::Lookup(lookup) => {
                 let mut val = ctx.get_attr(&lookup.path[0])?;
                 if val.is_undefined() {
-                    return Err(RaptorError::UndefinedVarError(lookup.path[0].to_string(), lookup.origin));
+                    return Err(RaptorError::UndefinedVarError(
+                        lookup.path[0].to_string(),
+                        lookup.origin,
+                    ));
                 }
                 for name in &lookup.path[1..] {
                     val = val.get_attr(name)?;
