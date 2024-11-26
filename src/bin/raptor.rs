@@ -3,6 +3,7 @@ use clap::Parser as _;
 use log::error;
 
 use raptor::build::RaptorBuilder;
+use raptor::program::Loader;
 use raptor::RaptorResult;
 
 #[derive(clap::Parser, Debug)]
@@ -43,7 +44,8 @@ struct Mode {
 fn raptor() -> RaptorResult<()> {
     let args = Cli::parse();
 
-    let mut builder = RaptorBuilder::new()?;
+    let loader = Loader::new("", args.mode.dump)?;
+    let mut builder = RaptorBuilder::new(loader);
 
     for file in args.input {
         let program = builder.load(file)?;

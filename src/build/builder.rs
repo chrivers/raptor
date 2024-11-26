@@ -15,11 +15,11 @@ pub struct RaptorBuilder<'a> {
 }
 
 impl<'a> RaptorBuilder<'a> {
-    pub fn new() -> RaptorResult<Self> {
-        Ok(Self {
-            loader: Loader::new("", false)?,
+    pub fn new(loader: Loader<'a>) -> Self {
+        Self {
+            loader,
             programs: HashMap::new(),
-        })
+        }
     }
 
     pub fn load(&mut self, path: impl AsRef<Utf8Path>) -> RaptorResult<Arc<Program>> {
