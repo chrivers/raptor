@@ -14,6 +14,22 @@ authors = ["Christian Iversen <ci@iversenit.dk>"]
 name = "diagnostic"
 harness = false
 
+[[bin]]
+name = "raptor"
+test = false
+
+[[bin]]
+name = "nspawn-test"
+test = false
+
+[[bin]]
+name = "debootwrap"
+test = false
+
+[[bin]]
+name = "nspawn-client"
+test = false
+
 [lints.rust]
 unstable_features = "forbid"
 unused_lifetimes = "warn"
