@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 use crate::print::Theme;
 
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct InstRun {
     pub run: Vec<String>,
 }
@@ -15,11 +15,5 @@ impl Display for InstRun {
             f.src(arg)?;
         }
         Ok(())
-    }
-}
-
-impl Debug for InstRun {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "RUN {}", self.run.join(" "))
     }
 }

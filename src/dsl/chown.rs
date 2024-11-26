@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-#[derive(Clone, Hash, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Default, PartialEq, Eq)]
 pub struct Chown {
     pub user: Option<String>,
     pub group: Option<String>,

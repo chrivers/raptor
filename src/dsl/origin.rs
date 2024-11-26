@@ -6,7 +6,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 
 use crate::RaptorResult;
 
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Origin {
     pub path: Arc<Utf8PathBuf>,
     pub span: Range<usize>,
@@ -35,15 +35,5 @@ impl Origin {
         self.path
             .parent()
             .ok_or_else(|| crate::RaptorError::BadPathNoParent(self.path.as_ref().clone()))
-    }
-}
-
-impl Debug for Origin {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "[{:<15} {:>3} .. {:>3}]",
-            self.path, self.span.start, self.span.end
-        )
     }
 }

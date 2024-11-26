@@ -65,7 +65,7 @@ impl IncludeArg {
     }
 }
 
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct InstInclude {
     pub src: String,
     pub args: Vec<IncludeArg>,
@@ -120,16 +120,6 @@ impl Display for InstInclude {
         f.keyword("INCLUDE")?;
         for arg in &self.args {
             f.include_arg(arg)?;
-        }
-        Ok(())
-    }
-}
-
-impl Debug for InstInclude {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "INCLUDE {}", self.src)?;
-        for arg in &self.args {
-            write!(f, " {arg:?}")?;
         }
         Ok(())
     }
