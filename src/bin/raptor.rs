@@ -2,9 +2,7 @@ use camino::Utf8PathBuf;
 use clap::Parser as _;
 use log::error;
 
-use minijinja::context;
-use raptor::program::{Executor, Loader};
-use raptor::sandbox::Sandbox;
+use raptor::build::RaptorBuilder;
 use raptor::RaptorResult;
 
 #[derive(clap::Parser, Debug)]
@@ -45,18 +43,10 @@ struct Mode {
 fn raptor() -> RaptorResult<()> {
     let args = Cli::parse();
 
-    let root_context = context!();
+    let mut builder = RaptorBuilder::new()?;
 
     for file in args.input {
-        let path = Utf8PathBuf::from(&file);
-        let mut loader = Loader::new(path.parent().unwrap(), args.mode.dump)?;
-        let program = match loader.parse_template(path.file_name().unwrap(), &root_context) {
-            Ok(res) => res,
-            Err(err) => {
-                loader.explain_error(&err)?;
-                continue;
-            }
-        };
+        let program = builder.load(file)?;
 
         print!("{program}");
 
@@ -64,12 +54,7 @@ fn raptor() -> RaptorResult<()> {
             continue;
         }
 
-        let sandbox = Sandbox::new(&["layers/empty".into()], "layers/tmp".into())?;
-        let mut exec = Executor::new(sandbox);
-
-        exec.run(&loader, &program)?;
-
-        exec.finish()?;
+        builder.exec(&program)?;
     }
 
     Ok(())
