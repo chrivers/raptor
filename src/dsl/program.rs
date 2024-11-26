@@ -4,7 +4,7 @@ use camino::Utf8PathBuf;
 use colored::Colorize;
 use minijinja::Value;
 
-use crate::dsl::{Item, Statement};
+use crate::dsl::{Instruction, Item, Statement};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Program {
@@ -28,6 +28,18 @@ impl Program {
                 }
             }
         }
+    }
+
+    #[must_use]
+    pub fn from(&self) -> Option<String> {
+        let mut res = None;
+        let opt = &mut res;
+        self.traverse(&mut |stmt| {
+            if let Instruction::From(from) = &stmt.inst {
+                *opt = Some(from.from.clone());
+            }
+        });
+        res
     }
 }
 
