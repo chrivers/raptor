@@ -38,7 +38,7 @@ impl<'source> Loader<'source> {
         &self.base
     }
 
-    fn handle(&mut self, stmt: Statement, rctx: &Value) -> RaptorResult<Item> {
+    fn handle(&mut self, stmt: Statement, ctx: &Value) -> RaptorResult<Item> {
         let Statement { inst, origin } = stmt;
 
         if let Instruction::Include(inst) = inst {
@@ -49,11 +49,11 @@ impl<'source> Loader<'source> {
                 ));
             }
 
-            let map = inst.args.resolve_args(rctx)?;
+            let map = inst.args.resolve_args(ctx)?;
             let src = &origin.basedir()?.join(inst.src);
 
             self.origins.push(origin);
-            let program = self.parse_template(src, &Value::from(map))?;
+            let program = self.parse_template(src, Value::from(map))?;
             self.origins.pop();
 
             Ok(Item::Program(program))
@@ -96,7 +96,7 @@ impl<'source> Loader<'source> {
                             last.path.as_ref(),
                             "Error while evaluating INCLUDE",
                             err.detail().unwrap_or("error"),
-                            err.range().unwrap_or_else(|| last.span.clone()),
+                            err.range().unwrap_or(last.span),
                         );
                     } else {
                         error!("Cannot provide error context: {err}");
@@ -147,7 +147,7 @@ impl<'source> Loader<'source> {
     pub fn parse_template(
         &mut self,
         path: impl AsRef<Utf8Path>,
-        ctx: &Value,
+        ctx: Value,
     ) -> RaptorResult<Program> {
         let tmpl = self.env.get_template(self.base.join(&path).as_str())?;
         let (source, state) = tmpl
@@ -162,7 +162,7 @@ impl<'source> Loader<'source> {
 
         let ctx = &context! {
             ..exports,
-            ..ctx.clone()
+            ..ctx,
         };
 
         if self.dump {
