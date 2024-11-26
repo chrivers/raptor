@@ -75,10 +75,12 @@ impl IncludeArgValue {
     pub fn resolve(self, ctx: &Value) -> RaptorResult<Value> {
         match self {
             Self::Lookup(lookup) => {
-                let name = &lookup.path[0];
-                let val = ctx.get_attr(name)?;
-                if val.is_undefined() {
-                    return Err(RaptorError::UndefinedVarError(name.into(), lookup.origin));
+                let mut val = ctx.get_attr(&lookup.path[0])?;
+                for name in &lookup.path[1..] {
+                    val = val.get_attr(name)?;
+                    if val.is_undefined() {
+                        return Err(RaptorError::UndefinedVarError(name.into(), lookup.origin));
+                    }
                 }
                 Ok(val)
             }
