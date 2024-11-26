@@ -62,7 +62,7 @@ impl<'a> RaptorBuilder<'a> {
         Ok(())
     }
 
-    pub fn build(&mut self, program: Arc<Program>) -> RaptorResult<()> {
+    pub fn stack(&mut self, program: Arc<Program>) -> RaptorResult<Vec<Arc<Program>>> {
         let mut data: Vec<Arc<Program>> = vec![];
         let table = &mut data;
 
@@ -70,12 +70,18 @@ impl<'a> RaptorBuilder<'a> {
             table.push(prog);
         })?;
 
+        Ok(data)
+    }
+
+    pub fn build(&mut self, program: Arc<Program>) -> RaptorResult<()> {
+        let programs = self.stack(program)?;
+
         let mut layers: Vec<Utf8PathBuf> = vec!["layers/empty".into()];
 
-        for p in data {
-            let hash = Cacher::cache_key(&p)?;
+        for prog in programs {
+            let hash = Cacher::cache_key(&prog)?;
 
-            let layer_name = Cacher::layer_name(&p, hash);
+            let layer_name = Cacher::layer_name(&prog, hash);
             let work_path = format!("layers/build-{layer_name}");
             let done_path = format!("layers/{layer_name}");
 
@@ -92,7 +98,7 @@ impl<'a> RaptorBuilder<'a> {
 
                 let mut exec = Executor::new(sandbox);
 
-                exec.run(&self.loader, &p)?;
+                exec.run(&self.loader, &prog)?;
 
                 exec.finish()?;
 
