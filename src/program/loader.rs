@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use camino::{Utf8Path, Utf8PathBuf};
+use colored::Colorize;
 use minijinja::{Environment, ErrorKind, Value};
 
 use crate::dsl::{Instruction, Item, Origin, Program, ResolveArgs, Statement};
@@ -103,6 +104,11 @@ impl<'source> Loader<'source> {
                 } else {
                     self.show_include_stack(&origins);
                     show_jinja_error_context(err)?;
+                    let mut err = &err as &dyn std::error::Error;
+                    while let Some(next_err) = err.source() {
+                        error!("{}\n{:#}", "caused by:".bright_white(), next_err);
+                        err = next_err;
+                    }
                 }
             }
             RaptorError::PestError(err) => {
