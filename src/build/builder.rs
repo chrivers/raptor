@@ -2,11 +2,14 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
+use colored::Colorize;
 use minijinja::context;
 
+use crate::build::Cacher;
 use crate::dsl::Program;
 use crate::program::{Executor, Loader};
 use crate::sandbox::Sandbox;
+use crate::util::SafeParent;
 use crate::RaptorResult;
 
 pub struct RaptorBuilder<'a> {
@@ -40,13 +43,66 @@ impl<'a> RaptorBuilder<'a> {
         Ok(res.clone())
     }
 
-    pub fn exec(&self, program: &Program) -> RaptorResult<()> {
-        let sandbox = Sandbox::new(&["layers/empty".into()], "layers/tmp".into())?;
+    pub fn recurse(
+        &mut self,
+        program: Arc<Program>,
+        visitor: &mut impl FnMut(Arc<Program>),
+    ) -> RaptorResult<()> {
+        if let Some(from) = program.from().map(|from| format!("{from}.rapt")) {
+            let base = program.path.try_parent()?;
 
-        let mut exec = Executor::new(sandbox);
+            let filename = base.join(from);
+            let fromprog = self.load(filename)?;
 
-        exec.run(&self.loader, program)?;
+            self.recurse(fromprog, visitor)?;
+        }
 
-        exec.finish()
+        visitor(program);
+
+        Ok(())
+    }
+
+    pub fn build(&mut self, program: Arc<Program>) -> RaptorResult<()> {
+        let mut data: Vec<Arc<Program>> = vec![];
+        let table = &mut data;
+
+        self.recurse(program, &mut |prog| {
+            table.push(prog);
+        })?;
+
+        let mut layers: Vec<Utf8PathBuf> = vec!["layers/empty".into()];
+
+        for p in data {
+            let hash = Cacher::cache_key(&p)?;
+
+            let layer_name = Cacher::layer_name(&p, hash);
+            let work_path = format!("layers/build-{layer_name}");
+            let done_path = format!("layers/{layer_name}");
+
+            if std::fs::exists(&done_path)? {
+                info!("{} {}", "Completed".bright_white(), layer_name.yellow());
+            } else {
+                info!(
+                    "{} {}: {}",
+                    "Building".bright_white(),
+                    layer_name.yellow(),
+                    work_path.green()
+                );
+                let sandbox = Sandbox::new(&layers, Utf8Path::new(&work_path))?;
+
+                let mut exec = Executor::new(sandbox);
+
+                exec.run(&self.loader, &p)?;
+
+                exec.finish()?;
+
+                debug!("Layer {layer_name} finished. Moving {work_path} -> {done_path}");
+                std::fs::rename(&work_path, &done_path)?;
+            }
+
+            layers.push(Utf8PathBuf::from(done_path));
+        }
+
+        Ok(())
     }
 }

@@ -1,8 +1,7 @@
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use log::{error, info};
 
-use raptor::build::{Cacher, RaptorBuilder};
+use raptor::build::RaptorBuilder;
 use raptor::program::Loader;
 use raptor::RaptorResult;
 
@@ -50,16 +49,11 @@ fn raptor() -> RaptorResult<()> {
     for file in args.input {
         let program = builder.load(file)?;
 
-        let hash = Cacher::cache_key(&program)?;
-        info!("Hash: {hash:X}");
-
-        print!("{program}");
-
         if args.no_act {
             continue;
         }
 
-        builder.exec(&program)?;
+        builder.build(program)?;
     }
 
     Ok(())
@@ -67,8 +61,7 @@ fn raptor() -> RaptorResult<()> {
 
 fn main() {
     colog::init();
-    if let Err(err) = raptor() {
-        error!("Error: {err}");
+    if raptor().is_err() {
         std::process::exit(1);
     }
 }
