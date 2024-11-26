@@ -2,7 +2,7 @@ use std::fmt::{self, Debug, Display};
 
 use crate::print::Theme;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct InstInvoke {
     pub args: Vec<String>,
 }

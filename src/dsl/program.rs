@@ -6,7 +6,7 @@ use minijinja::Value;
 
 use crate::dsl::Item;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Program {
     pub code: Vec<Item>,
     pub ctx: Value,

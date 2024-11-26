@@ -8,7 +8,7 @@ use crate::dsl::Origin;
 use crate::print::Theme;
 use crate::{RaptorError, RaptorResult};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Lookup {
     pub path: Vec<String>,
     pub origin: Origin,
@@ -27,13 +27,13 @@ impl Display for Lookup {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum IncludeArgValue {
     Lookup(Lookup),
     Value(Value),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct IncludeArg {
     pub name: String,
     pub value: IncludeArgValue,
@@ -65,7 +65,7 @@ impl IncludeArg {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct InstInclude {
     pub src: String,
     pub args: Vec<IncludeArg>,

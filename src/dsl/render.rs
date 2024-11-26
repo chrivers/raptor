@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display};
 use crate::dsl::{Chown, IncludeArg};
 use crate::print::Theme;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct InstRender {
     pub src: String,
     pub dest: String,

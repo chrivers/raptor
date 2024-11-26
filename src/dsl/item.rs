@@ -5,7 +5,7 @@ use minijinja::Value;
 
 use crate::dsl::{Instruction, Origin, Program, Statement};
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub enum Item {
     Statement(Statement),
     Program(Program),

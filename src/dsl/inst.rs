@@ -5,7 +5,7 @@ use crate::dsl::{
     InstRender, InstRun, InstWorkdir, InstWrite,
 };
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub enum Instruction {
     From(InstFrom),
     Copy(InstCopy),

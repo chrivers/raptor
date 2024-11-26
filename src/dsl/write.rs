@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display};
 use crate::dsl::Chown;
 use crate::print::Theme;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct InstWrite {
     pub dest: String,
     pub body: String,

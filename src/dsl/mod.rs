@@ -28,7 +28,7 @@ pub use run::*;
 pub use workdir::*;
 pub use write::*;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Statement {
     pub inst: Instruction,
     pub origin: Origin,

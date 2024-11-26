@@ -6,7 +6,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 
 use crate::RaptorResult;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct Origin {
     pub path: Arc<Utf8PathBuf>,
     pub span: Range<usize>,

@@ -2,13 +2,13 @@ use std::fmt::{Debug, Display};
 
 use crate::print::Theme;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct InstEnvAssign {
     pub key: String,
     pub value: String,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct InstEnv {
     pub env: Vec<InstEnvAssign>,
 }
