@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
-use minijinja::{Environment, ErrorKind, Value};
+use minijinja::{context, Environment, ErrorKind, Value};
 
 use crate::dsl::{Instruction, Item, Origin, Program, ResolveArgs, Statement};
 use crate::parser::ast;
@@ -149,11 +149,21 @@ impl<'source> Loader<'source> {
         path: impl AsRef<Utf8Path>,
         ctx: &Value,
     ) -> RaptorResult<Program> {
-        let source = self
-            .env
-            .get_template(self.base.join(&path).as_str())
-            .and_then(|tmpl| tmpl.render(ctx))
-            .map(|src| src + "\n")?;
+        let tmpl = self.env.get_template(self.base.join(&path).as_str())?;
+        let (source, state) = tmpl
+            .render_and_return_state(ctx.clone())
+            .map(|(src, state)| (src + "\n", state))?;
+
+        let exports = state
+            .exports()
+            .into_iter()
+            .map(|key| (key, state.lookup(key).unwrap()))
+            .collect::<Value>();
+
+        let ctx = &context! {
+            ..exports,
+            ..ctx.clone()
+        };
 
         if self.dump {
             println!("{source}");
