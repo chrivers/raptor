@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use camino::Utf8Path;
 use minijinja::Value;
 
 use crate::dsl::{Instruction, Origin, Program, Statement};
@@ -12,11 +13,15 @@ pub enum Item {
 
 impl Item {
     #[must_use]
-    pub fn program(code: impl IntoIterator<Item = Self>, ctx: Value, origin: Origin) -> Self {
+    pub fn program(
+        code: impl IntoIterator<Item = Self>,
+        ctx: Value,
+        path: impl AsRef<Utf8Path>,
+    ) -> Self {
         Self::Program(Program {
             code: code.into_iter().collect(),
             ctx,
-            origin,
+            path: path.as_ref().into(),
         })
     }
 

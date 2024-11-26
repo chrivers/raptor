@@ -1,21 +1,22 @@
 use std::fmt::{self, Display};
 
+use camino::Utf8PathBuf;
 use colored::Colorize;
 use minijinja::Value;
 
-use crate::dsl::{Item, Origin};
+use crate::dsl::Item;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Program {
     pub code: Vec<Item>,
     pub ctx: Value,
-    pub origin: Origin,
+    pub path: Utf8PathBuf,
 }
 
 impl Program {
     #[must_use]
-    pub const fn new(code: Vec<Item>, ctx: Value, origin: Origin) -> Self {
-        Self { code, ctx, origin }
+    pub const fn new(code: Vec<Item>, ctx: Value, path: Utf8PathBuf) -> Self {
+        Self { code, ctx, path }
     }
 }
 
@@ -41,7 +42,7 @@ impl Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fn dump(f: &mut fmt::Formatter<'_>, program: &Program, level: usize) -> fmt::Result {
             let indent = " ".repeat(level * 4);
-            writeln!(f, "{indent}{}{}", "# file ".dimmed(), program.origin.path)?;
+            writeln!(f, "{indent}{}{}", "# file ".dimmed(), program.path)?;
             for item in &program.code {
                 match item {
                     Item::Statement(stmt) => {
