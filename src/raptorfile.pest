@@ -97,7 +97,7 @@ value = {
 }
 
 include_arg = ${
-    ident ~ "=" ~ value
+    ident ~ ("=" ~ value)?
 }
 
 include_args = {

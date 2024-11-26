@@ -243,11 +243,16 @@ impl RaptorFileParser {
     }
 
     fn include_arg(input: Node) -> Result<IncludeArg> {
+        let origin = Origin::from_node(&input);
         Ok(match_nodes!(
             input.into_children();
             [ident(id), value(val)] => IncludeArg {
                 name: id,
                 value: val,
+            },
+            [ident(id)] => IncludeArg {
+                name: id.clone(),
+                value: IncludeArgValue::Lookup(Lookup::new(vec![id], origin)),
             }
         ))
     }
