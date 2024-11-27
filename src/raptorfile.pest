@@ -136,7 +136,7 @@ INCLUDE = {
 
 INVOKE = {
     "INVOKE"
-    ~ quoted_string+
+    ~ string+
 }
 
 RUN = {
