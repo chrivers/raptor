@@ -6,7 +6,7 @@ use raptor::program::Loader;
 use raptor::RaptorResult;
 
 #[derive(clap::Parser, Debug)]
-#[command(about, long_about = None)]
+#[command(about, long_about = None, styles=raptor::util::clapcolor::style())]
 struct Cli {
     /// Make no changes (print what would have been done)
     #[arg(short = 'n', long)]

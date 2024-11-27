@@ -595,6 +595,7 @@ version = "0.1.0"
 dependencies = [
  "annotate-snippets",
  "anstream",
+ "anstyle",
  "bincode",
  "camino",
  "camino-tempfile",
