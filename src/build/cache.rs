@@ -51,3 +51,41 @@ impl Cacher {
         res.into_iter().sorted().collect()
     }
 }
+
+pub struct LayerInfo {
+    name: String,
+    hash: u64,
+}
+
+impl LayerInfo {
+    #[must_use]
+    pub fn new(program: &Program, hash: u64) -> Self {
+        let name = program.path.file_stem().unwrap().into();
+        Self { name, hash }
+    }
+
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    #[must_use]
+    pub fn hash(&self) -> String {
+        format!("{:016X}", self.hash)
+    }
+
+    #[must_use]
+    pub fn id(&self) -> String {
+        format!("{}-{:016X}", self.name, self.hash)
+    }
+
+    #[must_use]
+    pub fn work_path(&self) -> String {
+        format!("layers/build-{}", self.id())
+    }
+
+    #[must_use]
+    pub fn done_path(&self) -> String {
+        format!("layers/{}", self.id())
+    }
+}
