@@ -26,8 +26,8 @@ impl Cacher {
     }
 
     #[must_use]
-    pub fn layer_name(prog: &Program, hash: u64) -> String {
-        format!("{}-{hash:016X}", prog.path.file_stem().unwrap())
+    pub fn layer_info(program: &Program, hash: u64) -> LayerInfo {
+        LayerInfo::new(program, hash)
     }
 
     #[must_use]

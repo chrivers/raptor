@@ -44,14 +44,10 @@ fn raptor() -> RaptorResult<()> {
     let args = Cli::parse();
 
     let loader = Loader::new("", args.mode.dump)?;
-    let mut builder = RaptorBuilder::new(loader);
+    let mut builder = RaptorBuilder::new(loader, args.no_act);
 
     for file in args.input {
         let program = builder.load(file)?;
-
-        if args.no_act {
-            continue;
-        }
 
         builder.build(program)?;
     }

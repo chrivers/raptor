@@ -5,6 +5,7 @@ use camino::Utf8PathBuf;
 use indicatif::{ProgressBar, ProgressStyle};
 use minijinja::Value;
 
+use crate::build::LayerInfo;
 use crate::dsl::{Instruction, Item, Program, ResolveArgs, Statement};
 use crate::program::Loader;
 use crate::sandbox::{Sandbox, SandboxExt};
@@ -13,14 +14,15 @@ use crate::{template, RaptorResult};
 
 pub struct Executor {
     sandbox: Sandbox,
+    layer: LayerInfo,
 }
 
 impl Executor {
     const PROGRESS_STYLE: &str = "[{elapsed_precise}] {bar:40.cyan/blue} {bytes:>7}/{total_bytes:7} {binary_bytes_per_sec} {msg}";
 
     #[must_use]
-    pub const fn new(sandbox: Sandbox) -> Self {
-        Self { sandbox }
+    pub const fn new(sandbox: Sandbox, layer: LayerInfo) -> Self {
+        Self { sandbox, layer }
     }
 
     fn progress_bar(len: u64) -> ProgressBar {

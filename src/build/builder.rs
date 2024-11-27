@@ -7,20 +7,22 @@ use minijinja::context;
 
 use crate::build::Cacher;
 use crate::dsl::Program;
-use crate::program::{Executor, Loader};
+use crate::program::{Executor, Loader, PrintExecutor};
 use crate::sandbox::Sandbox;
 use crate::util::SafeParent;
 use crate::RaptorResult;
 
 pub struct RaptorBuilder<'a> {
     loader: Loader<'a>,
+    dry_run: bool,
     programs: HashMap<Utf8PathBuf, Arc<Program>>,
 }
 
 impl<'a> RaptorBuilder<'a> {
-    pub fn new(loader: Loader<'a>) -> Self {
+    pub fn new(loader: Loader<'a>, dry_run: bool) -> Self {
         Self {
             loader,
+            dry_run,
             programs: HashMap::new(),
         }
     }
@@ -81,29 +83,36 @@ impl<'a> RaptorBuilder<'a> {
         for prog in programs {
             let hash = Cacher::cache_key(&prog)?;
 
-            let layer_name = Cacher::layer_name(&prog, hash);
-            let work_path = format!("layers/build-{layer_name}");
-            let done_path = format!("layers/{layer_name}");
+            let layer = Cacher::layer_info(&prog, hash);
 
-            if std::fs::exists(&done_path)? {
+            let layer_name = layer.name().to_string();
+            let work_path = layer.work_path();
+            let done_path = layer.done_path();
+
+            if std::fs::exists(layer.done_path())? {
                 info!("{} {}", "Completed".bright_white(), layer_name.yellow());
             } else {
                 info!(
                     "{} {}: {}",
                     "Building".bright_white(),
                     layer_name.yellow(),
-                    work_path.green()
+                    layer.work_path().green()
                 );
-                let sandbox = Sandbox::new(&layers, Utf8Path::new(&work_path))?;
 
-                let mut exec = Executor::new(sandbox);
+                if self.dry_run {
+                    let mut exec = PrintExecutor::new();
+                    exec.run(&self.loader, &prog)?;
+                } else {
+                    let sandbox = Sandbox::new(&layers, Utf8Path::new(&layer.work_path()))?;
 
-                exec.run(&self.loader, &prog)?;
+                    let mut exec = Executor::new(sandbox, layer);
 
-                exec.finish()?;
+                    exec.run(&self.loader, &prog)?;
 
-                debug!("Layer {layer_name} finished. Moving {work_path} -> {done_path}");
-                std::fs::rename(&work_path, &done_path)?;
+                    exec.finish()?;
+                    debug!("Layer {layer_name} finished. Moving {work_path} -> {done_path}");
+                    std::fs::rename(&work_path, &done_path)?;
+                }
             }
 
             layers.push(Utf8PathBuf::from(done_path));
