@@ -78,7 +78,15 @@ impl Executor {
             }
 
             Instruction::Invoke(inst) => {
-                Command::new("echo").args(&inst.args).spawn()?.wait()?;
+                Command::new(&inst.args[0])
+                    .args(&inst.args[1..])
+                    .env("RAPTOR_LAYER_NAME", self.layer.name())
+                    .env("RAPTOR_LAYER_HASH", self.layer.hash())
+                    .env("RAPTOR_LAYER_ID", self.layer.id())
+                    .env("RAPTOR_BUILD_DIR", self.sandbox.get_root_dir())
+                    .env("RAPTOR_TEMP_DIR", self.sandbox.get_temp_dir().unwrap())
+                    .spawn()?
+                    .wait()?;
             }
 
             Instruction::Env(inst) => {
