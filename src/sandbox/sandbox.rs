@@ -25,6 +25,7 @@ use crate::{RaptorError, RaptorResult};
 pub struct Sandbox {
     proc: Child,
     conn: UnixStream,
+    rootdir: Utf8PathBuf,
     mount: Option<Utf8PathBuf>,
     tempdir: Option<Utf8TempDir>,
 }
@@ -167,6 +168,7 @@ impl Sandbox {
             Ok(conn) => Ok(Self {
                 proc,
                 conn,
+                rootdir: rootdir.into(),
                 mount: Some(rootdir.join(int_root.strip_prefix("/").unwrap())),
                 tempdir: Some(tempdir),
             }),
@@ -233,6 +235,11 @@ impl Sandbox {
             std::fs::remove_dir(mount)?;
         }
         Ok(())
+    }
+
+    #[must_use]
+    pub fn get_root_dir(&self) -> &Utf8Path {
+        &self.rootdir
     }
 
     #[must_use]
