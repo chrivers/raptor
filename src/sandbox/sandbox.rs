@@ -48,7 +48,7 @@ impl Sandbox {
     const CHECK_TIMEOUT: Duration = Duration::from_millis(100);
 
     /* TODO: ugly hack, but works for testing */
-    const NSPAWN_CLIENT_PATH: &str = "target/x86_64-unknown-linux-musl/release/nspawn-client";
+    pub const NSPAWN_CLIENT_PATH: &str = "target/x86_64-unknown-linux-musl/release/nspawn-client";
 
     fn wait_for_startup(listen: UnixListener, proc: &mut Child) -> RaptorResult<UnixStream> {
         let (tx, rx) = mpsc::channel();

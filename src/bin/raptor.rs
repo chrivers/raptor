@@ -1,8 +1,11 @@
 use camino::Utf8PathBuf;
 use clap::Parser as _;
+use colored::Colorize;
+use log::{error, info};
 
 use raptor::build::RaptorBuilder;
 use raptor::program::Loader;
+use raptor::sandbox::Sandbox;
 use raptor::RaptorResult;
 
 #[derive(clap::Parser, Debug)]
@@ -42,6 +45,25 @@ struct Mode {
 
 fn raptor() -> RaptorResult<()> {
     let args = Cli::parse();
+
+    if !std::fs::exists(Sandbox::NSPAWN_CLIENT_PATH)? {
+        error!("The program nspawn-client could not be found\n\n  {}\n", Sandbox::NSPAWN_CLIENT_PATH);
+
+        info!("Please compile it before proceeding:");
+
+        eprintln!("");
+        eprintln!("  {}", "# install packages".dimmed());
+        eprintln!("  apt-get update && apt-get install musl-tools -y");
+
+        eprintln!("");
+        eprintln!("  {}", "# add rust musl target".dimmed());
+        eprintln!("  rustup target add x86_64-unknown-linux-musl");
+
+        eprintln!("");
+        eprintln!("  {}", "# compile nspawn-client".dimmed());
+        eprintln!("  cargo build --target x86_64-unknown-linux-musl --release --bin=nspawn-client");
+        std::process::exit(1);
+    }
 
     let loader = Loader::new("", args.mode.dump)?;
     let mut builder = RaptorBuilder::new(loader, args.no_act);
