@@ -38,6 +38,17 @@ pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
         })?))
     });
 
+    env.set_path_join_callback(|name, parent| {
+        let mut rv = parent.split('/').collect::<Vec<_>>();
+        rv.pop();
+        name.split('/').for_each(|segment| match segment {
+            "." => {}
+            ".." => drop(rv.pop()),
+            _ => rv.push(segment),
+        });
+        rv.join("/").into()
+    });
+
     env.set_syntax(
         SyntaxConfig::builder()
             .line_statement_prefix("$ ")
