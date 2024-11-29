@@ -38,8 +38,6 @@ pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
         })?))
     });
 
-    env.set_formatter(|out, _state, value| write!(out, "{value:?}").map_err(Error::from));
-
     env.set_syntax(
         SyntaxConfig::builder()
             .line_statement_prefix("$ ")
