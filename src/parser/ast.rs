@@ -35,7 +35,9 @@ impl RaptorFileParser {
         match input.as_str() {
             "\\t" => Ok("\t"),
             "\\n" => Ok("\n"),
-            x => Err(input.error(format!("Unexpected ecsape: {x}"))),
+            "\\\"" => Ok("\""),
+            "\\\\" => Ok("\\"),
+            x => Err(input.error(format!("Unexpected escape: {x}"))),
         }
     }
 
