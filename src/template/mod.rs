@@ -1,4 +1,5 @@
 mod args;
+mod escape;
 mod file;
 mod load_yaml;
 mod log;
@@ -50,6 +51,7 @@ pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
     file::add_functions(&mut env);
     args::add_functions(&mut env);
     load_yaml::add_functions(&mut env);
+    escape::add_filters(&mut env);
 
     Ok(env)
 }
