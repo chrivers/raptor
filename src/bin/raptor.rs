@@ -47,19 +47,22 @@ fn raptor() -> RaptorResult<()> {
     let args = Cli::parse();
 
     if !std::fs::exists(Sandbox::NSPAWN_CLIENT_PATH)? {
-        error!("The program nspawn-client could not be found\n\n  {}\n", Sandbox::NSPAWN_CLIENT_PATH);
+        error!(
+            "The program nspawn-client could not be found\n\n  {}\n",
+            Sandbox::NSPAWN_CLIENT_PATH
+        );
 
         info!("Please compile it before proceeding:");
 
-        eprintln!("");
+        eprintln!();
         eprintln!("  {}", "# install packages".dimmed());
         eprintln!("  apt-get update && apt-get install musl-tools -y");
 
-        eprintln!("");
+        eprintln!();
         eprintln!("  {}", "# add rust musl target".dimmed());
         eprintln!("  rustup target add x86_64-unknown-linux-musl");
 
-        eprintln!("");
+        eprintln!();
         eprintln!("  {}", "# compile nspawn-client".dimmed());
         eprintln!("  cargo build --target x86_64-unknown-linux-musl --release --bin=nspawn-client");
         std::process::exit(1);
