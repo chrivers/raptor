@@ -6,7 +6,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use minijinja::Value;
 
 use crate::build::LayerInfo;
-use crate::dsl::{Instruction, Item, Program, ResolveArgs, Statement};
+use crate::dsl::{Instruction, Program, ResolveArgs, Statement};
 use crate::program::Loader;
 use crate::sandbox::{Sandbox, SandboxExt};
 use crate::util::io_fast_copy;
@@ -106,19 +106,14 @@ impl Executor {
     }
 
     pub fn run(&mut self, loader: &Loader, program: &Program) -> RaptorResult<()> {
-        for stmt in &program.code {
-            match &stmt {
-                Item::Statement(stmt) => {
-                    info!("{}", stmt.inst);
-                    if let Err(err) = self.handle(stmt, &program.ctx) {
-                        loader.explain_exec_error(stmt, &err)?;
-                        return Err(err);
-                    }
-                }
-                Item::Program(prog) => self.run(loader, prog)?,
+        program.traverse(&mut |stmt| {
+            info!("{}", stmt.inst);
+            if let Err(err) = self.handle(stmt, &program.ctx) {
+                loader.explain_exec_error(stmt, &err)?;
+                return Err(err);
             }
-        }
-        Ok(())
+            Ok(())
+        })
     }
 
     pub fn finish(mut self) -> RaptorResult<()> {
