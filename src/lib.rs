@@ -15,6 +15,8 @@ use std::os::unix::net::UnixStream;
 use std::process::ExitStatus;
 use std::sync::mpsc;
 
+use camino::Utf8PathBuf;
+
 use crate::dsl::Origin;
 use crate::parser::Rule;
 
@@ -48,7 +50,7 @@ pub enum RaptorError {
     BadPath(std::path::PathBuf),
 
     #[error("Cannot get parent path from {0:?}")]
-    BadPathNoParent(camino::Utf8PathBuf),
+    BadPathNoParent(Utf8PathBuf),
 
     #[error("Script error: {0} {1:?}")]
     ScriptError(String, Origin),
