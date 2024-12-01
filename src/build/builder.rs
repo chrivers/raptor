@@ -76,11 +76,22 @@ impl<'a> RaptorBuilder<'a> {
     }
 
     pub fn build(&mut self, program: Arc<Program>) -> RaptorResult<()> {
+        match self.run_build(program) {
+            Ok(res) => Ok(res),
+            Err(err) => {
+                self.loader.explain_error(&err)?;
+                Err(err)
+            }
+        }
+    }
+
+    fn run_build(&mut self, program: Arc<Program>) -> RaptorResult<()> {
         let programs = self.stack(program)?;
 
         let mut layers: Vec<Utf8PathBuf> = vec!["layers/empty".into()];
 
         for prog in programs {
+            debug!("Calculating hash for layer {}", prog.path);
             let hash = Cacher::cache_key(&prog)?;
 
             let layer = Cacher::layer_info(&prog, hash);
