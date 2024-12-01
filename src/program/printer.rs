@@ -14,7 +14,7 @@ impl PrintExecutor {
     pub fn run(&mut self, _loader: &Loader, program: &Program) -> RaptorResult<()> {
         program.traverse(&mut |stmt| {
             info!("{}", stmt.inst);
-        });
-        Ok(())
+            Ok(())
+        })
     }
 }

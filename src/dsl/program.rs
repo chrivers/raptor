@@ -1,6 +1,6 @@
 use std::fmt::{self, Display};
 
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
 use minijinja::Value;
 
@@ -21,15 +21,19 @@ impl Program {
         Self { code, ctx, path }
     }
 
-    pub fn traverse(&self, visitor: &mut impl FnMut(&Statement)) {
+    pub fn traverse(
+        &self,
+        visitor: &mut impl FnMut(&Statement) -> RaptorResult<()>,
+    ) -> RaptorResult<()> {
         for stmt in &self.code {
             match stmt {
-                Item::Statement(stmt) => visitor(stmt),
+                Item::Statement(stmt) => visitor(stmt)?,
                 Item::Program(prog) => {
-                    prog.traverse(visitor);
+                    prog.traverse(visitor)?;
                 }
             }
         }
+        Ok(())
     }
 
     pub fn from(&self) -> RaptorResult<Option<String>> {

@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::os::unix::fs::MetadataExt;
-use std::path::Path;
 
+use camino::Utf8PathBuf;
 use itertools::Itertools;
 
 use crate::dsl::{Instruction, Program};
@@ -32,25 +32,34 @@ impl Cacher {
         LayerInfo::new(program, hash)
     }
 
-    #[must_use]
-    pub fn sources(prog: &Program) -> Vec<String> {
-        let mut res = HashSet::<String>::new();
+    pub fn sources(prog: &Program) -> RaptorResult<Vec<Utf8PathBuf>> {
+        let mut res = HashSet::<Utf8PathBuf>::new();
         let data = &mut res;
-        prog.traverse(&mut |stmt| match &stmt.inst {
-            Instruction::Copy(inst) => data.extend(inst.srcs.clone()),
-            Instruction::Render(inst) => {
-                data.insert(inst.src.clone());
-            }
-            Instruction::Include(_)
-            | Instruction::Invoke(_)
-            | Instruction::Write(_)
-            | Instruction::From(_)
-            | Instruction::Run(_)
-            | Instruction::Env(_)
-            | Instruction::Workdir(_) => {}
-        });
+        prog.traverse(&mut |stmt| {
+            match &stmt.inst {
+                Instruction::Copy(inst) => {
+                    data.extend(
+                        inst.srcs
+                            .iter()
+                            .map(|file| prog.path_for(file))
+                            .collect::<Result<Vec<_>, _>>()?,
+                    );
+                }
+                Instruction::Render(inst) => {
+                    data.insert(prog.path_for(&inst.src)?);
+                }
+                Instruction::Include(_)
+                | Instruction::Invoke(_)
+                | Instruction::Write(_)
+                | Instruction::From(_)
+                | Instruction::Run(_)
+                | Instruction::Env(_)
+                | Instruction::Workdir(_) => {}
+            };
+            Ok(())
+        })?;
 
-        res.into_iter().sorted().collect()
+        Ok(res.into_iter().sorted().collect())
     }
 }
 
