@@ -5,6 +5,8 @@ use colored::Colorize;
 use minijinja::Value;
 
 use crate::dsl::{Instruction, Item, Statement};
+use crate::util::SafeParent;
+use crate::RaptorResult;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Program {
@@ -30,16 +32,17 @@ impl Program {
         }
     }
 
-    #[must_use]
-    pub fn from(&self) -> Option<String> {
+    pub fn from(&self) -> RaptorResult<Option<String>> {
         let mut res = None;
         let opt = &mut res;
         self.traverse(&mut |stmt| {
             if let Instruction::From(from) = &stmt.inst {
                 *opt = Some(from.from.clone());
             }
-        });
-        res
+            Ok(())
+        })?;
+
+        Ok(res)
     }
 
     pub fn path_for(&self, path: impl AsRef<Utf8Path>) -> RaptorResult<Utf8PathBuf> {

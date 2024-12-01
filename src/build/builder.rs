@@ -50,7 +50,7 @@ impl<'a> RaptorBuilder<'a> {
         program: Arc<Program>,
         visitor: &mut impl FnMut(Arc<Program>),
     ) -> RaptorResult<()> {
-        if let Some(from) = program.from().map(|from| format!("{from}.rapt")) {
+        if let Some(from) = program.from()?.map(|from| format!("{from}.rapt")) {
             let base = program.path.try_parent()?;
 
             let filename = base.join(from);
