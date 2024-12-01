@@ -6,7 +6,7 @@ use std::path::Path;
 use itertools::Itertools;
 
 use crate::dsl::{Instruction, Program};
-use crate::RaptorResult;
+use crate::{RaptorError, RaptorResult};
 
 pub struct Cacher;
 
@@ -15,8 +15,10 @@ impl Cacher {
         let mut state = DefaultHasher::new();
         prog.hash(&mut state);
 
-        for source in &Self::sources(prog) {
-            let md = Path::new(source).metadata()?;
+        for source in &Self::sources(prog)? {
+            let md = source
+                .metadata()
+                .map_err(|err| RaptorError::CacheIoError(source.into(), err))?;
 
             md.ctime().hash(&mut state);
             md.ctime_nsec().hash(&mut state);
