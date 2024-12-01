@@ -41,6 +41,10 @@ impl Program {
         });
         res
     }
+
+    pub fn path_for(&self, path: impl AsRef<Utf8Path>) -> RaptorResult<Utf8PathBuf> {
+        Ok(self.path.try_parent()?.join(path.as_ref()))
+    }
 }
 
 impl IntoIterator for Program {
