@@ -1,0 +1,5 @@
+$ do trace("trace")
+$ do debug("debug")
+$ do info("info")
+$ do warning("warning")
+$ do error("error")
