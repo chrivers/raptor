@@ -23,7 +23,7 @@ pub struct Loader<'source> {
 
 const MAX_NESTED_INCLUDE: usize = 20;
 
-impl<'source> Loader<'source> {
+impl Loader<'_> {
     pub fn new(base: impl AsRef<Utf8Path>, dump: bool) -> RaptorResult<Self> {
         Ok(Self {
             env: make_environment()?,
