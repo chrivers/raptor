@@ -64,7 +64,7 @@ fn escape_sh(value: Value) -> Result<String, Error> {
             let val: Vec<_> = value.try_iter()?.map(escape_sh).try_collect()?;
             Ok(val.join(" "))
         }
-        kind => return error(format!("Cannot escape value: {value:?} of type {kind:?}"))?,
+        kind => error(format!("Cannot escape value: {value:?} of type {kind:?}"))?,
     }
 }
 
