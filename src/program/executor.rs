@@ -33,7 +33,7 @@ impl Executor {
         ProgressBar::new(len).with_style(style)
     }
 
-    pub fn handle(&mut self, stmt: &Statement, ctx: &Value) -> RaptorResult<()> {
+    fn handle(&mut self, stmt: &Statement, ctx: &Value) -> RaptorResult<()> {
         match &stmt.inst {
             Instruction::From(_) => {}
             Instruction::Copy(inst) => {
