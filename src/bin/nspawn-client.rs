@@ -37,9 +37,11 @@ fn request_changedir(req: &RequestChangeDir) -> RaptorResult<i32> {
     Ok(0)
 }
 
-fn request_setenv(req: &RequestSetEnv) {
+#[allow(clippy::unnecessary_wraps)]
+fn request_setenv(req: &RequestSetEnv) -> RaptorResult<i32> {
     debug!("Setenv {:?}={:?}", &req.key, &req.value);
     std::env::set_var(&req.key, &req.value);
+    Ok(0)
 }
 
 fn uid_from_account(acct: &Account) -> RaptorResult<Uid> {
@@ -158,13 +160,10 @@ fn main() -> RaptorResult<()> {
             Request::CreateFile(req) => files.create_file(&req),
             Request::WriteFd(req) => files.write_fd(&req),
             Request::CloseFd(req) => files.close_fd(&req),
+            Request::ChangeDir(req) => request_changedir(&req),
+            Request::SetEnv(req) => request_setenv(&req),
             Request::Shutdown => {
                 break;
-            }
-            Request::ChangeDir(req) => request_changedir(&req),
-            Request::SetEnv(req) => {
-                request_setenv(&req);
-                Ok(0)
             }
         };
 
