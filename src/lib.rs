@@ -46,6 +46,9 @@ pub enum RaptorError {
     #[error(transparent)]
     SendError(#[from] mpsc::SendError<UnixStream>),
 
+    #[error("Error while checking cache status of {0:?}: {1}")]
+    CacheIoError(Utf8PathBuf, std::io::Error),
+
     #[error("Path is not valid utf-8: {0}")]
     BadPath(std::path::PathBuf),
 
@@ -87,6 +90,7 @@ impl RaptorError {
             Self::BincodeError(_) => "Encoding error",
             Self::VarError(_) => "Environment error",
             Self::Errno(_) => "Errno",
+            Self::CacheIoError(_, _) => "Cache io error",
             Self::BadPath(_) => "Path encoding error",
             Self::BadPathNoParent(_) => "Path error",
             Self::ScriptError(_, _) => "Script error",
