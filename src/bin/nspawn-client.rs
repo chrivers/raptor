@@ -73,7 +73,7 @@ fn gid_from_account(acct: &Account) -> RaptorResult<Gid> {
                 error!("could not resolve unix group {name:?}");
                 Err(RaptorError::IoError(Error::new(
                     ErrorKind::NotFound,
-                    "User not found",
+                    "Group not found",
                 )))
             }
         }
