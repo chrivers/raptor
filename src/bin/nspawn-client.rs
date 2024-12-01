@@ -6,12 +6,13 @@ use std::os::unix::fs::OpenOptionsExt;
 use std::os::unix::net::UnixStream;
 use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::process::Command;
+use std::str::FromStr;
 
 use nix::errno::Errno;
 use nix::sys::stat::{umask, Mode};
 use nix::unistd::{fchown, Gid, Group, Uid, User};
 
-use log::{debug, error, trace};
+use log::{debug, error, trace, LevelFilter};
 
 use raptor::client::{
     Account, FramedRead, FramedWrite, Request, RequestChangeDir, RequestCloseFd, RequestCreateFile,
@@ -131,7 +132,16 @@ impl FileMap {
 }
 
 fn main() -> RaptorResult<()> {
-    colog::init();
+    if let Ok(log_level) = std::env::var("RAPTOR_NSPAWN_LOG_LEVEL") {
+        let mut builder = colog::basic_builder();
+        if let Ok(level) = LevelFilter::from_str(&log_level) {
+            builder.filter_level(level);
+        }
+        builder.init();
+    } else {
+        colog::init();
+    }
+
     let Ok(socket_name) = std::env::var("RAPTOR_NSPAWN_SOCKET") else {
         error!("Missing environment setting: RAPTOR_NSPAWN_SOCKET");
         std::process::exit(1);
