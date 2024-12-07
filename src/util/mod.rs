@@ -27,6 +27,10 @@ pub fn copy_file(from: impl AsRef<Utf8Path>, to: impl AsRef<Utf8Path>) -> Raptor
     io_fast_copy(src, dst)
 }
 
+pub fn link_or_copy_file(from: impl AsRef<Utf8Path>, to: impl AsRef<Utf8Path>) -> RaptorResult<()> {
+    std::fs::hard_link(from.as_ref(), to.as_ref()).or_else(|_| copy_file(from, to))
+}
+
 pub trait SafeParent {
     fn try_parent(&self) -> RaptorResult<&Utf8Path>;
 }

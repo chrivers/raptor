@@ -4,7 +4,7 @@ use camino::Utf8Path;
 use camino_tempfile::Utf8TempDir;
 use raptor::dsl::Chown;
 use raptor::sandbox::{FalconClient, Sandbox, SandboxExt};
-use raptor::util::copy_file;
+use raptor::util::link_or_copy_file;
 use raptor::{RaptorError, RaptorResult};
 
 const BUSYBOX_PATH: &str = "/bin/busybox";
@@ -40,7 +40,7 @@ fn spawn_sandbox(name: &str) -> RaptorResult<SandboxWrapper> {
     /* construct temporary directory with busybox as /bin/sh */
     let tempdir = Utf8TempDir::new()?;
     std::fs::create_dir(tempdir.path().join("bin"))?;
-    copy_file(BUSYBOX_PATH, tempdir.path().join("bin/sh"))?;
+    link_or_copy_file(BUSYBOX_PATH, tempdir.path().join("bin/sh"))?;
 
     let rootdir = Utf8Path::new("tests/output").join(name);
 

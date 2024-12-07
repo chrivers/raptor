@@ -7,7 +7,7 @@ use uuid::Uuid;
 use crate::sandbox::{
     ConsoleMode, FalconClient, LinkJournal, ResolvConf, Settings, SpawnBuilder, Timezone,
 };
-use crate::util::copy_file;
+use crate::util::link_or_copy_file;
 use crate::RaptorResult;
 
 #[derive(Debug)]
@@ -93,13 +93,15 @@ impl Sandbox {
         /* internal root is the namespace path where the conndir will be mounted */
         let int_root = Utf8PathBuf::from(format!("/raptor-{uuid_name}"));
 
+        /* external name of socket and falcon client */
         let ext_socket_path = ext_root.join("raptor");
         let ext_client_path = ext_root.join("falcon");
 
+        /* internal name of socket and falcon client */
         let int_socket_path = int_root.join("raptor");
         let int_client_path = int_root.join("falcon");
 
-        copy_file(Self::FALCON_PATH, ext_client_path)?;
+        link_or_copy_file(Self::FALCON_PATH, &ext_client_path)?;
 
         let listen = UnixListener::bind(ext_socket_path)?;
 
