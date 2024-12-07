@@ -181,7 +181,7 @@ impl RaptorFileParser {
     fn WRITE(input: Node) -> Result<InstWrite> {
         match_nodes!(
             input.into_children();
-            [file_options((chmod, chown)), filename(dest), quoted_string(body)] => {
+            [file_options((chmod, chown)), quoted_string(body), filename(dest)] => {
                 Ok(InstWrite {
                     dest,
                     body,

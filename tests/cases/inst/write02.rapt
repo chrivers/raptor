@@ -1,1 +1,1 @@
-WRITE --chown user:group /foo "bar"
+WRITE --chown user:group "bar" /foo
