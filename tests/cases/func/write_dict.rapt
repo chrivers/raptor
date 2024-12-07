@@ -1,1 +1,1 @@
-WRITE {{data.where}} "{{data.what}}"
+WRITE "{{data.what}}" {{data.where}}
