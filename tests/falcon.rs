@@ -12,15 +12,15 @@ const TEST_DATA: &[u8] = b"Raptortest\n";
 fn spawn_client() -> RaptorResult<SandboxClient> {
     let exe = std::env::current_exe().unwrap();
     let deps = exe.parent().unwrap().parent().unwrap();
-    let client = deps.join("nspawn-client");
+    let client = deps.join("falcon");
 
     let tempdir = Utf8TempDir::new()?;
     let socket_path = tempdir.path().join("raptor-test");
     let listen = UnixListener::bind(&socket_path)?;
 
     let proc = Command::new(client)
-        .env("RAPTOR_NSPAWN_LOG_LEVEL", "off")
-        .env("RAPTOR_NSPAWN_SOCKET", socket_path.as_str())
+        .env("FALCON_LOG_LEVEL", "off")
+        .env("FALCON_SOCKET", socket_path.as_str())
         .spawn()?;
 
     let conn = listen.accept()?.0;

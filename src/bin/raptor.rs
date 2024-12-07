@@ -46,10 +46,10 @@ struct Mode {
 fn raptor() -> RaptorResult<()> {
     let args = Cli::parse();
 
-    if !std::fs::exists(Sandbox::NSPAWN_CLIENT_PATH)? {
+    if !std::fs::exists(Sandbox::FALCON_PATH)? {
         error!(
-            "The program nspawn-client could not be found\n\n  {}\n",
-            Sandbox::NSPAWN_CLIENT_PATH
+            "The program falcon could not be found\n\n  {}\n",
+            Sandbox::FALCON_PATH
         );
 
         info!("Please compile it before proceeding:");
@@ -63,8 +63,8 @@ fn raptor() -> RaptorResult<()> {
         eprintln!("  rustup target add x86_64-unknown-linux-musl");
 
         eprintln!();
-        eprintln!("  {}", "# compile nspawn-client".dimmed());
-        eprintln!("  cargo build --target x86_64-unknown-linux-musl --release --bin=nspawn-client");
+        eprintln!("  {}", "# compile falcon".dimmed());
+        eprintln!("  cargo build --target x86_64-unknown-linux-musl --release --bin=falcon");
         std::process::exit(1);
     }
 

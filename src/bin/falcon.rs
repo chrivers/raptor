@@ -132,7 +132,7 @@ impl FileMap {
 }
 
 fn main() -> RaptorResult<()> {
-    if let Ok(log_level) = std::env::var("RAPTOR_NSPAWN_LOG_LEVEL") {
+    if let Ok(log_level) = std::env::var("FALCON_LOG_LEVEL") {
         let mut builder = colog::basic_builder();
         if let Ok(level) = LevelFilter::from_str(&log_level) {
             builder.filter_level(level);
@@ -142,8 +142,8 @@ fn main() -> RaptorResult<()> {
         colog::init();
     }
 
-    let Ok(socket_name) = std::env::var("RAPTOR_NSPAWN_SOCKET") else {
-        error!("Missing environment setting: RAPTOR_NSPAWN_SOCKET");
+    let Ok(socket_name) = std::env::var("FALCON_SOCKET") else {
+        error!("Missing environment setting: FALCON_SOCKET");
         std::process::exit(1);
     };
 

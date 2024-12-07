@@ -32,8 +32,8 @@ impl SandboxClient {
     pub fn wait_for_startup(listen: UnixListener, proc: &mut Child) -> RaptorResult<UnixStream> {
         let (tx, rx) = mpsc::channel();
 
-        /* Spawn a thread that waits for the sandbox to start up, and the
-         * nspawn-client to connect from inside the namespace */
+        /* Spawn a thread that waits for the sandbox to start up, and falcon to
+         * connect from inside the namespace */
         std::thread::spawn(move || -> RaptorResult<_> { Ok(tx.send(listen.accept()?.0)?) });
 
         /* Loop until START_TIMEOUT is reached, checking the sandbox process

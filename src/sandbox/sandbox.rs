@@ -35,7 +35,7 @@ fn copy_file(from: impl AsRef<Utf8Path>, to: impl AsRef<Utf8Path>) -> RaptorResu
 
 impl Sandbox {
     /* TODO: ugly hack, but works for testing */
-    pub const NSPAWN_CLIENT_PATH: &str = "target/x86_64-unknown-linux-musl/release/nspawn-client";
+    pub const FALCON_PATH: &str = "target/x86_64-unknown-linux-musl/release/falcon";
 
     pub fn new(layers: &[impl AsRef<Utf8Path>], rootdir: &Utf8Path) -> RaptorResult<Self> {
         /*
@@ -57,8 +57,8 @@ impl Sandbox {
         This dir with an ampty `/usr` dir, is the `tempdir`.
 
         The `conndir` serves an actual purpose. It contains a copy of the raptor
-        `nspawn-client` binary, as well as the unix socket that the
-        `nspawn-client` will connect to. This directory is then bind-mounted
+        `falcon` binary, as well as the unix socket that the
+        `falcon` will connect to. This directory is then bind-mounted
         into the container.
 
         temp:
@@ -66,14 +66,14 @@ impl Sandbox {
 
         conn:
           - /raptor (<-- socket)
-          - /nspawn-client (<-- client binary)
+          - /falcon (<-- client binary)
 
           | external path         | internal path  | note                            |
           |-----------------------|----------------|---------------------------------|
           | $TMP/raptor-temp-{id} | /              | 1. contains /usr                |
           |                       |                | 2. is hidden by root overlay    |
           |                       |                |                                 |
-          | $TMP/raptor-conn-{id} | /raptor-{uuid} | 1. has nspawn-client and socket |
+          | $TMP/raptor-conn-{id} | /raptor-{uuid} | 1. has falcon and socket |
           |                       |                | 2. is mounted read-only         |
 
          */
@@ -98,12 +98,12 @@ impl Sandbox {
         let int_root = Utf8PathBuf::from(format!("/raptor-{uuid_name}"));
 
         let ext_socket_path = ext_root.join("raptor");
-        let ext_client_path = ext_root.join("nspawn-client");
+        let ext_client_path = ext_root.join("falcon");
 
         let int_socket_path = int_root.join("raptor");
-        let int_client_path = int_root.join("nspawn-client");
+        let int_client_path = int_root.join("falcon");
 
-        copy_file(Self::NSPAWN_CLIENT_PATH, ext_client_path)?;
+        copy_file(Self::FALCON_PATH, ext_client_path)?;
 
         let listen = UnixListener::bind(ext_socket_path)?;
 
@@ -120,7 +120,7 @@ impl Sandbox {
             .root_overlay(rootdir)
             .bind_ro(ext_root, &int_root)
             .directory(tempdir.path())
-            .setenv("RAPTOR_NSPAWN_SOCKET", int_socket_path.as_str())
+            .setenv("FALCON_SOCKET", int_socket_path.as_str())
             .arg(int_client_path.as_str());
 
         debug!("Starting sandbox: {:?}", spawn.build().join(" "));

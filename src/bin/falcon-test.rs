@@ -6,7 +6,7 @@ use raptor::{client::Request, RaptorResult};
 
 fn main() -> RaptorResult<()> {
     colog::init();
-    let socket_name = std::env::var("RAPTOR_NSPAWN_SOCKET")?;
+    let socket_name = std::env::var("FALCON_SOCKET")?;
     let listen = UnixListener::bind(socket_name)?;
 
     let (mut stream, _addr) = listen.accept()?;
