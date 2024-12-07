@@ -15,12 +15,12 @@ use crate::sandbox::SandboxFile;
 use crate::{RaptorError, RaptorResult};
 
 #[derive(Debug)]
-pub struct SandboxClient {
+pub struct FalconClient {
     proc: Child,
     conn: UnixStream,
 }
 
-impl SandboxClient {
+impl FalconClient {
     const START_TIMEOUT: Duration = Duration::from_secs(2);
     const CHECK_TIMEOUT: Duration = Duration::from_millis(100);
 

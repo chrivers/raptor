@@ -19,15 +19,15 @@ name = "raptor"
 test = false
 
 [[bin]]
-name = "nspawn-test"
-test = false
-
-[[bin]]
 name = "debootwrap"
 test = false
 
 [[bin]]
-name = "nspawn-client"
+name = "falcon-test"
+test = false
+
+[[bin]]
+name = "falcon"
 test = false
 
 [lints.rust]

@@ -4,12 +4,12 @@ use std::process::Command;
 use camino_tempfile::{NamedUtf8TempFile, Utf8TempDir};
 use nix::errno::Errno;
 
-use raptor::sandbox::{SandboxClient, SandboxExt};
+use raptor::sandbox::{FalconClient, SandboxExt};
 use raptor::{RaptorError, RaptorResult};
 
 const TEST_DATA: &[u8] = b"Raptortest\n";
 
-fn spawn_client() -> RaptorResult<SandboxClient> {
+fn spawn_client() -> RaptorResult<FalconClient> {
     let exe = std::env::current_exe().unwrap();
     let deps = exe.parent().unwrap().parent().unwrap();
     let client = deps.join("falcon");
@@ -25,7 +25,7 @@ fn spawn_client() -> RaptorResult<SandboxClient> {
 
     let conn = listen.accept()?.0;
 
-    Ok(SandboxClient::new(proc, conn))
+    Ok(FalconClient::new(proc, conn))
 }
 
 #[test]

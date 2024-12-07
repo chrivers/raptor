@@ -3,7 +3,7 @@ use std::io::Write;
 use camino::Utf8Path;
 
 use crate::dsl::Chown;
-use crate::sandbox::SandboxClient;
+use crate::sandbox::FalconClient;
 use crate::RaptorResult;
 
 pub trait SandboxExt {
@@ -17,7 +17,7 @@ pub trait SandboxExt {
     ) -> RaptorResult<()>;
 }
 
-impl SandboxExt for SandboxClient {
+impl SandboxExt for FalconClient {
     fn shell(&mut self, cmd: &[&str]) -> RaptorResult<()> {
         let mut args = vec!["/bin/sh", "-c"];
         args.extend(cmd);

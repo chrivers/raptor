@@ -4,18 +4,18 @@ use camino::Utf8Path;
 
 use crate::client::{Account, Request, RequestCloseFd, RequestCreateFile, RequestWriteFd};
 use crate::dsl::Chown;
-use crate::sandbox::SandboxClient;
+use crate::sandbox::FalconClient;
 use crate::{RaptorError, RaptorResult};
 
 #[derive(Debug)]
 pub struct SandboxFile<'sb> {
-    sandbox_client: &'sb mut SandboxClient,
+    sandbox_client: &'sb mut FalconClient,
     fd: i32,
 }
 
 impl<'sb> SandboxFile<'sb> {
     pub fn new(
-        sandbox_client: &'sb mut SandboxClient,
+        sandbox_client: &'sb mut FalconClient,
         path: &Utf8Path,
         owner: Option<Chown>,
         mode: Option<u32>,

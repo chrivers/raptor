@@ -1,6 +1,6 @@
 use camino::Utf8Path;
 use raptor::dsl::Chown;
-use raptor::sandbox::{Sandbox, SandboxClient, SandboxExt};
+use raptor::sandbox::{FalconClient, Sandbox, SandboxExt};
 use raptor::{RaptorError, RaptorResult};
 
 fn spawn_sandbox(name: &str) -> RaptorResult<Sandbox> {
@@ -97,7 +97,7 @@ fn nspawn_write_data() -> RaptorResult<()> {
     Ok(())
 }
 
-fn write_etc_passwd(client: &mut SandboxClient) -> RaptorResult<()> {
+fn write_etc_passwd(client: &mut FalconClient) -> RaptorResult<()> {
     client.write_file(
         "/etc/passwd",
         None,
@@ -109,7 +109,7 @@ fn write_etc_passwd(client: &mut SandboxClient) -> RaptorResult<()> {
     )
 }
 
-fn write_etc_group(client: &mut SandboxClient) -> RaptorResult<()> {
+fn write_etc_group(client: &mut FalconClient) -> RaptorResult<()> {
     client.write_file(
         "/etc/group",
         None,

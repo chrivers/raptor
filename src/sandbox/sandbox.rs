@@ -7,14 +7,14 @@ use camino_tempfile::{Builder, Utf8TempDir};
 use uuid::Uuid;
 
 use crate::sandbox::{
-    ConsoleMode, LinkJournal, ResolvConf, SandboxClient, Settings, SpawnBuilder, Timezone,
+    ConsoleMode, FalconClient, LinkJournal, ResolvConf, Settings, SpawnBuilder, Timezone,
 };
 use crate::util::io_fast_copy;
 use crate::RaptorResult;
 
 #[derive(Debug)]
 pub struct Sandbox {
-    client: SandboxClient,
+    client: FalconClient,
     rootdir: Utf8PathBuf,
     mount: Option<Utf8PathBuf>,
     tempdir: Option<Utf8TempDir>,
@@ -139,9 +139,9 @@ impl Sandbox {
 
         let mut proc = spawn.command().spawn()?;
 
-        match SandboxClient::wait_for_startup(listen, &mut proc) {
+        match FalconClient::wait_for_startup(listen, &mut proc) {
             Ok(conn) => Ok(Self {
-                client: SandboxClient::new(proc, conn),
+                client: FalconClient::new(proc, conn),
                 rootdir: rootdir.into(),
                 mount: Some(rootdir.join(int_root.strip_prefix("/").unwrap())),
                 tempdir: Some(tempdir),
@@ -166,7 +166,7 @@ impl Sandbox {
         Ok(())
     }
 
-    pub fn client(&mut self) -> &mut SandboxClient {
+    pub fn client(&mut self) -> &mut FalconClient {
         &mut self.client
     }
 
