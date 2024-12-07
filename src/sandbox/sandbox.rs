@@ -33,6 +33,10 @@ fn copy_file(from: impl AsRef<Utf8Path>, to: impl AsRef<Utf8Path>) -> RaptorResu
     io_fast_copy(src, dst)
 }
 
+const SYSTEMD_NSPAWN_BASE_DIRS: &[&str] = &[
+    "etc", "sys", "var", "root", "dev", "proc", "run", "tmp", "usr",
+];
+
 impl Sandbox {
     /* TODO: ugly hack, but works for testing */
     pub const FALCON_PATH: &str = "target/x86_64-unknown-linux-musl/release/falcon";
@@ -54,7 +58,12 @@ impl Sandbox {
         we have to create it, to make sure systemd-nspawn is happy, so it can go
         on to ignore it completely.
 
-        This dir with an ampty `/usr` dir, is the `tempdir`.
+        This dir with an empty `/usr` dir, is the `tempdir`.
+
+        Incidentally, systemd-nspawn also "helpfully" pre-populates our target
+        directory with a number of directories (`SYSTEMD_NSPAWN_BASE_DIRS`). To
+        avoid having these directories show up in all build products, we create
+        all of them in `tempdir`.
 
         The `conndir` serves an actual purpose. It contains a copy of the raptor
         `falcon` binary, as well as the unix socket that the
@@ -89,7 +98,9 @@ impl Sandbox {
         std::fs::create_dir_all(rootdir)?;
 
         /* the ephemeral root directory needs to have /usr for systemd-nspawn to accept it */
-        std::fs::create_dir(tempdir.path().join("usr"))?;
+        for dir in SYSTEMD_NSPAWN_BASE_DIRS {
+            std::fs::create_dir(tempdir.path().join(dir))?;
+        }
 
         /* external root is the absolute path of the tempdir */
         let ext_root = conndir.path();
@@ -116,6 +127,7 @@ impl Sandbox {
             .timezone(Timezone::Off)
             .settings(Settings::False)
             .console(ConsoleMode::ReadOnly)
+            .root_overlay(tempdir.path())
             .root_overlays(layers)
             .root_overlay(rootdir)
             .bind_ro(ext_root, &int_root)
