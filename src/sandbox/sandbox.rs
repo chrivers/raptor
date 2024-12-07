@@ -1,5 +1,3 @@
-use std::fs::{File, OpenOptions};
-use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::os::unix::net::UnixListener;
 
 use camino::{Utf8Path, Utf8PathBuf};
@@ -9,7 +7,7 @@ use uuid::Uuid;
 use crate::sandbox::{
     ConsoleMode, FalconClient, LinkJournal, ResolvConf, Settings, SpawnBuilder, Timezone,
 };
-use crate::util::io_fast_copy;
+use crate::util::copy_file;
 use crate::RaptorResult;
 
 #[derive(Debug)]
@@ -18,19 +16,6 @@ pub struct Sandbox {
     rootdir: Utf8PathBuf,
     mount: Option<Utf8PathBuf>,
     tempdir: Option<Utf8TempDir>,
-}
-
-fn copy_file(from: impl AsRef<Utf8Path>, to: impl AsRef<Utf8Path>) -> RaptorResult<()> {
-    let src = File::open(from.as_ref())?;
-    let mode = src.metadata()?.permissions().mode();
-    let dst = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .mode(mode)
-        .open(to.as_ref())?;
-
-    io_fast_copy(src, dst)
 }
 
 const SYSTEMD_NSPAWN_BASE_DIRS: &[&str] = &[

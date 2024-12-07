@@ -1,4 +1,6 @@
+use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Read, Write};
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 
 use camino::{Utf8Path, Utf8PathBuf};
 
@@ -10,6 +12,19 @@ pub fn io_fast_copy(mut src: impl Read, dst: impl Write) -> RaptorResult<()> {
     let mut dst = BufWriter::with_capacity(BUFFER_SIZE, dst);
     std::io::copy(&mut src, &mut dst)?;
     Ok(())
+}
+
+pub fn copy_file(from: impl AsRef<Utf8Path>, to: impl AsRef<Utf8Path>) -> RaptorResult<()> {
+    let src = File::open(from.as_ref())?;
+    let mode = src.metadata()?.permissions().mode();
+    let dst = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .mode(mode)
+        .open(to.as_ref())?;
+
+    io_fast_copy(src, dst)
 }
 
 pub trait SafeParent {
