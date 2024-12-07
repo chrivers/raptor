@@ -95,6 +95,13 @@ impl Instruction {
             _ => self,
         }
     }
+
+    #[must_use]
+    pub fn invoke(args: &[impl AsRef<str>]) -> Self {
+        Self::Invoke(InstInvoke {
+            args: args.iter().map(|s| s.as_ref().to_string()).collect(),
+        })
+    }
 }
 
 impl Display for Instruction {

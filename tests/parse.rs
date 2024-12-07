@@ -200,3 +200,8 @@ fn parse_include04() -> RaptorResult<()> {
 
     Ok(())
 }
+
+#[test]
+fn parse_invoke01() -> RaptorResult<()> {
+    test_single_inst_parse("invoke01.rapt", Instruction::invoke(&["echo", "foo"]))
+}
