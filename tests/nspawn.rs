@@ -1,13 +1,52 @@
+use std::ops::{Deref, DerefMut};
+
 use camino::Utf8Path;
+use camino_tempfile::Utf8TempDir;
 use raptor::dsl::Chown;
 use raptor::sandbox::{FalconClient, Sandbox, SandboxExt};
+use raptor::util::copy_file;
 use raptor::{RaptorError, RaptorResult};
 
-fn spawn_sandbox(name: &str) -> RaptorResult<Sandbox> {
-    Sandbox::new(
-        &[Utf8Path::new("tests/data/busybox")],
-        &Utf8Path::new("tests/data/tmp").join(name),
-    )
+const BUSYBOX_PATH: &str = "/bin/busybox";
+
+/* wrapper type for Sandbox, which keeps tempdir alive as long as sandbox is */
+/* used. Implements transparent deref to make use of it seamless. */
+#[allow(dead_code)]
+struct SandboxWrapper {
+    sandbox: Sandbox,
+    tempdir: Utf8TempDir,
+}
+
+impl Deref for SandboxWrapper {
+    type Target = Sandbox;
+
+    fn deref(&self) -> &Self::Target {
+        &self.sandbox
+    }
+}
+
+impl DerefMut for SandboxWrapper {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.sandbox
+    }
+}
+
+fn spawn_sandbox(name: &str) -> RaptorResult<SandboxWrapper> {
+    assert!(
+        std::fs::exists(BUSYBOX_PATH)?,
+        "Busybox not required for testing, but not found at {BUSYBOX_PATH:?}"
+    );
+
+    /* construct temporary directory with busybox as /bin/sh */
+    let tempdir = Utf8TempDir::new()?;
+    std::fs::create_dir(tempdir.path().join("bin"))?;
+    copy_file(BUSYBOX_PATH, tempdir.path().join("bin/sh"))?;
+
+    let rootdir = Utf8Path::new("tests/output").join(name);
+
+    let sandbox = Sandbox::new(&[tempdir.path()], &rootdir)?;
+
+    Ok(SandboxWrapper { sandbox, tempdir })
 }
 
 #[test]
