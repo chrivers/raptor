@@ -1,6 +1,6 @@
 use camino::Utf8Path;
 use raptor::dsl::Chown;
-use raptor::sandbox::{Sandbox, SandboxExt};
+use raptor::sandbox::{Sandbox, SandboxClient, SandboxExt};
 use raptor::{RaptorError, RaptorResult};
 
 fn spawn_sandbox(name: &str) -> RaptorResult<Sandbox> {
@@ -34,15 +34,16 @@ fn nspawn_drop() -> RaptorResult<()> {
 #[test]
 fn nspawn_exit_status() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("exit_status")?;
+    let client = sbx.client();
 
-    sbx.shell(&["true"])?;
+    client.shell(&["true"])?;
 
     assert!(matches!(
-        sbx.shell(&["false"]).unwrap_err(),
+        client.shell(&["false"]).unwrap_err(),
         RaptorError::SandboxRunError(es) if es.code() == Some(1)
     ));
     assert!(matches!(
-        sbx.shell(&["exit 100"]).unwrap_err(),
+        client.shell(&["exit 100"]).unwrap_err(),
         RaptorError::SandboxRunError(es) if es.code() == Some(100)
     ));
     sbx.close()?;
@@ -52,13 +53,14 @@ fn nspawn_exit_status() -> RaptorResult<()> {
 #[test]
 fn nspawn_workdir() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("workdir")?;
-    sbx.shell(&["[ $PWD == / ]"])?;
-    sbx.chdir("/bin")?;
-    sbx.shell(&["[ $PWD == /bin ]"])?;
-    sbx.chdir("../usr")?;
-    sbx.shell(&["[ $PWD == /usr ]"])?;
-    sbx.chdir("..")?;
-    sbx.shell(&["[ $PWD == / ]"])?;
+    let client = sbx.client();
+    client.shell(&["[ $PWD == / ]"])?;
+    client.chdir("/bin")?;
+    client.shell(&["[ $PWD == /bin ]"])?;
+    client.chdir("../usr")?;
+    client.shell(&["[ $PWD == /usr ]"])?;
+    client.chdir("..")?;
+    client.shell(&["[ $PWD == / ]"])?;
     sbx.close()?;
     Ok(())
 }
@@ -66,11 +68,12 @@ fn nspawn_workdir() -> RaptorResult<()> {
 #[test]
 fn nspawn_setenv() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("setenv")?;
-    sbx.shell(&["[ x${FOO} == x ]"])?;
-    sbx.setenv("FOO", "BAR")?;
-    sbx.shell(&["[ x${FOO} == xBAR ]"])?;
-    sbx.setenv("FOO", "OTHER")?;
-    sbx.shell(&["[ x${FOO} == xOTHER ]"])?;
+    let client = sbx.client();
+    client.shell(&["[ x${FOO} == x ]"])?;
+    client.setenv("FOO", "BAR")?;
+    client.shell(&["[ x${FOO} == xBAR ]"])?;
+    client.setenv("FOO", "OTHER")?;
+    client.shell(&["[ x${FOO} == xOTHER ]"])?;
     sbx.close()?;
     Ok(())
 }
@@ -78,22 +81,24 @@ fn nspawn_setenv() -> RaptorResult<()> {
 #[test]
 fn nspawn_write_data() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("write_data")?;
-    sbx.write_file("/tmp/a", None, None, b"Hello world\n")?;
-    sbx.write_file(
+    let client = sbx.client();
+
+    client.write_file("/tmp/a", None, None, b"Hello world\n")?;
+    client.write_file(
         "/tmp/b",
         None,
         None,
         "f0ef7081e1539ac00ef5b761b4fb01b3  a\n",
     )?;
 
-    sbx.shell(&["cd /tmp && md5sum -cs b"])?;
+    client.shell(&["cd /tmp && md5sum -cs b"])?;
 
     sbx.close()?;
     Ok(())
 }
 
-fn write_etc_passwd(sbx: &mut Sandbox) -> RaptorResult<()> {
-    sbx.write_file(
+fn write_etc_passwd(client: &mut SandboxClient) -> RaptorResult<()> {
+    client.write_file(
         "/etc/passwd",
         None,
         None,
@@ -104,8 +109,8 @@ fn write_etc_passwd(sbx: &mut Sandbox) -> RaptorResult<()> {
     )
 }
 
-fn write_etc_group(sbx: &mut Sandbox) -> RaptorResult<()> {
-    sbx.write_file(
+fn write_etc_group(client: &mut SandboxClient) -> RaptorResult<()> {
+    client.write_file(
         "/etc/group",
         None,
         None,
@@ -116,16 +121,17 @@ fn write_etc_group(sbx: &mut Sandbox) -> RaptorResult<()> {
 #[test]
 fn nspawn_write_chown_user() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("write_chown_user")?;
+    let client = sbx.client();
 
-    write_etc_passwd(&mut sbx)?;
+    write_etc_passwd(client)?;
 
-    sbx.write_file("/tmp/c", Some(Chown::user("root")), None, b"Hello world\n")?;
-    sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
-    sbx.shell(&["[ $(stat -c %g /tmp/c) -eq 0 ]"])?;
+    client.write_file("/tmp/c", Some(Chown::user("root")), None, b"Hello world\n")?;
+    client.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
+    client.shell(&["[ $(stat -c %g /tmp/c) -eq 0 ]"])?;
 
-    sbx.write_file("/tmp/c", Some(Chown::user("user")), None, b"Hello world\n")?;
-    sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 1000 ]"])?;
-    sbx.shell(&["[ $(stat -c %g /tmp/c) -eq 0 ]"])?;
+    client.write_file("/tmp/c", Some(Chown::user("user")), None, b"Hello world\n")?;
+    client.shell(&["[ $(stat -c %u /tmp/c) -eq 1000 ]"])?;
+    client.shell(&["[ $(stat -c %g /tmp/c) -eq 0 ]"])?;
 
     sbx.close()?;
     Ok(())
@@ -134,17 +140,18 @@ fn nspawn_write_chown_user() -> RaptorResult<()> {
 #[test]
 fn nspawn_write_chown_group() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("write_chown_group")?;
+    let client = sbx.client();
 
-    write_etc_passwd(&mut sbx)?;
-    write_etc_group(&mut sbx)?;
+    write_etc_passwd(client)?;
+    write_etc_group(client)?;
 
-    sbx.write_file("/tmp/c", Some(Chown::group("root")), None, b"Hello world\n")?;
-    sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
-    sbx.shell(&["[ $(stat -c %g /tmp/c) -eq 0 ]"])?;
+    client.write_file("/tmp/c", Some(Chown::group("root")), None, b"Hello world\n")?;
+    client.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
+    client.shell(&["[ $(stat -c %g /tmp/c) -eq 0 ]"])?;
 
-    sbx.write_file("/tmp/c", Some(Chown::group("user")), None, b"Hello world\n")?;
-    sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
-    sbx.shell(&["[ $(stat -c %g /tmp/c) -eq 1000 ]"])?;
+    client.write_file("/tmp/c", Some(Chown::group("user")), None, b"Hello world\n")?;
+    client.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
+    client.shell(&["[ $(stat -c %g /tmp/c) -eq 1000 ]"])?;
 
     sbx.close()?;
     Ok(())
@@ -154,25 +161,26 @@ fn nspawn_write_chown_group() -> RaptorResult<()> {
 fn nspawn_write_chown_both() -> RaptorResult<()> {
     colog::init();
     let mut sbx = spawn_sandbox("write_chown_both")?;
+    let client = sbx.client();
 
-    write_etc_passwd(&mut sbx)?;
-    write_etc_group(&mut sbx)?;
+    write_etc_passwd(client)?;
+    write_etc_group(client)?;
 
-    sbx.write_file("/tmp/a", Some(Chown::new("root", "root")), None, b"Hello\n")?;
-    sbx.shell(&["[ $(stat -c %u /tmp/a) -eq 0 ]"])?;
-    sbx.shell(&["[ $(stat -c %g /tmp/a) -eq 0 ]"])?;
+    client.write_file("/tmp/a", Some(Chown::new("root", "root")), None, b"Hello\n")?;
+    client.shell(&["[ $(stat -c %u /tmp/a) -eq 0 ]"])?;
+    client.shell(&["[ $(stat -c %g /tmp/a) -eq 0 ]"])?;
 
-    sbx.write_file("/tmp/b", Some(Chown::new("user", "user")), None, b"Hello\n")?;
-    sbx.shell(&["[ $(stat -c %u /tmp/b) -eq 1000 ]"])?;
-    sbx.shell(&["[ $(stat -c %g /tmp/b) -eq 1000 ]"])?;
+    client.write_file("/tmp/b", Some(Chown::new("user", "user")), None, b"Hello\n")?;
+    client.shell(&["[ $(stat -c %u /tmp/b) -eq 1000 ]"])?;
+    client.shell(&["[ $(stat -c %g /tmp/b) -eq 1000 ]"])?;
 
-    sbx.write_file("/tmp/c", Some(Chown::new("root", "user")), None, b"Hello\n")?;
-    sbx.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
-    sbx.shell(&["[ $(stat -c %g /tmp/c) -eq 1000 ]"])?;
+    client.write_file("/tmp/c", Some(Chown::new("root", "user")), None, b"Hello\n")?;
+    client.shell(&["[ $(stat -c %u /tmp/c) -eq 0 ]"])?;
+    client.shell(&["[ $(stat -c %g /tmp/c) -eq 1000 ]"])?;
 
-    sbx.write_file("/tmp/d", Some(Chown::new("user", "root")), None, b"Hello\n")?;
-    sbx.shell(&["[ $(stat -c %u /tmp/d) -eq 1000 ]"])?;
-    sbx.shell(&["[ $(stat -c %g /tmp/d) -eq 0 ]"])?;
+    client.write_file("/tmp/d", Some(Chown::new("user", "root")), None, b"Hello\n")?;
+    client.shell(&["[ $(stat -c %u /tmp/d) -eq 1000 ]"])?;
+    client.shell(&["[ $(stat -c %g /tmp/d) -eq 0 ]"])?;
 
     sbx.close()?;
     Ok(())
@@ -181,14 +189,15 @@ fn nspawn_write_chown_both() -> RaptorResult<()> {
 #[test]
 fn nspawn_write_chmod() -> RaptorResult<()> {
     let mut sbx = spawn_sandbox("write_chmod")?;
+    let client = sbx.client();
 
     let mut test_chmod = |mode: u32| -> RaptorResult<()> {
         const DATA: &[u8] = b"Hello world\n";
-        sbx.write_file("/a", None, Some(mode), DATA)?;
-        sbx.shell(&[&format!(
+        client.write_file("/a", None, Some(mode), DATA)?;
+        client.shell(&[&format!(
             "[ $(stat -c '%04a' /a) = {mode:04o} ] || {{ stat /a; stat -c '%04a' /a; exit 1; }}"
         )])?;
-        sbx.shell(&[&format!(
+        client.shell(&[&format!(
             "[ $(stat -c '%s' /a) -eq {} ] || {{ stat /a; exit 1; }}; rm -f /a",
             DATA.len()
         )])?;

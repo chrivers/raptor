@@ -34,11 +34,12 @@ impl Executor {
     }
 
     fn handle(&mut self, stmt: &Statement, ctx: &Value) -> RaptorResult<()> {
+        let client = self.sandbox.client();
         match &stmt.inst {
             Instruction::From(_) => {}
             Instruction::Copy(inst) => {
                 let src = File::open(&inst.srcs[0])?;
-                let fd = self.sandbox.create_file(
+                let fd = client.create_file(
                     &Utf8PathBuf::from(&inst.dest),
                     inst.chown.clone(),
                     inst.chmod,
@@ -58,7 +59,7 @@ impl Executor {
                     .and_then(|tmpl| tmpl.render(Value::from(map)))
                     .map(|src| src + "\n")?;
 
-                self.sandbox.write_file(
+                client.write_file(
                     &inst.dest,
                     inst.chown.clone(),
                     inst.chmod,
@@ -66,7 +67,7 @@ impl Executor {
                 )?;
             }
             Instruction::Write(inst) => {
-                self.sandbox.write_file(
+                client.write_file(
                     &inst.dest,
                     inst.chown.clone(),
                     inst.chmod,
@@ -74,7 +75,7 @@ impl Executor {
                 )?;
             }
             Instruction::Run(inst) => {
-                self.sandbox.run(&inst.run)?;
+                client.run(&inst.run)?;
             }
 
             Instruction::Invoke(inst) => {
@@ -91,12 +92,12 @@ impl Executor {
 
             Instruction::Env(inst) => {
                 for env in &inst.env {
-                    self.sandbox.setenv(&env.key, &env.value)?;
+                    client.setenv(&env.key, &env.value)?;
                 }
             }
 
             Instruction::Workdir(inst) => {
-                self.sandbox.chdir(&inst.dir)?;
+                client.chdir(&inst.dir)?;
             }
 
             Instruction::Include(_) => unreachable!(),
