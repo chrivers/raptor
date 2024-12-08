@@ -175,6 +175,79 @@ RENDER widgetfactory.tmpl /etc/widgetd/server.conf host port
 
 ### RUN
 
+```nginx
+RUN arg0 arg1 arg2..
+```
+
+The `RUN` instruction executes the given command inside the build namespace.
+
+Arguments are executed as-is, i.e. without shell expansion, redirection, piping, etc.
+
+```nginx
+# enable the foo service
+RUN systemctl enable foo.service
+```
+
+This ensures full control over the parsing of commands, but it also means normal
+shell syntax is not available:
+
+```nginx
+# BAD: This will call "cat" with 3 arguments
+RUN cat /etc/hostname "|" md5sum   # <-- this will not work
+```
+
+Instead, `/bin/sh` can be specified:
+
+```nginx
+# This will produce the md5sum of /etc/hostname
+RUN /bin/sh -c "cat /etc/hostname | md5sum"
+```
+
 ### WORKDIR
 
+```nginx
+WORKDIR directory
+```
+
+The `WORKDIR` instruction changes the current working directory inside the build
+namespace. This affects all relative destination paths, as well as `RUN`:
+
+```nginx
+# This will copy "program" to "/bin/program"
+# (initial directory is "/")
+COPY program bin/program
+
+WORKDIR /usr
+
+# The same command will now copy "program"
+# to "/usr/bin/program"
+COPY program bin/program
+
+WORKDIR /tmp
+
+# This creates /tmp/foo
+RUN /bin/sh -c "touch foo"
+```
+
 ### WRITE
+
+```nginx
+WRITE [file-options] <value> <path>
+```
+
+The `WRITE` instruction writes a fixed string to the given path.
+
+A file can be added to the build output with `COPY`, but sometimes we just need
+to write a short value, and `COPY` might like overkill.
+
+Using `WRITE`, we can put values into files:
+
+```nginx
+WRITE "hello world" hello.txt
+```
+
+The same file options as `COPY` and `RENDER` are accepted:
+
+```nginx
+WRITE --chmod 0600 --chown service:root "API-TOKEN" /etc/service/token.conf
+```
