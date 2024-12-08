@@ -1,7 +1,7 @@
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use colored::Colorize;
-use log::{error, info};
+use log::{debug, error, info};
 
 use raptor::build::RaptorBuilder;
 use raptor::program::Loader;
@@ -43,9 +43,7 @@ struct Mode {
     show: bool,
 }
 
-fn raptor() -> RaptorResult<()> {
-    let args = Cli::parse();
-
+fn check_for_falcon_binary() -> RaptorResult<()> {
     if !std::fs::exists(Sandbox::FALCON_PATH)? {
         error!(
             "The program falcon could not be found\n\n  {}\n",
@@ -67,6 +65,13 @@ fn raptor() -> RaptorResult<()> {
         eprintln!("  cargo build --target x86_64-unknown-linux-musl --release --bin=falcon");
         std::process::exit(1);
     }
+    Ok(())
+}
+
+fn raptor() -> RaptorResult<()> {
+    let args = Cli::parse();
+
+    check_for_falcon_binary()?;
 
     let loader = Loader::new("", args.mode.dump)?;
     let mut builder = RaptorBuilder::new(loader, args.no_act);
@@ -82,7 +87,14 @@ fn raptor() -> RaptorResult<()> {
 
 fn main() {
     colog::init();
-    if raptor().is_err() {
-        std::process::exit(1);
+
+    match raptor() {
+        Ok(()) => {
+            debug!("Raptor completed successfully")
+        }
+        Err(err) => {
+            debug!("Raptor failed: {err}");
+            std::process::exit(1);
+        }
     }
 }
