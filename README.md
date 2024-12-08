@@ -89,11 +89,11 @@ same convention used by GNU coreutils, and several other programs.
 
 ### ENV
 
-The `ENV` instruction sets one or more environment variables inside the build namespace.
-
 ```nginx
 ENV <key>=<value> [...<key=value>]
 ```
+
+The `ENV` instruction sets one or more environment variables inside the build namespace.
 
 Example:
 
@@ -104,11 +104,13 @@ ENV API_TOKEN="acbd18db4cc2f85cedef654fccc4a4d8" API_USER="user@example.org"
 
 ### INCLUDE
 
-The `INCLUDE` instruction calls on another Raptor file (`.rinc`) to be
-executed.
+```nginx
+INCLUDE <filename> [...<key=value>]
+```
 
-When `INCLUDE`ing files, any number of local variables can be passed to the
-included target. This is the core feature that makes it useful to include files.
+The `INCLUDE` instruction calls on another Raptor file (`.rinc`) to be
+executed. When `INCLUDE`ing files, any number of local variables can be passed
+to the included target.
 
 For example, if we have previously made the file `lib/install-utils.rinc` that
 installs some useful programs, we can use that file in build targets:
@@ -128,9 +130,48 @@ INCLUDE "lib/set-hostname.rinc" hostname="server1"
 In the above example, we set the hostname of a server using an included
 component.
 
+Since all values have to be specified as `key=value`, we might end up passing
+variables through several raptor files. This often ends up looking like this in
+the middle:
+
+```nginx
+INCLUDE "setup-thing.rinc" username=username password=password
+```
+
+This is of course valid, but a shorter syntax exists for this case:
+
+```nginx
+INCLUDE "setup-thing.rinc" username password
+```
+
+In other words, include parameters without `=` always expand to `name=name`.
+
 ### INVOKE
 
+T.B.D.
+
 ### RENDER
+
+```nginx
+RENDER [file-options] <source> <destination> [...include-arg]
+```
+
+The `RENDER` instruction renders a file from a template, and writes it to the
+specified destination. It accepts the same `key=value` arguments as
+`INCLUDE`. These arguments are made available in the template.
+
+Example:
+
+```nginx
+RENDER widgetfactory.tmpl /etc/widgetd/server.conf host="example.org" port=1234
+```
+
+The short form `name` (meaning `name=name`) is also supported here. For example,
+in a component where `host` and `port` are available in the environment:
+
+```nginx
+RENDER widgetfactory.tmpl /etc/widgetd/server.conf host port
+```
 
 ### RUN
 
