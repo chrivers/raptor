@@ -35,7 +35,7 @@ FROM base
 ### COPY
 
 ```nginx
-COPY [file-options] <source> [...<source>] <destination>
+COPY [<file-options>] <source> [...<source>] <destination>
 ```
 
 The `COPY` instruction takes one or more source files, and copies them to the
@@ -105,7 +105,7 @@ ENV API_TOKEN="acbd18db4cc2f85cedef654fccc4a4d8" API_USER="user@example.org"
 ### INCLUDE
 
 ```nginx
-INCLUDE <filename> [...<key=value>]
+INCLUDE <filename> [...<key>=<value>]
 ```
 
 The `INCLUDE` instruction calls on another Raptor file (`.rinc`) to be
@@ -144,7 +144,7 @@ This is of course valid, but a shorter syntax exists for this case:
 INCLUDE "setup-thing.rinc" username password
 ```
 
-In other words, include parameters without `=` always expand to `name=name`.
+In other words, include parameter `name=name` can always be shortened to `name`.
 
 ### INVOKE
 
@@ -153,7 +153,7 @@ T.B.D.
 ### RENDER
 
 ```nginx
-RENDER [file-options] <source> <destination> [...include-arg]
+RENDER [<file-options>] <source> <destination> [...<include-arg>]
 ```
 
 The `RENDER` instruction renders a file from a template, and writes it to the
@@ -166,8 +166,10 @@ Example:
 RENDER widgetfactory.tmpl /etc/widgetd/server.conf host="example.org" port=1234
 ```
 
-The short form `name` (meaning `name=name`) is also supported here. For example,
-in a component where `host` and `port` are available in the environment:
+The short form `name` (meaning `name=name`) is also supported here.
+
+For example, in a component where `host` and `port` are available in the
+environment:
 
 ```nginx
 RENDER widgetfactory.tmpl /etc/widgetd/server.conf host port
@@ -176,7 +178,7 @@ RENDER widgetfactory.tmpl /etc/widgetd/server.conf host port
 ### RUN
 
 ```nginx
-RUN arg0 arg1 arg2..
+RUN <command> [...<arg>]
 ```
 
 The `RUN` instruction executes the given command inside the build namespace.
@@ -192,11 +194,12 @@ This ensures full control over the parsing of commands, but it also means normal
 shell syntax is not available:
 
 ```nginx
-# BAD: This will call "cat" with 3 arguments
-RUN cat /etc/hostname "|" md5sum   # <-- this will not work
+# BROKEN: This will call "cat" with 3 arguments
+RUN cat /etc/hostname "|" md5sum
+#   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this will not work
 ```
 
-Instead, `/bin/sh` can be specified:
+Instead, `/bin/sh` can be called explicitly:
 
 ```nginx
 # This will produce the md5sum of /etc/hostname
@@ -206,21 +209,19 @@ RUN /bin/sh -c "cat /etc/hostname | md5sum"
 ### WORKDIR
 
 ```nginx
-WORKDIR directory
+WORKDIR <path>
 ```
 
 The `WORKDIR` instruction changes the current working directory inside the build
 namespace. This affects all relative destination paths, as well as `RUN`:
 
 ```nginx
-# This will copy "program" to "/bin/program"
-# (initial directory is "/")
+# This will copy "program" to "/bin/program" (initial directory is "/")
 COPY program bin/program
 
 WORKDIR /usr
 
-# The same command will now copy "program"
-# to "/usr/bin/program"
+# The same command will now copy "program" to "/usr/bin/program"
 COPY program bin/program
 
 WORKDIR /tmp
@@ -232,7 +233,7 @@ RUN /bin/sh -c "touch foo"
 ### WRITE
 
 ```nginx
-WRITE [file-options] <value> <path>
+WRITE [<file-options>] <value> <path>
 ```
 
 The `WRITE` instruction writes a fixed string to the given path.
