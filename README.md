@@ -13,14 +13,14 @@ keywords, and are terminated by end of line.
 
 All lines starting with `#` are treated as comments:
 
-```Dockerfile
+```nginx
 # This copies "foo" from the host to "/bar" inside the build target
 COPY foo /bar
 ```
 
 ### FROM
 
-```
+```nginx
 FROM <identifier>
 ```
 
@@ -28,13 +28,13 @@ The `FROM` statement bases the current layer on top of some the specified layer.
 
 Example:
 
-```
+```nginx
 FROM base
 ```
 
 ### COPY
 
-```
+```nginx
 COPY [file-options] <source> [...<source>] <destination>
 ```
 
@@ -61,7 +61,7 @@ the file. The `mode` is specified as 3 or 4 octal digits.
 
 Examples:
 
-```
+```nginx
 # these are equivalent:
 COPY --chmod  755 script.sh /root/script.sh
 COPY --chmod 0755 script.sh /root/script.sh
@@ -91,13 +91,13 @@ same convention used by GNU coreutils, and several other programs.
 
 The `ENV` command sets one or more environment variables inside the build namespace.
 
-```
+```nginx
 ENV <key>=<value> [...<key=value>]
 ```
 
 Example:
 
-```
+```nginx
 ENV CFLAGS="--with-sprinkles"
 ENV API_TOKEN="acbd18db4cc2f85cedef654fccc4a4d8" API_USER="user@example.org"
 ```
