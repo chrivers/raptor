@@ -24,7 +24,7 @@ COPY foo /bar
 FROM <identifier>
 ```
 
-The `FROM` statement bases the current layer on top of some the specified layer.
+The `FROM` instruction bases the current layer on top of some the specified layer.
 
 Example:
 
@@ -89,7 +89,7 @@ same convention used by GNU coreutils, and several other programs.
 
 ### ENV
 
-The `ENV` command sets one or more environment variables inside the build namespace.
+The `ENV` instruction sets one or more environment variables inside the build namespace.
 
 ```nginx
 ENV <key>=<value> [...<key=value>]
@@ -104,6 +104,29 @@ ENV API_TOKEN="acbd18db4cc2f85cedef654fccc4a4d8" API_USER="user@example.org"
 
 ### INCLUDE
 
+The `INCLUDE` instruction calls on another Raptor file (`.rinc`) to be
+executed.
+
+When `INCLUDE`ing files, any number of local variables can be passed to the
+included target. This is the core feature that makes it useful to include files.
+
+For example, if we have previously made the file `lib/install-utils.rinc` that
+installs some useful programs, we can use that file in build targets:
+
+```nginx
+INCLUDE "lib/install-base-utils.rinc"
+```
+
+We can also make the component accept parameters, to make powerful, flexible
+components:
+
+```nginx
+# hypothetical library function to update "/etc/hostname"
+INCLUDE "lib/set-hostname.rinc" hostname="server1"
+```
+
+In the above example, we set the hostname of a server using an included
+component.
 
 ### INVOKE
 
