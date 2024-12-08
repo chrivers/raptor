@@ -75,14 +75,13 @@ impl Loader<'_> {
 
     pub fn explain_error(&self, err: &RaptorError) -> RaptorResult<()> {
         match err {
-            RaptorError::ScriptError(desc, origin)
-            | RaptorError::UndefinedVarError(desc, origin) => {
+            RaptorError::ScriptError(_, origin) | RaptorError::UndefinedVarError(_, origin) => {
                 self.show_include_stack(&self.origins);
                 show_origin_error_context(
                     &self.sources[origin.path.as_str()],
                     origin,
                     "Script Error",
-                    desc,
+                    &err.to_string(),
                 );
             }
             RaptorError::MinijinjaError(err) => {

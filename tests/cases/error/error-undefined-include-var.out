@@ -2,6 +2,6 @@ error: Script Error
  --> tests/cases/error/error-undefined-include-var.rapt:1:24
   |
 1 | INCLUDE dummy.rapt foo=bar
-  |                        ^^^ bar
+  |                        ^^^ Undefined variable: bar
 2 | 
   |

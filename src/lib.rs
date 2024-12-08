@@ -55,7 +55,7 @@ pub enum RaptorError {
     #[error("Cannot get parent path from {0:?}")]
     BadPathNoParent(Utf8PathBuf),
 
-    #[error("Script error: {0} {1:?}")]
+    #[error("Script error: {0}")]
     ScriptError(String, Origin),
 
     #[error("Undefined variable: {0}")]

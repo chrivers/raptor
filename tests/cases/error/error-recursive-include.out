@@ -142,6 +142,6 @@ error: Script Error
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Too many nested includes
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Script error: Too many nested includes
 2 | 
   |
