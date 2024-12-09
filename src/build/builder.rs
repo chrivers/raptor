@@ -88,7 +88,7 @@ impl<'a> RaptorBuilder<'a> {
     fn run_build(&mut self, program: Arc<Program>) -> RaptorResult<()> {
         let programs = self.stack(program)?;
 
-        let mut layers: Vec<Utf8PathBuf> = vec!["layers/empty".into()];
+        let mut layers: Vec<Utf8PathBuf> = vec![];
 
         for prog in programs {
             debug!("Calculating hash for layer {}", prog.path);
