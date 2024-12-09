@@ -53,6 +53,15 @@ impl Instruction {
         })
     }
 
+    pub fn copy(srcs: &[impl AsRef<str>], dest: impl AsRef<str>) -> Self {
+        Self::Copy(InstCopy {
+            chmod: None,
+            chown: None,
+            srcs: srcs.iter().map(|s| s.as_ref().to_string()).collect(),
+            dest: dest.as_ref().into(),
+        })
+    }
+
     pub fn write(dest: impl AsRef<str>, body: impl AsRef<str>) -> Self {
         Self::Write(InstWrite {
             dest: dest.as_ref().to_string(),
