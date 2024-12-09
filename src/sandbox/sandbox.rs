@@ -18,10 +18,6 @@ pub struct Sandbox {
     tempdir: Option<Utf8TempDir>,
 }
 
-const SYSTEMD_NSPAWN_BASE_DIRS: &[&str] = &[
-    "etc", "sys", "var", "root", "dev", "proc", "run", "tmp", "usr",
-];
-
 impl Sandbox {
     /* TODO: ugly hack, but works for testing */
     pub const FALCON_PATH: &str = "target/x86_64-unknown-linux-musl/release/falcon";
@@ -83,9 +79,8 @@ impl Sandbox {
         std::fs::create_dir_all(rootdir)?;
 
         /* the ephemeral root directory needs to have /usr for systemd-nspawn to accept it */
-        for dir in SYSTEMD_NSPAWN_BASE_DIRS {
-            std::fs::create_dir(tempdir.path().join(dir))?;
-        }
+        let root = tempdir.path().join("root");
+        std::fs::create_dir_all(root.join("usr"))?;
 
         /* external root is the absolute path of the tempdir */
         let ext_root = conndir.path();
@@ -118,7 +113,7 @@ impl Sandbox {
             .root_overlays(layers)
             .root_overlay(rootdir)
             .bind_ro(ext_root, &int_root)
-            .directory(tempdir.path())
+            .directory(&root)
             .setenv("FALCON_SOCKET", int_socket_path.as_str())
             .arg(int_client_path.as_str());
 
