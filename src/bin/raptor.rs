@@ -90,7 +90,7 @@ fn main() {
 
     match raptor() {
         Ok(()) => {
-            debug!("Raptor completed successfully")
+            debug!("Raptor completed successfully");
         }
         Err(err) => {
             debug!("Raptor failed: {err}");
