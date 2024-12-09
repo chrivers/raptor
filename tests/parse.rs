@@ -34,6 +34,44 @@ fn test_single_inst_parse(filename: &str, inst: Instruction) -> RaptorResult<()>
 }
 
 #[test]
+fn parse_copy01() -> RaptorResult<()> {
+    test_single_inst_parse("copy01.rapt", Instruction::copy(&["file"], "/foo"))
+}
+
+#[test]
+fn parse_copy02() -> RaptorResult<()> {
+    test_single_inst_parse("copy02.rapt", Instruction::copy(&["a", "b", "c", "d"], "/dir/"))
+}
+
+#[test]
+fn parse_from01() -> RaptorResult<()> {
+    test_single_inst_parse(
+        "from01.rapt",
+        Instruction::From(raptor::dsl::InstFrom {
+            from: "baselayer".into(),
+        }),
+    )
+}
+
+#[test]
+fn parse_run01() -> RaptorResult<()> {
+    test_single_inst_parse("run01.rapt", Instruction::run(&["id"]))
+}
+
+#[test]
+fn parse_run02() -> RaptorResult<()> {
+    test_single_inst_parse("run02.rapt", Instruction::run(&["ls", "-l"]))
+}
+
+#[test]
+fn parse_run03() -> RaptorResult<()> {
+    test_single_inst_parse(
+        "run03.rapt",
+        Instruction::run(&["/bin/sh", "-c", "echo 'foo'"]),
+    )
+}
+
+#[test]
 fn parse_write01() -> RaptorResult<()> {
     test_single_inst_parse("write01.rapt", Instruction::write("/foo", "bar"))
 }
