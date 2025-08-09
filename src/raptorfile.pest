@@ -7,6 +7,7 @@ STATEMENT = {
   | (FROM    ~ NEWLINE)
   | (RENDER  ~ NEWLINE)
   | (WRITE   ~ NEWLINE)
+  | (MKDIR   ~ NEWLINE)
   | (COPY    ~ NEWLINE)
   | (INCLUDE ~ NEWLINE)
   | (INVOKE  ~ NEWLINE)
@@ -80,6 +81,8 @@ file_options = {
     file_option*
 }
 
+parents_flag = { "-p" }
+
 identpath = _{
     ident ~ ("." ~ ident)*
 }
@@ -125,6 +128,13 @@ WRITE = {
     "WRITE"
     ~ file_options
     ~ quoted_string
+    ~ filename
+}
+
+MKDIR = {
+    "MKDIR"
+    ~ parents_flag?
+    ~ file_options
     ~ filename
 }
 
