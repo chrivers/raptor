@@ -75,6 +75,7 @@ pub fn escape_colon(path: &Utf8Path) -> String {
 pub struct SpawnBuilder<'a> {
     sudo: bool,
     quiet: bool,
+    suppress_sync: bool,
     args: Vec<&'a str>,
     uuid: Option<Uuid>,
     settings: Option<Settings>,
@@ -110,6 +111,12 @@ impl<'a> SpawnBuilder<'a> {
     #[must_use]
     pub const fn quiet(mut self, quiet: bool) -> Self {
         self.quiet = quiet;
+        self
+    }
+
+    #[must_use]
+    pub const fn suppress_sync(mut self, suppress_sync: bool) -> Self {
+        self.suppress_sync = suppress_sync;
         self
     }
 
@@ -199,6 +206,10 @@ impl SpawnBuilder<'_> {
 
         if self.quiet {
             res.push("-q".into());
+        }
+
+        if self.suppress_sync {
+            res.push("--suppress-sync=true".into())
         }
 
         if let Some(mode) = self.console {
