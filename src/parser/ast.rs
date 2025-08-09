@@ -6,8 +6,8 @@ use pest_consume::{match_nodes, Parser};
 
 use crate::dsl::{
     Chown, IncludeArg, IncludeArgValue, InstCopy, InstEnv, InstEnvAssign, InstFrom, InstInclude,
-    InstInvoke, InstRender, InstRun, InstWorkdir, InstWrite, Instruction, Lookup, Origin,
-    Statement,
+    InstInvoke, InstMkdir, InstRender, InstRun, InstWorkdir, InstWrite, Instruction, Lookup,
+    Origin, Statement,
 };
 use crate::parser::{RaptorFileParser, Rule};
 use crate::RaptorResult;
@@ -140,6 +140,13 @@ impl RaptorFileParser {
         Ok((chmod, chown))
     }
 
+    fn parents_flag(input: Node) -> Result<bool> {
+        match input.as_str() {
+            "-p" => Ok(true),
+            _ => todo!(),
+        }
+    }
+
     fn COPY(input: Node) -> Result<InstCopy> {
         let mut srcs: Vec<String>;
         let chmod;
@@ -187,6 +194,28 @@ impl RaptorFileParser {
                     body,
                     chmod,
                     chown,
+                })
+            },
+        )
+    }
+
+    fn MKDIR(input: Node) -> Result<InstMkdir> {
+        match_nodes!(
+            input.into_children();
+            [parents_flag(_), file_options((chmod, chown)), filename(dest)] => {
+                Ok(InstMkdir {
+                    dest,
+                    chmod,
+                    chown,
+                    parents: true,
+                })
+            },
+            [file_options((chmod, chown)), filename(dest)] => {
+                Ok(InstMkdir {
+                    dest,
+                    chmod,
+                    chown,
+                    parents : false,
                 })
             },
         )
@@ -306,6 +335,7 @@ impl RaptorFileParser {
             [COPY(stmt)] => Some(Statement { inst: Instruction::Copy(stmt), origin }),
             [WRITE(stmt)] => Some(Statement { inst: Instruction::Write(stmt), origin }),
             [RENDER(stmt)] => Some(Statement { inst: Instruction::Render(stmt), origin }),
+            [MKDIR(stmt)] => Some(Statement { inst: Instruction::Mkdir(stmt), origin }),
             [INCLUDE(stmt)] => Some(Statement { inst: Instruction::Include(stmt), origin }),
             [INVOKE(stmt)] => Some(Statement { inst: Instruction::Invoke(stmt), origin }),
             [RUN(stmt)] => Some(Statement { inst: Instruction::Run(stmt), origin }),
