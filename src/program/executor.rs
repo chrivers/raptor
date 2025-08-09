@@ -74,6 +74,9 @@ impl Executor {
                     inst.body.as_bytes(),
                 )?;
             }
+            Instruction::Mkdir(inst) => {
+                client.mkdir(&inst.dest, inst.chown.clone(), inst.chmod, inst.parents)?;
+            }
             Instruction::Run(inst) => {
                 client.run(&inst.run)?;
             }

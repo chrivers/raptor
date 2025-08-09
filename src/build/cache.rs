@@ -51,6 +51,7 @@ impl Cacher {
                 Instruction::Include(_)
                 | Instruction::Invoke(_)
                 | Instruction::Write(_)
+                | Instruction::Mkdir(_)
                 | Instruction::From(_)
                 | Instruction::Run(_)
                 | Instruction::Env(_)

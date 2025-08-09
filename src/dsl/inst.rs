@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 use crate::dsl::{
     Chown, IncludeArg, InstCopy, InstEnv, InstEnvAssign, InstFrom, InstInclude, InstInvoke,
-    InstRender, InstRun, InstWorkdir, InstWrite,
+    InstMkdir, InstRender, InstRun, InstWorkdir, InstWrite,
 };
 
 #[derive(Clone, Hash, PartialEq, Eq)]
@@ -11,6 +11,7 @@ pub enum Instruction {
     Copy(InstCopy),
     Render(InstRender),
     Write(InstWrite),
+    Mkdir(InstMkdir),
     Include(InstInclude),
     Invoke(InstInvoke),
     Run(InstRun),
@@ -26,6 +27,7 @@ impl Instruction {
             Self::Copy(_) => "COPY",
             Self::Render(_) => "RENDER",
             Self::Write(_) => "WRITE",
+            Self::Mkdir(_) => "MKDIR",
             Self::Include(_) => "INCLUDE",
             Self::Invoke(_) => "INVOKE",
             Self::Run(_) => "RUN",
@@ -68,6 +70,15 @@ impl Instruction {
             body: body.as_ref().to_string(),
             chmod: None,
             chown: None,
+        })
+    }
+
+    pub fn mkdir(dest: impl AsRef<str>) -> Self {
+        Self::Mkdir(InstMkdir {
+            dest: dest.as_ref().to_string(),
+            chmod: None,
+            chown: None,
+            parents: false,
         })
     }
 
@@ -120,6 +131,7 @@ impl Display for Instruction {
             Self::Copy(inst) => Display::fmt(inst, f),
             Self::Render(inst) => Display::fmt(inst, f),
             Self::Write(inst) => Display::fmt(inst, f),
+            Self::Mkdir(inst) => Display::fmt(inst, f),
             Self::Include(inst) => Display::fmt(inst, f),
             Self::Invoke(inst) => Display::fmt(inst, f),
             Self::Run(inst) => Display::fmt(inst, f),
@@ -136,6 +148,7 @@ impl Debug for Instruction {
             Self::Copy(inst) => Debug::fmt(inst, f),
             Self::Render(inst) => Debug::fmt(inst, f),
             Self::Write(inst) => Debug::fmt(inst, f),
+            Self::Mkdir(inst) => Debug::fmt(inst, f),
             Self::Include(inst) => Debug::fmt(inst, f),
             Self::Invoke(inst) => Debug::fmt(inst, f),
             Self::Run(inst) => Debug::fmt(inst, f),
