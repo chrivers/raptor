@@ -3,7 +3,9 @@ use std::os::unix::fs::MetadataExt;
 use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::context;
 
-use raptor::dsl::{Chown, IncludeArg, InstEnvAssign, Instruction, Item, Origin, Program};
+use raptor::dsl::{
+    Chown, IncludeArg, InstEnvAssign, InstMkdir, Instruction, Item, Origin, Program,
+};
 use raptor::program::Loader;
 use raptor::RaptorResult;
 
@@ -84,6 +86,40 @@ fn parse_write02() -> RaptorResult<()> {
     test_single_inst_parse(
         "write02.rapt",
         Instruction::write("/foo", "bar").chown(Some(Chown::new("user", "group"))),
+    )
+}
+
+#[test]
+fn parse_mkdir01() -> RaptorResult<()> {
+    test_single_inst_parse("mkdir01.rapt", Instruction::mkdir("/foo"))
+}
+
+#[test]
+fn parse_mkdir02() -> RaptorResult<()> {
+    test_single_inst_parse(
+        "mkdir02.rapt",
+        Instruction::Mkdir(InstMkdir {
+            dest: "/foo/bar".into(),
+            chmod: None,
+            chown: None,
+            parents: true,
+        }),
+    )
+}
+
+#[test]
+fn parse_mkdir03() -> RaptorResult<()> {
+    test_single_inst_parse(
+        "mkdir03.rapt",
+        Instruction::Mkdir(InstMkdir {
+            dest: "/foo/bar".into(),
+            chmod: Some(0o0755),
+            chown: Some(Chown {
+                user: Some("user".into()),
+                group: Some("group".into()),
+            }),
+            parents: true,
+        }),
     )
 }
 
