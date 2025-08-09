@@ -8,6 +8,7 @@ use nix::fcntl::OFlag;
 
 use raptor::{util::capture_proc_fd::HookFd, RaptorResult};
 
+#[allow(clippy::literal_string_with_formatting_args)]
 fn main() -> RaptorResult<()> {
     let (read, write) = nix::unistd::pipe2(OFlag::O_CLOEXEC)?;
 

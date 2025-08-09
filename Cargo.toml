@@ -34,6 +34,7 @@ test = false
 unstable_features = "forbid"
 unused_lifetimes = "warn"
 unused_qualifications = "warn"
+mismatched_lifetime_syntaxes = "allow"
 
 [lints.clippy]
 all         = { level = "warn", priority = -1 }

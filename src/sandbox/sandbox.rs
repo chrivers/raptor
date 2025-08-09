@@ -149,7 +149,7 @@ impl Sandbox {
         Ok(())
     }
 
-    pub fn client(&mut self) -> &mut FalconClient {
+    pub const fn client(&mut self) -> &mut FalconClient {
         &mut self.client
     }
 

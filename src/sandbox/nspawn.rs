@@ -209,7 +209,7 @@ impl SpawnBuilder<'_> {
         }
 
         if self.suppress_sync {
-            res.push("--suppress-sync=true".into())
+            res.push("--suppress-sync=true".into());
         }
 
         if let Some(mode) = self.console {

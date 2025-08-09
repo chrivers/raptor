@@ -55,7 +55,7 @@ impl Cacher {
                 | Instruction::Run(_)
                 | Instruction::Env(_)
                 | Instruction::Workdir(_) => {}
-            };
+            }
             Ok(())
         })?;
 

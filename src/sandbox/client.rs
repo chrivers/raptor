@@ -45,9 +45,9 @@ impl FalconClient {
 
             match rx.recv_timeout(Self::CHECK_TIMEOUT) {
                 Ok(conn) => return Ok(conn),
-                Err(RecvTimeoutError::Timeout) => continue,
+                Err(RecvTimeoutError::Timeout) => {},
                 Err(err) => Err(err)?,
-            };
+            }
         }
 
         Err(RaptorError::SandboxRequestError(Errno::ECONNABORTED))
