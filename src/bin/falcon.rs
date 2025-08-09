@@ -10,13 +10,13 @@ use std::str::FromStr;
 
 use nix::errno::Errno;
 use nix::sys::stat::{umask, Mode};
-use nix::unistd::{fchown, Gid, Group, Uid, User};
+use nix::unistd::{chown, fchown, Gid, Group, Uid, User};
 
 use log::{debug, error, trace, LevelFilter};
 
 use raptor::client::{
-    Account, FramedRead, FramedWrite, Request, RequestChangeDir, RequestCloseFd, RequestCreateFile,
-    RequestRun, RequestSetEnv, RequestWriteFd, Response,
+    Account, FramedRead, FramedWrite, Request, RequestChangeDir, RequestCloseFd, RequestCreateDir,
+    RequestCreateFile, RequestRun, RequestSetEnv, RequestWriteFd, Response,
 };
 use raptor::util::umask_proc::Umask;
 use raptor::{RaptorError, RaptorResult};
@@ -117,6 +117,25 @@ impl FileMap {
         Ok(fd)
     }
 
+    #[allow(clippy::unused_self)]
+    pub fn create_dir(&self, req: &RequestCreateDir) -> RaptorResult<i32> {
+        let path = &req.path;
+
+        if req.parents {
+            std::fs::create_dir_all(path)?;
+        } else {
+            std::fs::create_dir(path)?;
+        }
+
+        let uid = req.user.as_ref().map(uid_from_account).transpose()?;
+        let gid = req.group.as_ref().map(gid_from_account).transpose()?;
+        if uid.is_some() | gid.is_some() {
+            chown(path.as_os_str(), uid, gid)?;
+        }
+
+        Ok(0)
+    }
+
     fn write_fd(&mut self, req: &RequestWriteFd) -> RaptorResult<i32> {
         self.get(req.fd)?.write_all(&req.data)?;
         Ok(0)
@@ -168,6 +187,7 @@ fn main() -> RaptorResult<()> {
         let res = match req {
             Request::Run(req) => request_run(&req),
             Request::CreateFile(req) => files.create_file(&req),
+            Request::CreateDir(req) => files.create_dir(&req),
             Request::WriteFd(req) => files.write_fd(&req),
             Request::CloseFd(req) => files.close_fd(&req),
             Request::ChangeDir(req) => request_changedir(&req),

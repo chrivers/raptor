@@ -26,6 +26,15 @@ pub struct RequestCreateFile {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct RequestCreateDir {
+    pub path: Utf8PathBuf,
+    pub user: Option<Account>,
+    pub group: Option<Account>,
+    pub mode: Option<u32>,
+    pub parents: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct RequestWriteFd {
     pub fd: i32,
     pub data: Vec<u8>,
@@ -53,6 +62,7 @@ pub enum Request {
     ChangeDir(RequestChangeDir),
     SetEnv(RequestSetEnv),
     CreateFile(RequestCreateFile),
+    CreateDir(RequestCreateDir),
     WriteFd(RequestWriteFd),
     CloseFd(RequestCloseFd),
     Shutdown,
