@@ -103,6 +103,7 @@ impl Sandbox {
         let spawn = SpawnBuilder::new()
             .quiet(true)
             .sudo(true)
+            .suppress_sync(true)
             .uuid(uuid)
             .link_journal(LinkJournal::No)
             .resolv_conf(ResolvConf::Off)
