@@ -40,7 +40,10 @@ fn parse_copy01() -> RaptorResult<()> {
 
 #[test]
 fn parse_copy02() -> RaptorResult<()> {
-    test_single_inst_parse("copy02.rapt", Instruction::copy(&["a", "b", "c", "d"], "/dir/"))
+    test_single_inst_parse(
+        "copy02.rapt",
+        Instruction::copy(&["a", "b", "c", "d"], "/dir/"),
+    )
 }
 
 #[test]
