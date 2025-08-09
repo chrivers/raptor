@@ -38,7 +38,8 @@ impl Executor {
         match &stmt.inst {
             Instruction::From(_) => {}
             Instruction::Copy(inst) => {
-                let src = File::open(&inst.srcs[0])?;
+                let srcname = stmt.origin.basedir()?.join(&inst.srcs[0]);
+                let src = File::open(&srcname)?;
                 let fd = client.create_file(
                     &Utf8PathBuf::from(&inst.dest),
                     inst.chown.clone(),
