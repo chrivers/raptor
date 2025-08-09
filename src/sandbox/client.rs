@@ -8,7 +8,8 @@ use camino::Utf8Path;
 use nix::errno::Errno;
 
 use crate::client::{
-    FramedRead, FramedWrite, Request, RequestChangeDir, RequestRun, RequestSetEnv, Response,
+    Account, FramedRead, FramedWrite, Request, RequestChangeDir, RequestCreateDir, RequestRun,
+    RequestSetEnv, Response,
 };
 use crate::dsl::Chown;
 use crate::sandbox::SandboxFile;
@@ -78,6 +79,25 @@ impl FalconClient {
         mode: Option<u32>,
     ) -> RaptorResult<SandboxFile> {
         SandboxFile::new(self, path, owner, mode)
+    }
+
+    pub fn mkdir(
+        &mut self,
+        path: &impl AsRef<Utf8Path>,
+        owner: Option<Chown>,
+        mode: Option<u32>,
+        parents: bool,
+    ) -> RaptorResult<()> {
+        let Chown { user, group } = owner.unwrap_or_default();
+
+        self.rpc(&Request::CreateDir(RequestCreateDir {
+            path: path.as_ref().to_path_buf(),
+            user: user.map(Account::Name),
+            group: group.map(Account::Name),
+            mode,
+            parents,
+        }))?;
+        Ok(())
     }
 
     pub fn chdir(&mut self, dir: &str) -> RaptorResult<()> {
