@@ -37,6 +37,7 @@ impl Executor {
         let client = self.sandbox.client();
         match &stmt.inst {
             Instruction::From(_) => {}
+
             Instruction::Copy(inst) => {
                 let srcname = stmt.origin.basedir()?.join(&inst.srcs[0]);
                 let src = File::open(&srcname)?;
@@ -50,6 +51,7 @@ impl Executor {
                 let dst = pb.wrap_write(fd);
                 io_fast_copy(src, dst)?;
             }
+
             Instruction::Render(inst) => {
                 let map = inst.args.clone().resolve_args(ctx)?;
 
@@ -67,6 +69,7 @@ impl Executor {
                     source.as_bytes(),
                 )?;
             }
+
             Instruction::Write(inst) => {
                 client.write_file(
                     &inst.dest,
@@ -75,9 +78,11 @@ impl Executor {
                     inst.body.as_bytes(),
                 )?;
             }
+
             Instruction::Mkdir(inst) => {
                 client.mkdir(&inst.dest, inst.chown.clone(), inst.chmod, inst.parents)?;
             }
+
             Instruction::Run(inst) => {
                 client.run(&inst.run)?;
             }

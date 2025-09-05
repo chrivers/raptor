@@ -92,6 +92,7 @@ fn main() {
         Ok(()) => {
             debug!("Raptor completed successfully");
         }
+
         Err(err) => {
             debug!("Raptor failed: {err}");
             std::process::exit(1);
