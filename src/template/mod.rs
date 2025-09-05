@@ -28,15 +28,27 @@ where
 pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
     let mut env = Environment::new();
     env.set_debug(true);
+    env.set_keep_trailing_newline(true);
     env.set_undefined_behavior(UndefinedBehavior::Strict);
 
     env.set_loader(|name| {
-        Ok(Some(std::fs::read_to_string(name).map_err(|e| {
-            Error::new(
-                ErrorKind::BadInclude,
-                format!("Could not open [{name}]: {e}"),
-            )
-        })?))
+        Ok(Some(
+            std::fs::read_to_string(name)
+                .map(|mut data| {
+                    // file must end in newline, to avoid minijinja
+                    // glueing the included file together incorrectly
+                    if !data.ends_with('\n') {
+                        data.push('\n');
+                    }
+                    data
+                })
+                .map_err(|e| {
+                    Error::new(
+                        ErrorKind::BadInclude,
+                        format!("Could not open [{name}]: {e}"),
+                    )
+                })?,
+        ))
     });
 
     env.set_path_join_callback(|name, parent| {
