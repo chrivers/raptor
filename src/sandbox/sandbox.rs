@@ -118,7 +118,10 @@ impl Sandbox {
             .setenv("FALCON_SOCKET", int_socket_path.as_str())
             .arg(int_client_path.as_str());
 
-        debug!("Starting sandbox: {:?}", spawn.build().join(" "));
+        debug!(
+            "Starting sandbox: {}",
+            spawn.build().join(" ").replace(" --", "\n  --")
+        );
 
         let mut proc = spawn.command().spawn()?;
 
