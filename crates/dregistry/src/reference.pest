@@ -1,0 +1,30 @@
+ASCII_LOWER_AND_DIGIT = _{ ASCII_ALPHA_LOWER | ASCII_DIGIT }
+
+DOCKER_REFERENCE = { SOI ~ container ~ EOI }
+
+container = { image_name ~ ( tag_spec | digest_spec )? }
+
+image_name = { prefix? ~ name_components }
+
+prefix   =  { hostname ~ (":" ~ port)? ~ "/" }
+hostname =  { "localhost" | hostname_fqdn }
+hostname_fqdn = { hostname_part ~ ("." ~ hostname_part)+ }
+hostname_part = { (ASCII_ALPHA | ASCII_DIGIT | "-")+ }
+port     =  { ASCII_DIGIT+ }
+
+name_components =  { name_component ~ ( "/" ~ name_component )? }
+name_component  = _{ name ~ ( name_separator ~ name )* }
+name            = _{ ('a'..'z' | '0'..'9')+ }
+name_separator  = _{ ( "." | "_" ~ "_"? | "-"+ ) }
+
+tag_spec        = _{ ":" ~ tag_name }
+tag_name        =  { tag_head ~ tag_tail{0,127} }
+tag_head        = _{ ASCII_ALPHANUMERIC }
+tag_tail        = _{ tag_head | "." | "-" }
+
+digest_spec           = _{ "@" ~ digest }
+digest                =  { algorithm ~ ":" ~ encoded }
+algorithm             =  { algorithm_component ~ (algorithm_separator ~ algorithm_component)* }
+algorithm_component   =  { ASCII_LOWER_AND_DIGIT+ }
+algorithm_separator   =  { "+" | "." | "_" | "-" }
+encoded               =  { (ASCII_ALPHANUMERIC | "=" | "_" | "-")+ }
