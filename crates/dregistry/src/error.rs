@@ -1,3 +1,5 @@
+use crate::reference::Rule;
+
 #[derive(thiserror::Error, Debug)]
 pub enum DockerError {
     #[error(transparent)]
@@ -15,6 +17,9 @@ pub enum DockerError {
     #[error(transparent)]
     ParseIntError(#[from] std::num::ParseIntError),
 
+    #[error(transparent)]
+    PestError(#[from] Box<pest_consume::Error<Rule>>),
+
     #[error("Could not parse digest")]
     DigestError,
 
@@ -23,3 +28,9 @@ pub enum DockerError {
 }
 
 pub type DResult<T> = Result<T, DockerError>;
+
+impl From<pest_consume::Error<Rule>> for DockerError {
+    fn from(e: pest_consume::Error<Rule>) -> Self {
+        Self::PestError(Box::new(e))
+    }
+}
