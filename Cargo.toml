@@ -20,6 +20,11 @@ repository = "https://github.com/chrivers/raptor"
 keywords = ["devops", "reproducible", "disk-image", "generation"]
 authors = ["Christian Iversen <ci@iversenit.dk>"]
 
+[workspace]
+members = [
+    "crates/dregistry",
+]
+
 [[test]]
 name = "diagnostic"
 harness = false
@@ -75,6 +80,7 @@ camino-tempfile = "1.1.1"
 clap = { version = "4.5.21", features = ["cargo", "derive", "string"] }
 colog = "1.3.0"
 colored = "2.1.0"
+dregistry = { version = "0.1.0", path = "crates/dregistry" }
 indicatif = { version = "0.17.9", features = ["improved_unicode"] }
 itertools = "0.13.0"
 log = "0.4.22"
