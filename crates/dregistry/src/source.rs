@@ -59,3 +59,49 @@ impl Display for DockerSource {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{digest::Digest, reference, source::DockerSource};
+
+    #[test]
+    fn parse_combinations() {
+        let digest = Digest::parse(&format!("sha256:{}", "0".repeat(64))).unwrap();
+
+        for host in [None, Some("example.org".into())] {
+            for port in [None, Some(8080)] {
+                for namespace in [None, Some("namespace".into())] {
+                    for tag in [None, Some("tag".into())] {
+                        for digest in [None, Some(digest.clone())] {
+                            // can't have a port number without a host
+                            if port.is_some() && host.is_none() {
+                                continue;
+                            }
+
+                            // can't have a tag and a digest at the same time
+                            if tag.is_some() && digest.is_some() {
+                                continue;
+                            }
+
+                            let src = DockerSource {
+                                host: host.clone(),
+                                port,
+                                namespace: namespace.clone(),
+                                repository: "debian".into(),
+                                tag: tag.clone(),
+                                digest: digest.clone(),
+                            };
+
+                            let name = src.to_string();
+
+                            let dst = reference::parse(&name).unwrap();
+
+                            println!("{src:?}");
+                            assert_eq!(src, dst);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
