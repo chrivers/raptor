@@ -1,10 +1,20 @@
 [package]
 name = "raptor"
 version = "0.1.0"
+description = "Build disk images, file archives and bootable isos with a simple, docker-inspired syntax"
+
+readme.workspace = true
+repository.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[workspace.package]
 edition = "2021"
 license = "GPL-3.0-only"
 readme = "README.md"
-description = "Build disk images, file archives and bootable isos with a simple, docker-inspired syntax"
 categories = ["config", "command-line-utilities", "virtualization", "template-engine"]
 repository = "https://github.com/chrivers/raptor"
 keywords = ["devops", "reproducible", "disk-image", "generation"]
@@ -30,13 +40,16 @@ test = false
 name = "falcon"
 test = false
 
-[lints.rust]
+[lints]
+workspace = true
+
+[workspace.lints.rust]
 unstable_features = "forbid"
 unused_lifetimes = "warn"
 unused_qualifications = "warn"
 mismatched_lifetime_syntaxes = "allow"
 
-[lints.clippy]
+[workspace.lints.clippy]
 all         = { level = "warn", priority = -1 }
 correctness = { level = "warn", priority = -1 }
 pedantic    = { level = "warn", priority = -1 }
