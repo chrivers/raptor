@@ -174,24 +174,35 @@ impl<'a> RaptorBuilder<'a> {
     pub fn recurse(
         &mut self,
         program: Arc<Program>,
-        visitor: &mut impl FnMut(Arc<Program>),
+        visitor: &mut impl FnMut(BuildTarget),
     ) -> RaptorResult<()> {
-        if let Some(from) = program.from()?.map(|from| format!("{from}.rapt")) {
-            let base = program.path.try_parent()?;
+        match program.from()? {
+            Some(FromSource::Docker(mut image)) => {
+                if !image.contains('/') {
+                    image = format!("library/{image}");
+                }
+                let source = dregistry::reference::parse(&image)?;
+                visitor(BuildTarget::DockerSource(source));
+            }
+            Some(FromSource::Plain(from)) => {
+                let from = format!("{from}.rapt");
+                let base = program.path.try_parent()?;
 
-            let filename = base.join(from);
-            let fromprog = self.load(filename)?;
+                let filename = base.join(from);
+                let fromprog = self.load(filename)?;
 
-            self.recurse(fromprog, visitor)?;
+                self.recurse(fromprog, visitor)?;
+            }
+            None => {}
         }
 
-        visitor(program);
+        visitor(BuildTarget::Program(program));
 
         Ok(())
     }
 
-    pub fn stack(&mut self, program: Arc<Program>) -> RaptorResult<Vec<Arc<Program>>> {
-        let mut data: Vec<Arc<Program>> = vec![];
+    pub fn stack(&mut self, program: Arc<Program>) -> RaptorResult<Vec<BuildTarget>> {
+        let mut data: Vec<BuildTarget> = vec![];
         let table = &mut data;
 
         self.recurse(program, &mut |prog| {
@@ -217,16 +228,13 @@ impl<'a> RaptorBuilder<'a> {
         let mut layers: Vec<Utf8PathBuf> = vec![];
 
         for prog in programs {
-            debug!("Calculating hash for layer {}", prog.path);
-            let hash = Cacher::cache_key(&prog)?;
-
-            let layer = Cacher::layer_info(&prog, hash);
+            let layer = prog.layer_info()?;
 
             let layer_name = layer.name().to_string();
             let work_path = layer.work_path();
             let done_path = layer.done_path();
 
-            if std::fs::exists(layer.done_path())? {
+            if fs::exists(layer.done_path())? {
                 info!("{} {}", "Completed".bright_white(), layer_name.yellow());
             } else {
                 info!(
@@ -237,18 +245,12 @@ impl<'a> RaptorBuilder<'a> {
                 );
 
                 if self.dry_run {
-                    let mut exec = PrintExecutor::new();
-                    exec.run(&self.loader, &prog)?;
+                    prog.simulate(&self.loader)?;
                 } else {
-                    let sandbox = Sandbox::new(&layers, Utf8Path::new(&layer.work_path()))?;
+                    prog.build(&self.loader, &layers, layer)?;
 
-                    let mut exec = Executor::new(sandbox, layer);
-
-                    exec.run(&self.loader, &prog)?;
-
-                    exec.finish()?;
                     debug!("Layer {layer_name} finished. Moving {work_path} -> {done_path}");
-                    std::fs::rename(&work_path, &done_path)?;
+                    fs::rename(&work_path, &done_path)?;
                 }
             }
 
