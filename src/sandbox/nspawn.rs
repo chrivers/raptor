@@ -103,6 +103,12 @@ impl<'a> SpawnBuilder<'a> {
     }
 
     #[must_use]
+    pub fn args(mut self, args: &'a [impl AsRef<str>]) -> Self {
+        self.args.extend(args.iter().map(AsRef::as_ref));
+        self
+    }
+
+    #[must_use]
     pub const fn sudo(mut self, sudo: bool) -> Self {
         self.sudo = sudo;
         self
