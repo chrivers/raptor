@@ -4,7 +4,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::context;
 
 use raptor::dsl::{
-    Chown, IncludeArg, InstEnvAssign, InstMkdir, Instruction, Item, Origin, Program,
+    Chown, FromSource, IncludeArg, InstEnvAssign, InstMkdir, Instruction, Item, Origin, Program,
 };
 use raptor::program::Loader;
 use raptor::RaptorResult;
@@ -53,7 +53,7 @@ fn parse_from01() -> RaptorResult<()> {
     test_single_inst_parse(
         "from01.rapt",
         Instruction::From(raptor::dsl::InstFrom {
-            from: "baselayer".into(),
+            from: FromSource::Plain("baselayer".into()),
         }),
     )
 }
