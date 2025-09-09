@@ -73,7 +73,7 @@ fn raptor() -> RaptorResult<()> {
 
     check_for_falcon_binary()?;
 
-    let loader = Loader::new("", args.mode.dump)?;
+    let loader = Loader::new()?.with_dump(args.mode.dump);
     let mut builder = RaptorBuilder::new(loader, args.no_act);
 
     for file in args.input {

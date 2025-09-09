@@ -24,11 +24,11 @@ pub struct Loader<'source> {
 const MAX_NESTED_INCLUDE: usize = 20;
 
 impl Loader<'_> {
-    pub fn new(base: impl AsRef<Utf8Path>, dump: bool) -> RaptorResult<Self> {
+    pub fn new() -> RaptorResult<Self> {
         Ok(Self {
             env: make_environment()?,
-            dump,
-            base: base.as_ref().into(),
+            dump: false,
+            base: Utf8PathBuf::new(),
             sources: HashMap::new(),
             origins: vec![],
         })
