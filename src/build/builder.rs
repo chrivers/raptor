@@ -115,13 +115,7 @@ impl BuildTarget {
 
                 let dc = DockerDownloader::new(Utf8PathBuf::from("cache"))?;
 
-                let layers = dc.pull(
-                    image.host.as_deref().unwrap_or("index.docker.io"),
-                    &image.image_ref(),
-                    image.image_tag(),
-                    "linux",
-                    "amd64",
-                )?;
+                let layers = dc.pull(image, "linux", "amd64")?;
 
                 for layer in layers.layers {
                     info!("Extracting layer [{}]", layer.digest);

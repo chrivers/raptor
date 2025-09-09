@@ -13,6 +13,17 @@ pub struct DockerSource {
 }
 
 impl DockerSource {
+    #[allow(clippy::option_if_let_else)]
+    #[must_use]
+    pub fn domain(&self) -> String {
+        let host = &self.host.as_deref().unwrap_or("index.docker.io");
+        if let Some(port) = self.port {
+            format!("{host}:{port}")
+        } else {
+            (*host).to_string()
+        }
+    }
+
     #[must_use]
     pub fn image_ref(&self) -> String {
         format!(

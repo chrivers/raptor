@@ -13,6 +13,7 @@ use crate::api::{DockerLayer, DockerLayers};
 use crate::client::DockerClient;
 use crate::digest::Digest;
 use crate::error::DResult;
+use crate::source::DockerSource;
 
 pub struct DockerDownloader {
     root: Utf8PathBuf,
@@ -105,23 +106,16 @@ impl DockerDownloader {
         Ok(())
     }
 
-    pub fn pull(
-        &self,
-        domain: &str,
-        image: &str,
-        reference: &str,
-        os: &str,
-        arch: &str,
-    ) -> DResult<DockerLayers> {
+    pub fn pull(&self, source: &DockerSource, os: &str, arch: &str) -> DResult<DockerLayers> {
         info!("Logging in to registry..");
-        let dc = DockerClient::new(self.client.clone(), domain, image)?;
+        let dc = DockerClient::new(self.client.clone(), source.domain(), source.image_ref())?;
 
         info!("Loading manifests..");
-        let manifest_file = self.manifest_file_name(image);
+        let manifest_file = self.manifest_file_name(&source.image_ref());
 
         fs::create_dir_all(manifest_file.parent().unwrap())?;
 
-        let manifest = dc.manifests(reference)?;
+        let manifest = dc.manifests(source.image_tag())?;
         /* eprintln!("{manifest:#?}"); */
 
         let hash = manifest.select(os, arch)?;
