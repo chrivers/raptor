@@ -13,6 +13,7 @@ fn run_raptor(filename: &Utf8Path) -> RaptorResult<String> {
         .arg("-q")
         .arg("--bin")
         .arg("raptor")
+        .arg("build")
         .arg(filename)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
