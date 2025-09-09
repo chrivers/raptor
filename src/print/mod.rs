@@ -2,12 +2,13 @@ use colored::Colorize;
 
 use std::fmt::{Debug, Formatter, Result};
 
-use crate::dsl::{Chown, IncludeArg, InstEnvAssign};
+use crate::dsl::{Chown, FromSource, IncludeArg, InstEnvAssign};
 
 pub trait Theme {
     fn keyword(&mut self, name: &str) -> Result;
     fn chmod(&mut self, chmod: &Option<u32>) -> Result;
     fn chown(&mut self, chown: &Option<Chown>) -> Result;
+    fn from(&mut self, src: &FromSource) -> Result;
     fn src(&mut self, src: &str) -> Result;
     fn dest(&mut self, dest: &str) -> Result;
     fn include_arg(&mut self, arg: &IncludeArg) -> Result;
@@ -43,6 +44,10 @@ impl Theme for Formatter<'_> {
             )?;
         }
         Ok(())
+    }
+
+    fn from(&mut self, src: &FromSource) -> Result {
+        write!(self, " {}", format!("{src}").green())
     }
 
     fn src(&mut self, src: &str) -> Result {
