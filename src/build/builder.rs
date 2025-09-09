@@ -1,12 +1,17 @@
 use std::collections::HashMap;
+use std::fs;
+use std::hash::{DefaultHasher, Hash, Hasher};
+use std::process::Command;
 use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
+use dregistry::downloader::DockerDownloader;
+use dregistry::source::DockerSource;
 use minijinja::context;
 
-use crate::build::Cacher;
-use crate::dsl::Program;
+use crate::build::{Cacher, LayerInfo};
+use crate::dsl::{FromSource, Program};
 use crate::program::{Executor, Loader, PrintExecutor};
 use crate::sandbox::Sandbox;
 use crate::util::SafeParent;
@@ -16,6 +21,127 @@ pub struct RaptorBuilder<'a> {
     loader: Loader<'a>,
     dry_run: bool,
     programs: HashMap<Utf8PathBuf, Arc<Program>>,
+}
+
+#[derive(Debug)]
+pub enum BuildTarget {
+    Program(Arc<Program>),
+    DockerSource(DockerSource),
+}
+
+trait DockerSourceExt {
+    fn safe_file_name(&self) -> RaptorResult<Utf8PathBuf>;
+}
+
+impl DockerSourceExt for DockerSource {
+    fn safe_file_name(&self) -> RaptorResult<Utf8PathBuf> {
+        let safe = Self {
+            host: Some(
+                self.host
+                    .as_deref()
+                    .unwrap_or("index.docker.io")
+                    .to_string(),
+            ),
+            port: self.port,
+            namespace: Some(self.namespace.as_deref().unwrap_or("library").to_string()),
+            repository: self.repository.clone(),
+            tag: self.tag.clone(),
+            digest: self.digest.clone(),
+        };
+
+        Ok(safe.to_string().replace(['/', ':'], "-").into())
+    }
+}
+
+impl BuildTarget {
+    pub fn layer_info(&self) -> RaptorResult<LayerInfo> {
+        let name;
+        let hash;
+
+        match self {
+            Self::Program(prog) => {
+                debug!("Calculating hash for layer {}", prog.path);
+
+                name = prog.path.file_stem().unwrap().into();
+                hash = Cacher::cache_key(prog)?;
+            }
+
+            Self::DockerSource(image) => {
+                debug!("Calculating hash for image {image}");
+
+                name = image.safe_file_name()?;
+
+                let mut state = DefaultHasher::new();
+                image.hash(&mut state);
+                hash = state.finish();
+            }
+        }
+
+        Ok(LayerInfo::new(name.to_string(), hash))
+    }
+
+    fn simulate(&self, loader: &Loader) -> RaptorResult<()> {
+        match self {
+            Self::Program(prog) => {
+                let mut exec = PrintExecutor::new();
+
+                exec.run(loader, prog)?;
+            }
+
+            Self::DockerSource(image) => {
+                info!("Would download docker image [{image}]");
+            }
+        }
+
+        Ok(())
+    }
+
+    fn build(&self, loader: &Loader, layers: &[Utf8PathBuf], layer: LayerInfo) -> RaptorResult<()> {
+        match self {
+            Self::Program(prog) => {
+                let sandbox = Sandbox::new(layers, Utf8Path::new(&layer.work_path()))?;
+
+                let mut exec = Executor::new(sandbox, layer);
+
+                exec.run(loader, prog)?;
+
+                exec.finish()?;
+            }
+
+            Self::DockerSource(image) => {
+                let work_path = layer.work_path();
+
+                fs::create_dir_all(&work_path)?;
+
+                let dc = DockerDownloader::new(Utf8PathBuf::from("cache"))?;
+
+                let layers = dc.pull(
+                    image.host.as_deref().unwrap_or("index.docker.io"),
+                    &image.image_ref(),
+                    image.image_tag(),
+                    "linux",
+                    "amd64",
+                )?;
+
+                for layer in layers.layers {
+                    info!("Extracting layer [{}]", layer.digest);
+
+                    let filename = dc.layer_file_name(&layer.digest);
+
+                    Command::new("sudo")
+                        .arg("tar")
+                        .arg("-x")
+                        .arg("-C")
+                        .arg(&work_path)
+                        .arg("-f")
+                        .arg(filename)
+                        .status()?;
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl<'a> RaptorBuilder<'a> {
