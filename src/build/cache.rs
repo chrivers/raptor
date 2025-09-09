@@ -27,11 +27,6 @@ impl Cacher {
         Ok(state.finish())
     }
 
-    #[must_use]
-    pub fn layer_info(program: &Program, hash: u64) -> LayerInfo {
-        LayerInfo::new(program, hash)
-    }
-
     pub fn sources(prog: &Program) -> RaptorResult<Vec<Utf8PathBuf>> {
         let mut res = HashSet::<Utf8PathBuf>::new();
         let data = &mut res;
@@ -71,8 +66,7 @@ pub struct LayerInfo {
 
 impl LayerInfo {
     #[must_use]
-    pub fn new(program: &Program, hash: u64) -> Self {
-        let name = program.path.file_stem().unwrap().into();
+    pub const fn new(name: String, hash: u64) -> Self {
         Self { name, hash }
     }
 
