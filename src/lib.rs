@@ -46,6 +46,12 @@ pub enum RaptorError {
     #[error(transparent)]
     SendError(#[from] mpsc::SendError<UnixStream>),
 
+    #[error(transparent)]
+    FmtError(#[from] std::fmt::Error),
+
+    #[error(transparent)]
+    DockerError(#[from] dregistry::error::DockerError),
+
     #[error("Error while checking cache status of {0:?}: {1}")]
     CacheIoError(Utf8PathBuf, std::io::Error),
 
@@ -99,6 +105,8 @@ impl RaptorError {
             Self::SandboxRunError(_) => "Sandbox run error",
             Self::MpscTimeout(_) => "Channel error",
             Self::SendError(_) => "Send error",
+            Self::FmtError(_) => "Format error",
+            Self::DockerError(_) => "Docker error",
         }
     }
 }
