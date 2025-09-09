@@ -10,12 +10,21 @@ pub enum FromSource {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct InstFrom {
-    pub from: String,
+    pub from: FromSource,
 }
 
 impl Display for InstFrom {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.keyword("FROM")?;
-        f.src(&self.from)
+        f.from(&self.from)
+    }
+}
+
+impl Display for FromSource {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Plain(src) => write!(f, "{src}"),
+            Self::Docker(src) => write!(f, "docker::{src}"),
+        }
     }
 }

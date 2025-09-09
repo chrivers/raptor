@@ -4,7 +4,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
 use minijinja::Value;
 
-use crate::dsl::{Instruction, Item, Statement};
+use crate::dsl::{FromSource, Instruction, Item, Statement};
 use crate::util::SafeParent;
 use crate::RaptorResult;
 
@@ -36,7 +36,7 @@ impl Program {
         Ok(())
     }
 
-    pub fn from(&self) -> RaptorResult<Option<String>> {
+    pub fn from(&self) -> RaptorResult<Option<FromSource>> {
         let mut res = None;
         let opt = &mut res;
         self.traverse(&mut |stmt| {
