@@ -34,6 +34,19 @@ impl Loader<'_> {
         })
     }
 
+    #[must_use]
+    pub fn with_base(self, base: impl AsRef<Utf8Path>) -> Self {
+        Self {
+            base: base.as_ref().into(),
+            ..self
+        }
+    }
+
+    #[must_use]
+    pub fn with_dump(self, dump: bool) -> Self {
+        Self { dump, ..self }
+    }
+
     pub fn base(&self) -> &Utf8Path {
         &self.base
     }
