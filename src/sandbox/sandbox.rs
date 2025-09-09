@@ -1,4 +1,6 @@
 use std::os::unix::net::UnixListener;
+use std::process::Stdio;
+use std::thread;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use camino_tempfile::{Builder, Utf8TempDir};
@@ -123,7 +125,16 @@ impl Sandbox {
             spawn.build().join(" ").replace(" --", "\n  --")
         );
 
-        let mut proc = spawn.command().spawn()?;
+        let mut proc = spawn
+            .command()
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()?;
+
+        let mut stdout = proc.stdout.take().unwrap();
+        let mut stderr = proc.stderr.take().unwrap();
+        thread::spawn(move || std::io::copy(&mut stdout, &mut std::io::stdout()));
+        thread::spawn(move || std::io::copy(&mut stderr, &mut std::io::stderr()));
 
         match FalconClient::wait_for_startup(listen, &mut proc) {
             Ok(conn) => Ok(Self {
