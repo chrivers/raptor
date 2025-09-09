@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use annotate_snippets::{Level, Renderer, Snippet};
-use pest::error::InputLocation;
+use pest::error::{ErrorVariant, InputLocation};
 
 use crate::dsl::Origin;
 use crate::parser::Rule;
@@ -88,11 +88,27 @@ pub fn show_pest_error_context(raw: &str, err: &pest::error::Error<Rule>) -> Rap
         InputLocation::Span((begin, end)) => begin..end,
     };
 
+    let mut msg = err.variant.message();
+
+    match &err.variant {
+        ErrorVariant::ParsingError { positives, .. } if positives.len() == 1 => {
+            match positives[0] {
+                Rule::docker_source | Rule::from_source => {
+                    msg = "Invalid FROM declaration. Specify the basename of a .rapt file, or a docker::<image>.".into();
+                }
+
+                _ => {}
+            }
+        }
+
+        _ => {}
+    }
+
     show_error_context(
         raw,
         source_path,
-        &format!("{}", err.variant),
-        &err.variant.message(),
+        &format!("parsing error: {msg}"),
+        &msg,
         span,
     );
     Ok(())
