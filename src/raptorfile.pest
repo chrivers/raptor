@@ -111,6 +111,14 @@ env_assign = ${
     ident ~ "=" ~ string
 }
 
+docker_source = {
+    "docker" ~ "://" ~ string
+}
+
+from_source = ${
+    docker_source | ident
+}
+
 COPY = {
     "COPY"
     ~ file_options
@@ -156,7 +164,7 @@ RUN = {
 
 FROM = {
     "FROM"
-    ~ ident
+    ~ from_source
 }
 
 ENV = {

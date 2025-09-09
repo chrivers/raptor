@@ -5,9 +5,9 @@ use minijinja::Value;
 use pest_consume::{match_nodes, Parser};
 
 use crate::dsl::{
-    Chown, IncludeArg, IncludeArgValue, InstCopy, InstEnv, InstEnvAssign, InstFrom, InstInclude,
-    InstInvoke, InstMkdir, InstRender, InstRun, InstWorkdir, InstWrite, Instruction, Lookup,
-    Origin, Statement,
+    Chown, FromSource, IncludeArg, IncludeArgValue, InstCopy, InstEnv, InstEnvAssign, InstFrom,
+    InstInclude, InstInvoke, InstMkdir, InstRender, InstRun, InstWorkdir, InstWrite, Instruction,
+    Lookup, Origin, Statement,
 };
 use crate::parser::{RaptorFileParser, Rule};
 use crate::RaptorResult;
@@ -232,9 +232,24 @@ impl RaptorFileParser {
         Ok(input.as_str().to_string())
     }
 
+    fn docker_source(input: Node) -> Result<String> {
+        Ok(match_nodes!(
+            input.into_children();
+            [string(i)] => i.as_str().to_string()
+        ))
+    }
+
+    fn from_source(input: Node) -> Result<FromSource> {
+        Ok(match_nodes!(
+            input.into_children();
+            [ident(i)] => FromSource::Plain(i),
+            [docker_source(i)] => FromSource::Docker(i),
+        ))
+    }
+
     fn FROM(input: Node) -> Result<InstFrom> {
         Ok(match_nodes!(input.into_children();
-        [ident(i)] => InstFrom {
+        [from_source(i)] => InstFrom {
             from: i,
         }))
     }
