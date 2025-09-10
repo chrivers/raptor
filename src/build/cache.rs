@@ -28,8 +28,8 @@ impl Cacher {
     }
 
     pub fn sources(prog: &Program) -> RaptorResult<Vec<Utf8PathBuf>> {
-        let mut res = HashSet::<Utf8PathBuf>::new();
-        let data = &mut res;
+        let mut data = HashSet::<Utf8PathBuf>::new();
+
         prog.traverse(&mut |stmt| {
             match &stmt.inst {
                 Instruction::Copy(inst) => {
@@ -52,10 +52,11 @@ impl Cacher {
                 | Instruction::Env(_)
                 | Instruction::Workdir(_) => {}
             }
+
             Ok(())
         })?;
 
-        Ok(res.into_iter().sorted().collect())
+        Ok(data.into_iter().sorted().collect())
     }
 }
 
