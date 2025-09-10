@@ -24,7 +24,7 @@ impl Display for FromSource {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Plain(src) => write!(f, "{src}"),
-            Self::Docker(src) => write!(f, "docker::{src}"),
+            Self::Docker(src) => write!(f, "docker://{src}"),
         }
     }
 }
