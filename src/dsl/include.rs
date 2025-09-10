@@ -126,6 +126,7 @@ impl Display for IncludeArgValue {
 impl Display for InstInclude {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.keyword("INCLUDE")?;
+        f.src(&self.src)?;
         for arg in &self.args {
             f.include_arg(arg)?;
         }
