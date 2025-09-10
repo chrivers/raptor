@@ -6,7 +6,7 @@ use clap::Parser as _;
 use colored::Colorize;
 use log::{debug, error, info};
 
-use raptor::build::RaptorBuilder;
+use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
 use raptor::program::Loader;
 use raptor::sandbox::{
     ConsoleMode, LinkJournal, ResolvConf, Sandbox, Settings, SpawnBuilder, Timezone,
@@ -134,7 +134,10 @@ fn raptor() -> RaptorResult<()> {
 
     check_for_falcon_binary()?;
 
-    let loader = Loader::new()?.with_dump(args.mode.dump());
+    let loader = Loader::new()?
+        .with_dump(args.mode.dump())
+        .with_keep_include(args.mode.show());
+
     let mut builder = RaptorBuilder::new(loader, args.no_act);
 
     match args.mode {
@@ -206,21 +209,15 @@ fn raptor() -> RaptorResult<()> {
         }
 
         Mode::Show { dirs } => {
-            for dir in dirs.unwrap_or_else(|| vec![Utf8PathBuf::from(".")]) {
-                for entry in dir.read_dir_utf8()? {
-                    let Ok(entry) = entry else {
-                        continue;
-                    };
+            let mut stats = BuildTargetStats::new();
+            for target in dirs.unwrap() {
+                let program = builder.load(target)?;
+                let stack = builder.stack(program)?;
 
-                    if !entry.file_type()?.is_file() {
-                        continue;
-                    }
-
-                    if entry.file_name().ends_with(".rapt") {
-                        println!("{}", dir.as_path().join(entry.file_name()));
-                    }
-                }
+                stats.merge(stack)?;
             }
+
+            Presenter::new(&stats).present()?;
         }
     }
 
