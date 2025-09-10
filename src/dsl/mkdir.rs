@@ -1,5 +1,7 @@
 use std::fmt::{Debug, Display};
 
+use colored::Colorize;
+
 use crate::dsl::Chown;
 use crate::print::Theme;
 
@@ -15,7 +17,7 @@ impl Display for InstMkdir {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.keyword("MKDIR")?;
         if self.parents {
-            f.write_str(" -p")?;
+            write!(f, "{}", " -p".bright_white())?;
         }
         f.chmod(&self.chmod)?;
         f.chown(&self.chown)?;
