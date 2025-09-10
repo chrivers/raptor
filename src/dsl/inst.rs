@@ -36,6 +36,13 @@ impl Instruction {
         }
     }
 
+    pub fn include(src: impl AsRef<str>, args: impl IntoIterator<Item = IncludeArg>) -> Self {
+        Self::Include(InstInclude {
+            src: src.as_ref().to_string(),
+            args: args.into_iter().collect(),
+        })
+    }
+
     pub fn workdir(dir: impl AsRef<str>) -> Self {
         Self::Workdir(InstWorkdir {
             dir: dir.as_ref().to_string(),
