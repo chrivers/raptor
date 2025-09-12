@@ -77,36 +77,16 @@ impl Tester {
     }
 }
 
-fn setup() -> RaptorResult<(RaptorBuilder<'static>, Utf8TempDir)> {
-    let tempdir = Utf8TempDir::new()?;
-
-    let loader = Loader::new()?.with_base(&tempdir);
-    let builder = RaptorBuilder::new(loader, true);
-
-    Ok((builder, tempdir))
-}
-
 #[test]
 fn dep_copy() -> RaptorResult<()> {
-    let (mut builder, tempdir) = setup()?;
+    let mut test = Tester::setup()?;
 
-    let path = tempdir.path();
-    let path_rapt = path.join("test.rapt");
-    let path_test = path.join("a");
+    test.write("test.rapt", ["COPY a a"])?;
+    test.write("a", "1234")?;
 
-    fs::write(&path_rapt, "COPY a a\n")?;
-
-    fs::write(&path_test, "1234")?;
-    let prog = builder.load(&path_rapt)?;
-    let hash_a = Cacher::cache_key(&prog)?;
-
-    // the hash depends on the mtime, so let enough time pass for the next mtime
-    // to be different
-    thread::sleep(Duration::from_millis(10));
-
-    fs::write(&path_test, "ABCD")?;
-    let prog = builder.load(&path_rapt)?;
-    let hash_b = Cacher::cache_key(&prog)?;
+    let hash_a = test.hash("test.rapt")?;
+    test.touch("a")?;
+    let hash_b = test.hash("test.rapt")?;
 
     println!("{hash_a:16X} vs {hash_b:16X}");
     assert_ne!(hash_a, hash_b);
