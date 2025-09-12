@@ -11,11 +11,6 @@ use raptor::dsl::Program;
 use raptor::program::Loader;
 use raptor::RaptorResult;
 
-struct Tester {
-    builder: RaptorBuilder<'static>,
-    tempdir: Utf8TempDir,
-}
-
 trait Writable {
     fn as_string(self) -> String;
 }
@@ -40,18 +35,61 @@ impl Writable for &[&str] {
     }
 }
 
+struct Tester {
+    builder: RaptorBuilder<'static>,
+    tempdir: Utf8TempDir,
+    hash: u64,
+}
+
 impl Tester {
-    fn setup() -> RaptorResult<Self> {
+    fn setup(
+        program: impl Writable,
+        init: impl Fn(&Self) -> RaptorResult<()>,
+    ) -> RaptorResult<Self> {
         let tempdir = Utf8TempDir::new()?;
 
         let loader = Loader::new()?.with_base(&tempdir);
         let builder = RaptorBuilder::new(loader, true);
 
-        Ok(Self { builder, tempdir })
+        let mut res = Self {
+            builder,
+            tempdir,
+            hash: 0,
+        };
+        res.program_write(program)?;
+        init(&res)?;
+        res.hash = res.program_hash()?;
+
+        Ok(res)
+    }
+
+    fn step(
+        &mut self,
+        description: &str,
+        func: impl Fn(&mut Self) -> RaptorResult<()>,
+    ) -> RaptorResult<()> {
+        func(self)?;
+
+        let hash = self.program_hash()?;
+        assert_ne!(self.hash, hash, "{description}");
+        self.hash = hash;
+        Ok(())
     }
 
     fn path(&self, name: &str) -> Utf8PathBuf {
         self.tempdir.path().join(name)
+    }
+
+    fn program_path(&self) -> Utf8PathBuf {
+        self.path("program.rapt")
+    }
+
+    fn program_write(&self, value: impl Writable) -> RaptorResult<()> {
+        Ok(fs::write(self.program_path(), value.as_string())?)
+    }
+
+    fn program_hash(&mut self) -> RaptorResult<u64> {
+        self.hash(self.program_path().as_str())
     }
 
     fn write(&self, name: &str, value: impl Writable) -> RaptorResult<()> {
@@ -79,16 +117,9 @@ impl Tester {
 
 #[test]
 fn dep_copy() -> RaptorResult<()> {
-    let mut test = Tester::setup()?;
+    let mut test = Tester::setup(["COPY a a"], |test| test.write("a", "1234"))?;
 
-    test.write("test.rapt", ["COPY a a"])?;
-    test.write("a", "1234")?;
+    test.step("change COPY src", |test| test.touch("a"))?;
 
-    let hash_a = test.hash("test.rapt")?;
-    test.touch("a")?;
-    let hash_b = test.hash("test.rapt")?;
-
-    println!("{hash_a:16X} vs {hash_b:16X}");
-    assert_ne!(hash_a, hash_b);
     Ok(())
 }
