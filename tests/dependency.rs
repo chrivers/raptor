@@ -42,6 +42,8 @@ struct Tester {
 }
 
 impl Tester {
+    const PROGRAM_NAME: &str = "program.rapt";
+
     fn setup(
         program: impl Writable,
         init: impl Fn(&Self) -> RaptorResult<()>,
@@ -81,7 +83,7 @@ impl Tester {
     }
 
     fn program_path(&self) -> Utf8PathBuf {
-        self.path("program.rapt")
+        self.path(Self::PROGRAM_NAME)
     }
 
     fn program_write(&self, value: impl Writable) -> RaptorResult<()> {
@@ -129,6 +131,17 @@ fn dep_render() -> RaptorResult<()> {
     let mut test = Tester::setup(["RENDER a a"], |test| test.write("a", "1234"))?;
 
     test.step("change RENDER src", |test| test.touch("a"))?;
+
+    Ok(())
+}
+
+#[test]
+fn dep_self() -> RaptorResult<()> {
+    let mut test = Tester::setup([""], |test| test.write("a.rapt", ""))?;
+
+    test.step("change program file", |test| {
+        test.touch(Tester::PROGRAM_NAME)
+    })?;
 
     Ok(())
 }
