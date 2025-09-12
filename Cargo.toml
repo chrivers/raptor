@@ -99,6 +99,7 @@ serde_yml = "0.0.12"
 thiserror = "2.0.16"
 uuid = "1.18.1"
 indicatif = "0.18.0"
+pretty_assertions = "1.4.1"
 
 [dependencies]
 annotate-snippets = { workspace = true }
@@ -127,4 +128,4 @@ uuid = { workspace = true, features = ["v4"] }
 
 [dev-dependencies]
 libtest-mimic = { workspace = true }
-pretty_assertions = "1.4.1"
+pretty_assertions = { workspace = true }
