@@ -76,7 +76,7 @@ dregistry = { version = "0.1.0", path = "crates/dregistry" }
 annotate-snippets = "0.11.4"
 anstream = { version = "0.6.18", default-features = false }
 anstyle = { version = "1.0.10", default-features = false }
-bincode = "1.3.3"
+bincode = "2.0.1"
 camino = "1.1.11"
 camino-tempfile = "1.1.1"
 clap = "4.5.47"
@@ -104,7 +104,7 @@ indicatif = "0.18.0"
 annotate-snippets = { workspace = true }
 anstream = { workspace = true, features = ["auto"] }
 anstyle = { workspace = true, features = ["std"] }
-bincode = { workspace = true }
+bincode = { workspace = true, features = ["serde"] }
 camino = { workspace = true, features = ["serde", "serde1"] }
 camino-tempfile = { workspace = true }
 clap = { workspace = true, features = ["cargo", "derive", "string"] }

@@ -13,14 +13,14 @@ pub trait FramedRead: Read {
         let mut req = vec![0; len as usize];
         self.read_exact(&mut req)?;
 
-        Ok(bincode::deserialize(&req)?)
+        Ok(bincode::serde::decode_from_slice(&req, bincode::config::standard())?.0)
     }
 }
 
 pub trait FramedWrite: Write {
     #[allow(clippy::cast_possible_truncation)]
     fn write_framed(&mut self, value: impl Serialize) -> RaptorResult<()> {
-        let buf = bincode::serialize(&value)?;
+        let buf = bincode::serde::encode_to_vec(&value, bincode::config::standard())?;
         let len_bytes = (buf.len() as u32).to_be_bytes();
         self.write_all(&len_bytes)?;
         self.write_all(&buf)?;
