@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{Error, ErrorKind, Write};
-use std::os::fd::AsRawFd;
+use std::os::fd::{AsFd, AsRawFd};
 use std::os::unix::fs::OpenOptionsExt;
 use std::os::unix::net::UnixStream;
 use std::os::unix::process::{CommandExt, ExitStatusExt};
@@ -110,7 +110,7 @@ impl FileMap {
         let uid = req.user.as_ref().map(uid_from_account).transpose()?;
         let gid = req.group.as_ref().map(gid_from_account).transpose()?;
         if uid.is_some() | gid.is_some() {
-            fchown(fd, uid, gid)?;
+            fchown(file.as_fd(), uid, gid)?;
         }
 
         self.0.insert(fd, file);

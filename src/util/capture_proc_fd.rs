@@ -1,18 +1,21 @@
-use std::os::fd::AsRawFd;
+use std::os::fd::{AsFd, IntoRawFd, OwnedFd};
 use std::os::unix::process::CommandExt;
 use std::process::Command;
 
 /// Command extension to hook a specific file descriptor before executing
 /// process, using `nix::unistd::dup2()`
 pub trait HookFd {
-    fn hook_fd(&mut self, fd: i32, dst: (impl AsRawFd + Send + Sync + 'static)) -> &mut Self;
+    fn hook_fd(&mut self, fd: i32, dst: OwnedFd) -> &mut Self;
 }
 
 impl HookFd for Command {
-    fn hook_fd(&mut self, fd: i32, dst: (impl AsRawFd + Send + Sync + 'static)) -> &mut Self {
+    fn hook_fd(&mut self, fd: i32, dst: OwnedFd) -> &mut Self {
         unsafe {
             self.pre_exec(move || {
-                nix::unistd::dup2(dst.as_raw_fd(), fd)?;
+                // Call .into_raw_fd() to unwrap the returned file handle, so we
+                // don't immediately drop the dup'ed file handle.
+                let _ = nix::unistd::dup2_raw(dst.as_fd(), fd)?.into_raw_fd();
+
                 Ok(())
             })
         }
