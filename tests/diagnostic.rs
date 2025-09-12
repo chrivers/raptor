@@ -1,10 +1,9 @@
-use std::{
-    io::Read,
-    process::{Command, Stdio},
-};
+use std::io::Read;
+use std::process::{Command, Stdio};
 
 use camino::Utf8Path;
 use libtest_mimic::{Arguments, Trial};
+use pretty_assertions::assert_eq;
 use raptor::RaptorResult;
 
 fn run_raptor(filename: &Utf8Path) -> RaptorResult<String> {
