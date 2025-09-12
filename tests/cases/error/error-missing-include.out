@@ -3,5 +3,5 @@ error: Error while evaluating INCLUDE
   |
 1 | INCLUDE missing-file
   | ^^^^^^^^^^^^^^^^^^^^ Could not open [tests/cases/error/missing-file]: No such file or directory (os error 2)
-2 | 
+2 |
   |

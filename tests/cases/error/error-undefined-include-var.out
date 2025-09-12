@@ -3,5 +3,5 @@ error: Script Error
   |
 1 | INCLUDE dummy.rapt foo=bar
   |                        ^^^ Undefined variable: bar
-2 | 
+2 |
   |

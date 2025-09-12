@@ -20,7 +20,7 @@ fn load_file(path: impl AsRef<Utf8Path>) -> RaptorResult<Program> {
 }
 
 fn assert_single_inst_eq(path: &Utf8Path, size: usize, res: &Program, inst: Instruction) {
-    let origin = Origin::make(path, 0..size);
+    let origin = Origin::make(path, 0..size - 1);
 
     assert_eq!(&res.code, &[Item::statement(inst, origin)]);
 }
@@ -184,7 +184,7 @@ fn parse_render03() -> RaptorResult<()> {
                         Origin::make("render03.rinc", 39..43),
                     )],
                 ),
-                Origin::make("render03.rinc", 0..44)
+                Origin::make("render03.rinc", 0..43)
             )],
             context! { what => "world" },
             "render03.rinc",
@@ -203,7 +203,7 @@ fn parse_include01() -> RaptorResult<()> {
         &[Item::program(
             [Item::statement(
                 Instruction::write("/foo", "bar"),
-                Origin::make("write01.rapt", 0..17)
+                Origin::make("write01.rapt", 0..16)
             )],
             context! {},
             "write01.rapt",
@@ -223,7 +223,7 @@ fn parse_include02() -> RaptorResult<()> {
             [Item::program(
                 [Item::statement(
                     Instruction::write("/foo", "bar"),
-                    Origin::make("write01.rapt", 0..17)
+                    Origin::make("write01.rapt", 0..16)
                 )],
                 context! {},
                 "write01.rapt",
@@ -245,7 +245,7 @@ fn parse_include03() -> RaptorResult<()> {
         &[Item::program(
             [Item::statement(
                 Instruction::run(&["id"]),
-                Origin::make("include/run01.rinc", 0..7)
+                Origin::make("include/run01.rinc", 0..6)
             )],
             context! {},
             "include/run01.rinc",
@@ -265,7 +265,7 @@ fn parse_include04() -> RaptorResult<()> {
             [Item::program(
                 [Item::statement(
                     Instruction::run(&["id"]),
-                    Origin::make("include/run01.rinc", 0..7)
+                    Origin::make("include/run01.rinc", 0..6)
                 )],
                 context! {},
                 "include/run01.rinc",

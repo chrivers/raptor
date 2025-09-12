@@ -8,5 +8,5 @@ error: parsing error: expected FILE
 4 | RUN ls -l
 5 | RUN ls -l
 6 | RUN ls -l
-7 | 
+7 |
   |

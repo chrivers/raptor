@@ -3,145 +3,145 @@ error: Error while evaluating INCLUDE
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Error while evaluating INCLUDE
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 | 
+2 |
   |
 error: Script Error
  --> tests/cases/error/error-recursive-include.rapt:1:1
   |
 1 | INCLUDE error-recursive-include.rapt
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Script error: Too many nested includes
-2 | 
+2 |
   |

@@ -343,7 +343,15 @@ impl RaptorFileParser {
     }
 
     fn STATEMENT(input: Node) -> Result<Option<Statement>> {
-        let origin = Origin::from_node(&input);
+        let mut origin = Origin::from_node(&input);
+
+        // All non-empty statements include the trailing newline in the span, so
+        // decrement the span here, to make it match the actual range.
+        // Without this, error messages will be wrong for e.g. INCLUDE statements.
+        if origin.span.end > origin.span.start {
+            origin.span.end -= 1;
+        }
+
         Ok(match_nodes!(
             input.into_children();
             [FROM(stmt)] => Some(Statement { inst: Instruction::From(stmt), origin }),
