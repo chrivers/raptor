@@ -123,3 +123,12 @@ fn dep_copy() -> RaptorResult<()> {
 
     Ok(())
 }
+
+#[test]
+fn dep_render() -> RaptorResult<()> {
+    let mut test = Tester::setup(["RENDER a a"], |test| test.write("a", "1234"))?;
+
+    test.step("change RENDER src", |test| test.touch("a"))?;
+
+    Ok(())
+}
