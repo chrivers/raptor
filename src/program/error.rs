@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use annotate_snippets::{Level, Renderer, Snippet};
+use annotate_snippets::{AnnotationKind, Level, Renderer, Snippet};
 use pest::error::{ErrorVariant, InputLocation};
 
 use crate::dsl::Origin;
@@ -42,15 +42,15 @@ pub fn show_error_context(
     label: &str,
     err_range: Range<usize>,
 ) {
-    let message = Level::Error.title(title).snippet(
+    let message = Level::ERROR.primary_title(title).element(
         Snippet::source(source)
             .fold(false)
-            .origin(source_path.as_ref())
-            .annotation(Level::Error.span(err_range).label(label)),
+            .annotation(AnnotationKind::Primary.span(err_range).label(label))
+            .path(source_path.as_ref()),
     );
 
     let renderer = Renderer::styled();
-    anstream::println!("{}", renderer.render(message));
+    anstream::println!("{}", renderer.render(&[message]));
 }
 
 pub fn show_origin_error_context(source: &str, origin: &Origin, title: &str, label: &str) {

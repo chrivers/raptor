@@ -73,7 +73,7 @@ similar_names           = "allow"
 [workspace.dependencies]
 dregistry = { version = "0.1.0", path = "crates/dregistry" }
 
-annotate-snippets = "0.11.5"
+annotate-snippets = "0.12.4"
 anstream = { version = "0.6.20", default-features = false }
 anstyle = { version = "1.0.11", default-features = false }
 bincode = "2.0.1"
