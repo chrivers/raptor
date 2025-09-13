@@ -146,7 +146,7 @@ impl FileMap {
         if self.0.remove(&req.fd).is_some() {
             Ok(0)
         } else {
-            Err(FalconError::SandboxRequestError(Errno::EBADF))?
+            Err(FalconError::Errno(Errno::EBADF))?
         }
     }
 }

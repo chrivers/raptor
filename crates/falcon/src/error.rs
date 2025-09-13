@@ -11,9 +11,6 @@ pub enum FalconError {
 
     #[error(transparent)]
     Errno(#[from] nix::Error),
-
-    #[error("Sandbox error: {0}")]
-    SandboxRequestError(nix::errno::Errno),
 }
 
 pub type FalconResult<T> = Result<T, FalconError>;
