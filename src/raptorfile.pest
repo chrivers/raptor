@@ -59,7 +59,7 @@ mb_eq = _{ "="? }
 
 IDENT_START = _{ ASCII_ALPHA | "_" }
 IDENT_CHAR  = _{ ASCII_ALPHA | "_" | ASCII_DIGIT }
-ident = { IDENT_START ~ IDENT_CHAR* }
+ident = @{ IDENT_START ~ IDENT_CHAR* }
 
 user_spec  = { ident }
 group_spec = { ident }
@@ -127,7 +127,7 @@ raptor_source = {
     ident ~ include_args
 }
 
-from_source = ${
+from_source = {
     docker_source
   | raptor_source
 }
