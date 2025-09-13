@@ -14,7 +14,9 @@ impl<'a> Presenter<'a> {
     }
 
     pub fn present_program(&self, name: &str, indent: usize) -> RaptorResult<()> {
-        let prefix = " | ".repeat(indent);
+        let prefix = "|  ".repeat(indent);
+        println!("{prefix}");
+        println!("{prefix}{} [{}]", "# target".dimmed(), name.bright_white());
 
         if let BuildTarget::Program(program) = &self.0.targets[name] {
             for inst in &program.code {
@@ -32,13 +34,6 @@ impl<'a> Presenter<'a> {
 
         if let Some(rmap) = self.0.rmap.get(name) {
             for sub in rmap.iter().sorted() {
-                println!("{prefix}");
-                println!("{prefix}{} [{}]", "# target".dimmed(), sub.bright_white());
-                println!(
-                    "{prefix}[{}] -> [{}]",
-                    name.bright_white(),
-                    sub.bright_white()
-                );
                 self.present_program(sub, indent + 1)?;
             }
         }
@@ -48,7 +43,7 @@ impl<'a> Presenter<'a> {
 
     pub fn present(&self) -> RaptorResult<()> {
         for root in self.0.roots.iter().sorted() {
-            println!("ROOT {root}");
+            info!("{:-<80}", format!("--[ {} ]", root.bright_yellow()));
             self.present_program(root, 0)?;
             println!();
         }
