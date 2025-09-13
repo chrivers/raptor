@@ -31,12 +31,6 @@ pub enum RaptorError {
     PestError(Box<pest::error::Error<Rule>>),
 
     #[error(transparent)]
-    BincodeDecodeError(#[from] bincode::error::DecodeError),
-
-    #[error(transparent)]
-    BincodeEncodeError(#[from] bincode::error::EncodeError),
-
-    #[error(transparent)]
     VarError(#[from] std::env::VarError),
 
     #[error(transparent)]
@@ -86,8 +80,6 @@ impl RaptorError {
             Self::IoError(_) => "IO Error",
             Self::MinijinjaError(_) => "Template error",
             Self::PestError(_) => "Parser error",
-            Self::BincodeEncodeError(_) => "Encoding error",
-            Self::BincodeDecodeError(_) => "Decoding error",
             Self::VarError(_) => "Environment error",
             Self::Errno(_) => "Errno",
             Self::CacheIoError(_, _) => "Cache io error",

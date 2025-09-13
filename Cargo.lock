@@ -1246,7 +1246,6 @@ dependencies = [
  "annotate-snippets",
  "anstream",
  "anstyle",
- "bincode",
  "camino",
  "camino-tempfile",
  "clap",

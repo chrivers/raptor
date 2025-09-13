@@ -99,7 +99,6 @@ pretty_assertions = "1.4.1"
 annotate-snippets = { workspace = true }
 anstream = { workspace = true, features = ["auto"] }
 anstyle = { workspace = true, features = ["std"] }
-bincode = { workspace = true, features = ["serde"] }
 camino = { workspace = true, features = ["serde", "serde1"] }
 camino-tempfile = { workspace = true }
 clap = { workspace = true, features = ["cargo", "derive", "string"] }
