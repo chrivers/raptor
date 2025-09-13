@@ -178,7 +178,8 @@ impl Loader<'_> {
         };
 
         if self.dump {
-            println!("{source}");
+            info!("Template output for [{}]", path.as_ref());
+            println!("{}\n", source.trim_end());
         }
 
         let filename = path.as_ref().as_str();
