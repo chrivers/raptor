@@ -60,9 +60,6 @@ pub enum RaptorError {
     #[error("Error while checking cache status of {0:?}: {1}")]
     CacheIoError(Utf8PathBuf, std::io::Error),
 
-    #[error("Path is not valid utf-8: {0}")]
-    BadPath(std::path::PathBuf),
-
     #[error("Cannot get parent path from {0:?}")]
     BadPathNoParent(Utf8PathBuf),
 
@@ -85,12 +82,6 @@ impl From<pest_consume::Error<Rule>> for RaptorError {
     }
 }
 
-impl From<std::path::PathBuf> for RaptorError {
-    fn from(e: std::path::PathBuf) -> Self {
-        Self::BadPath(e)
-    }
-}
-
 impl RaptorError {
     #[must_use]
     pub const fn category(&self) -> &'static str {
@@ -103,7 +94,6 @@ impl RaptorError {
             Self::VarError(_) => "Environment error",
             Self::Errno(_) => "Errno",
             Self::CacheIoError(_, _) => "Cache io error",
-            Self::BadPath(_) => "Path encoding error",
             Self::BadPathNoParent(_) => "Path error",
             Self::ScriptError(_, _) => "Script error",
             Self::UndefinedVarError(_, _) => "Undefined variable",
