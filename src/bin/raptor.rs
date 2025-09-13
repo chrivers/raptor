@@ -77,7 +77,7 @@ enum Mode {
 
     /// Show mode: print list of build targets
     #[command(alias = "s")]
-    Show { dirs: Option<Vec<Utf8PathBuf>> },
+    Show { dirs: Vec<Utf8PathBuf> },
 }
 
 #[allow(dead_code)]
@@ -208,7 +208,7 @@ fn raptor() -> RaptorResult<()> {
 
         Mode::Show { dirs } => {
             let mut stats = BuildTargetStats::new();
-            for target in dirs.unwrap() {
+            for target in dirs {
                 let program = builder.load(target)?;
                 let stack = builder.stack(program)?;
 
