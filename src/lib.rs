@@ -49,9 +49,6 @@ pub enum RaptorError {
     SendError(#[from] mpsc::SendError<UnixStream>),
 
     #[error(transparent)]
-    FmtError(#[from] std::fmt::Error),
-
-    #[error(transparent)]
     DockerError(#[from] dregistry::error::DockerError),
 
     #[error(transparent)]
@@ -101,7 +98,6 @@ impl RaptorError {
             Self::SandboxRunError(_) => "Sandbox run error",
             Self::MpscTimeout(_) => "Channel error",
             Self::SendError(_) => "Send error",
-            Self::FmtError(_) => "Format error",
             Self::DockerError(_) => "Docker error",
             Self::FalconError(_) => "Falcon error",
         }
