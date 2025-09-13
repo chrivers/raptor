@@ -2,7 +2,6 @@
 extern crate log;
 
 pub mod build;
-pub mod client;
 pub mod dsl;
 pub mod parser;
 pub mod print;
@@ -54,6 +53,9 @@ pub enum RaptorError {
 
     #[error(transparent)]
     DockerError(#[from] dregistry::error::DockerError),
+
+    #[error(transparent)]
+    FalconError(#[from] falcon::error::FalconError),
 
     #[error("Error while checking cache status of {0:?}: {1}")]
     CacheIoError(Utf8PathBuf, std::io::Error),
@@ -111,6 +113,7 @@ impl RaptorError {
             Self::SendError(_) => "Send error",
             Self::FmtError(_) => "Format error",
             Self::DockerError(_) => "Docker error",
+            Self::FalconError(_) => "Falcon error",
         }
     }
 }

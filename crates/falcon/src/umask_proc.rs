@@ -25,10 +25,10 @@ mod tests {
 
     use nix::sys::stat::Mode;
 
-    use crate::util::umask_proc::Umask;
-    use crate::RaptorResult;
+    use crate::umask_proc::Umask;
+    use crate::error::FalconResult;
 
-    fn test_umask(mask: u32) -> RaptorResult<()> {
+    fn test_umask(mask: u32) -> FalconResult<()> {
         Command::new("/bin/sh")
             .arg("-c")
             .umask(Mode::from_bits_truncate(mask))
@@ -39,27 +39,27 @@ mod tests {
     }
 
     #[test]
-    fn set_umask_000() -> RaptorResult<()> {
+    fn set_umask_000() -> FalconResult<()> {
         test_umask(0o000)
     }
 
     #[test]
-    fn set_umask_007() -> RaptorResult<()> {
+    fn set_umask_007() -> FalconResult<()> {
         test_umask(0o007)
     }
 
     #[test]
-    fn set_umask_022() -> RaptorResult<()> {
+    fn set_umask_022() -> FalconResult<()> {
         test_umask(0o022)
     }
 
     #[test]
-    fn set_umask_027() -> RaptorResult<()> {
+    fn set_umask_027() -> FalconResult<()> {
         test_umask(0o027)
     }
 
     #[test]
-    fn set_umask_777() -> RaptorResult<()> {
+    fn set_umask_777() -> FalconResult<()> {
         test_umask(0o777)
     }
 }

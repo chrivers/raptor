@@ -14,14 +14,15 @@ use nix::unistd::{chown, fchown, Gid, Group, Uid, User};
 
 use log::{debug, error, trace, LevelFilter};
 
-use raptor::client::{
+use falcon::client::{
     Account, FramedRead, FramedWrite, Request, RequestChangeDir, RequestCloseFd, RequestCreateDir,
     RequestCreateFile, RequestRun, RequestSetEnv, RequestWriteFd, Response,
 };
-use raptor::util::umask_proc::Umask;
-use raptor::{RaptorError, RaptorResult};
+use falcon::umask_proc::Umask;
 
-fn request_run(req: &RequestRun) -> RaptorResult<i32> {
+use falcon::error::{FalconError, FalconResult};
+
+fn request_run(req: &RequestRun) -> FalconResult<i32> {
     debug!("Exec {} {:?}", req.arg0, &req.argv);
     Ok(Command::new(&req.argv[0])
         .arg0(&req.argv[0])
@@ -31,7 +32,7 @@ fn request_run(req: &RequestRun) -> RaptorResult<i32> {
         .map(ExitStatusExt::into_raw)?)
 }
 
-fn request_changedir(req: &RequestChangeDir) -> RaptorResult<i32> {
+fn request_changedir(req: &RequestChangeDir) -> FalconResult<i32> {
     debug!("Chdir {:?}", req.cd);
     std::env::set_current_dir(&req.cd)
         .map_err(|err| Errno::from_raw(err.raw_os_error().unwrap()))?;
@@ -39,13 +40,13 @@ fn request_changedir(req: &RequestChangeDir) -> RaptorResult<i32> {
 }
 
 #[allow(clippy::unnecessary_wraps)]
-fn request_setenv(req: &RequestSetEnv) -> RaptorResult<i32> {
+fn request_setenv(req: &RequestSetEnv) -> FalconResult<i32> {
     debug!("Setenv {:?}={:?}", &req.key, &req.value);
     std::env::set_var(&req.key, &req.value);
     Ok(0)
 }
 
-fn uid_from_account(acct: &Account) -> RaptorResult<Uid> {
+fn uid_from_account(acct: &Account) -> FalconResult<Uid> {
     match acct {
         Account::Id(uid) => Ok(Uid::from_raw(*uid)),
         Account::Name(name) => {
@@ -55,7 +56,7 @@ fn uid_from_account(acct: &Account) -> RaptorResult<Uid> {
                 Ok(user.uid)
             } else {
                 error!("could not resolve unix user {name:?}");
-                Err(RaptorError::IoError(Error::new(
+                Err(FalconError::IoError(Error::new(
                     ErrorKind::NotFound,
                     "User not found",
                 )))
@@ -64,7 +65,7 @@ fn uid_from_account(acct: &Account) -> RaptorResult<Uid> {
     }
 }
 
-fn gid_from_account(acct: &Account) -> RaptorResult<Gid> {
+fn gid_from_account(acct: &Account) -> FalconResult<Gid> {
     match acct {
         Account::Id(uid) => Ok(Gid::from_raw(*uid)),
         Account::Name(name) => {
@@ -74,7 +75,7 @@ fn gid_from_account(acct: &Account) -> RaptorResult<Gid> {
                 Ok(group.gid)
             } else {
                 error!("could not resolve unix group {name:?}");
-                Err(RaptorError::IoError(Error::new(
+                Err(FalconError::IoError(Error::new(
                     ErrorKind::NotFound,
                     "Group not found",
                 )))
@@ -98,7 +99,7 @@ impl FileMap {
         }
     }
 
-    pub fn create_file(&mut self, req: &RequestCreateFile) -> RaptorResult<i32> {
+    pub fn create_file(&mut self, req: &RequestCreateFile) -> FalconResult<i32> {
         let file = OpenOptions::new()
             .write(true)
             .create(true)
@@ -118,7 +119,7 @@ impl FileMap {
     }
 
     #[allow(clippy::unused_self)]
-    pub fn create_dir(&self, req: &RequestCreateDir) -> RaptorResult<i32> {
+    pub fn create_dir(&self, req: &RequestCreateDir) -> FalconResult<i32> {
         let path = &req.path;
 
         if req.parents {
@@ -136,21 +137,21 @@ impl FileMap {
         Ok(0)
     }
 
-    fn write_fd(&mut self, req: &RequestWriteFd) -> RaptorResult<i32> {
+    fn write_fd(&mut self, req: &RequestWriteFd) -> FalconResult<i32> {
         self.get(req.fd)?.write_all(&req.data)?;
         Ok(0)
     }
 
-    fn close_fd(&mut self, req: &RequestCloseFd) -> RaptorResult<i32> {
+    fn close_fd(&mut self, req: &RequestCloseFd) -> FalconResult<i32> {
         if self.0.remove(&req.fd).is_some() {
             Ok(0)
         } else {
-            Err(RaptorError::SandboxRequestError(Errno::EBADF))?
+            Err(FalconError::SandboxRequestError(Errno::EBADF))?
         }
     }
 }
 
-fn main() -> RaptorResult<()> {
+fn main() -> FalconResult<()> {
     if let Ok(log_level) = std::env::var("FALCON_LOG_LEVEL") {
         let mut builder = colog::basic_builder();
         if let Ok(level) = LevelFilter::from_str(&log_level) {
@@ -175,7 +176,7 @@ fn main() -> RaptorResult<()> {
     loop {
         let req: Request = match stream.read_framed() {
             Ok(req) => req,
-            Err(RaptorError::IoError(err)) if err.kind() == ErrorKind::UnexpectedEof => break,
+            Err(FalconError::IoError(err)) if err.kind() == ErrorKind::UnexpectedEof => break,
             Err(err) => {
                 error!("Failed to read request: {err}");
                 break;
@@ -198,7 +199,7 @@ fn main() -> RaptorResult<()> {
         };
 
         let resp: Response = res.map_err(|err| match err {
-            RaptorError::IoError(err) => {
+            FalconError::IoError(err) => {
                 error!("Error: {err}");
                 err.raw_os_error().unwrap_or(Errno::EIO as i32)
             }

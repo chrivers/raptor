@@ -2,7 +2,7 @@ use std::io::{Error, ErrorKind, Write};
 
 use camino::Utf8Path;
 
-use crate::client::{Account, Request, RequestCloseFd, RequestCreateFile, RequestWriteFd};
+use falcon::client::{Account, Request, RequestCloseFd, RequestCreateFile, RequestWriteFd};
 use crate::dsl::Chown;
 use crate::sandbox::FalconClient;
 use crate::{RaptorError, RaptorResult};

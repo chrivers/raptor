@@ -1,12 +1,12 @@
 use std::os::unix::net::UnixListener;
 
+use falcon::client::{FramedRead, FramedWrite, Request, RequestRun, Response};
+use falcon::error::FalconResult;
 use log::{error, info};
-use raptor::client::{FramedRead, FramedWrite, RequestRun, Response};
-use raptor::{client::Request, RaptorResult};
 
-fn main() -> RaptorResult<()> {
+fn main() -> FalconResult<()> {
     colog::init();
-    let socket_name = std::env::var("FALCON_SOCKET")?;
+    let socket_name = std::env::var("FALCON_SOCKET").expect("Must have FALCON_SOCKET set");
     let listen = UnixListener::bind(socket_name)?;
 
     let (mut stream, _addr) = listen.accept()?;

@@ -122,7 +122,7 @@ fn check_for_falcon_binary() -> RaptorResult<()> {
 
         eprintln!();
         eprintln!("  {}", "# compile falcon".dimmed());
-        eprintln!("  cargo build --target x86_64-unknown-linux-musl --release --bin=falcon");
+        eprintln!("  cargo build --target x86_64-unknown-linux-musl --release --package falcon --bin=falcon");
         std::process::exit(1);
     }
     Ok(())

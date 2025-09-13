@@ -1,0 +1,22 @@
+[package]
+name = "falcon"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+readme.workspace = true
+categories.workspace = true
+repository.workspace = true
+keywords.workspace = true
+authors.workspace = true
+
+[dependencies]
+bincode = { workspace = true, features = ["serde"] }
+camino = { workspace = true, features = ["serde", "serde1"] }
+colog = { workspace = true }
+log = { workspace = true }
+nix = { workspace = true, features = ["fs", "user"] }
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

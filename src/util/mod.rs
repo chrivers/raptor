@@ -52,4 +52,3 @@ impl SafeParent for Utf8PathBuf {
 pub mod capture_proc_fd;
 pub mod clapcolor;
 pub mod kwargs;
-pub mod umask_proc;
