@@ -172,7 +172,7 @@ impl Loader<'_> {
             .map(|key| (key, state.lookup(key).unwrap()))
             .collect::<Value>();
 
-        let ctx = &context! {
+        let ctx = context! {
             ..exports,
             ..ctx,
         };
@@ -201,9 +201,9 @@ impl Loader<'_> {
                 res.push(Item::Statement(stmt.clone()));
             }
 
-            res.push(self.handle(stmt, ctx)?);
+            res.push(self.handle(stmt, &ctx)?);
         }
 
-        Ok(Program::new(res, ctx.clone(), path.as_ref().into()))
+        Ok(Program::new(res, ctx, path.as_ref().into()))
     }
 }
