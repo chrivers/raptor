@@ -2,12 +2,13 @@ use std::fmt::{Debug, Display};
 
 use crate::dsl::{
     Chown, IncludeArg, InstCopy, InstEnv, InstEnvAssign, InstFrom, InstInclude, InstInvoke,
-    InstMkdir, InstRender, InstRun, InstWorkdir, InstWrite,
+    InstMkdir, InstMount, InstRender, InstRun, InstWorkdir, InstWrite,
 };
 
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub enum Instruction {
     From(InstFrom),
+    Mount(InstMount),
     Copy(InstCopy),
     Render(InstRender),
     Write(InstWrite),
@@ -24,6 +25,7 @@ impl Instruction {
     pub const fn name(&self) -> &'static str {
         match self {
             Self::From(_) => "FROM",
+            Self::Mount(_) => "MOUNT",
             Self::Copy(_) => "COPY",
             Self::Render(_) => "RENDER",
             Self::Write(_) => "WRITE",
@@ -135,6 +137,7 @@ impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::From(inst) => Display::fmt(inst, f),
+            Self::Mount(inst) => Display::fmt(inst, f),
             Self::Copy(inst) => Display::fmt(inst, f),
             Self::Render(inst) => Display::fmt(inst, f),
             Self::Write(inst) => Display::fmt(inst, f),
@@ -152,6 +155,7 @@ impl Debug for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::From(inst) => Debug::fmt(inst, f),
+            Self::Mount(inst) => Debug::fmt(inst, f),
             Self::Copy(inst) => Debug::fmt(inst, f),
             Self::Render(inst) => Debug::fmt(inst, f),
             Self::Write(inst) => Debug::fmt(inst, f),

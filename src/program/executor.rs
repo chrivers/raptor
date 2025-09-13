@@ -36,8 +36,8 @@ impl Executor {
     fn handle(&mut self, stmt: &Statement, ctx: &Value) -> RaptorResult<()> {
         let client = self.sandbox.client();
         match &stmt.inst {
-            // Code merging instruction have nothing to execute
-            Instruction::From(_) | Instruction::Include(_) => {}
+            // Code merging and mount instruction have nothing to execute
+            Instruction::From(_) | Instruction::Include(_) | Instruction::Mount(_) => {}
 
             Instruction::Copy(inst) => {
                 let srcname = stmt.origin.basedir()?.join(&inst.srcs[0]);
