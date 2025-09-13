@@ -144,6 +144,36 @@ fn dep_from() -> RaptorResult<()> {
 }
 
 #[test]
+fn dep_from2() -> RaptorResult<()> {
+    let mut test = Tester::setup(["FROM a"], |test| {
+        test.write("a.rapt", "FROM b")?;
+        test.write("b.rapt", "FROM c")?;
+        test.write("c.rapt", "")
+    })?;
+
+    test.step("changing FROM src", |test| test.touch("c.rapt"))?;
+    test.step("changing FROM src", |test| test.touch("b.rapt"))?;
+    test.step("changing FROM src", |test| test.touch("a.rapt"))?;
+    test.step("changing FROM src", |test| test.touch(Tester::PROGRAM_NAME))?;
+
+    Ok(())
+}
+
+#[test]
+fn dep_from3() -> RaptorResult<()> {
+    let mut test = Tester::setup(["FROM a"], |test| {
+        test.write("a.rapt", "INCLUDE \"b.rinc\"")?;
+        test.write("b.rinc", "")
+    })?;
+
+    test.step("changing FROM src", |test| test.touch("b.rinc"))?;
+    test.step("changing FROM src", |test| test.touch("a.rapt"))?;
+    test.step("changing FROM src", |test| test.touch(Tester::PROGRAM_NAME))?;
+
+    Ok(())
+}
+
+#[test]
 fn dep_self() -> RaptorResult<()> {
     let mut test = Tester::setup([""], |test| test.write("a.rapt", ""))?;
 
