@@ -36,17 +36,19 @@ impl Program {
         Ok(())
     }
 
-    pub fn from(&self) -> RaptorResult<Option<FromSource>> {
-        let mut res = None;
-        let opt = &mut res;
-        self.traverse(&mut |stmt| {
-            if let Instruction::From(from) = &stmt.inst {
-                *opt = Some(from.from.clone());
+    #[must_use]
+    pub fn from(&self) -> Option<&FromSource> {
+        for item in &self.code {
+            if let Item::Statement(Statement {
+                inst: Instruction::From(inst),
+                ..
+            }) = item
+            {
+                return Some(&inst.from);
             }
-            Ok(())
-        })?;
+        }
 
-        Ok(res)
+        None
     }
 
     pub fn path_for(&self, path: impl AsRef<Utf8Path>) -> RaptorResult<Utf8PathBuf> {

@@ -170,11 +170,13 @@ impl<'a> RaptorBuilder<'a> {
         program: Arc<Program>,
         visitor: &mut impl FnMut(BuildTarget),
     ) -> RaptorResult<()> {
-        match program.from()? {
-            Some(FromSource::Docker(mut image)) => {
-                if !image.contains('/') {
-                    image = format!("library/{image}");
-                }
+        match program.from() {
+            Some(FromSource::Docker(ref src)) => {
+                let image = if src.contains('/') {
+                    src.to_string()
+                } else {
+                    format!("library/{src}")
+                };
                 let source = dregistry::reference::parse(&image)?;
                 visitor(BuildTarget::DockerSource(source));
             }
