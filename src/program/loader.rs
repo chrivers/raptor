@@ -98,23 +98,22 @@ impl Loader<'_> {
                 );
             }
             RaptorError::MinijinjaError(err) => {
-                let mut origins = self.origins().to_vec();
                 if err.kind() == ErrorKind::BadInclude {
-                    if let Some(last) = origins.pop() {
-                        self.show_include_stack(&origins);
+                    if let Some((last, origins)) = &self.origins.split_last() {
+                        self.show_include_stack(origins);
 
                         show_error_context(
                             &self.sources[last.path.as_str()],
                             last.path.as_ref(),
                             "Error while evaluating INCLUDE",
                             err.detail().unwrap_or("error"),
-                            err.range().unwrap_or(last.span),
+                            err.range().unwrap_or_else(|| last.span.clone()),
                         );
                     } else {
                         error!("Cannot provide error context: {err}");
                     }
                 } else {
-                    self.show_include_stack(&origins);
+                    self.show_include_stack(&self.origins);
                     show_jinja_error_context(err)?;
                     let mut err = &err as &dyn std::error::Error;
                     while let Some(next_err) = err.source() {
