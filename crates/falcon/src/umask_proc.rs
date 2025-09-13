@@ -25,8 +25,8 @@ mod tests {
 
     use nix::sys::stat::Mode;
 
-    use crate::umask_proc::Umask;
     use crate::error::FalconResult;
+    use crate::umask_proc::Umask;
 
     fn test_umask(mask: u32) -> FalconResult<()> {
         Command::new("/bin/sh")
