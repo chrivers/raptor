@@ -178,7 +178,7 @@ impl<'a> RaptorBuilder<'a> {
                 let source = dregistry::reference::parse(&image)?;
                 visitor(BuildTarget::DockerSource(source));
             }
-            Some(FromSource::Plain(from)) => {
+            Some(FromSource::Raptor(from)) => {
                 let from = format!("{from}.rapt");
                 let base = program.path.try_parent()?;
 

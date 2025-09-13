@@ -124,8 +124,13 @@ docker_source = {
     "docker" ~ "://" ~ string
 }
 
+raptor_source = {
+    ident ~ include_args
+}
+
 from_source = ${
-    docker_source | ident
+    docker_source
+  | raptor_source
 }
 
 COPY = {

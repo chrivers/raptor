@@ -264,6 +264,13 @@ impl RaptorFileParser {
         Ok(input.as_str().to_string())
     }
 
+    fn raptor_source(input: Node) -> Result<String> {
+        Ok(match_nodes!(
+            input.into_children();
+            [ident(i), include_args(_)] => i.as_str().to_string()
+        ))
+    }
+
     fn docker_source(input: Node) -> Result<String> {
         Ok(match_nodes!(
             input.into_children();
@@ -274,7 +281,7 @@ impl RaptorFileParser {
     fn from_source(input: Node) -> Result<FromSource> {
         Ok(match_nodes!(
             input.into_children();
-            [ident(i)] => FromSource::Plain(i),
+            [raptor_source(i)] => FromSource::Raptor(i),
             [docker_source(i)] => FromSource::Docker(i),
         ))
     }

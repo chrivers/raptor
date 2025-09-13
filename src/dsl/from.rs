@@ -4,7 +4,7 @@ use crate::print::Theme;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FromSource {
-    Plain(String),
+    Raptor(String),
     Docker(String),
 }
 
@@ -23,7 +23,7 @@ impl Display for InstFrom {
 impl Display for FromSource {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Plain(src) => write!(f, "{src}"),
+            Self::Raptor(src) => write!(f, "{src}"),
             Self::Docker(src) => write!(f, "docker://{src}"),
         }
     }

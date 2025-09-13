@@ -36,7 +36,7 @@ impl BuildTargetStats {
 
                     if let Some(from) = program.from()? {
                         let key = match &from {
-                            FromSource::Plain(from) => from.to_string(),
+                            FromSource::Raptor(from) => from.to_string(),
                             FromSource::Docker(image) => {
                                 if image.contains('/') {
                                     format!("docker://{image}")
