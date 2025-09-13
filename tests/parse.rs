@@ -2,6 +2,7 @@ use std::os::unix::fs::MetadataExt;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::context;
+use pretty_assertions::assert_eq;
 
 use raptor::dsl::{
     Chown, FromSource, IncludeArg, InstEnvAssign, InstMkdir, Instruction, Item, Origin, Program,
@@ -53,7 +54,7 @@ fn parse_from01() -> RaptorResult<()> {
     test_single_inst_parse(
         "from01.rapt",
         Instruction::From(raptor::dsl::InstFrom {
-            from: FromSource::Plain("baselayer".into()),
+            from: FromSource::Raptor("baselayer".into()),
         }),
     )
 }
@@ -173,22 +174,28 @@ fn parse_render03() -> RaptorResult<()> {
 
     assert_eq!(
         &program.code,
-        &[Item::program(
-            [Item::statement(
-                Instruction::render(
-                    "include/template02.tmpl",
-                    "/a",
-                    [IncludeArg::lookup(
-                        "what",
-                        &["what"],
-                        Origin::make("render03.rinc", 39..43),
-                    )],
-                ),
-                Origin::make("render03.rinc", 0..43)
-            )],
-            context! { what => "world" },
-            "render03.rinc",
-        )]
+        &[
+            Item::statement(
+                Instruction::include("render03.rinc", [IncludeArg::value("what", "world")]),
+                Origin::make("render03.rapt", 0..34),
+            ),
+            Item::program(
+                [Item::statement(
+                    Instruction::render(
+                        "include/template02.tmpl",
+                        "/a",
+                        [IncludeArg::lookup(
+                            "what",
+                            &["what"],
+                            Origin::make("render03.rinc", 39..43),
+                        )],
+                    ),
+                    Origin::make("render03.rinc", 0..43)
+                )],
+                context! { what => "world" },
+                "render03.rinc",
+            )
+        ]
     );
 
     Ok(())
@@ -200,14 +207,20 @@ fn parse_include01() -> RaptorResult<()> {
 
     assert_eq!(
         &program.code,
-        &[Item::program(
-            [Item::statement(
-                Instruction::write("/foo", "bar"),
-                Origin::make("write01.rapt", 0..16)
-            )],
-            context! {},
-            "write01.rapt",
-        )]
+        &[
+            Item::statement(
+                Instruction::include("write01.rapt", [],),
+                Origin::make("include01.rapt", 0..22,),
+            ),
+            Item::program(
+                [Item::statement(
+                    Instruction::write("/foo", "bar"),
+                    Origin::make("write01.rapt", 0..16)
+                )],
+                context! {},
+                "write01.rapt",
+            )
+        ]
     );
 
     Ok(())
@@ -219,18 +232,30 @@ fn parse_include02() -> RaptorResult<()> {
 
     assert_eq!(
         &program.code,
-        &[Item::program(
-            [Item::program(
-                [Item::statement(
-                    Instruction::write("/foo", "bar"),
-                    Origin::make("write01.rapt", 0..16)
-                )],
+        &[
+            Item::statement(
+                Instruction::include("include01.rapt", []),
+                Origin::make("include02.rapt", 0..24),
+            ),
+            Item::program(
+                [
+                    Item::statement(
+                        Instruction::include("write01.rapt", []),
+                        Origin::make("include01.rapt", 0..22),
+                    ),
+                    Item::program(
+                        [Item::statement(
+                            Instruction::write("/foo", "bar"),
+                            Origin::make("write01.rapt", 0..16)
+                        )],
+                        context! {},
+                        "write01.rapt",
+                    )
+                ],
                 context! {},
-                "write01.rapt",
-            )],
-            context! {},
-            "include01.rapt",
-        )]
+                "include01.rapt",
+            )
+        ]
     );
 
     Ok(())
@@ -242,14 +267,20 @@ fn parse_include03() -> RaptorResult<()> {
 
     assert_eq!(
         &program.code,
-        &[Item::program(
-            [Item::statement(
-                Instruction::run(&["id"]),
-                Origin::make("include/run01.rinc", 0..6)
-            )],
-            context! {},
-            "include/run01.rinc",
-        )]
+        &[
+            Item::statement(
+                Instruction::include("include/run01.rinc", []),
+                Origin::make("include03.rapt", 0..28),
+            ),
+            Item::program(
+                [Item::statement(
+                    Instruction::run(&["id"]),
+                    Origin::make("include/run01.rinc", 0..6)
+                )],
+                context! {},
+                "include/run01.rinc",
+            )
+        ]
     );
 
     Ok(())
@@ -261,18 +292,30 @@ fn parse_include04() -> RaptorResult<()> {
 
     assert_eq!(
         &program.code,
-        &[Item::program(
-            [Item::program(
-                [Item::statement(
-                    Instruction::run(&["id"]),
-                    Origin::make("include/run01.rinc", 0..6)
-                )],
+        &[
+            Item::statement(
+                Instruction::include("include/include01.rinc", []),
+                Origin::make("include04.rapt", 0..32),
+            ),
+            Item::program(
+                [
+                    Item::statement(
+                        Instruction::include("run01.rinc", []),
+                        Origin::make("include/include01.rinc", 0..20),
+                    ),
+                    Item::program(
+                        [Item::statement(
+                            Instruction::run(&["id"]),
+                            Origin::make("include/run01.rinc", 0..6)
+                        )],
+                        context! {},
+                        "include/run01.rinc",
+                    )
+                ],
                 context! {},
-                "include/run01.rinc",
-            )],
-            context! {},
-            "include/include01.rinc",
-        )]
+                "include/include01.rinc",
+            )
+        ]
     );
 
     Ok(())
