@@ -186,8 +186,6 @@ impl Loader<'_> {
 
         self.sources.insert(filename.into(), source);
 
-        let mut res = vec![];
-
         let statements =
             ast::parse(filename, &self.sources[filename]).map_err(|err| match err {
                 RaptorError::PestError(err) => {
@@ -195,6 +193,8 @@ impl Loader<'_> {
                 }
                 err => err,
             })?;
+
+        let mut res = vec![];
 
         for stmt in statements {
             if matches!(stmt.inst, Instruction::Include(_)) {
