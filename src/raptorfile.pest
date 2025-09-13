@@ -1,20 +1,19 @@
 FILE = {
-    SOI ~ STATEMENT* ~ EOI
+    SOI ~ (STATEMENT? ~ NEWLINE)* ~ EOI
 }
 
 STATEMENT = {
-    NEWLINE
-  | (FROM    ~ NEWLINE)
-  | (MOUNT   ~ NEWLINE)
-  | (RENDER  ~ NEWLINE)
-  | (WRITE   ~ NEWLINE)
-  | (MKDIR   ~ NEWLINE)
-  | (COPY    ~ NEWLINE)
-  | (INCLUDE ~ NEWLINE)
-  | (INVOKE  ~ NEWLINE)
-  | (RUN     ~ NEWLINE)
-  | (ENV     ~ NEWLINE)
-  | (WORKDIR ~ NEWLINE)
+    FROM
+  | MOUNT
+  | RENDER
+  | WRITE
+  | MKDIR
+  | COPY
+  | INCLUDE
+  | INVOKE
+  | RUN
+  | ENV
+  | WORKDIR
 }
 
 WHITESPACE = _{ " " | "\\\n" }
