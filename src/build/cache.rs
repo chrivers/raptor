@@ -1,20 +1,37 @@
 use std::collections::HashSet;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::os::unix::fs::MetadataExt;
+use std::sync::Arc;
 
 use camino::Utf8PathBuf;
 use itertools::Itertools;
 
-use crate::dsl::{Instruction, Program};
+use crate::build::RaptorBuilder;
+use crate::dsl::{FromSource, Instruction, Program};
+use crate::util::SafeParent;
 use crate::{RaptorError, RaptorResult};
 
 pub struct Cacher;
 
 impl Cacher {
-    pub fn cache_key(prog: &Program) -> RaptorResult<u64> {
+    pub fn cache_key(program: &Arc<Program>, builder: &mut RaptorBuilder<'_>) -> RaptorResult<u64> {
         let mut state = DefaultHasher::new();
 
-        for source in &Self::sources(prog)? {
+        if let Some(from) = program.from() {
+            match from {
+                FromSource::Raptor(name) => {
+                    let path = format!("{name}.rapt");
+                    let base = program.path.try_parent()?;
+                    let filename = base.join(path);
+
+                    let prog = builder.load(filename)?;
+                    Self::cache_key(&prog, builder)?.hash(&mut state);
+                }
+                FromSource::Docker(src) => src.hash(&mut state),
+            }
+        }
+
+        for source in &Self::sources(program)? {
             let md = source
                 .metadata()
                 .map_err(|err| RaptorError::CacheIoError(source.into(), err))?;

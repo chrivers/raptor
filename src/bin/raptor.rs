@@ -167,7 +167,7 @@ fn raptor() -> RaptorResult<()> {
             let mut layers = vec![];
 
             for layer in builder.stack(program)? {
-                layers.push(layer.layer_info()?.done_path());
+                layers.push(layer.layer_info(&mut builder)?.done_path());
             }
 
             let tempdir = Builder::new().prefix("raptor-temp-").tempdir()?;

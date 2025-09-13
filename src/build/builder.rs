@@ -54,7 +54,7 @@ impl DockerSourceExt for DockerSource {
 }
 
 impl BuildTarget {
-    pub fn layer_info(&self) -> RaptorResult<LayerInfo> {
+    pub fn layer_info(&self, builder: &mut RaptorBuilder) -> RaptorResult<LayerInfo> {
         let name;
         let hash;
 
@@ -63,7 +63,7 @@ impl BuildTarget {
                 debug!("Calculating hash for layer {}", prog.path);
 
                 name = prog.path.file_stem().unwrap().into();
-                hash = Cacher::cache_key(prog)?;
+                hash = Cacher::cache_key(prog, builder)?;
             }
 
             Self::DockerSource(image) => {
@@ -168,7 +168,7 @@ impl<'a> RaptorBuilder<'a> {
     pub fn recurse(
         &mut self,
         program: Arc<Program>,
-        visitor: &mut impl FnMut(BuildTarget),
+        visitor: &mut impl FnMut(BuildTarget) -> RaptorResult<()>,
     ) -> RaptorResult<()> {
         match program.from() {
             Some(FromSource::Docker(ref src)) => {
@@ -178,7 +178,7 @@ impl<'a> RaptorBuilder<'a> {
                     format!("library/{src}")
                 };
                 let source = dregistry::reference::parse(&image)?;
-                visitor(BuildTarget::DockerSource(source));
+                visitor(BuildTarget::DockerSource(source))?;
             }
             Some(FromSource::Raptor(from)) => {
                 let from = format!("{from}.rapt");
@@ -192,9 +192,7 @@ impl<'a> RaptorBuilder<'a> {
             None => {}
         }
 
-        visitor(BuildTarget::Program(program));
-
-        Ok(())
+        visitor(BuildTarget::Program(program))
     }
 
     pub fn stack(&mut self, program: Arc<Program>) -> RaptorResult<Vec<BuildTarget>> {
@@ -203,6 +201,7 @@ impl<'a> RaptorBuilder<'a> {
 
         self.recurse(program, &mut |prog| {
             table.push(prog);
+            Ok(())
         })?;
 
         Ok(data)
@@ -224,7 +223,7 @@ impl<'a> RaptorBuilder<'a> {
         let mut layers: Vec<Utf8PathBuf> = vec![];
 
         for prog in programs {
-            let layer = prog.layer_info()?;
+            let layer = prog.layer_info(self)?;
 
             let layer_name = layer.name().to_string();
             let work_path = layer.work_path();

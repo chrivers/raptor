@@ -112,7 +112,7 @@ impl Tester {
 
     fn hash(&mut self, name: &str) -> RaptorResult<u64> {
         let prog = self.load(name)?;
-        Cacher::cache_key(&prog)
+        Cacher::cache_key(&prog, &mut self.builder)
     }
 }
 
