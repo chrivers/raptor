@@ -6,8 +6,8 @@ use pest_consume::{match_nodes, Parser};
 
 use crate::dsl::{
     Chown, FromSource, IncludeArg, IncludeArgValue, InstCopy, InstEnv, InstEnvAssign, InstFrom,
-    InstInclude, InstInvoke, InstMkdir, InstRender, InstRun, InstWorkdir, InstWrite, Instruction,
-    Lookup, Origin, Statement,
+    InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun, InstWorkdir, InstWrite,
+    Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
 use crate::parser::{RaptorFileParser, Rule};
 use crate::RaptorResult;
@@ -168,6 +168,38 @@ impl RaptorFileParser {
             chmod,
             chown,
         })
+    }
+
+    fn mount_type(input: Node) -> Result<MountType> {
+        let res = match input.as_str() {
+            "--simple" => MountType::Simple,
+            "--layers" => MountType::Layers,
+            "--overlay" => MountType::Overlay,
+            _ => unreachable!(),
+        };
+
+        Ok(res)
+    }
+
+    fn mount_options(input: Node) -> Result<MountOptions> {
+        match_nodes!(
+            input.into_children();
+            [] => Ok(MountOptions{ mtype: MountType::Simple }),
+            [mount_type(mtype)] => Ok(MountOptions{ mtype }),
+        )
+    }
+
+    fn MOUNT(input: Node) -> Result<InstMount> {
+        match_nodes!(
+            input.into_children();
+            [mount_options(opts), ident(name), filename(dest)] => {
+                Ok(InstMount {
+                    opts,
+                    name,
+                    dest,
+                })
+            },
+        )
     }
 
     fn RENDER(input: Node) -> Result<InstRender> {
@@ -355,6 +387,7 @@ impl RaptorFileParser {
         Ok(match_nodes!(
             input.into_children();
             [FROM(stmt)] => Some(Statement { inst: Instruction::From(stmt), origin }),
+            [MOUNT(stmt)] => Some(Statement { inst: Instruction::Mount(stmt), origin }),
             [COPY(stmt)] => Some(Statement { inst: Instruction::Copy(stmt), origin }),
             [WRITE(stmt)] => Some(Statement { inst: Instruction::Write(stmt), origin }),
             [RENDER(stmt)] => Some(Statement { inst: Instruction::Render(stmt), origin }),
