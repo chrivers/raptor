@@ -109,7 +109,7 @@ impl Executor {
                 client.chdir(&inst.dir)?;
             }
 
-            Instruction::Include(_) => unreachable!(),
+            Instruction::Include(_) => {}
         }
 
         Ok(())

@@ -134,9 +134,7 @@ fn raptor() -> RaptorResult<()> {
 
     check_for_falcon_binary()?;
 
-    let loader = Loader::new()?
-        .with_dump(args.mode.dump())
-        .with_keep_include(args.mode.show());
+    let loader = Loader::new()?.with_dump(args.mode.dump());
 
     let mut builder = RaptorBuilder::new(loader, args.no_act);
 

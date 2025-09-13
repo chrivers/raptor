@@ -19,7 +19,6 @@ pub struct Loader<'source> {
     sources: HashMap<String, String>,
     base: Utf8PathBuf,
     origins: Vec<Origin>,
-    keep_include: bool,
 }
 
 const MAX_NESTED_INCLUDE: usize = 20;
@@ -32,7 +31,6 @@ impl Loader<'_> {
             base: Utf8PathBuf::new(),
             sources: HashMap::new(),
             origins: vec![],
-            keep_include: false,
         })
     }
 
@@ -47,14 +45,6 @@ impl Loader<'_> {
     #[must_use]
     pub fn with_dump(self, dump: bool) -> Self {
         Self { dump, ..self }
-    }
-
-    #[must_use]
-    pub fn with_keep_include(self, keep_include: bool) -> Self {
-        Self {
-            keep_include,
-            ..self
-        }
     }
 
     pub fn base(&self) -> &Utf8Path {
@@ -206,7 +196,7 @@ impl Loader<'_> {
             })?;
 
         for stmt in statements {
-            if self.keep_include && matches!(stmt.inst, Instruction::Include(_)) {
+            if matches!(stmt.inst, Instruction::Include(_)) {
                 res.push(Item::Statement(stmt.clone()));
             }
 
