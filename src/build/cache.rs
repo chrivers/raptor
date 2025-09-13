@@ -13,7 +13,6 @@ pub struct Cacher;
 impl Cacher {
     pub fn cache_key(prog: &Program) -> RaptorResult<u64> {
         let mut state = DefaultHasher::new();
-        prog.hash(&mut state);
 
         for source in &Self::sources(prog)? {
             let md = source
@@ -30,6 +29,8 @@ impl Cacher {
     pub fn sources(prog: &Program) -> RaptorResult<Vec<Utf8PathBuf>> {
         let mut data = HashSet::<Utf8PathBuf>::new();
 
+        data.insert(prog.path.clone());
+
         prog.traverse(&mut |stmt| {
             match &stmt.inst {
                 Instruction::Copy(inst) => {
@@ -40,11 +41,16 @@ impl Cacher {
                             .collect::<Result<Vec<_>, _>>()?,
                     );
                 }
+
                 Instruction::Render(inst) => {
                     data.insert(prog.path_for(&inst.src)?);
                 }
-                Instruction::Include(_)
-                | Instruction::Invoke(_)
+
+                Instruction::Include(inst) => {
+                    data.insert(prog.path_for(&inst.src)?);
+                }
+
+                Instruction::Invoke(_)
                 | Instruction::Write(_)
                 | Instruction::Mkdir(_)
                 | Instruction::From(_)
