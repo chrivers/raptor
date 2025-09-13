@@ -135,6 +135,15 @@ fn dep_render() -> RaptorResult<()> {
 }
 
 #[test]
+fn dep_from() -> RaptorResult<()> {
+    let mut test = Tester::setup(["FROM a"], |test| test.write("a.rapt", ""))?;
+
+    test.step("changing FROM src", |test| test.touch("a.rapt"))?;
+
+    Ok(())
+}
+
+#[test]
 fn dep_self() -> RaptorResult<()> {
     let mut test = Tester::setup([""], |test| test.write("a.rapt", ""))?;
 
