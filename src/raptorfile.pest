@@ -5,6 +5,7 @@ FILE = {
 STATEMENT = {
     NEWLINE
   | (FROM    ~ NEWLINE)
+  | (MOUNT   ~ NEWLINE)
   | (RENDER  ~ NEWLINE)
   | (WRITE   ~ NEWLINE)
   | (MKDIR   ~ NEWLINE)
@@ -79,6 +80,14 @@ file_option = {
 
 file_options = {
     file_option*
+}
+
+mount_type = {
+    ("--simple" | "--layers" | "--overlay")
+}
+
+mount_options = {
+    mount_type?
 }
 
 parents_flag = { "-p" }
@@ -165,6 +174,13 @@ RUN = {
 FROM = {
     "FROM"
     ~ from_source
+}
+
+MOUNT = {
+    "MOUNT"
+    ~ mount_options
+    ~ ident
+    ~ filename
 }
 
 ENV = {
