@@ -36,7 +36,8 @@ impl Executor {
     fn handle(&mut self, stmt: &Statement, ctx: &Value) -> RaptorResult<()> {
         let client = self.sandbox.client();
         match &stmt.inst {
-            Instruction::From(_) => {}
+            // Code merging instruction have nothing to execute
+            Instruction::From(_) | Instruction::Include(_) => {}
 
             Instruction::Copy(inst) => {
                 let srcname = stmt.origin.basedir()?.join(&inst.srcs[0]);
@@ -108,8 +109,6 @@ impl Executor {
             Instruction::Workdir(inst) => {
                 client.chdir(&inst.dir)?;
             }
-
-            Instruction::Include(_) => {}
         }
 
         Ok(())
