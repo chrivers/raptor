@@ -144,3 +144,12 @@ fn dep_self() -> RaptorResult<()> {
 
     Ok(())
 }
+
+#[test]
+fn dep_include() -> RaptorResult<()> {
+    let mut test = Tester::setup(["INCLUDE \"a.rinc\""], |test| test.write("a.rinc", ""))?;
+
+    test.step("changing include file", |test| test.touch("a.rinc"))?;
+
+    Ok(())
+}
