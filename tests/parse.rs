@@ -79,7 +79,7 @@ fn parse_run03() -> RaptorResult<()> {
 
 #[test]
 fn parse_write01() -> RaptorResult<()> {
-    test_single_inst_parse("write01.rapt", Instruction::write("/foo", "bar"))
+    test_single_inst_parse("write01.rinc", Instruction::write("/foo", "bar"))
 }
 
 #[test]
@@ -176,8 +176,8 @@ fn parse_render03() -> RaptorResult<()> {
         &program.code,
         &[
             Item::statement(
-                Instruction::include("render03.rinc", [IncludeArg::value("what", "world")]),
-                Origin::make("render03.rapt", 0..34),
+                Instruction::include("render03", [IncludeArg::value("what", "world")]),
+                Origin::make("render03.rapt", 0..29),
             ),
             Item::program(
                 [Item::statement(
@@ -209,16 +209,16 @@ fn parse_include01() -> RaptorResult<()> {
         &program.code,
         &[
             Item::statement(
-                Instruction::include("write01.rapt", [],),
-                Origin::make("include01.rapt", 0..22,),
+                Instruction::include("write01", []),
+                Origin::make("include01.rapt", 0..15),
             ),
             Item::program(
                 [Item::statement(
                     Instruction::write("/foo", "bar"),
-                    Origin::make("write01.rapt", 0..16)
+                    Origin::make("write01.rinc", 0..16)
                 )],
                 context! {},
-                "write01.rapt",
+                "write01.rinc",
             )
         ]
     );
@@ -234,26 +234,26 @@ fn parse_include02() -> RaptorResult<()> {
         &program.code,
         &[
             Item::statement(
-                Instruction::include("include01.rapt", []),
-                Origin::make("include02.rapt", 0..24),
+                Instruction::include("include01", []),
+                Origin::make("include02.rapt", 0..17),
             ),
             Item::program(
                 [
                     Item::statement(
-                        Instruction::include("write01.rapt", []),
-                        Origin::make("include01.rapt", 0..22),
+                        Instruction::include("write01", []),
+                        Origin::make("include01.rinc", 0..15),
                     ),
                     Item::program(
                         [Item::statement(
                             Instruction::write("/foo", "bar"),
-                            Origin::make("write01.rapt", 0..16)
+                            Origin::make("write01.rinc", 0..16)
                         )],
                         context! {},
-                        "write01.rapt",
+                        "write01.rinc",
                     )
                 ],
                 context! {},
-                "include01.rapt",
+                "include01.rinc",
             )
         ]
     );
@@ -269,8 +269,8 @@ fn parse_include03() -> RaptorResult<()> {
         &program.code,
         &[
             Item::statement(
-                Instruction::include("include/run01.rinc", []),
-                Origin::make("include03.rapt", 0..28),
+                Instruction::include("include.run01", []),
+                Origin::make("include03.rapt", 0..21),
             ),
             Item::program(
                 [Item::statement(
@@ -294,14 +294,14 @@ fn parse_include04() -> RaptorResult<()> {
         &program.code,
         &[
             Item::statement(
-                Instruction::include("include/include01.rinc", []),
-                Origin::make("include04.rapt", 0..32),
+                Instruction::include("include.include01", []),
+                Origin::make("include04.rapt", 0..25),
             ),
             Item::program(
                 [
                     Item::statement(
-                        Instruction::include("run01.rinc", []),
-                        Origin::make("include/include01.rinc", 0..20),
+                        Instruction::include("run01", []),
+                        Origin::make("include/include01.rinc", 0..13),
                     ),
                     Item::program(
                         [Item::statement(
