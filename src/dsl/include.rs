@@ -68,7 +68,7 @@ impl IncludeArg {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct InstInclude {
-    pub src: String,
+    pub src: ModuleName,
     pub args: Vec<IncludeArg>,
 }
 
@@ -127,7 +127,7 @@ impl Display for IncludeArgValue {
 impl Display for InstInclude {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.keyword("INCLUDE")?;
-        f.src(&self.src)?;
+        f.src(&self.src.to_string())?;
         for arg in &self.args {
             f.include_arg(arg)?;
         }

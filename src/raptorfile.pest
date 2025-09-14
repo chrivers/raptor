@@ -165,7 +165,7 @@ MKDIR = {
 
 INCLUDE = {
     "INCLUDE"
-    ~ filename
+    ~ module_name
     ~ include_args
 }
 

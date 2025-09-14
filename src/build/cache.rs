@@ -62,7 +62,7 @@ impl Cacher {
                 }
 
                 Instruction::Include(inst) => {
-                    data.insert(prog.path_for(&inst.src)?);
+                    data.insert(prog.path_for(inst.src.to_include_path())?);
                 }
 
                 Instruction::Invoke(_)

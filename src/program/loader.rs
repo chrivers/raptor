@@ -63,7 +63,7 @@ impl Loader<'_> {
             }
 
             let map = inst.args.resolve_args(ctx)?;
-            let src = &origin.basedir()?.join(inst.src);
+            let src = &origin.basedir()?.join(inst.src.to_include_path());
 
             self.origins.push(origin);
             let program = self.parse_template(src, Value::from(map))?;

@@ -380,7 +380,7 @@ impl RaptorFileParser {
     fn INCLUDE(input: Node) -> Result<InstInclude> {
         match_nodes!(
             input.into_children();
-            [filename(src), include_args(args)] => {
+            [module_name(src), include_args(args)] => {
                 Ok(InstInclude {
                     src,
                     args,

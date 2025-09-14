@@ -1,8 +1,11 @@
 use std::fmt::{Debug, Display};
 
-use crate::dsl::{
-    Chown, IncludeArg, InstCopy, InstEnv, InstEnvAssign, InstFrom, InstInclude, InstInvoke,
-    InstMkdir, InstMount, InstRender, InstRun, InstWorkdir, InstWrite,
+use crate::{
+    dsl::{
+        Chown, IncludeArg, InstCopy, InstEnv, InstEnvAssign, InstFrom, InstInclude, InstInvoke,
+        InstMkdir, InstMount, InstRender, InstRun, InstWorkdir, InstWrite,
+    },
+    util::module_name::ModuleName,
 };
 
 #[derive(Clone, Hash, PartialEq, Eq)]
@@ -40,7 +43,7 @@ impl Instruction {
 
     pub fn include(src: impl AsRef<str>, args: impl IntoIterator<Item = IncludeArg>) -> Self {
         Self::Include(InstInclude {
-            src: src.as_ref().to_string(),
+            src: ModuleName::from(src.as_ref()),
             args: args.into_iter().collect(),
         })
     }
