@@ -1,8 +1,0 @@
-error: unexpected identifier, expected in
- --> tests/cases/error/error-invalid-jinja.rapt:2:9
-  |
-1 | # line 1
-2 | $ for x inx
-  |         ^^^ syntax error: unexpected identifier, expected in (in tests/cases/error/error-invalid-jinja.rapt:2)
-3 | # line 3
-  |

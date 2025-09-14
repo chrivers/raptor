@@ -49,7 +49,7 @@ fn main() -> RaptorResult<()> {
     for dent in cases {
         let dent = dent?;
         let file_name = dent.file_name();
-        if !file_name.ends_with(".rapt") || !file_name.starts_with("error-") {
+        if !file_name.ends_with(".rapt") || !file_name.starts_with("error_") {
             continue;
         }
         let refpath = dent.path().with_extension("out");

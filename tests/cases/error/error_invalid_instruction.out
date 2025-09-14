@@ -1,5 +1,5 @@
 error: parsing error: expected FILE
- --> tests/cases/error/error-invalid-instruction.rapt:1:1
+ --> tests/cases/error/error_invalid_instruction.rapt:1:1
   |
 1 | FLORG --foo "bar"
   | ^^^^^^^^^^^^^^^^^ expected FILE

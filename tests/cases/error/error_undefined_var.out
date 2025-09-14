@@ -1,0 +1,10 @@
+error: undefined value
+ --> tests/cases/error/error_undefined_var.rapt:2:12
+  |
+1 | # line 1
+2 | $ for x in missing
+  |            ^^^^^^^ undefined value (in tests/cases/error/error_undefined_var.rapt:2)
+3 | RUN echo {{x}}
+4 | $ endfor
+5 | # line 3
+  |
