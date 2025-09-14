@@ -44,3 +44,48 @@ impl From<&str> for ModuleName {
         Self::new(value.split('.').map(ToString::to_string).collect())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::util::module_name::ModuleName;
+
+    #[test]
+    fn basic() {
+        let name = ModuleName::new(vec![String::from("a"), String::from("b")]);
+
+        assert_eq!(name.to_program_path(), "a/b.rapt");
+        assert_eq!(name.to_include_path(), "a/b.rinc");
+        assert_eq!(name.parts(), &["a", "b"]);
+    }
+
+    #[test]
+    fn format() {
+        let name = ModuleName::new(vec![String::from("a"), String::from("b")]);
+
+        assert_eq!(format!("{name}"), "a.b");
+    }
+
+    #[test]
+    fn from0() {
+        let name = ModuleName::from("");
+        let expected: &[&str] = &[];
+
+        assert_eq!(name.parts(), expected);
+    }
+
+    #[test]
+    fn from1() {
+        let name = ModuleName::from("a");
+        let expected: &[&str] = &["a"];
+
+        assert_eq!(name.parts(), expected);
+    }
+
+    #[test]
+    fn from3() {
+        let name = ModuleName::from("a.b.c");
+        let expected: &[&str] = &["a", "b", "c"];
+
+        assert_eq!(name.parts(), expected);
+    }
+}
