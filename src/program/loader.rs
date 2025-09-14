@@ -51,10 +51,10 @@ impl Loader<'_> {
         &self.base
     }
 
-    fn handle(&mut self, stmt: Statement, ctx: &Value) -> RaptorResult<Item> {
+    fn handle(&mut self, res: &mut Vec<Item>, stmt: Statement, ctx: &Value) -> RaptorResult<()> {
         let Statement { inst, origin } = stmt;
 
-        if let Instruction::Include(inst) = inst {
+        if let Instruction::Include(include) = &inst {
             if self.origins.len() >= MAX_NESTED_INCLUDE {
                 return Err(RaptorError::ScriptError(
                     "Too many nested includes".into(),
@@ -62,17 +62,20 @@ impl Loader<'_> {
                 ));
             }
 
-            let map = inst.args.resolve_args(ctx)?;
-            let src = &origin.basedir()?.join(inst.src.to_include_path());
+            let map = include.args.clone().resolve_args(ctx)?;
+            let src = &origin.basedir()?.join(include.src.to_include_path());
 
-            self.origins.push(origin);
+            self.origins.push(origin.clone());
             let program = self.parse_template(src, Value::from(map))?;
             self.origins.pop();
 
-            Ok(Item::Program(program))
+            res.push(Item::Statement(Statement { inst, origin }));
+            res.push(Item::Program(program));
         } else {
-            Ok(Item::Statement(Statement { inst, origin }))
+            res.push(Item::Statement(Statement { inst, origin }));
         }
+
+        Ok(())
     }
 
     fn show_include_stack(&self, origins: &[Origin]) {
@@ -196,11 +199,7 @@ impl Loader<'_> {
         let mut res = vec![];
 
         for stmt in statements {
-            if matches!(stmt.inst, Instruction::Include(_)) {
-                res.push(Item::Statement(stmt.clone()));
-            }
-
-            res.push(self.handle(stmt, &ctx)?);
+            self.handle(&mut res, stmt, &ctx)?;
         }
 
         Ok(Program::new(res, ctx, path.as_ref().into()))
