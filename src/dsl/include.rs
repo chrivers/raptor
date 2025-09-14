@@ -6,24 +6,25 @@ use serde::Serialize;
 
 use crate::dsl::Origin;
 use crate::print::Theme;
+use crate::util::module_name::ModuleName;
 use crate::{RaptorError, RaptorResult};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Lookup {
-    pub path: Vec<String>,
+    pub path: ModuleName,
     pub origin: Origin,
 }
 
 impl Lookup {
     #[must_use]
-    pub const fn new(path: Vec<String>, origin: Origin) -> Self {
+    pub const fn new(path: ModuleName, origin: Origin) -> Self {
         Self { path, origin }
     }
 }
 
 impl Display for Lookup {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", &self.path.join("."))
+        write!(f, "{}", &self.path)
     }
 }
 
@@ -51,7 +52,7 @@ impl IncludeArg {
         Self {
             name: name.as_ref().to_string(),
             value: IncludeArgValue::Lookup(Lookup {
-                path: path.iter().map(ToString::to_string).collect(),
+                path: ModuleName::new(path.iter().map(ToString::to_string).collect()),
                 origin,
             }),
         }
@@ -75,14 +76,14 @@ impl IncludeArgValue {
     pub fn resolve(self, ctx: &Value) -> RaptorResult<Value> {
         match self {
             Self::Lookup(lookup) => {
-                let mut val = ctx.get_attr(&lookup.path[0])?;
+                let mut val = ctx.get_attr(&lookup.path.parts()[0])?;
                 if val.is_undefined() {
                     return Err(RaptorError::UndefinedVarError(
-                        lookup.path[0].to_string(),
+                        lookup.path.parts()[0].to_string(),
                         lookup.origin,
                     ));
                 }
-                for name in &lookup.path[1..] {
+                for name in &lookup.path.parts()[1..] {
                     val = val.get_attr(name)?;
                     if val.is_undefined() {
                         return Err(RaptorError::UndefinedVarError(name.into(), lookup.origin));

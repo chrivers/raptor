@@ -331,7 +331,7 @@ impl RaptorFileParser {
             [bool(b)] => IncludeArgValue::Value(b.into()),
             [number(b)] => IncludeArgValue::Value(b.into()),
             [string(b)] => IncludeArgValue::Value(b.into()),
-            [ident(b)..] => IncludeArgValue::Lookup(Lookup::new(b.collect(), origin)),
+            [module_name(b)] => IncludeArgValue::Lookup(Lookup::new(b, origin)),
         ))
     }
 
@@ -345,7 +345,7 @@ impl RaptorFileParser {
             },
             [ident(id)] => IncludeArg {
                 name: id.clone(),
-                value: IncludeArgValue::Lookup(Lookup::new(vec![id], origin)),
+                value: IncludeArgValue::Lookup(Lookup::new(ModuleName::new(vec![id]), origin)),
             }
         ))
     }

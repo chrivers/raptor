@@ -104,7 +104,7 @@ number = {
 }
 
 value = {
-    bool | number | identpath | string
+    bool | number | module_name | string
 }
 
 include_arg = ${
