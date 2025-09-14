@@ -1,4 +1,6 @@
+use std::env;
 use std::io::Read;
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 use camino::Utf8Path;
@@ -6,12 +8,24 @@ use libtest_mimic::{Arguments, Trial};
 use pretty_assertions::assert_eq;
 use raptor::RaptorResult;
 
+// The function `cargo_dir` is copied from cargo source code (dual Apache / MIT license)
+pub fn cargo_dir() -> PathBuf {
+    env::var_os("CARGO_BIN_PATH")
+        .map(PathBuf::from)
+        .or_else(|| {
+            env::current_exe().ok().map(|mut path| {
+                path.pop();
+                if path.ends_with("deps") {
+                    path.pop();
+                }
+                path
+            })
+        })
+        .unwrap_or_else(|| panic!("CARGO_BIN_PATH wasn't set. Cannot continue running test"))
+}
+
 fn run_raptor(filename: &Utf8Path) -> RaptorResult<String> {
-    let mut proc = Command::new("cargo")
-        .arg("run")
-        .arg("-q")
-        .arg("--bin")
-        .arg("raptor")
+    let mut proc = Command::new(cargo_dir().join("raptor"))
         .arg("build")
         .arg(filename)
         .stdin(Stdio::null())
