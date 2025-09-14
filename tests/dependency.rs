@@ -162,7 +162,7 @@ fn dep_from2() -> RaptorResult<()> {
 #[test]
 fn dep_from3() -> RaptorResult<()> {
     let mut test = Tester::setup(["FROM a"], |test| {
-        test.write("a.rapt", "INCLUDE \"b.rinc\"")?;
+        test.write("a.rapt", "INCLUDE b")?;
         test.write("b.rinc", "")
     })?;
 
@@ -186,7 +186,7 @@ fn dep_self() -> RaptorResult<()> {
 
 #[test]
 fn dep_include() -> RaptorResult<()> {
-    let mut test = Tester::setup(["INCLUDE \"a.rinc\""], |test| test.write("a.rinc", ""))?;
+    let mut test = Tester::setup(["INCLUDE a"], |test| test.write("a.rinc", ""))?;
 
     test.step("changing include file", |test| test.touch("a.rinc"))?;
 
