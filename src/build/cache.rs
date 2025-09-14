@@ -19,10 +19,8 @@ impl Cacher {
 
         if let Some(from) = program.from() {
             match from {
-                FromSource::Raptor(name) => {
-                    let path = format!("{name}.rapt");
-                    let base = program.path.try_parent()?;
-                    let filename = base.join(path);
+                FromSource::Raptor(from) => {
+                    let filename = program.path.try_parent()?.join(from.to_program_path());
 
                     let prog = builder.load(filename)?;
                     Self::cache_key(&prog, builder)?.hash(&mut state);

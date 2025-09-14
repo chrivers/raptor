@@ -10,6 +10,7 @@ use crate::dsl::{
     Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
 use crate::parser::{RaptorFileParser, Rule};
+use crate::util::module_name::ModuleName;
 use crate::RaptorResult;
 
 #[derive(Clone, Debug)]
@@ -264,10 +265,17 @@ impl RaptorFileParser {
         Ok(input.as_str().to_string())
     }
 
-    fn raptor_source(input: Node) -> Result<String> {
+    fn module_name(input: Node) -> Result<ModuleName> {
         Ok(match_nodes!(
             input.into_children();
-            [ident(i), include_args(_)] => i.as_str().to_string()
+            [ident(i)..] => ModuleName::new(i.collect())
+        ))
+    }
+
+    fn raptor_source(input: Node) -> Result<ModuleName> {
+        Ok(match_nodes!(
+            input.into_children();
+            [module_name(from), include_args(_)] => from
         ))
     }
 

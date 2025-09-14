@@ -1,10 +1,11 @@
 use std::fmt::{self, Debug, Display};
 
 use crate::print::Theme;
+use crate::util::module_name::ModuleName;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FromSource {
-    Raptor(String),
+    Raptor(ModuleName),
     Docker(String),
 }
 

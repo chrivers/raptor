@@ -123,8 +123,12 @@ docker_source = {
     "docker" ~ "://" ~ string
 }
 
+module_name = {
+    identpath
+}
+
 raptor_source = {
-    ident ~ include_args
+    module_name ~ include_args
 }
 
 from_source = {

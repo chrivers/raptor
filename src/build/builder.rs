@@ -181,10 +181,8 @@ impl<'a> RaptorBuilder<'a> {
                 visitor(BuildTarget::DockerSource(source))?;
             }
             Some(FromSource::Raptor(from)) => {
-                let from = format!("{from}.rapt");
-                let base = program.path.try_parent()?;
+                let filename = program.path.try_parent()?.join(from.to_program_path());
 
-                let filename = base.join(from);
                 let fromprog = self.load(filename)?;
 
                 self.recurse(fromprog, visitor)?;
