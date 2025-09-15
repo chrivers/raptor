@@ -18,7 +18,7 @@ use uuid::Uuid;
 #[command(about, long_about = None, styles=raptor::util::clapcolor::style())]
 struct Cli {
     /// Make no changes (print what would have been done)
-    #[arg(short = 'n', long)]
+    #[arg(short = 'n', long, global = true)]
     no_act: bool,
 
     #[command(subcommand)]
