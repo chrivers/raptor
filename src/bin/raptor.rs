@@ -53,15 +53,15 @@ enum Mode {
         targets: Vec<Utf8PathBuf>,
     },
 
-    /// Enter mode: run a shell or command inside the layer
+    /// Run mode: run a shell or command inside the layer
     #[command(alias = "e")]
     #[command(after_help = [
         "  If <state-dir> is specified, any changes made in the session will be saved there.",
         "",
         "  If <state-dir> is not specified, all changes will be lost."
     ].join("\n"))]
-    Enter {
-        /// Target to enter
+    Run {
+        /// Target to run
         #[arg(value_name = "target")]
         target: Utf8PathBuf,
 
@@ -90,11 +90,11 @@ impl Mode {
     }
 
     const fn build(&self) -> bool {
-        matches!(self, Self::Build { .. } | Self::Enter { .. })
+        matches!(self, Self::Build { .. } | Self::Run { .. })
     }
 
-    const fn enter(&self) -> bool {
-        matches!(self, Self::Enter { .. })
+    const fn run(&self) -> bool {
+        matches!(self, Self::Run { .. })
     }
 
     const fn check(&self) -> bool {
@@ -108,7 +108,7 @@ impl Mode {
     fn mounts(&self) -> HashMap<&str, &str> {
         let mut res = HashMap::new();
 
-        let Self::Enter { mount, .. } = self else {
+        let Self::Run { mount, .. } = self else {
             return res;
         };
 
@@ -172,7 +172,7 @@ fn raptor() -> RaptorResult<()> {
             }
         }
 
-        Mode::Enter {
+        Mode::Run {
             target,
             state,
             args,
