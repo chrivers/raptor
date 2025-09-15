@@ -4,7 +4,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
 use minijinja::Value;
 
-use crate::dsl::{FromSource, Instruction, Item, Statement};
+use crate::dsl::{FromSource, InstMount, Instruction, Item, Statement};
 use crate::util::SafeParent;
 use crate::RaptorResult;
 
@@ -49,6 +49,23 @@ impl Program {
         }
 
         None
+    }
+
+    #[must_use]
+    pub fn mounts(&self) -> Vec<&InstMount> {
+        let mut mounts = vec![];
+
+        for item in &self.code {
+            if let Item::Statement(Statement {
+                inst: Instruction::Mount(inst),
+                ..
+            }) = item
+            {
+                mounts.push(inst);
+            }
+        }
+
+        mounts
     }
 
     pub fn path_for(&self, path: impl AsRef<Utf8Path>) -> RaptorResult<Utf8PathBuf> {
