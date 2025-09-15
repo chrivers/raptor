@@ -3,7 +3,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use std::os::unix::fs::MetadataExt;
 use std::sync::Arc;
 
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use itertools::Itertools;
 
 use crate::build::RaptorBuilder;
@@ -109,12 +109,12 @@ impl LayerInfo {
     }
 
     #[must_use]
-    pub fn work_path(&self) -> String {
-        format!("layers/build-{}", self.id())
+    pub fn work_path(&self) -> Utf8PathBuf {
+        Utf8Path::new("layers").join(format!("build-{}", self.id()))
     }
 
     #[must_use]
-    pub fn done_path(&self) -> String {
-        format!("layers/{}", self.id())
+    pub fn done_path(&self) -> Utf8PathBuf {
+        Utf8Path::new("layers").join(self.id())
     }
 }

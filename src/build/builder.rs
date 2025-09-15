@@ -235,7 +235,7 @@ impl<'a> RaptorBuilder<'a> {
                     "{} {}: {}",
                     "Building".bright_white(),
                     layer_name.yellow(),
-                    layer.work_path().green()
+                    layer.work_path().as_str().green()
                 );
 
                 if self.dry_run {
@@ -248,7 +248,7 @@ impl<'a> RaptorBuilder<'a> {
                 }
             }
 
-            layers.push(Utf8PathBuf::from(done_path));
+            layers.push(done_path);
         }
 
         Ok(layers)
