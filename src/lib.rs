@@ -16,7 +16,7 @@ use std::sync::mpsc;
 
 use camino::Utf8PathBuf;
 
-use crate::dsl::Origin;
+use crate::dsl::{InstMount, Origin};
 use crate::parser::Rule;
 
 #[derive(thiserror::Error, Debug)]
@@ -65,6 +65,9 @@ pub enum RaptorError {
 
     #[error("process exit status {0}")]
     SandboxRunError(ExitStatus),
+
+    #[error("Required mount [{}] not specified", .0.name)]
+    MountMissing(InstMount),
 }
 
 impl From<pest_consume::Error<Rule>> for RaptorError {
@@ -92,6 +95,7 @@ impl RaptorError {
             Self::SendError(_) => "Send error",
             Self::DockerError(_) => "Docker error",
             Self::FalconError(_) => "Falcon error",
+            Self::MountMissing(_) => "Missing mount error",
         }
     }
 }
