@@ -24,7 +24,28 @@ impl Sandbox {
     /* TODO: ugly hack, but works for testing */
     pub const FALCON_PATH: &str = "target/x86_64-unknown-linux-musl/release/falcon";
 
+    #[must_use]
+    pub fn builder() -> SpawnBuilder {
+        SpawnBuilder::new()
+            .quiet(true)
+            .sudo(true)
+            .suppress_sync(true)
+            .link_journal(LinkJournal::No)
+            .resolv_conf(ResolvConf::Off)
+            .timezone(Timezone::Off)
+            .settings(Settings::False)
+            .console(ConsoleMode::ReadOnly)
+    }
+
     pub fn new(layers: &[impl AsRef<Utf8Path>], rootdir: &Utf8Path) -> RaptorResult<Self> {
+        Self::custom(Self::builder(), layers, rootdir)
+    }
+
+    pub fn custom(
+        mut spawn: SpawnBuilder,
+        layers: &[impl AsRef<Utf8Path>],
+        rootdir: &Utf8Path,
+    ) -> RaptorResult<Self> {
         /*
         For the sandbox, we need two directories, "temp" and "conn".
 
@@ -102,16 +123,8 @@ impl Sandbox {
 
         let listen = UnixListener::bind(ext_socket_path)?;
 
-        let spawn = SpawnBuilder::new()
-            .quiet(true)
-            .sudo(true)
-            .suppress_sync(true)
+        spawn = spawn
             .uuid(uuid)
-            .link_journal(LinkJournal::No)
-            .resolv_conf(ResolvConf::Off)
-            .timezone(Timezone::Off)
-            .settings(Settings::False)
-            .console(ConsoleMode::ReadOnly)
             .root_overlay(tempdir.path())
             .root_overlays(layers)
             .root_overlay(rootdir)
