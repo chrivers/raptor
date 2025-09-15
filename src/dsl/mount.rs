@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use camino::Utf8PathBuf;
 use colored::Colorize;
 
 use crate::print::Theme;
@@ -20,7 +21,7 @@ pub struct MountOptions {
 pub struct InstMount {
     pub opts: MountOptions,
     pub name: String,
-    pub dest: String,
+    pub dest: Utf8PathBuf,
 }
 
 impl Display for InstMount {

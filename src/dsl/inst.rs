@@ -1,5 +1,7 @@
 use std::fmt::{Debug, Display};
 
+use camino::Utf8Path;
+
 use crate::{
     dsl::{
         Chown, IncludeArg, InstCopy, InstEnv, InstEnvAssign, InstFrom, InstInclude, InstInvoke,
@@ -48,9 +50,9 @@ impl Instruction {
         })
     }
 
-    pub fn workdir(dir: impl AsRef<str>) -> Self {
+    pub fn workdir(dir: impl AsRef<Utf8Path>) -> Self {
         Self::Workdir(InstWorkdir {
-            dir: dir.as_ref().to_string(),
+            dir: dir.as_ref().to_path_buf(),
         })
     }
 
@@ -67,27 +69,27 @@ impl Instruction {
         })
     }
 
-    pub fn copy(srcs: &[impl AsRef<str>], dest: impl AsRef<str>) -> Self {
+    pub fn copy(srcs: &[impl AsRef<Utf8Path>], dest: impl AsRef<str>) -> Self {
         Self::Copy(InstCopy {
             chmod: None,
             chown: None,
-            srcs: srcs.iter().map(|s| s.as_ref().to_string()).collect(),
+            srcs: srcs.iter().map(|s| s.as_ref().to_path_buf()).collect(),
             dest: dest.as_ref().into(),
         })
     }
 
-    pub fn write(dest: impl AsRef<str>, body: impl AsRef<str>) -> Self {
+    pub fn write(dest: impl AsRef<Utf8Path>, body: impl AsRef<str>) -> Self {
         Self::Write(InstWrite {
-            dest: dest.as_ref().to_string(),
+            dest: dest.as_ref().to_path_buf(),
             body: body.as_ref().to_string(),
             chmod: None,
             chown: None,
         })
     }
 
-    pub fn mkdir(dest: impl AsRef<str>) -> Self {
+    pub fn mkdir(dest: impl AsRef<Utf8Path>) -> Self {
         Self::Mkdir(InstMkdir {
-            dest: dest.as_ref().to_string(),
+            dest: dest.as_ref().to_path_buf(),
             chmod: None,
             chown: None,
             parents: false,
@@ -95,13 +97,13 @@ impl Instruction {
     }
 
     pub fn render(
-        src: impl AsRef<str>,
-        dest: impl AsRef<str>,
+        src: impl AsRef<Utf8Path>,
+        dest: impl AsRef<Utf8Path>,
         args: impl IntoIterator<Item = IncludeArg>,
     ) -> Self {
         Self::Render(InstRender {
-            src: src.as_ref().to_string(),
-            dest: dest.as_ref().to_string(),
+            src: src.as_ref().to_path_buf(),
+            dest: dest.as_ref().to_path_buf(),
             args: args.into_iter().collect(),
             chmod: None,
             chown: None,

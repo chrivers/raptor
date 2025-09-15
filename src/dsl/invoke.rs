@@ -1,5 +1,7 @@
 use std::fmt::{self, Debug, Display};
 
+use camino::Utf8Path;
+
 use crate::print::Theme;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -11,7 +13,7 @@ impl Display for InstInvoke {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.keyword("INVOKE")?;
         for arg in &self.args {
-            f.src(arg)?;
+            f.src(Utf8Path::new(arg))?;
         }
         Ok(())
     }

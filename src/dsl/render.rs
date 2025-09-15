@@ -1,12 +1,14 @@
 use std::fmt::{Debug, Display};
 
+use camino::Utf8PathBuf;
+
 use crate::dsl::{Chown, IncludeArg};
 use crate::print::Theme;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct InstRender {
-    pub src: String,
-    pub dest: String,
+    pub src: Utf8PathBuf,
+    pub dest: Utf8PathBuf,
     pub chmod: Option<u32>,
     pub chown: Option<Chown>,
     pub args: Vec<IncludeArg>,

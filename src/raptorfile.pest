@@ -176,7 +176,7 @@ INVOKE = {
 
 RUN = {
     "RUN"
-    ~ filename+
+    ~ string+
 }
 
 FROM = {

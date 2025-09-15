@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Display};
 
+use camino::Utf8PathBuf;
 use colored::Colorize;
 
 use crate::dsl::Chown;
@@ -7,7 +8,7 @@ use crate::print::Theme;
 
 #[derive(Clone, Hash, Debug, PartialEq, Eq)]
 pub struct InstMkdir {
-    pub dest: String,
+    pub dest: Utf8PathBuf,
     pub chmod: Option<u32>,
     pub chown: Option<Chown>,
     pub parents: bool,

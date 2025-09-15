@@ -86,11 +86,11 @@ impl RaptorFileParser {
         )?)
     }
 
-    fn filename(input: Node) -> Result<String> {
+    fn filename(input: Node) -> Result<Utf8PathBuf> {
         Ok(match_nodes!(
             input.into_children();
-            [string(s)] => Ok(s),
-            [literal_string(s)] => Ok(s),
+            [string(s)] => Ok(s.into()),
+            [literal_string(s)] => Ok(s.into()),
         )?)
     }
 
@@ -149,7 +149,7 @@ impl RaptorFileParser {
     }
 
     fn COPY(input: Node) -> Result<InstCopy> {
-        let mut srcs: Vec<String>;
+        let mut srcs: Vec<Utf8PathBuf>;
         let chmod;
         let chown;
 
@@ -303,7 +303,7 @@ impl RaptorFileParser {
 
     fn RUN(input: Node) -> Result<InstRun> {
         Ok(match_nodes!(input.into_children();
-        [filename(i)..] => InstRun {
+        [string(i)..] => InstRun {
             run: i.collect(),
         }))
     }

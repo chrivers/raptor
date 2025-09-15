@@ -1,11 +1,13 @@
 use std::fmt::{Debug, Display};
 
+use camino::Utf8PathBuf;
+
 use crate::dsl::Chown;
 use crate::print::Theme;
 
 #[derive(Clone, Hash, Debug, PartialEq, Eq)]
 pub struct InstWrite {
-    pub dest: String,
+    pub dest: Utf8PathBuf,
     pub body: String,
     pub chmod: Option<u32>,
     pub chown: Option<Chown>,

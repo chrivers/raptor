@@ -107,7 +107,7 @@ impl Executor {
             }
 
             Instruction::Workdir(inst) => {
-                client.chdir(&inst.dir)?;
+                client.chdir(inst.dir.as_str())?;
             }
         }
 

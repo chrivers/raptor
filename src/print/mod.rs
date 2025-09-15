@@ -1,3 +1,4 @@
+use camino::Utf8Path;
 use colored::Colorize;
 
 use std::fmt::{Debug, Formatter, Result};
@@ -9,8 +10,8 @@ pub trait Theme {
     fn chmod(&mut self, chmod: &Option<u32>) -> Result;
     fn chown(&mut self, chown: &Option<Chown>) -> Result;
     fn from(&mut self, src: &FromSource) -> Result;
-    fn src(&mut self, src: &str) -> Result;
-    fn dest(&mut self, dest: &str) -> Result;
+    fn src(&mut self, src: &Utf8Path) -> Result;
+    fn dest(&mut self, dest: &Utf8Path) -> Result;
     fn include_arg(&mut self, arg: &IncludeArg) -> Result;
     fn env_arg(&mut self, arg: &InstEnvAssign) -> Result;
     fn name(&mut self, name: &str) -> Result;
@@ -50,11 +51,11 @@ impl Theme for Formatter<'_> {
         write!(self, " {}", format!("{src}").green())
     }
 
-    fn src(&mut self, src: &str) -> Result {
+    fn src(&mut self, src: &Utf8Path) -> Result {
         write!(self, " {}", format!("{src:?}").green())
     }
 
-    fn dest(&mut self, dest: &str) -> Result {
+    fn dest(&mut self, dest: &Utf8Path) -> Result {
         write!(self, " {}", format!("{dest:?}").bright_green())
     }
 

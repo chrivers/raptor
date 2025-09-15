@@ -1,12 +1,14 @@
 use std::fmt::Display;
 
+use camino::Utf8PathBuf;
+
 use crate::dsl::Chown;
 use crate::print::Theme;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct InstCopy {
-    pub srcs: Vec<String>,
-    pub dest: String,
+    pub srcs: Vec<Utf8PathBuf>,
+    pub dest: Utf8PathBuf,
     pub chmod: Option<u32>,
     pub chown: Option<Chown>,
 }

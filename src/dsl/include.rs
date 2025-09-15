@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{self, Debug, Display};
 
+use camino::Utf8Path;
 use minijinja::Value;
 use serde::Serialize;
 
@@ -127,7 +128,7 @@ impl Display for IncludeArgValue {
 impl Display for InstInclude {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.keyword("INCLUDE")?;
-        f.src(&self.src.to_string())?;
+        f.src(Utf8Path::new(&self.src.to_string()))?;
         for arg in &self.args {
             f.include_arg(arg)?;
         }
