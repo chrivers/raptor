@@ -99,7 +99,8 @@ impl BuildTarget {
     fn build(&self, loader: &Loader, layers: &[Utf8PathBuf], layer: LayerInfo) -> RaptorResult<()> {
         match self {
             Self::Program(prog) => {
-                let sandbox = Sandbox::new(layers, Utf8Path::new(&layer.work_path()))?;
+                let rootdir = layer.work_path();
+                let sandbox = Sandbox::new(layers, Utf8Path::new(&rootdir))?;
 
                 let mut exec = Executor::new(sandbox, layer);
 
@@ -205,7 +206,7 @@ impl<'a> RaptorBuilder<'a> {
         Ok(data)
     }
 
-    pub fn build(&mut self, program: Arc<Program>) -> RaptorResult<()> {
+    pub fn build(&mut self, program: Arc<Program>) -> RaptorResult<Vec<Utf8PathBuf>> {
         match self.run_build(program) {
             Ok(res) => Ok(res),
             Err(err) => {
@@ -215,7 +216,7 @@ impl<'a> RaptorBuilder<'a> {
         }
     }
 
-    fn run_build(&mut self, program: Arc<Program>) -> RaptorResult<()> {
+    fn run_build(&mut self, program: Arc<Program>) -> RaptorResult<Vec<Utf8PathBuf>> {
         let programs = self.stack(program)?;
 
         let mut layers: Vec<Utf8PathBuf> = vec![];
@@ -250,6 +251,6 @@ impl<'a> RaptorBuilder<'a> {
             layers.push(Utf8PathBuf::from(done_path));
         }
 
-        Ok(())
+        Ok(layers)
     }
 }
