@@ -87,6 +87,8 @@ pub struct SpawnBuilder {
     timezone: Option<Timezone>,
     directory: Option<Utf8PathBuf>,
     root_overlay: Vec<Utf8PathBuf>,
+    overlay: Vec<Vec<Utf8PathBuf>>,
+    overlay_ro: Vec<Vec<Utf8PathBuf>>,
     bind: Vec<(Utf8PathBuf, Utf8PathBuf)>,
     bind_ro: Vec<(Utf8PathBuf, Utf8PathBuf)>,
     environment: BTreeMap<String, String>,
@@ -205,6 +207,36 @@ impl SpawnBuilder {
         self.directory = Some(path.to_path_buf());
         self
     }
+
+    #[must_use]
+    pub fn overlay(mut self, source: &[impl AsRef<Utf8Path>], dest: impl AsRef<Utf8Path>) -> Self {
+        let mut layers: Vec<Utf8PathBuf> = source
+            .iter()
+            .map(AsRef::as_ref)
+            .map(Utf8Path::to_path_buf)
+            .collect();
+        layers.push(dest.as_ref().to_path_buf());
+
+        self.overlay.push(layers);
+        self
+    }
+
+    #[must_use]
+    pub fn overlay_ro(
+        mut self,
+        source: &[impl AsRef<Utf8Path>],
+        dest: impl AsRef<Utf8Path>,
+    ) -> Self {
+        let mut layers: Vec<Utf8PathBuf> = source
+            .iter()
+            .map(AsRef::as_ref)
+            .map(Utf8Path::to_path_buf)
+            .collect();
+        layers.push(dest.as_ref().to_path_buf());
+
+        self.overlay_ro.push(layers);
+        self
+    }
 }
 
 impl SpawnBuilder {
@@ -265,6 +297,30 @@ impl SpawnBuilder {
             overlays.push("/".into());
 
             res.push(overlays.join(":"));
+        }
+
+        for overlay in &self.overlay {
+            res.push("--overlay".into());
+
+            let overlays = overlay
+                .iter()
+                .map(Utf8PathBuf::as_path)
+                .map(escape_colon)
+                .join(":");
+
+            res.push(overlays);
+        }
+
+        for overlay in &self.overlay_ro {
+            res.push("--overlay-ro".into());
+
+            let overlays = overlay
+                .iter()
+                .map(Utf8PathBuf::as_path)
+                .map(escape_colon)
+                .join(":");
+
+            res.push(overlays);
         }
 
         for (src, dst) in &self.bind {
