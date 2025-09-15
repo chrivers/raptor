@@ -1,17 +1,17 @@
+use std::collections::HashMap;
 use std::io::{stdout, IsTerminal};
 
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use camino_tempfile::Builder;
 use clap::Parser as _;
 use colored::Colorize;
 use log::{debug, error, info};
 
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
+use raptor::dsl::MountType;
 use raptor::program::Loader;
-use raptor::sandbox::{
-    ConsoleMode, LinkJournal, ResolvConf, Sandbox, Settings, SpawnBuilder, Timezone,
-};
-use raptor::RaptorResult;
+use raptor::sandbox::{ConsoleMode, Sandbox};
+use raptor::{RaptorError, RaptorResult};
 use uuid::Uuid;
 
 #[derive(clap::Parser, Debug)]
@@ -70,6 +70,9 @@ enum Mode {
         #[arg(value_name = "state-dir")]
         state: Option<Utf8PathBuf>,
 
+        #[arg(short = 'M', long, num_args = 2, action = clap::ArgAction::Append)]
+        mount: Vec<String>,
+
         /// Command arguments (defaults to interactive shell if unset)
         #[arg(value_name = "arguments")]
         args: Vec<String>,
@@ -100,6 +103,20 @@ impl Mode {
 
     const fn show(&self) -> bool {
         matches!(self, Self::Show { .. })
+    }
+
+    fn mounts(&self) -> HashMap<&str, &str> {
+        let mut res = HashMap::new();
+
+        let Self::Enter { mount, .. } = self else {
+            return res;
+        };
+
+        for kv in mount.chunks_exact(2) {
+            res.insert(&kv[0], &kv[1]);
+        }
+
+        res
     }
 }
 
@@ -138,7 +155,9 @@ fn raptor() -> RaptorResult<()> {
 
     let mut builder = RaptorBuilder::new(loader, args.no_act);
 
-    match args.mode {
+    let mounts = args.mode.mounts();
+
+    match &args.mode {
         Mode::Dump { ref targets } | Mode::Check { ref targets } | Mode::Build { ref targets } => {
             for file in targets {
                 let program = builder.load(file)?;
@@ -157,6 +176,7 @@ fn raptor() -> RaptorResult<()> {
             target,
             state,
             args,
+            ..
         } => {
             let program = builder.load(target)?;
 
@@ -166,7 +186,7 @@ fn raptor() -> RaptorResult<()> {
 
             let mut layers = vec![];
 
-            for layer in builder.stack(program)? {
+            for layer in builder.stack(program.clone())? {
                 layers.push(layer.layer_info(&mut builder)?.done_path());
             }
 
@@ -176,7 +196,7 @@ fn raptor() -> RaptorResult<()> {
             let root = tempdir.path().join("root");
             std::fs::create_dir_all(root.join("usr"))?;
 
-            let work = state.unwrap_or_else(|| tempdir.path().join("work"));
+            let work = state.clone().unwrap_or_else(|| tempdir.path().join("work"));
 
             std::fs::create_dir_all(&work)?;
 
@@ -186,22 +206,44 @@ fn raptor() -> RaptorResult<()> {
                 ConsoleMode::Pipe
             };
 
-            let spawn = SpawnBuilder::new()
-                .quiet(true)
-                .sudo(true)
+            let mut spawn = Sandbox::builder()
                 .uuid(uuid)
-                .link_journal(LinkJournal::No)
-                .resolv_conf(ResolvConf::Off)
-                .timezone(Timezone::Off)
-                .settings(Settings::False)
                 .console(console_mode)
                 .arg("--background=")
                 .arg("--no-pager")
                 .root_overlays(&layers)
-                .root_overlay(&work)
+                .root_overlay(work)
                 .directory(&root)
-                .args(&args);
+                .args(args);
             /* .setenv("FALCON_LOG_LEVEL", "debug") */
+
+            for mount in program.mounts() {
+                let src: Utf8PathBuf = mounts
+                    .get(&mount.name.as_str())
+                    .ok_or_else(|| RaptorError::MountMissing(mount.clone()))?
+                    .into();
+                match mount.opts.mtype {
+                    MountType::Simple => {
+                        spawn = spawn.bind(&src, Utf8Path::new(&mount.dest));
+                    }
+
+                    MountType::Layers => {
+                        let program = builder.load(src)?;
+                        let layers = builder.build(program)?;
+
+                        for layer in &layers {
+                            let filename = layer.file_name().unwrap();
+                            spawn = spawn.bind_ro(layer, &mount.dest.join(filename));
+                        }
+                    }
+
+                    MountType::Overlay => {
+                        let program = builder.load(src)?;
+                        let layers = builder.build(program)?;
+                        spawn = spawn.overlay_ro(&layers, &mount.dest);
+                    }
+                }
+            }
 
             spawn.command().spawn()?.wait()?;
         }
