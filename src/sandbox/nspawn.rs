@@ -1,6 +1,8 @@
-use std::{collections::BTreeMap, process::Command};
+use std::collections::BTreeMap;
+use std::process::Command;
 
-use camino::Utf8Path;
+use camino::{Utf8Path, Utf8PathBuf};
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_variant::to_variant_name;
 use uuid::Uuid;
@@ -72,39 +74,40 @@ pub fn escape_colon(path: &Utf8Path) -> String {
 }
 
 #[derive(Clone, Default)]
-pub struct SpawnBuilder<'a> {
+pub struct SpawnBuilder {
     sudo: bool,
     quiet: bool,
     suppress_sync: bool,
-    args: Vec<&'a str>,
+    args: Vec<String>,
     uuid: Option<Uuid>,
     settings: Option<Settings>,
     console: Option<ConsoleMode>,
     link_journal: Option<LinkJournal>,
     resolv_conf: Option<ResolvConf>,
     timezone: Option<Timezone>,
-    directory: Option<&'a Utf8Path>,
-    root_overlay: Vec<&'a Utf8Path>,
-    bind: Vec<(&'a Utf8Path, &'a Utf8Path)>,
-    bind_ro: Vec<(&'a Utf8Path, &'a Utf8Path)>,
-    environment: BTreeMap<&'a str, &'a str>,
+    directory: Option<Utf8PathBuf>,
+    root_overlay: Vec<Utf8PathBuf>,
+    bind: Vec<(Utf8PathBuf, Utf8PathBuf)>,
+    bind_ro: Vec<(Utf8PathBuf, Utf8PathBuf)>,
+    environment: BTreeMap<String, String>,
 }
 
-impl<'a> SpawnBuilder<'a> {
+impl SpawnBuilder {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
     #[must_use]
-    pub fn arg(mut self, arg: &'a str) -> Self {
-        self.args.push(arg);
+    pub fn arg(mut self, arg: &str) -> Self {
+        self.args.push(arg.to_string());
         self
     }
 
     #[must_use]
-    pub fn args(mut self, args: &'a [impl AsRef<str>]) -> Self {
-        self.args.extend(args.iter().map(AsRef::as_ref));
+    pub fn args(mut self, args: &[impl AsRef<str>]) -> Self {
+        self.args
+            .extend(args.iter().map(AsRef::as_ref).map(ToString::to_string));
         self
     }
 
@@ -163,43 +166,48 @@ impl<'a> SpawnBuilder<'a> {
     }
 
     #[must_use]
-    pub fn setenv(mut self, key: &'a str, value: &'a str) -> Self {
-        self.environment.insert(key, value);
+    pub fn setenv(mut self, key: &str, value: &str) -> Self {
+        self.environment.insert(key.to_string(), value.to_string());
         self
     }
 
     #[must_use]
-    pub fn root_overlay(mut self, overlay: &'a Utf8Path) -> Self {
-        self.root_overlay.push(overlay);
+    pub fn root_overlay(mut self, overlay: impl Into<Utf8PathBuf>) -> Self {
+        self.root_overlay.push(overlay.into());
         self
     }
 
     #[must_use]
-    pub fn root_overlays(mut self, overlays: &'a [impl AsRef<Utf8Path>]) -> Self {
-        self.root_overlay.extend(overlays.iter().map(AsRef::as_ref));
+    pub fn root_overlays(mut self, overlays: &[impl AsRef<Utf8Path>]) -> Self {
+        self.root_overlay.extend(
+            overlays
+                .iter()
+                .map(AsRef::as_ref)
+                .map(Utf8Path::to_path_buf),
+        );
         self
     }
 
     #[must_use]
-    pub fn bind(mut self, src: &'a Utf8Path, dst: &'a Utf8Path) -> Self {
-        self.bind.push((src, dst));
+    pub fn bind(mut self, src: &Utf8Path, dst: &Utf8Path) -> Self {
+        self.bind.push((src.to_path_buf(), dst.to_path_buf()));
         self
     }
 
     #[must_use]
-    pub fn bind_ro(mut self, src: &'a Utf8Path, dst: &'a Utf8Path) -> Self {
-        self.bind_ro.push((src, dst));
+    pub fn bind_ro(mut self, src: &Utf8Path, dst: &Utf8Path) -> Self {
+        self.bind_ro.push((src.to_path_buf(), dst.to_path_buf()));
         self
     }
 
     #[must_use]
-    pub const fn directory(mut self, path: &'a Utf8Path) -> Self {
-        self.directory = Some(path);
+    pub fn directory(mut self, path: &Utf8Path) -> Self {
+        self.directory = Some(path.to_path_buf());
         self
     }
 }
 
-impl SpawnBuilder<'_> {
+impl SpawnBuilder {
     #[must_use]
     pub fn build(&self) -> Vec<String> {
         let mut res = vec![];
@@ -249,7 +257,8 @@ impl SpawnBuilder<'_> {
             let mut overlays = self
                 .root_overlay
                 .clone()
-                .into_iter()
+                .iter()
+                .map(AsRef::as_ref)
                 .map(escape_colon)
                 .collect::<Vec<_>>();
 
