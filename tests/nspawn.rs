@@ -34,7 +34,7 @@ impl DerefMut for SandboxWrapper {
 fn spawn_sandbox(name: &str) -> RaptorResult<SandboxWrapper> {
     assert!(
         std::fs::exists(BUSYBOX_PATH)?,
-        "Busybox not required for testing, but not found at {BUSYBOX_PATH:?}"
+        "Busybox required for testing, but not found at {BUSYBOX_PATH:?}"
     );
 
     /* construct temporary directory with busybox as /bin/sh */
