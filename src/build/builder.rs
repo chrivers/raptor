@@ -149,6 +149,12 @@ impl<'a> RaptorBuilder<'a> {
     }
 
     pub fn load(&mut self, path: impl AsRef<Utf8Path>) -> RaptorResult<Arc<Program>> {
+        let key = path.as_ref();
+
+        if let Some(program) = self.programs.get(key) {
+            return Ok(program.clone());
+        }
+
         let program = match self.loader.parse_template(&path, context! {}) {
             Ok(res) => res,
             Err(err) => {
@@ -157,13 +163,9 @@ impl<'a> RaptorBuilder<'a> {
             }
         };
 
-        let key = path.as_ref().into();
+        self.programs.insert(key.into(), Arc::new(program));
 
-        let res = self
-            .programs
-            .entry(key)
-            .or_insert_with(|| Arc::new(program));
-        Ok(res.clone())
+        Ok(self.programs[key].clone())
     }
 
     pub fn clear_cache(&mut self) {
