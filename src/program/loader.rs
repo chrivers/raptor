@@ -51,6 +51,10 @@ impl Loader<'_> {
         &self.base
     }
 
+    pub fn clear_cache(&mut self) {
+        self.env.clear_templates();
+    }
+
     fn handle(&mut self, res: &mut Vec<Item>, stmt: Statement, ctx: &Value) -> RaptorResult<()> {
         let Statement { inst, origin } = stmt;
 
