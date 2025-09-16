@@ -7,6 +7,7 @@ use clap::Parser as _;
 use colored::Colorize;
 use log::{debug, error, info};
 
+use nix::unistd::Uid;
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
 use raptor::dsl::MountType;
 use raptor::program::Loader;
@@ -120,6 +121,15 @@ impl Mode {
     }
 }
 
+fn check_for_root() -> RaptorResult<()> {
+    if Uid::effective().is_root() {
+        Ok(())
+    } else {
+        error!("Root is required to run!\n\nTry with sudo :)\n");
+        Err(RaptorError::RootRequired)
+    }
+}
+
 fn check_for_falcon_binary() -> RaptorResult<()> {
     if !std::fs::exists(Sandbox::FALCON_PATH)? {
         error!(
@@ -163,6 +173,7 @@ fn raptor() -> RaptorResult<()> {
                 let program = builder.load(file)?;
 
                 if args.mode.build() {
+                    check_for_root()?;
                     builder.build(program)?;
                 }
             }
@@ -178,6 +189,8 @@ fn raptor() -> RaptorResult<()> {
             args,
             ..
         } => {
+            check_for_root()?;
+
             let program = builder.load(target)?;
 
             builder.build(program.clone())?;

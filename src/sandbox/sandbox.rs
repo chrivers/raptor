@@ -28,7 +28,6 @@ impl Sandbox {
     pub fn builder() -> SpawnBuilder {
         SpawnBuilder::new()
             .quiet(true)
-            .sudo(true)
             .suppress_sync(true)
             .link_journal(LinkJournal::No)
             .resolv_conf(ResolvConf::Off)
@@ -95,11 +94,6 @@ impl Sandbox {
 
         let uuid = Uuid::new_v4();
         let uuid_name = uuid.as_simple().to_string();
-
-        /* ensure the build directory exists before we start the build (with
-         * sudo). This ensures the build root is owned by the current user, thus
-         * allowing our cleanup rmdir() to succeed */
-        std::fs::create_dir_all(rootdir)?;
 
         /* the ephemeral root directory needs to have /usr for systemd-nspawn to accept it */
         let root = tempdir.path().join("root");

@@ -68,6 +68,9 @@ pub enum RaptorError {
 
     #[error("Required mount [{}] not specified", .0.name)]
     MountMissing(InstMount),
+
+    #[error("Raptor requires root to run (please try again with sudo)")]
+    RootRequired,
 }
 
 impl From<pest_consume::Error<Rule>> for RaptorError {
@@ -96,6 +99,7 @@ impl RaptorError {
             Self::DockerError(_) => "Docker error",
             Self::FalconError(_) => "Falcon error",
             Self::MountMissing(_) => "Missing mount error",
+            Self::RootRequired => "Root required",
         }
     }
 }

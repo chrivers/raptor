@@ -123,8 +123,7 @@ impl BuildTarget {
 
                     let filename = dc.layer_file_name(&layer.digest);
 
-                    Command::new("sudo")
-                        .arg("tar")
+                    Command::new("tar")
                         .arg("-x")
                         .arg("-C")
                         .arg(&work_path)
