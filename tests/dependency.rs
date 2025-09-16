@@ -1,4 +1,5 @@
-use std::fs::File;
+use std::fs::{File, OpenOptions};
+use std::io::Write;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use std::{fs, thread};
@@ -65,13 +66,22 @@ impl Tester {
         Ok(res)
     }
 
-    fn step(&mut self, act: &str, fun: impl Fn(&mut Self) -> RaptorResult<()>) -> RaptorResult<()> {
+    /// Perform a modification to one or more input files, and verify that the
+    /// build hash changes as a result.
+    fn expect_new(
+        &mut self,
+        act: &str,
+        fun: impl Fn(&mut Self) -> RaptorResult<()>,
+    ) -> RaptorResult<()> {
+        // clear cache to prevent stale programs
+        self.builder.clear_cache();
+
         fun(self)?;
 
         let hash = self.program_hash()?;
         if self.hash == hash {
             eprintln!("{}", self.load(self.program_path().as_str())?);
-            panic!("Program hash did not change after {act}");
+            panic!("Program hash did not change after changing {act}");
         }
         self.hash = hash;
         Ok(())
@@ -97,6 +107,21 @@ impl Tester {
         Ok(fs::write(self.path(name), value.into_string())?)
     }
 
+    fn append(&self, name: &str, value: impl Writable) -> RaptorResult<()> {
+        let val = value.into_string();
+
+        OpenOptions::new()
+            .append(true)
+            .open(self.path(name))?
+            .write_all(val.as_bytes())?;
+
+        Ok(())
+    }
+
+    fn append_inst(&self, name: &str) -> RaptorResult<()> {
+        self.append(name, ["", &format!("RUN echo {name}")])
+    }
+
     fn touch(&self, name: &str) -> RaptorResult<()> {
         // the hash depends on the mtime, so let enough time pass for the next
         // ctime to be different
@@ -120,7 +145,7 @@ impl Tester {
 fn dep_copy() -> RaptorResult<()> {
     let mut test = Tester::setup(["COPY a a"], |test| test.write("a", "1234"))?;
 
-    test.step("changing COPY src", |test| test.touch("a"))?;
+    test.expect_new("COPY src", |test| test.touch("a"))?;
 
     Ok(())
 }
@@ -129,7 +154,7 @@ fn dep_copy() -> RaptorResult<()> {
 fn dep_render() -> RaptorResult<()> {
     let mut test = Tester::setup(["RENDER a a"], |test| test.write("a", "1234"))?;
 
-    test.step("changing RENDER src", |test| test.touch("a"))?;
+    test.expect_new("RENDER src", |test| test.touch("a"))?;
 
     Ok(())
 }
@@ -138,7 +163,7 @@ fn dep_render() -> RaptorResult<()> {
 fn dep_from() -> RaptorResult<()> {
     let mut test = Tester::setup(["FROM a"], |test| test.write("a.rapt", ""))?;
 
-    test.step("changing FROM src", |test| test.touch("a.rapt"))?;
+    test.expect_new("FROM src", |test| test.append_inst("a.rapt"))?;
 
     Ok(())
 }
@@ -151,10 +176,10 @@ fn dep_from2() -> RaptorResult<()> {
         test.write("c.rapt", "")
     })?;
 
-    test.step("changing FROM src", |test| test.touch("c.rapt"))?;
-    test.step("changing FROM src", |test| test.touch("b.rapt"))?;
-    test.step("changing FROM src", |test| test.touch("a.rapt"))?;
-    test.step("changing FROM src", |test| test.touch(Tester::PROGRAM_NAME))?;
+    test.expect_new("FROM src 1", |test| test.append_inst("c.rapt"))?;
+    test.expect_new("FROM src 2", |test| test.append_inst("b.rapt"))?;
+    test.expect_new("FROM src 3", |test| test.append_inst("a.rapt"))?;
+    test.expect_new("FROM src 4", |test| test.append_inst(Tester::PROGRAM_NAME))?;
 
     Ok(())
 }
@@ -166,9 +191,9 @@ fn dep_from3() -> RaptorResult<()> {
         test.write("b.rinc", "")
     })?;
 
-    test.step("changing FROM src", |test| test.touch("b.rinc"))?;
-    test.step("changing FROM src", |test| test.touch("a.rapt"))?;
-    test.step("changing FROM src", |test| test.touch(Tester::PROGRAM_NAME))?;
+    test.expect_new("FROM src 1", |test| test.append_inst("b.rinc"))?;
+    test.expect_new("FROM src 2", |test| test.append_inst("a.rapt"))?;
+    test.expect_new("FROM src 3", |test| test.append_inst(Tester::PROGRAM_NAME))?;
 
     Ok(())
 }
@@ -177,9 +202,7 @@ fn dep_from3() -> RaptorResult<()> {
 fn dep_self() -> RaptorResult<()> {
     let mut test = Tester::setup([""], |test| test.write("a.rapt", ""))?;
 
-    test.step("changing program file", |test| {
-        test.touch(Tester::PROGRAM_NAME)
-    })?;
+    test.expect_new("program", |test| test.append_inst(Tester::PROGRAM_NAME))?;
 
     Ok(())
 }
@@ -188,7 +211,7 @@ fn dep_self() -> RaptorResult<()> {
 fn dep_include() -> RaptorResult<()> {
     let mut test = Tester::setup(["INCLUDE a"], |test| test.write("a.rinc", ""))?;
 
-    test.step("changing include file", |test| test.touch("a.rinc"))?;
+    test.expect_new("include file 1", |test| test.touch("a.rinc"))?;
 
     Ok(())
 }
