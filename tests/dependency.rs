@@ -87,6 +87,27 @@ impl Tester {
         Ok(())
     }
 
+    /// Perform a (non-semantic) modification to one or more input files, and verify that the
+    /// build hash does NOT change as a result.
+    fn expect_same(
+        &mut self,
+        act: &str,
+        fun: impl Fn(&mut Self) -> RaptorResult<()>,
+    ) -> RaptorResult<()> {
+        // clear cache to prevent stale programs
+        self.builder.clear_cache();
+
+        fun(self)?;
+
+        let hash = self.program_hash()?;
+        if self.hash != hash {
+            eprintln!("{}", self.load(self.program_path().as_str())?);
+            panic!("Program hash changed after changing {act}");
+        }
+
+        Ok(())
+    }
+
     fn path(&self, name: &str) -> Utf8PathBuf {
         self.tempdir.path().join(name)
     }
