@@ -215,3 +215,16 @@ fn dep_include() -> RaptorResult<()> {
 
     Ok(())
 }
+
+#[test]
+fn dep_include2() -> RaptorResult<()> {
+    let mut test = Tester::setup(["INCLUDE a"], |test| {
+        test.write("a.rinc", "INCLUDE b")?;
+        test.write("b.rinc", "")
+    })?;
+
+    test.expect_new("include file 1", |test| test.touch("a.rinc"))?;
+    test.expect_new("include file 2", |test| test.touch("b.rinc"))?;
+
+    Ok(())
+}
