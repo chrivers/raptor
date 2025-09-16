@@ -166,6 +166,11 @@ impl<'a> RaptorBuilder<'a> {
         Ok(res.clone())
     }
 
+    pub fn clear_cache(&mut self) {
+        self.loader.clear_cache();
+        self.programs.clear();
+    }
+
     pub fn recurse(
         &mut self,
         program: Arc<Program>,
