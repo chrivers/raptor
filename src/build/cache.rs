@@ -29,6 +29,10 @@ impl Cacher {
             }
         }
 
+        for stmt in &program.code {
+            stmt.hash(&mut state);
+        }
+
         for source in &Self::sources(program)? {
             let md = source
                 .metadata()
@@ -43,8 +47,6 @@ impl Cacher {
 
     pub fn sources(prog: &Program) -> RaptorResult<Vec<Utf8PathBuf>> {
         let mut data = HashSet::<Utf8PathBuf>::new();
-
-        data.insert(prog.path.clone());
 
         prog.traverse(&mut |stmt| {
             match &stmt.inst {
