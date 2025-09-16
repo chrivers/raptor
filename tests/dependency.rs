@@ -186,6 +186,8 @@ fn dep_from() -> RaptorResult<()> {
 
     test.expect_new("FROM src", |test| test.append_inst("a.rapt"))?;
 
+    test.expect_same("FROM src", |test| test.touch("a.rapt"))?;
+
     Ok(())
 }
 
@@ -202,6 +204,11 @@ fn dep_from2() -> RaptorResult<()> {
     test.expect_new("FROM src 3", |test| test.append_inst("a.rapt"))?;
     test.expect_new("FROM src 4", |test| test.append_inst(Tester::PROGRAM_NAME))?;
 
+    test.expect_same("FROM src 1", |test| test.touch("c.rapt"))?;
+    test.expect_same("FROM src 2", |test| test.touch("b.rapt"))?;
+    test.expect_same("FROM src 3", |test| test.touch("a.rapt"))?;
+    test.expect_same("FROM src 4", |test| test.touch(Tester::PROGRAM_NAME))?;
+
     Ok(())
 }
 
@@ -216,6 +223,10 @@ fn dep_from3() -> RaptorResult<()> {
     test.expect_new("FROM src 2", |test| test.append_inst("a.rapt"))?;
     test.expect_new("FROM src 3", |test| test.append_inst(Tester::PROGRAM_NAME))?;
 
+    test.expect_new("FROM src 1", |test| test.touch("b.rinc"))?;
+    test.expect_same("FROM src 2", |test| test.touch("a.rapt"))?;
+    test.expect_same("FROM src 3", |test| test.touch(Tester::PROGRAM_NAME))?;
+
     Ok(())
 }
 
@@ -224,6 +235,8 @@ fn dep_self() -> RaptorResult<()> {
     let mut test = Tester::setup([""], |test| test.write("a.rapt", ""))?;
 
     test.expect_new("program", |test| test.append_inst(Tester::PROGRAM_NAME))?;
+
+    test.expect_same("program", |test| test.touch(Tester::PROGRAM_NAME))?;
 
     Ok(())
 }
