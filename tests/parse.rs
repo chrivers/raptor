@@ -213,6 +213,16 @@ fn parse_entrypoint02() -> RaptorResult<()> {
 }
 
 #[test]
+fn parse_cmd01() -> RaptorResult<()> {
+    test_single_inst_parse("cmd01.rapt", Instruction::cmd(["/bin/sh"]))
+}
+
+#[test]
+fn parse_cmd02() -> RaptorResult<()> {
+    test_single_inst_parse("cmd02.rapt", Instruction::cmd(["/bin/sh", "-c", "echo foo"]))
+}
+
+#[test]
 fn parse_include01() -> RaptorResult<()> {
     let program = load_file("include01.rapt")?;
 

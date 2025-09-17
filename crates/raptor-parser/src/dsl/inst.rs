@@ -118,6 +118,12 @@ impl Instruction {
         })
     }
 
+    pub fn cmd(args: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        Self::Cmd(InstCmd {
+            cmd: args.into_iter().map(Into::into).collect(),
+        })
+    }
+
     #[must_use]
     pub fn chmod(self, chmod: Option<u32>) -> Self {
         match self {
