@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
-use minijinja::Value;
 use pest_consume::{Parser, match_nodes};
 
 use crate::ParseResult;
@@ -314,10 +313,6 @@ impl RaptorFileParser {
             "false" => Ok(false),
             _ => todo!(),
         }
-    }
-
-    fn identpath(input: Node) -> Result<Value> {
-        Ok(input.as_str().to_string().into())
     }
 
     fn number(input: Node) -> Result<i64> {
