@@ -12,7 +12,7 @@ authors.workspace = true
 
 [dependencies]
 bincode = { workspace = true, features = ["serde"] }
-camino = { workspace = true, features = ["serde", "serde1"] }
+camino = { workspace = true, features = ["serde1"] }
 colog = { workspace = true }
 log = { workspace = true }
 nix = { workspace = true, features = ["fs", "user"] }
