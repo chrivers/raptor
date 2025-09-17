@@ -1,0 +1,67 @@
+use camino::Utf8PathBuf;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Account {
+    Id(u32),
+    Name(String),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RequestRun {
+    pub arg0: String,
+    pub argv: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RequestCreateFile {
+    pub path: Utf8PathBuf,
+    pub user: Option<Account>,
+    pub group: Option<Account>,
+    pub mode: Option<u32>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RequestCreateDir {
+    pub path: Utf8PathBuf,
+    pub user: Option<Account>,
+    pub group: Option<Account>,
+    pub mode: Option<u32>,
+    pub parents: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RequestWriteFd {
+    pub fd: i32,
+    pub data: Vec<u8>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RequestCloseFd {
+    pub fd: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RequestChangeDir {
+    pub cd: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RequestSetEnv {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Request {
+    Run(RequestRun),
+    ChangeDir(RequestChangeDir),
+    SetEnv(RequestSetEnv),
+    CreateFile(RequestCreateFile),
+    CreateDir(RequestCreateDir),
+    WriteFd(RequestWriteFd),
+    CloseFd(RequestCloseFd),
+    Shutdown,
+}
+
+pub type Response = Result<i32, i32>;
