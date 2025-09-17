@@ -38,7 +38,11 @@ impl Executor {
         let client = self.sandbox.client();
         match &stmt.inst {
             // Code merging and mount instruction have nothing to execute
-            Instruction::From(_) | Instruction::Include(_) | Instruction::Mount(_) => {}
+            Instruction::From(_)
+            | Instruction::Include(_)
+            | Instruction::Mount(_)
+            | Instruction::Entrypoint(_)
+            | Instruction::Cmd(_) => {}
 
             Instruction::Copy(inst) => {
                 let srcname = stmt.origin.basedir()?.join(&inst.srcs[0]);

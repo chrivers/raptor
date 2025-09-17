@@ -2,13 +2,11 @@ use std::fmt::{Debug, Display};
 
 use camino::Utf8Path;
 
-use crate::{
-    dsl::{
-        Chown, IncludeArg, InstCopy, InstEnv, InstEnvAssign, InstFrom, InstInclude, InstInvoke,
-        InstMkdir, InstMount, InstRender, InstRun, InstWorkdir, InstWrite,
-    },
-    util::module_name::ModuleName,
+use crate::dsl::{
+    Chown, IncludeArg, InstCmd, InstCopy, InstEntrypoint, InstEnv, InstEnvAssign, InstFrom,
+    InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun, InstWorkdir, InstWrite,
 };
+use crate::util::module_name::ModuleName;
 
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub enum Instruction {
@@ -23,6 +21,8 @@ pub enum Instruction {
     Run(InstRun),
     Env(InstEnv),
     Workdir(InstWorkdir),
+    Entrypoint(InstEntrypoint),
+    Cmd(InstCmd),
 }
 
 impl Instruction {
@@ -40,6 +40,8 @@ impl Instruction {
             Self::Run(_) => "RUN",
             Self::Env(_) => "ENV",
             Self::Workdir(_) => "WORKDIR",
+            Self::Entrypoint(_) => "ENTRYPOINT",
+            Self::Cmd(_) => "CMD",
         }
     }
 
@@ -110,6 +112,12 @@ impl Instruction {
         })
     }
 
+    pub fn entrypoint(args: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        Self::Entrypoint(InstEntrypoint {
+            entrypoint: args.into_iter().map(Into::into).collect(),
+        })
+    }
+
     #[must_use]
     pub fn chmod(self, chmod: Option<u32>) -> Self {
         match self {
@@ -152,6 +160,8 @@ impl Display for Instruction {
             Self::Run(inst) => Display::fmt(inst, f),
             Self::Env(inst) => Display::fmt(inst, f),
             Self::Workdir(inst) => Display::fmt(inst, f),
+            Self::Entrypoint(inst) => Display::fmt(inst, f),
+            Self::Cmd(inst) => Display::fmt(inst, f),
         }
     }
 }
@@ -170,6 +180,8 @@ impl Debug for Instruction {
             Self::Run(inst) => Debug::fmt(inst, f),
             Self::Env(inst) => Debug::fmt(inst, f),
             Self::Workdir(inst) => Debug::fmt(inst, f),
+            Self::Entrypoint(inst) => Debug::fmt(inst, f),
+            Self::Cmd(inst) => Debug::fmt(inst, f),
         }
     }
 }

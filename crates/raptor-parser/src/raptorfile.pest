@@ -13,6 +13,8 @@ STATEMENT = {
   | RUN
   | ENV
   | WORKDIR
+  | ENTRYPOINT
+  | CMD
 }
 
 WHITESPACE = _{ " " | "\\\n" }
@@ -20,17 +22,19 @@ WHITESPACE = _{ " " | "\\\n" }
 COMMENT = _{ "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
 
 // Statements
-COPY    = { "COPY"    ~ file_options  ~ filename{2,}                 }
-RENDER  = { "RENDER"  ~ file_options  ~ filename{2}   ~ include_args }
-WRITE   = { "WRITE"   ~ file_options  ~ quoted_string ~ filename     }
-MKDIR   = { "MKDIR"   ~ parents_flag? ~ file_options  ~ filename     }
-INCLUDE = { "INCLUDE" ~ module_name   ~ include_args                 }
-INVOKE  = { "INVOKE"  ~ string+                                      }
-RUN     = { "RUN"     ~ string+                                      }
-FROM    = { "FROM"    ~ from_source                                  }
-MOUNT   = { "MOUNT"   ~ mount_options ~ ident         ~ filename     }
-ENV     = { "ENV"     ~ env_assign+                                  }
-WORKDIR = { "WORKDIR" ~ filename                                     }
+COPY       = { "COPY"       ~ file_options  ~ filename{2,}                 }
+RENDER     = { "RENDER"     ~ file_options  ~ filename{2}   ~ include_args }
+WRITE      = { "WRITE"      ~ file_options  ~ quoted_string ~ filename     }
+MKDIR      = { "MKDIR"      ~ parents_flag? ~ file_options  ~ filename     }
+MOUNT      = { "MOUNT"      ~ mount_options ~ ident         ~ filename     }
+INCLUDE    = { "INCLUDE"    ~ module_name   ~ include_args                 }
+INVOKE     = { "INVOKE"     ~ string+                                      }
+RUN        = { "RUN"        ~ string+                                      }
+FROM       = { "FROM"       ~ from_source                                  }
+ENV        = { "ENV"        ~ env_assign+                                  }
+WORKDIR    = { "WORKDIR"    ~ filename                                     }
+ENTRYPOINT = { "ENTRYPOINT" ~ string+                                      }
+CMD        = { "CMD"        ~ string+                                      }
 
 // String parsing
 char_escape = _{ "\\" | "\"" | "n" | "r" | "t" }

@@ -1,5 +1,7 @@
 mod chown;
+mod cmd;
 mod copy;
+mod entrypoint;
 mod env;
 mod from;
 mod include;
@@ -14,7 +16,9 @@ mod workdir;
 mod write;
 
 pub use chown::*;
+pub use cmd::*;
 pub use copy::*;
+pub use entrypoint::*;
 pub use env::*;
 pub use from::*;
 pub use include::*;

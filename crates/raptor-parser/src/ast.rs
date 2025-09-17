@@ -5,9 +5,9 @@ use pest_consume::{Parser, match_nodes};
 
 use crate::ParseResult;
 use crate::dsl::{
-    Chown, FromSource, IncludeArg, IncludeArgValue, InstCopy, InstEnv, InstEnvAssign, InstFrom,
-    InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun, InstWorkdir, InstWrite,
-    Instruction, Lookup, MountOptions, MountType, Origin, Statement,
+    Chown, FromSource, IncludeArg, IncludeArgValue, InstCmd, InstCopy, InstEntrypoint, InstEnv,
+    InstEnvAssign, InstFrom, InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun,
+    InstWorkdir, InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
 use crate::util::module_name::ModuleName;
 use crate::{RaptorFileParser, Rule};
@@ -307,6 +307,20 @@ impl RaptorFileParser {
         }))
     }
 
+    fn ENTRYPOINT(input: Node) -> Result<InstEntrypoint> {
+        Ok(match_nodes!(input.into_children();
+        [string(i)..] => InstEntrypoint {
+            entrypoint: i.collect(),
+        }))
+    }
+
+    fn CMD(input: Node) -> Result<InstCmd> {
+        Ok(match_nodes!(input.into_children();
+        [string(i)..] => InstCmd {
+            cmd: i.collect(),
+        }))
+    }
+
     fn bool(input: Node) -> Result<bool> {
         match input.as_str() {
             "true" => Ok(true),
@@ -400,6 +414,8 @@ impl RaptorFileParser {
             [RUN(stmt)] => Some(Statement { inst: Instruction::Run(stmt), origin }),
             [ENV(stmt)] => Some(Statement { inst: Instruction::Env(stmt), origin }),
             [WORKDIR(stmt)] => Some(Statement { inst: Instruction::Workdir(stmt), origin }),
+            [ENTRYPOINT(stmt)] => Some(Statement { inst: Instruction::Entrypoint(stmt), origin }),
+            [CMD(stmt)] => Some(Statement { inst: Instruction::Cmd(stmt), origin }),
             [] => None,
         ))
     }

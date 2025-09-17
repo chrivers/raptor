@@ -75,7 +75,9 @@ impl Cacher {
                 | Instruction::From(_)
                 | Instruction::Run(_)
                 | Instruction::Env(_)
-                | Instruction::Workdir(_) => {}
+                | Instruction::Workdir(_)
+                | Instruction::Entrypoint(_)
+                | Instruction::Cmd(_) => {}
             }
 
             Ok(())
