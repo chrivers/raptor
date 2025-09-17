@@ -6,6 +6,7 @@ pub mod dsl;
 pub mod parser;
 pub mod print;
 pub mod program;
+pub mod runner;
 pub mod sandbox;
 pub mod template;
 pub mod util;
