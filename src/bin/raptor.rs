@@ -55,7 +55,7 @@ enum Mode {
     },
 
     /// Run mode: run a shell or command inside the layer
-    #[command(alias = "e")]
+    #[command(alias = "r")]
     #[command(after_help = [
         "  If <state-dir> is specified, any changes made in the session will be saved there.",
         "",
