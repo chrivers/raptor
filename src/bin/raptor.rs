@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::{stdout, IsTerminal};
 
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8PathBuf;
 use camino_tempfile::Builder;
 use clap::Parser as _;
 use colored::Colorize;
@@ -9,8 +9,8 @@ use log::{debug, error, info};
 
 use nix::unistd::Uid;
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
-use raptor::dsl::MountType;
 use raptor::program::Loader;
+use raptor::runner::AddMounts;
 use raptor::sandbox::{ConsoleMode, Sandbox};
 use raptor::{RaptorError, RaptorResult};
 use uuid::Uuid;
@@ -219,7 +219,7 @@ fn raptor() -> RaptorResult<()> {
                 ConsoleMode::Pipe
             };
 
-            let mut spawn = Sandbox::builder()
+            Sandbox::builder()
                 .uuid(uuid)
                 .console(console_mode)
                 .arg("--background=")
@@ -227,38 +227,11 @@ fn raptor() -> RaptorResult<()> {
                 .root_overlays(&layers)
                 .root_overlay(work)
                 .directory(&root)
-                .args(args);
-            /* .setenv("FALCON_LOG_LEVEL", "debug") */
-
-            for mount in program.mounts() {
-                let src: Utf8PathBuf = mounts
-                    .get(&mount.name.as_str())
-                    .ok_or_else(|| RaptorError::MountMissing(mount.clone()))?
-                    .into();
-                match mount.opts.mtype {
-                    MountType::Simple => {
-                        spawn = spawn.bind(&src, Utf8Path::new(&mount.dest));
-                    }
-
-                    MountType::Layers => {
-                        let program = builder.load(src)?;
-                        let layers = builder.build(program)?;
-
-                        for layer in &layers {
-                            let filename = layer.file_name().unwrap();
-                            spawn = spawn.bind_ro(layer, &mount.dest.join(filename));
-                        }
-                    }
-
-                    MountType::Overlay => {
-                        let program = builder.load(src)?;
-                        let layers = builder.build(program)?;
-                        spawn = spawn.overlay_ro(&layers, &mount.dest);
-                    }
-                }
-            }
-
-            spawn.command().spawn()?.wait()?;
+                .args(args)
+                .add_mounts(&program, &mut builder, &mounts, tempdir.path())?
+                .command()
+                .spawn()?
+                .wait()?;
         }
 
         Mode::Show { dirs } => {
