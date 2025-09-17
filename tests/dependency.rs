@@ -7,10 +7,10 @@ use std::{fs, thread};
 use camino::Utf8PathBuf;
 use camino_tempfile::Utf8TempDir;
 
+use raptor::RaptorResult;
 use raptor::build::{Cacher, RaptorBuilder};
 use raptor::dsl::Program;
 use raptor::program::Loader;
-use raptor::RaptorResult;
 
 trait Writable {
     fn into_string(self) -> String;

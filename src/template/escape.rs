@@ -1,7 +1,8 @@
-use std::{borrow::Cow, sync::Arc};
+use std::borrow::Cow;
+use std::sync::Arc;
 
 use itertools::Itertools;
-use minijinja::{value::ValueKind, Environment, Error, ErrorKind, Value};
+use minijinja::{Environment, Error, ErrorKind, Value, value::ValueKind};
 
 const fn blacklisted(ch: char) -> bool {
     !matches!(ch, 'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' | '=' | '/' | ',' | '.' | '+')

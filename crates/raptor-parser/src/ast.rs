@@ -2,15 +2,15 @@ use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::Value;
-use pest_consume::{match_nodes, Parser};
+use pest_consume::{Parser, match_nodes};
 
+use crate::ParseResult;
 use crate::dsl::{
     Chown, FromSource, IncludeArg, IncludeArgValue, InstCopy, InstEnv, InstEnvAssign, InstFrom,
     InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun, InstWorkdir, InstWrite,
     Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
 use crate::util::module_name::ModuleName;
-use crate::ParseResult;
 use crate::{RaptorFileParser, Rule};
 
 #[derive(Clone, Debug)]

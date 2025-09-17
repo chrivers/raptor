@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::io::{stdout, IsTerminal};
+use std::io::{IsTerminal, stdout};
 
 use camino::Utf8PathBuf;
 use camino_tempfile::Builder;
@@ -149,7 +149,9 @@ fn check_for_falcon_binary() -> RaptorResult<()> {
 
         eprintln!();
         eprintln!("  {}", "# compile falcon".dimmed());
-        eprintln!("  cargo build --target x86_64-unknown-linux-musl --release --package falcon --bin=falcon");
+        eprintln!(
+            "  cargo build --target x86_64-unknown-linux-musl --release --package falcon --bin=falcon"
+        );
         std::process::exit(1);
     }
     Ok(())
@@ -168,7 +170,7 @@ fn raptor() -> RaptorResult<()> {
     let mounts = args.mode.mounts();
 
     match &args.mode {
-        Mode::Dump { ref targets } | Mode::Check { ref targets } | Mode::Build { ref targets } => {
+        Mode::Dump { targets } | Mode::Check { targets } | Mode::Build { targets } => {
             for file in targets {
                 let program = builder.load(file)?;
 

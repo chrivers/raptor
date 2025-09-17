@@ -4,8 +4,8 @@ use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::context;
 use pretty_assertions::assert_eq;
 
-use raptor::dsl::Item;
 use raptor::RaptorResult;
+use raptor::dsl::Item;
 use raptor::{dsl::Program, program::Loader};
 use raptor_parser::dsl::{
     Chown, FromSource, IncludeArg, InstEnvAssign, InstFrom, InstMkdir, Instruction, Origin,

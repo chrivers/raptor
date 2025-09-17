@@ -9,18 +9,17 @@ use std::process::Command;
 use std::str::FromStr;
 
 use nix::errno::Errno;
-use nix::sys::stat::{umask, Mode};
-use nix::unistd::{chown, fchown, Gid, Group, Uid, User};
+use nix::sys::stat::{Mode, umask};
+use nix::unistd::{Gid, Group, Uid, User, chown, fchown};
 
-use log::{debug, error, trace, LevelFilter};
+use log::{LevelFilter, debug, error, trace};
 
 use falcon::client::{
     Account, FramedRead, FramedWrite, Request, RequestChangeDir, RequestCloseFd, RequestCreateDir,
     RequestCreateFile, RequestRun, RequestSetEnv, RequestWriteFd, Response,
 };
-use falcon::umask_proc::Umask;
-
 use falcon::error::{FalconError, FalconResult};
+use falcon::umask_proc::Umask;
 
 fn request_run(req: &RequestRun) -> FalconResult<i32> {
     debug!("Exec {} {:?}", req.arg0, &req.argv);
@@ -42,7 +41,9 @@ fn request_changedir(req: &RequestChangeDir) -> FalconResult<i32> {
 #[allow(clippy::unnecessary_wraps)]
 fn request_setenv(req: &RequestSetEnv) -> FalconResult<i32> {
     debug!("Setenv {:?}={:?}", &req.key, &req.value);
-    std::env::set_var(&req.key, &req.value);
+    unsafe {
+        std::env::set_var(&req.key, &req.value);
+    }
     Ok(0)
 }
 

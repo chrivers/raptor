@@ -4,8 +4,8 @@ use annotate_snippets::{AnnotationKind, Level, Renderer, Snippet};
 use pest::error::{ErrorVariant, InputLocation};
 
 use crate::RaptorResult;
-use raptor_parser::dsl::Origin;
 use raptor_parser::Rule;
+use raptor_parser::dsl::Origin;
 
 #[must_use]
 pub fn line_number_to_span(text: &str, line: usize) -> Range<usize> {

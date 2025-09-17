@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
-use minijinja::{context, Environment, ErrorKind, Value};
+use minijinja::{Environment, ErrorKind, Value, context};
 
 use crate::dsl::{Item, Program};
 use crate::program::{
@@ -12,7 +12,7 @@ use crate::program::{
 use crate::template::make_environment;
 use crate::{RaptorError, RaptorResult};
 use raptor_parser::dsl::{Instruction, Origin, ResolveArgs, Statement};
-use raptor_parser::{ast, ParseError};
+use raptor_parser::{ParseError, ast};
 
 pub struct Loader<'source> {
     env: Environment<'source>,

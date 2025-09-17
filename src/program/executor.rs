@@ -10,7 +10,7 @@ use crate::dsl::Program;
 use crate::program::Loader;
 use crate::sandbox::{Sandbox, SandboxExt};
 use crate::util::io_fast_copy;
-use crate::{template, RaptorResult};
+use crate::{RaptorResult, template};
 use raptor_parser::dsl::{Instruction, ResolveArgs, Statement};
 
 pub struct Executor {

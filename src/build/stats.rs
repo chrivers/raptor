@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::build::BuildTarget;
 use crate::RaptorResult;
+use crate::build::BuildTarget;
 use raptor_parser::dsl::FromSource;
 
 pub struct BuildTargetStats {

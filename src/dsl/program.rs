@@ -7,8 +7,8 @@ use minijinja::Value;
 use raptor_parser::dsl::{FromSource, InstMount, Instruction, Statement};
 use raptor_parser::util::SafeParent;
 
-use crate::dsl::Item;
 use crate::RaptorResult;
+use crate::dsl::Item;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Program {

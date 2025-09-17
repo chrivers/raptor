@@ -1,7 +1,7 @@
 use std::os::unix::process::CommandExt;
 use std::process::Command;
 
-use nix::sys::stat::{umask, Mode};
+use nix::sys::stat::{Mode, umask};
 
 /// Command extension to set umask for spawned child process
 pub trait Umask {

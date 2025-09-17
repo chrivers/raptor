@@ -10,11 +10,11 @@ use dregistry::downloader::DockerDownloader;
 use dregistry::source::DockerSource;
 use minijinja::context;
 
+use crate::RaptorResult;
 use crate::build::{Cacher, LayerInfo};
 use crate::dsl::Program;
 use crate::program::{Executor, Loader, PrintExecutor};
 use crate::sandbox::Sandbox;
-use crate::RaptorResult;
 use raptor_parser::dsl::FromSource;
 use raptor_parser::util::SafeParent;
 
@@ -179,7 +179,7 @@ impl<'a> RaptorBuilder<'a> {
         visitor: &mut impl FnMut(BuildTarget) -> RaptorResult<()>,
     ) -> RaptorResult<()> {
         match program.from() {
-            Some(FromSource::Docker(ref src)) => {
+            Some(FromSource::Docker(src)) => {
                 let image = if src.contains('/') {
                     src.to_string()
                 } else {

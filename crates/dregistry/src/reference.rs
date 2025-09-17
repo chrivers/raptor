@@ -1,4 +1,4 @@
-use pest_consume::{match_nodes, Parser};
+use pest_consume::{Parser, match_nodes};
 
 use crate::digest::Digest;
 use crate::error::DResult;

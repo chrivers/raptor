@@ -12,7 +12,7 @@ categories.workspace = true
 keywords.workspace = true
 
 [workspace.package]
-edition = "2021"
+edition = "2024"
 license = "GPL-3.0-only"
 readme = "README.md"
 categories = ["config", "command-line-utilities", "virtualization", "template-engine"]

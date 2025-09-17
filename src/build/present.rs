@@ -1,9 +1,9 @@
 use colored::Colorize;
 use itertools::Itertools;
 
+use crate::RaptorResult;
 use crate::build::{BuildTarget, BuildTargetStats};
 use crate::dsl::Item;
-use crate::RaptorResult;
 
 pub struct Presenter<'a>(&'a BuildTargetStats);
 

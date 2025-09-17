@@ -30,8 +30,8 @@ mod tests {
 
     use nix::fcntl::OFlag;
 
-    use crate::util::capture_proc_fd::HookFd;
     use crate::RaptorResult;
+    use crate::util::capture_proc_fd::HookFd;
 
     #[test]
     fn test_hook_stdout() -> RaptorResult<()> {

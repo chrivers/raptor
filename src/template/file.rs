@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use camino::Utf8PathBuf;
-use minijinja::value::{from_args, Object};
+use minijinja::value::{Object, from_args};
 use minijinja::{Environment, Error, ErrorKind, State, Value};
 
 #[derive(Debug)]

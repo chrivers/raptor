@@ -6,11 +6,11 @@ use camino::{Utf8Path, Utf8PathBuf};
 use camino_tempfile::{Builder, Utf8TempDir};
 use uuid::Uuid;
 
+use crate::RaptorResult;
 use crate::sandbox::{
     ConsoleMode, FalconClient, LinkJournal, ResolvConf, Settings, SpawnBuilder, Timezone,
 };
 use crate::util::link_or_copy_file;
-use crate::RaptorResult;
 
 #[derive(Debug)]
 pub struct Sandbox {

@@ -1,6 +1,6 @@
+use crate::RaptorResult;
 use crate::dsl::Program;
 use crate::program::Loader;
-use crate::RaptorResult;
 
 #[derive(Default)]
 pub struct PrintExecutor {}

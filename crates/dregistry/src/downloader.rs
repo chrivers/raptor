@@ -6,8 +6,8 @@ use camino::{Utf8Path, Utf8PathBuf};
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use log::info;
 use reqwest::blocking::{Client, ClientBuilder};
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use crate::api::{DockerLayer, DockerLayers};
 use crate::client::DockerClient;
@@ -57,11 +57,11 @@ impl DockerDownloader {
         let dst_file = self.layer_file_name(&layer.digest);
         let tmp_file = dst_file.with_extension("tmp");
 
-        if let Ok(md) = fs::metadata(&dst_file) {
-            if md.len() == layer.size {
-                /* eprintln!("Already downloaded!"); */
-                return Ok(());
-            }
+        if let Ok(md) = fs::metadata(&dst_file)
+            && md.len() == layer.size
+        {
+            /* eprintln!("Already downloaded!"); */
+            return Ok(());
         }
 
         let mut fd = File::create(&tmp_file)?;

@@ -4,8 +4,8 @@ use std::sync::LazyLock;
 use reqwest::blocking::{Client, RequestBuilder, Response};
 use reqwest::header;
 use reqwest::{IntoUrl, Method};
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
+use serde::de::DeserializeOwned;
 
 use crate::api::{DockerLayers, DockerManifests, DockerTagsList};
 use crate::digest::Digest;

@@ -1,7 +1,7 @@
 use std::io::{Read, Write};
 
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use crate::error::FalconResult;
 

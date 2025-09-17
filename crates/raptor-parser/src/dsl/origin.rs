@@ -4,8 +4,8 @@ use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 
-use crate::util::SafeParent;
 use crate::ParseResult;
+use crate::util::SafeParent;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Origin {

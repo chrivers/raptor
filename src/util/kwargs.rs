@@ -1,5 +1,5 @@
-use minijinja::value::{ArgType, Kwargs};
 use minijinja::Error;
+use minijinja::value::{ArgType, Kwargs};
 
 pub trait KwargsExt {
     fn get_option<'a, T>(&'a self, name: &'a str) -> Result<Option<T>, Error>

@@ -6,7 +6,8 @@ use std::process::Command;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use nix::fcntl::OFlag;
 
-use raptor::{util::capture_proc_fd::HookFd, RaptorResult};
+use raptor::RaptorResult;
+use raptor::util::capture_proc_fd::HookFd;
 
 #[allow(clippy::literal_string_with_formatting_args)]
 fn main() -> RaptorResult<()> {
