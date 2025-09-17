@@ -1,6 +1,5 @@
-FILE = {
-    SOI ~ (STATEMENT? ~ NEWLINE)* ~ EOI
-}
+// Fundamental definitions
+FILE = { SOI ~ (STATEMENT? ~ NEWLINE)* ~ EOI }
 
 STATEMENT = {
     FROM
@@ -18,23 +17,28 @@ STATEMENT = {
 
 WHITESPACE = _{ " " | "\\\n" }
 
-COMMENT = _{
-    "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE
-}
+COMMENT = _{ "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
+
+// Statements
+COPY    = { "COPY"    ~ file_options  ~ filename{2,}                 }
+RENDER  = { "RENDER"  ~ file_options  ~ filename{2}   ~ include_args }
+WRITE   = { "WRITE"   ~ file_options  ~ quoted_string ~ filename     }
+MKDIR   = { "MKDIR"   ~ parents_flag? ~ file_options  ~ filename     }
+INCLUDE = { "INCLUDE" ~ module_name   ~ include_args                 }
+INVOKE  = { "INVOKE"  ~ string+                                      }
+RUN     = { "RUN"     ~ string+                                      }
+FROM    = { "FROM"    ~ from_source                                  }
+MOUNT   = { "MOUNT"   ~ mount_options ~ ident         ~ filename     }
+ENV     = { "ENV"     ~ env_assign+                                  }
+WORKDIR = { "WORKDIR" ~ filename                                     }
+
+// String parsing
+char_escape = _{ "\\" | "\"" | "n" | "r" | "t" }
+string_non_escape = ${ (!("\\" | "\"") ~ ANY)+ }
+string_escape_seq = ${ "\\" ~ char_escape }
+string_inner = { (string_non_escape | string_escape_seq)* }
 
 quoted_string = ${ "\"" ~ string_inner ~ "\"" }
-
-string_inner = {
-    (string_non_escape | string_escape_seq)*
-}
-
-string_non_escape = ${
-    (!("\\" | "\"") ~ ANY)+
-}
-
-string_escape_seq = ${ "\\" ~ char_escape }
-
-char_escape = _{ "\\" | "\"" | "n" | "r" | "t" }
 
 literal_string = ${
     // for literal strings, the first character must be "reasonable", as
@@ -49,20 +53,21 @@ literal_string = ${
     )*
 }
 
-string = {quoted_string | literal_string}
+string      = { quoted_string | literal_string }
 
-filename = {
-    string
-}
+// Value types
+bool        = { "true" | "false" }
+number      = { ('1'..'9') ~ ('0'..'9')* }
+module_name = { ident ~ ("." ~ ident)* }
+value       = { bool | number | module_name | string }
+filename    = { string }
+user_spec   = { ident }
+group_spec  = { ident }
 
-mb_eq = _{ "="? }
-
+// Identifiers
 IDENT_START = _{ ASCII_ALPHA | "_" }
 IDENT_CHAR  = _{ ASCII_ALPHA | "_" | ASCII_DIGIT }
 ident = @{ IDENT_START ~ IDENT_CHAR* }
-
-user_spec  = { ident }
-group_spec = { ident }
 
 option_chown = ${
     user_spec ~ ":" ~ group_spec
@@ -72,131 +77,28 @@ option_chown = ${
 }
 option_chmod = ${ ASCII_OCT_DIGIT{3,4} }
 
+mb_eq = _{ "="? }
 file_option = {
     ("--chown" ~ mb_eq ~ option_chown)
   | ("--chmod" ~ mb_eq ~ option_chmod)
 }
+file_options = { file_option* }
 
-file_options = {
-    file_option*
-}
-
-mount_type = {
-    ("--simple" | "--layers" | "--overlay")
-}
-
-mount_options = {
-    mount_type?
-}
-
+// MKDIR
 parents_flag = { "-p" }
 
-identpath = _{
-    ident ~ ("." ~ ident)*
-}
+// MOUNT
+mount_type = { "--simple" | "--layers" | "--overlay" }
+mount_options = { mount_type? }
 
-bool = {
-    "true" | "false"
-}
+// INCLUDE
+include_arg = ${ ident ~ ("=" ~ value)? }
+include_args = { include_arg* }
 
-number = {
-    ('1'..'9') ~ ('0'..'9')*
-}
+// ENV
+env_assign = ${ ident ~ "=" ~ string }
 
-value = {
-    bool | number | module_name | string
-}
-
-include_arg = ${
-    ident ~ ("=" ~ value)?
-}
-
-include_args = {
-    include_arg*
-}
-
-env_assign = ${
-    ident ~ "=" ~ string
-}
-
-docker_source = {
-    "docker" ~ "://" ~ string
-}
-
-module_name = {
-    identpath
-}
-
-raptor_source = {
-    module_name ~ include_args
-}
-
-from_source = {
-    docker_source
-  | raptor_source
-}
-
-COPY = {
-    "COPY"
-    ~ file_options
-    ~ filename{2,}
-}
-
-RENDER = {
-    "RENDER"
-    ~ file_options
-    ~ filename{2}
-    ~ include_args
-}
-
-WRITE = {
-    "WRITE"
-    ~ file_options
-    ~ quoted_string
-    ~ filename
-}
-
-MKDIR = {
-    "MKDIR"
-    ~ parents_flag?
-    ~ file_options
-    ~ filename
-}
-
-INCLUDE = {
-    "INCLUDE"
-    ~ module_name
-    ~ include_args
-}
-
-INVOKE = {
-    "INVOKE"
-    ~ string+
-}
-
-RUN = {
-    "RUN"
-    ~ string+
-}
-
-FROM = {
-    "FROM"
-    ~ from_source
-}
-
-MOUNT = {
-    "MOUNT"
-    ~ mount_options
-    ~ ident
-    ~ filename
-}
-
-ENV = {
-    "ENV"
-    ~ env_assign+
-}
-
-WORKDIR = {
-    "WORKDIR"
-    ~ filename
-}
+// FROM
+raptor_source = { module_name ~ include_args }
+docker_source = { "docker" ~ "://" ~ string }
+from_source   = { docker_source | raptor_source }
