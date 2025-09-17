@@ -4,11 +4,12 @@ use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::context;
 use pretty_assertions::assert_eq;
 
-use raptor::dsl::{
-    Chown, FromSource, IncludeArg, InstEnvAssign, InstMkdir, Instruction, Item, Origin, Program,
-};
-use raptor::program::Loader;
+use raptor::dsl::Item;
 use raptor::RaptorResult;
+use raptor::{dsl::Program, program::Loader};
+use raptor_parser::dsl::{
+    Chown, FromSource, IncludeArg, InstEnvAssign, InstFrom, InstMkdir, Instruction, Origin,
+};
 
 fn base_path() -> Utf8PathBuf {
     Utf8Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/cases/inst")
@@ -53,7 +54,7 @@ fn parse_copy02() -> RaptorResult<()> {
 fn parse_from01() -> RaptorResult<()> {
     test_single_inst_parse(
         "from01.rapt",
-        Instruction::From(raptor::dsl::InstFrom {
+        Instruction::From(InstFrom {
             from: FromSource::Raptor("baselayer".into()),
         }),
     )

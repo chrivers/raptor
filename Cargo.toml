@@ -24,6 +24,7 @@ authors = ["Christian Iversen <ci@iversenit.dk>"]
 members = [
     "crates/falcon",
     "crates/dregistry",
+    "crates/raptor-parser",
 ]
 
 [[test]]
@@ -64,6 +65,7 @@ module_inception        = "allow"
 similar_names           = "allow"
 
 [workspace.dependencies]
+raptor-parser = { version = "0.1.0", path = "crates/raptor-parser" }
 dregistry = { version = "0.1.0", path = "crates/dregistry" }
 falcon = { version = "0.1.0", path = "crates/falcon" }
 
@@ -112,8 +114,7 @@ log = { workspace = true }
 minijinja = { workspace = true, features = ["custom_syntax", "debug", "loader", "loop_controls"] }
 nix = { workspace = true, features = ["fs", "user"] }
 pest = { workspace = true, features = ["pretty-print"] }
-pest_consume = { workspace = true }
-pest_derive = { workspace = true }
+raptor-parser = { workspace = true }
 serde = { workspace = true, features = ["serde_derive"] }
 serde_variant = { workspace = true }
 serde_yml = { workspace = true }

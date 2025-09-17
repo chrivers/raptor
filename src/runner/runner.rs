@@ -5,9 +5,10 @@ use std::hash::BuildHasher;
 use camino::{Utf8Path, Utf8PathBuf};
 
 use crate::build::RaptorBuilder;
-use crate::dsl::{MountType, Program};
+use crate::dsl::Program;
 use crate::sandbox::SpawnBuilder;
 use crate::{RaptorError, RaptorResult};
+use raptor_parser::dsl::MountType;
 
 pub trait AddMounts: Sized {
     fn add_mounts<S: BuildHasher>(
@@ -54,7 +55,7 @@ impl AddMounts for SpawnBuilder {
                     let listfile = tempdir.join(format!("mounts-{}", mount.name));
                     fs::write(&listfile, names.join("\n"))?;
 
-                    self = self.bind_ro(&listfile, &mount.dest.join("ORDER"))
+                    self = self.bind_ro(&listfile, &mount.dest.join("ORDER"));
                 }
 
                 MountType::Overlay => {

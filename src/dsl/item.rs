@@ -3,7 +3,8 @@ use std::fmt::Debug;
 use camino::Utf8Path;
 use minijinja::Value;
 
-use crate::dsl::{Instruction, Origin, Program, Statement};
+use crate::dsl::Program;
+use raptor_parser::dsl::{Instruction, Origin, Statement};
 
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub enum Item {

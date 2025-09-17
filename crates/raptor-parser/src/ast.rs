@@ -9,9 +9,9 @@ use crate::dsl::{
     InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun, InstWorkdir, InstWrite,
     Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
-use crate::parser::{RaptorFileParser, Rule};
 use crate::util::module_name::ModuleName;
-use crate::RaptorResult;
+use crate::ParseResult;
+use crate::{RaptorFileParser, Rule};
 
 #[derive(Clone, Debug)]
 pub struct UserData {
@@ -417,7 +417,7 @@ impl RaptorFileParser {
     }
 }
 
-pub fn parse(path: impl AsRef<Utf8Path>, input: &str) -> RaptorResult<Vec<Statement>> {
+pub fn parse(path: impl AsRef<Utf8Path>, input: &str) -> ParseResult<Vec<Statement>> {
     let inputs = RaptorFileParser::parse_with_userdata(
         Rule::FILE,
         input,

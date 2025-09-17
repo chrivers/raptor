@@ -2,7 +2,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Read, Write};
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8Path;
 
 use crate::RaptorResult;
 
@@ -31,25 +31,6 @@ pub fn link_or_copy_file(from: impl AsRef<Utf8Path>, to: impl AsRef<Utf8Path>) -
     std::fs::hard_link(from.as_ref(), to.as_ref()).or_else(|_| copy_file(from, to))
 }
 
-pub trait SafeParent {
-    fn try_parent(&self) -> RaptorResult<&Utf8Path>;
-}
-
-impl SafeParent for Utf8Path {
-    fn try_parent(&self) -> RaptorResult<&Utf8Path> {
-        self.parent()
-            .ok_or_else(|| crate::RaptorError::BadPathNoParent(self.into()))
-    }
-}
-
-impl SafeParent for Utf8PathBuf {
-    fn try_parent(&self) -> RaptorResult<&Utf8Path> {
-        self.parent()
-            .ok_or_else(|| crate::RaptorError::BadPathNoParent(self.into()))
-    }
-}
-
 pub mod capture_proc_fd;
 pub mod clapcolor;
 pub mod kwargs;
-pub mod module_name;

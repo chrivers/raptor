@@ -1,0 +1,25 @@
+[package]
+name = "raptor-parser"
+version = "0.1.0"
+description = "Parser for Raptor build files (.rapt & .rinc)"
+
+edition.workspace = true
+license.workspace = true
+readme.workspace = true
+categories.workspace = true
+repository.workspace = true
+keywords.workspace = true
+authors.workspace = true
+
+[dependencies]
+pest = { workspace = true, features = ["pretty-print"] }
+pest_consume = { workspace = true }
+pest_derive = { workspace = true }
+thiserror = { workspace = true }
+camino = { workspace = true, features = ["serde", "serde1"] }
+minijinja = { workspace = true, features = ["custom_syntax", "debug", "loader", "loop_controls"] }
+serde = { workspace = true }
+colored = { workspace = true }
+
+[lints]
+workspace = true

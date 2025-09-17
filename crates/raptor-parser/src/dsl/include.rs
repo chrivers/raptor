@@ -8,7 +8,7 @@ use serde::Serialize;
 use crate::dsl::Origin;
 use crate::print::Theme;
 use crate::util::module_name::ModuleName;
-use crate::{RaptorError, RaptorResult};
+use crate::{ParseError, ParseResult};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Lookup {
@@ -74,12 +74,12 @@ pub struct InstInclude {
 }
 
 impl IncludeArgValue {
-    pub fn resolve(self, ctx: &Value) -> RaptorResult<Value> {
+    pub fn resolve(self, ctx: &Value) -> ParseResult<Value> {
         match self {
             Self::Lookup(lookup) => {
                 let mut val = ctx.get_attr(&lookup.path.parts()[0])?;
                 if val.is_undefined() {
-                    return Err(RaptorError::UndefinedVarError(
+                    return Err(ParseError::UndefinedVarError(
                         lookup.path.parts()[0].to_string(),
                         lookup.origin,
                     ));
@@ -87,7 +87,7 @@ impl IncludeArgValue {
                 for name in &lookup.path.parts()[1..] {
                     val = val.get_attr(name)?;
                     if val.is_undefined() {
-                        return Err(RaptorError::UndefinedVarError(name.into(), lookup.origin));
+                        return Err(ParseError::UndefinedVarError(name.into(), lookup.origin));
                     }
                 }
                 Ok(val)
@@ -98,11 +98,11 @@ impl IncludeArgValue {
 }
 
 pub trait ResolveArgs {
-    fn resolve_args(self, ctx: &Value) -> RaptorResult<HashMap<String, Value>>;
+    fn resolve_args(self, ctx: &Value) -> ParseResult<HashMap<String, Value>>;
 }
 
 impl ResolveArgs for Vec<IncludeArg> {
-    fn resolve_args(self, ctx: &Value) -> RaptorResult<HashMap<String, Value>> {
+    fn resolve_args(self, ctx: &Value) -> ParseResult<HashMap<String, Value>> {
         self.into_iter()
             .map(|IncludeArg { name, value }| Ok((name, value.resolve(ctx)?)))
             .collect()

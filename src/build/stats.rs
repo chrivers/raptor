@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::build::BuildTarget;
-use crate::dsl::FromSource;
 use crate::RaptorResult;
+use raptor_parser::dsl::FromSource;
 
 pub struct BuildTargetStats {
     pub targets: HashMap<String, BuildTarget>,

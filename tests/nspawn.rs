@@ -2,10 +2,10 @@ use std::ops::{Deref, DerefMut};
 
 use camino::Utf8Path;
 use camino_tempfile::Utf8TempDir;
-use raptor::dsl::Chown;
 use raptor::sandbox::{FalconClient, Sandbox, SandboxExt};
 use raptor::util::link_or_copy_file;
 use raptor::{RaptorError, RaptorResult};
+use raptor_parser::dsl::Chown;
 
 const BUSYBOX_PATH: &str = "/bin/busybox";
 

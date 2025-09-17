@@ -3,8 +3,6 @@ extern crate log;
 
 pub mod build;
 pub mod dsl;
-pub mod parser;
-pub mod print;
 pub mod program;
 pub mod runner;
 pub mod sandbox;
@@ -17,8 +15,7 @@ use std::sync::mpsc;
 
 use camino::Utf8PathBuf;
 
-use crate::dsl::{InstMount, Origin};
-use crate::parser::Rule;
+use raptor_parser::dsl::{InstMount, Origin};
 
 #[derive(thiserror::Error, Debug)]
 pub enum RaptorError {
@@ -29,7 +26,7 @@ pub enum RaptorError {
     MinijinjaError(#[from] minijinja::Error),
 
     #[error(transparent)]
-    PestError(Box<pest::error::Error<Rule>>),
+    ParseError(#[from] raptor_parser::ParseError),
 
     #[error(transparent)]
     VarError(#[from] std::env::VarError),
@@ -52,14 +49,8 @@ pub enum RaptorError {
     #[error("Error while checking cache status of {0:?}: {1}")]
     CacheIoError(Utf8PathBuf, std::io::Error),
 
-    #[error("Cannot get parent path from {0:?}")]
-    BadPathNoParent(Utf8PathBuf),
-
     #[error("Script error: {0}")]
     ScriptError(String, Origin),
-
-    #[error("Undefined variable: {0}")]
-    UndefinedVarError(String, Origin),
 
     #[error("Sandbox error: {0}")]
     SandboxRequestError(nix::errno::Errno),
@@ -74,25 +65,17 @@ pub enum RaptorError {
     RootRequired,
 }
 
-impl From<pest_consume::Error<Rule>> for RaptorError {
-    fn from(e: pest_consume::Error<Rule>) -> Self {
-        Self::PestError(Box::new(e))
-    }
-}
-
 impl RaptorError {
     #[must_use]
     pub const fn category(&self) -> &'static str {
         match self {
             Self::IoError(_) => "IO Error",
             Self::MinijinjaError(_) => "Template error",
-            Self::PestError(_) => "Parser error",
+            Self::ParseError(_) => "Parser error",
             Self::VarError(_) => "Environment error",
             Self::Errno(_) => "Errno",
             Self::CacheIoError(_, _) => "Cache io error",
-            Self::BadPathNoParent(_) => "Path error",
             Self::ScriptError(_, _) => "Script error",
-            Self::UndefinedVarError(_, _) => "Undefined variable",
             Self::SandboxRequestError(_) => "Sandbox request error",
             Self::SandboxRunError(_) => "Sandbox run error",
             Self::MpscTimeout(_) => "Channel error",

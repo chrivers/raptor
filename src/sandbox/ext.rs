@@ -2,9 +2,9 @@ use std::io::Write;
 
 use camino::Utf8Path;
 
-use crate::dsl::Chown;
 use crate::sandbox::FalconClient;
 use crate::RaptorResult;
+use raptor_parser::dsl::Chown;
 
 pub trait SandboxExt {
     fn shell(&mut self, cmd: &[&str]) -> RaptorResult<()>;

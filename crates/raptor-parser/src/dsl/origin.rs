@@ -5,7 +5,7 @@ use std::sync::Arc;
 use camino::{Utf8Path, Utf8PathBuf};
 
 use crate::util::SafeParent;
-use crate::RaptorResult;
+use crate::ParseResult;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Origin {
@@ -24,7 +24,7 @@ impl Origin {
     }
 
     #[must_use]
-    pub fn from_node(node: &crate::parser::ast::Node) -> Self {
+    pub fn from_node(node: &crate::ast::Node) -> Self {
         let span = node.as_span();
         Self {
             path: node.user_data().path.clone(),
@@ -32,7 +32,7 @@ impl Origin {
         }
     }
 
-    pub fn basedir(&self) -> RaptorResult<&Utf8Path> {
+    pub fn basedir(&self) -> ParseResult<&Utf8Path> {
         self.path.try_parent()
     }
 }

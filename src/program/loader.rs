@@ -4,14 +4,15 @@ use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
 use minijinja::{context, Environment, ErrorKind, Value};
 
-use crate::dsl::{Instruction, Item, Origin, Program, ResolveArgs, Statement};
-use crate::parser::ast;
+use crate::dsl::{Item, Program};
 use crate::program::{
     show_error_context, show_jinja_error_context, show_origin_error_context,
     show_pest_error_context,
 };
 use crate::template::make_environment;
 use crate::{RaptorError, RaptorResult};
+use raptor_parser::dsl::{Instruction, Origin, ResolveArgs, Statement};
+use raptor_parser::{ast, ParseError};
 
 pub struct Loader<'source> {
     env: Environment<'source>,
@@ -95,7 +96,8 @@ impl Loader<'_> {
 
     pub fn explain_error(&self, err: &RaptorError) -> RaptorResult<()> {
         match err {
-            RaptorError::ScriptError(_, origin) | RaptorError::UndefinedVarError(_, origin) => {
+            RaptorError::ScriptError(_, origin)
+            | RaptorError::ParseError(ParseError::UndefinedVarError(_, origin)) => {
                 self.show_include_stack(&self.origins);
                 show_origin_error_context(
                     &self.sources[origin.path.as_str()],
@@ -129,7 +131,7 @@ impl Loader<'_> {
                     }
                 }
             }
-            RaptorError::PestError(err) => {
+            RaptorError::ParseError(ParseError::PestError(err)) => {
                 show_pest_error_context(&self.sources[err.path().unwrap()], err)?;
             }
             err => {
@@ -194,8 +196,8 @@ impl Loader<'_> {
 
         let statements =
             ast::parse(filename, &self.sources[filename]).map_err(|err| match err {
-                RaptorError::PestError(err) => {
-                    RaptorError::PestError(Box::new(err.with_path(filename)))
+                ParseError::PestError(err) => {
+                    ParseError::PestError(Box::new(err.with_path(filename)))
                 }
                 err => err,
             })?;

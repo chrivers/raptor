@@ -7,9 +7,10 @@ use camino::{Utf8Path, Utf8PathBuf};
 use itertools::Itertools;
 
 use crate::build::RaptorBuilder;
-use crate::dsl::{FromSource, Instruction, Program};
-use crate::util::SafeParent;
+use crate::dsl::Program;
 use crate::{RaptorError, RaptorResult};
+use raptor_parser::dsl::{FromSource, Instruction};
+use raptor_parser::util::SafeParent;
 
 pub struct Cacher;
 

@@ -6,11 +6,12 @@ use indicatif::{ProgressBar, ProgressStyle};
 use minijinja::Value;
 
 use crate::build::LayerInfo;
-use crate::dsl::{Instruction, Program, ResolveArgs, Statement};
+use crate::dsl::Program;
 use crate::program::Loader;
 use crate::sandbox::{Sandbox, SandboxExt};
 use crate::util::io_fast_copy;
 use crate::{template, RaptorResult};
+use raptor_parser::dsl::{Instruction, ResolveArgs, Statement};
 
 pub struct Executor {
     sandbox: Sandbox,

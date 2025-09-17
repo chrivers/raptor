@@ -11,11 +11,12 @@ use dregistry::source::DockerSource;
 use minijinja::context;
 
 use crate::build::{Cacher, LayerInfo};
-use crate::dsl::{FromSource, Program};
+use crate::dsl::Program;
 use crate::program::{Executor, Loader, PrintExecutor};
 use crate::sandbox::Sandbox;
-use crate::util::SafeParent;
 use crate::RaptorResult;
+use raptor_parser::dsl::FromSource;
+use raptor_parser::util::SafeParent;
 
 pub struct RaptorBuilder<'a> {
     loader: Loader<'a>,

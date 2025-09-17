@@ -1260,14 +1260,27 @@ dependencies = [
  "minijinja",
  "nix",
  "pest",
- "pest_consume",
- "pest_derive",
  "pretty_assertions",
+ "raptor-parser",
  "serde",
  "serde_variant",
  "serde_yml",
  "thiserror",
  "uuid",
+]
+
+[[package]]
+name = "raptor-parser"
+version = "0.1.0"
+dependencies = [
+ "camino",
+ "colored",
+ "minijinja",
+ "pest",
+ "pest_consume",
+ "pest_derive",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]
