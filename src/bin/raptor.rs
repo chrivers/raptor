@@ -61,44 +61,47 @@ enum Mode {
         "",
         "  If <state-dir> is not specified, all changes will be lost."
     ].join("\n"))]
-    Run {
-        /// Target to run
-        #[arg(value_name = "target")]
-        target: Utf8PathBuf,
-
-        /// State directory for changes (ephemeral if unset)
-        #[arg(short = 's', long)]
-        #[arg(value_name = "state-dir")]
-        state: Option<Utf8PathBuf>,
-
-        /// Specify mounts
-        #[arg(short = 'M', long, value_names = ["name", "mount"], num_args = 2, action = clap::ArgAction::Append)]
-        mount: Vec<String>,
-
-        #[arg(
-            short = 'I',
-            long,
-            value_name = "mount",
-            help = "Specify input mount. Shorthand for -M input <mount>"
-        )]
-        input: Option<String>,
-
-        #[arg(
-            short = 'O',
-            long,
-            value_name = "mount",
-            help = "Specify output mount. Shorthand for -M output <mount>"
-        )]
-        output: Option<String>,
-
-        /// Command arguments (defaults to interactive shell if unset)
-        #[arg(value_name = "arguments")]
-        args: Vec<String>,
-    },
+    Run(RunCmd),
 
     /// Show mode: print list of build targets
     #[command(alias = "s")]
     Show { dirs: Vec<Utf8PathBuf> },
+}
+
+#[derive(clap::Args, Clone, Debug)]
+struct RunCmd {
+    /// Target to run
+    #[arg(value_name = "target")]
+    target: Utf8PathBuf,
+
+    /// State directory for changes (ephemeral if unset)
+    #[arg(short = 's', long)]
+    #[arg(value_name = "state-dir")]
+    state: Option<Utf8PathBuf>,
+
+    /// Specify mounts
+    #[arg(short = 'M', long, value_names = ["name", "mount"], num_args = 2, action = clap::ArgAction::Append)]
+    mount: Vec<String>,
+
+    #[arg(
+        short = 'I',
+        long,
+        value_name = "mount",
+        help = "Specify input mount. Shorthand for -M input <mount>"
+    )]
+    input: Option<String>,
+
+    #[arg(
+        short = 'O',
+        long,
+        value_name = "mount",
+        help = "Specify output mount. Shorthand for -M output <mount>"
+    )]
+    output: Option<String>,
+
+    /// Command arguments (defaults to interactive shell if unset)
+    #[arg(value_name = "arguments")]
+    args: Vec<String>,
 }
 
 #[allow(dead_code)]
@@ -122,29 +125,21 @@ impl Mode {
     const fn show(&self) -> bool {
         matches!(self, Self::Show { .. })
     }
+}
 
+impl RunCmd {
     fn mounts(&self) -> HashMap<&str, &str> {
-        let mut res = HashMap::new();
+        let mut res: HashMap<&str, &str> = HashMap::new();
 
-        let Self::Run {
-            mount,
-            input,
-            output,
-            ..
-        } = self
-        else {
-            return res;
-        };
-
-        for kv in mount.chunks_exact(2) {
+        for kv in self.mount.chunks_exact(2) {
             res.insert(&kv[0], &kv[1]);
         }
 
-        if let Some(input) = input {
+        if let Some(input) = &self.input {
             res.insert("input", input);
         }
 
-        if let Some(output) = output {
+        if let Some(output) = &self.output {
             res.insert("output", output);
         }
 
@@ -198,8 +193,6 @@ fn raptor() -> RaptorResult<()> {
 
     let mut builder = RaptorBuilder::new(loader, args.no_act);
 
-    let mounts = args.mode.mounts();
-
     match &args.mode {
         Mode::Dump { targets } | Mode::Check { targets } | Mode::Build { targets } => {
             for file in targets {
@@ -216,15 +209,10 @@ fn raptor() -> RaptorResult<()> {
             }
         }
 
-        Mode::Run {
-            target,
-            state,
-            args,
-            ..
-        } => {
+        Mode::Run(run) => {
             check_for_root()?;
 
-            let program = builder.load(target)?;
+            let program = builder.load(&run.target)?;
 
             builder.build(program.clone())?;
 
@@ -242,7 +230,10 @@ fn raptor() -> RaptorResult<()> {
             let root = tempdir.path().join("root");
             std::fs::create_dir_all(root.join("usr"))?;
 
-            let work = state.clone().unwrap_or_else(|| tempdir.path().join("work"));
+            let work = run
+                .state
+                .clone()
+                .unwrap_or_else(|| tempdir.path().join("work"));
 
             std::fs::create_dir_all(&work)?;
 
@@ -254,8 +245,8 @@ fn raptor() -> RaptorResult<()> {
                 command.push("/bin/sh");
             }
 
-            if !args.is_empty() {
-                command.extend(args.iter().map(String::as_str));
+            if !run.args.is_empty() {
+                command.extend(run.args.iter().map(String::as_str));
             } else if let Some(cmd) = program.cmd() {
                 command.extend(cmd.cmd.iter().map(String::as_str));
             }
@@ -275,7 +266,7 @@ fn raptor() -> RaptorResult<()> {
                 .root_overlay(work)
                 .directory(&root)
                 .args(&command)
-                .add_mounts(&program, &mut builder, &mounts, tempdir.path())?
+                .add_mounts(&program, &mut builder, &run.mounts(), tempdir.path())?
                 .command()
                 .spawn()?
                 .wait()?;
