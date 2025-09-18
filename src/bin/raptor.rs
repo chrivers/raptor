@@ -126,7 +126,13 @@ impl Mode {
     fn mounts(&self) -> HashMap<&str, &str> {
         let mut res = HashMap::new();
 
-        let Self::Run { mount, .. } = self else {
+        let Self::Run {
+            mount,
+            input,
+            output,
+            ..
+        } = self
+        else {
             return res;
         };
 
@@ -240,6 +246,20 @@ fn raptor() -> RaptorResult<()> {
 
             std::fs::create_dir_all(&work)?;
 
+            let mut command = vec![];
+
+            if let Some(entr) = program.entrypoint() {
+                command.extend(entr.entrypoint.iter().map(String::as_str));
+            } else {
+                command.push("/bin/sh");
+            }
+
+            if !args.is_empty() {
+                command.extend(args.iter().map(String::as_str));
+            } else if let Some(cmd) = program.cmd() {
+                command.extend(cmd.cmd.iter().map(String::as_str));
+            }
+
             let console_mode = if stdout().is_terminal() {
                 ConsoleMode::Interactive
             } else {
@@ -254,7 +274,7 @@ fn raptor() -> RaptorResult<()> {
                 .root_overlays(&layers)
                 .root_overlay(work)
                 .directory(&root)
-                .args(args)
+                .args(&command)
                 .add_mounts(&program, &mut builder, &mounts, tempdir.path())?
                 .command()
                 .spawn()?
