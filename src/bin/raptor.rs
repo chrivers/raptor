@@ -265,6 +265,7 @@ fn raptor() -> RaptorResult<()> {
                 .root_overlays(&layers)
                 .root_overlay(work)
                 .directory(&root)
+                .bind(BindMount::new("/dev/kvm", "/dev/kvm"))
                 .args(&command)
                 .add_mounts(&program, &mut builder, &run.mounts(), tempdir.path())?
                 .command()
