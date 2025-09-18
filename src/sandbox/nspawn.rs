@@ -148,8 +148,8 @@ pub struct SpawnBuilder {
     root_overlay: Vec<Utf8PathBuf>,
     overlay: Vec<Vec<Utf8PathBuf>>,
     overlay_ro: Vec<Vec<Utf8PathBuf>>,
-    bind: Vec<(Utf8PathBuf, Utf8PathBuf)>,
-    bind_ro: Vec<(Utf8PathBuf, Utf8PathBuf)>,
+    bind: Vec<BindMount>,
+    bind_ro: Vec<BindMount>,
     environment: BTreeMap<String, String>,
 }
 
@@ -250,14 +250,14 @@ impl SpawnBuilder {
     }
 
     #[must_use]
-    pub fn bind(mut self, src: &Utf8Path, dst: &Utf8Path) -> Self {
-        self.bind.push((src.to_path_buf(), dst.to_path_buf()));
+    pub fn bind(mut self, mount: impl Into<BindMount>) -> Self {
+        self.bind.push(mount.into());
         self
     }
 
     #[must_use]
-    pub fn bind_ro(mut self, src: &Utf8Path, dst: &Utf8Path) -> Self {
-        self.bind_ro.push((src.to_path_buf(), dst.to_path_buf()));
+    pub fn bind_ro(mut self, mount: impl Into<BindMount>) -> Self {
+        self.bind_ro.push(mount.into());
         self
     }
 
@@ -382,14 +382,14 @@ impl SpawnBuilder {
             res.push(overlays);
         }
 
-        for (src, dst) in &self.bind {
+        for mount in &self.bind {
             res.push("--bind".into());
-            res.push(format!("{}:{}", escape_colon(src), escape_colon(dst)));
+            res.push(mount.to_string());
         }
 
-        for (src, dst) in &self.bind_ro {
+        for mount in &self.bind_ro {
             res.push("--bind-ro".into());
-            res.push(format!("{}:{}", escape_colon(src), escape_colon(dst)));
+            res.push(mount.to_string());
         }
 
         let uuid = &self.uuid.unwrap_or_else(Uuid::new_v4);

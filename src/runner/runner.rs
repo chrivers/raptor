@@ -6,7 +6,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 
 use crate::build::RaptorBuilder;
 use crate::dsl::Program;
-use crate::sandbox::SpawnBuilder;
+use crate::sandbox::{BindMount, SpawnBuilder};
 use crate::{RaptorError, RaptorResult};
 use raptor_parser::ast::MountType;
 
@@ -36,7 +36,7 @@ impl AddMounts for SpawnBuilder {
 
             match mount.opts.mtype {
                 MountType::Simple => {
-                    self = self.bind(&src, Utf8Path::new(&mount.dest));
+                    self = self.bind(BindMount::new(&src, Utf8Path::new(&mount.dest)));
                 }
 
                 MountType::Layers => {
@@ -48,14 +48,14 @@ impl AddMounts for SpawnBuilder {
                     for layer in &layers {
                         let filename = layer.file_name().unwrap();
                         names.push(filename);
-                        self = self.bind_ro(layer, &mount.dest.join(filename));
+                        self = self.bind_ro(BindMount::new(layer, mount.dest.join(filename)));
                     }
                     names.push("");
 
                     let listfile = tempdir.join(format!("mounts-{}", mount.name));
                     fs::write(&listfile, names.join("\n"))?;
 
-                    self = self.bind_ro(&listfile, &mount.dest.join("ORDER"));
+                    self = self.bind_ro(BindMount::new(&listfile, mount.dest.join("ORDER")));
                 }
 
                 MountType::Overlay => {

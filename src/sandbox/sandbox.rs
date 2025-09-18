@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::RaptorResult;
 use crate::sandbox::{
-    ConsoleMode, FalconClient, LinkJournal, ResolvConf, Settings, SpawnBuilder, Timezone,
+    BindMount, ConsoleMode, FalconClient, LinkJournal, ResolvConf, Settings, SpawnBuilder, Timezone,
 };
 use crate::util::link_or_copy_file;
 
@@ -122,7 +122,7 @@ impl Sandbox {
             .root_overlay(tempdir.path())
             .root_overlays(layers)
             .root_overlay(rootdir)
-            .bind_ro(ext_root, &int_root)
+            .bind_ro(BindMount::new(ext_root, &int_root))
             .directory(&root)
             .setenv("FALCON_SOCKET", int_socket_path.as_str())
             .arg(int_client_path.as_str());

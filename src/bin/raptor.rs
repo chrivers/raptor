@@ -11,7 +11,7 @@ use nix::unistd::Uid;
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
 use raptor::program::Loader;
 use raptor::runner::AddMounts;
-use raptor::sandbox::{ConsoleMode, Sandbox};
+use raptor::sandbox::{BindMount, ConsoleMode, Sandbox};
 use raptor::{RaptorError, RaptorResult};
 use uuid::Uuid;
 
