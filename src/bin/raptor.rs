@@ -75,6 +75,22 @@ enum Mode {
         #[arg(short = 'M', long, value_names = ["name", "mount"], num_args = 2, action = clap::ArgAction::Append)]
         mount: Vec<String>,
 
+        #[arg(
+            short = 'I',
+            long,
+            value_name = "mount",
+            help = "Specify input mount. Shorthand for -M input <mount>"
+        )]
+        input: Option<String>,
+
+        #[arg(
+            short = 'O',
+            long,
+            value_name = "mount",
+            help = "Specify output mount. Shorthand for -M output <mount>"
+        )]
+        output: Option<String>,
+
         /// Command arguments (defaults to interactive shell if unset)
         #[arg(value_name = "arguments")]
         args: Vec<String>,
@@ -116,6 +132,14 @@ impl Mode {
 
         for kv in mount.chunks_exact(2) {
             res.insert(&kv[0], &kv[1]);
+        }
+
+        if let Some(input) = input {
+            res.insert("input", input);
+        }
+
+        if let Some(output) = output {
+            res.insert("output", output);
         }
 
         res
