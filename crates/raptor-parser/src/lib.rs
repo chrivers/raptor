@@ -1,6 +1,6 @@
-pub mod ast;
 pub mod dsl;
 pub mod error;
+pub mod parser;
 pub mod print;
 pub mod util;
 

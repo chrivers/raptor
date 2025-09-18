@@ -12,7 +12,7 @@ use crate::program::{
 use crate::template::make_environment;
 use crate::{RaptorError, RaptorResult};
 use raptor_parser::dsl::{Instruction, Origin, ResolveArgs, Statement};
-use raptor_parser::{ParseError, ast};
+use raptor_parser::{ParseError, parser};
 
 pub struct Loader<'source> {
     env: Environment<'source>,
@@ -195,7 +195,7 @@ impl Loader<'_> {
         self.sources.insert(filename.into(), source);
 
         let statements =
-            ast::parse(filename, &self.sources[filename]).map_err(|err| match err {
+            parser::parse(filename, &self.sources[filename]).map_err(|err| match err {
                 ParseError::PestError(err) => {
                     ParseError::PestError(Box::new(err.with_path(filename)))
                 }

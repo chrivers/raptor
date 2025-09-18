@@ -24,7 +24,7 @@ impl Origin {
     }
 
     #[must_use]
-    pub fn from_node(node: &crate::ast::Node) -> Self {
+    pub fn from_node(node: &crate::parser::Node) -> Self {
         let span = node.as_span();
         Self {
             path: node.user_data().path.clone(),
