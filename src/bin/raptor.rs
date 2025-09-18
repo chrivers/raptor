@@ -71,7 +71,8 @@ enum Mode {
         #[arg(value_name = "state-dir")]
         state: Option<Utf8PathBuf>,
 
-        #[arg(short = 'M', long, num_args = 2, action = clap::ArgAction::Append)]
+        /// Specify mounts
+        #[arg(short = 'M', long, value_names = ["name", "mount"], num_args = 2, action = clap::ArgAction::Append)]
         mount: Vec<String>,
 
         /// Command arguments (defaults to interactive shell if unset)
