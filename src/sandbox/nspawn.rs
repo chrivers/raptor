@@ -1,5 +1,5 @@
-use std::collections::BTreeMap;
 use std::process::Command;
+use std::{collections::BTreeMap, fmt::Display};
 
 use camino::{Utf8Path, Utf8PathBuf};
 use itertools::Itertools;
@@ -71,6 +71,65 @@ pub enum Timezone {
 #[must_use]
 pub fn escape_colon(path: &Utf8Path) -> String {
     path.as_str().replace(':', "\\:")
+}
+
+#[derive(Copy, Clone, Default, PartialEq, Eq)]
+pub enum BindMode {
+    #[default]
+    NoIdmap,
+    Idmap,
+    RootIdmap,
+    OwnerIdmap,
+}
+
+impl BindMode {
+    const DEFAULT: Self = Self::NoIdmap;
+}
+
+#[derive(Clone)]
+pub struct BindMount {
+    src: Utf8PathBuf,
+    dst: Utf8PathBuf,
+    mode: BindMode,
+}
+
+impl Display for BindMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NoIdmap => write!(f, "noidmap"),
+            Self::Idmap => write!(f, "idmap"),
+            Self::RootIdmap => write!(f, "rootidmap"),
+            Self::OwnerIdmap => write!(f, "owneridmap"),
+        }
+    }
+}
+
+impl Display for BindMount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &escape_colon(&self.src))?;
+        if self.mode != BindMode::DEFAULT || self.src != self.dst {
+            write!(f, ":{}", &escape_colon(&self.dst))?;
+        }
+        if self.mode != BindMode::DEFAULT {
+            write!(f, ":{}", self.mode)?;
+        }
+        Ok(())
+    }
+}
+
+impl BindMount {
+    pub fn new(src: impl AsRef<Utf8Path>, dst: impl AsRef<Utf8Path>) -> Self {
+        Self {
+            src: src.as_ref().to_path_buf(),
+            dst: dst.as_ref().to_path_buf(),
+            mode: BindMode::DEFAULT,
+        }
+    }
+
+    #[must_use]
+    pub fn with_mode(self, mode: BindMode) -> Self {
+        Self { mode, ..self }
+    }
 }
 
 #[derive(Clone, Default)]
