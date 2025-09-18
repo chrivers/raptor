@@ -5,7 +5,7 @@ use camino::Utf8Path;
 use crate::sandbox::FalconClient;
 use crate::{RaptorError, RaptorResult};
 use falcon::client::{Account, Request, RequestCloseFd, RequestCreateFile, RequestWriteFd};
-use raptor_parser::dsl::Chown;
+use raptor_parser::ast::Chown;
 
 #[derive(Debug)]
 pub struct SandboxFile<'sb> {

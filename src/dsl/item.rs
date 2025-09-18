@@ -4,7 +4,7 @@ use camino::Utf8Path;
 use minijinja::Value;
 
 use crate::dsl::Program;
-use raptor_parser::dsl::{Instruction, Origin, Statement};
+use raptor_parser::ast::{Instruction, Origin, Statement};
 
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub enum Item {

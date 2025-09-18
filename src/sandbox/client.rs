@@ -13,7 +13,7 @@ use falcon::client::{
     Account, FramedRead, FramedWrite, Request, RequestChangeDir, RequestCreateDir, RequestRun,
     RequestSetEnv, Response,
 };
-use raptor_parser::dsl::Chown;
+use raptor_parser::ast::Chown;
 
 #[derive(Debug)]
 pub struct FalconClient {

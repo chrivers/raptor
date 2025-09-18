@@ -5,7 +5,7 @@ use camino::Utf8Path;
 use minijinja::Value;
 use serde::Serialize;
 
-use crate::dsl::Origin;
+use crate::ast::Origin;
 use crate::print::Theme;
 use crate::util::module_name::ModuleName;
 use crate::{ParseError, ParseResult};

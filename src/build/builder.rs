@@ -15,7 +15,7 @@ use crate::build::{Cacher, LayerInfo};
 use crate::dsl::Program;
 use crate::program::{Executor, Loader, PrintExecutor};
 use crate::sandbox::Sandbox;
-use raptor_parser::dsl::FromSource;
+use raptor_parser::ast::FromSource;
 use raptor_parser::util::SafeParent;
 
 pub struct RaptorBuilder<'a> {

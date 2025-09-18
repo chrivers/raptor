@@ -11,7 +11,7 @@ use crate::program::Loader;
 use crate::sandbox::{Sandbox, SandboxExt};
 use crate::util::io_fast_copy;
 use crate::{RaptorResult, template};
-use raptor_parser::dsl::{Instruction, ResolveArgs, Statement};
+use raptor_parser::ast::{Instruction, ResolveArgs, Statement};
 
 pub struct Executor {
     sandbox: Sandbox,

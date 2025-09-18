@@ -8,7 +8,7 @@ use crate::build::RaptorBuilder;
 use crate::dsl::Program;
 use crate::sandbox::SpawnBuilder;
 use crate::{RaptorError, RaptorResult};
-use raptor_parser::dsl::MountType;
+use raptor_parser::ast::MountType;
 
 pub trait AddMounts: Sized {
     fn add_mounts<S: BuildHasher>(

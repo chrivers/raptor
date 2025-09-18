@@ -4,7 +4,7 @@ use camino::Utf8Path;
 
 use crate::RaptorResult;
 use crate::sandbox::FalconClient;
-use raptor_parser::dsl::Chown;
+use raptor_parser::ast::Chown;
 
 pub trait SandboxExt {
     fn shell(&mut self, cmd: &[&str]) -> RaptorResult<()>;

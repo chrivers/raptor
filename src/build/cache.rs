@@ -9,7 +9,7 @@ use itertools::Itertools;
 use crate::build::RaptorBuilder;
 use crate::dsl::Program;
 use crate::{RaptorError, RaptorResult};
-use raptor_parser::dsl::{FromSource, Instruction};
+use raptor_parser::ast::{FromSource, Instruction};
 use raptor_parser::util::SafeParent;
 
 pub struct Cacher;

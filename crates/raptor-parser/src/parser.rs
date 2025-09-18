@@ -4,7 +4,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use pest_consume::{Parser, match_nodes};
 
 use crate::ParseResult;
-use crate::dsl::{
+use crate::ast::{
     Chown, FromSource, IncludeArg, IncludeArgValue, InstCmd, InstCopy, InstEntrypoint, InstEnv,
     InstEnvAssign, InstFrom, InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun,
     InstWorkdir, InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,

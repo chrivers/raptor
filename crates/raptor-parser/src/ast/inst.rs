@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 use camino::Utf8Path;
 
-use crate::dsl::{
+use crate::ast::{
     Chown, IncludeArg, InstCmd, InstCopy, InstEntrypoint, InstEnv, InstEnvAssign, InstFrom,
     InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun, InstWorkdir, InstWrite,
 };

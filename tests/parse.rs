@@ -7,7 +7,7 @@ use pretty_assertions::assert_eq;
 use raptor::RaptorResult;
 use raptor::dsl::Item;
 use raptor::{dsl::Program, program::Loader};
-use raptor_parser::dsl::{
+use raptor_parser::ast::{
     Chown, FromSource, IncludeArg, InstEnvAssign, InstFrom, InstMkdir, Instruction, Origin,
 };
 

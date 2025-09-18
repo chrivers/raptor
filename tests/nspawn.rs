@@ -5,7 +5,7 @@ use camino_tempfile::Utf8TempDir;
 use raptor::sandbox::{FalconClient, Sandbox, SandboxExt};
 use raptor::util::link_or_copy_file;
 use raptor::{RaptorError, RaptorResult};
-use raptor_parser::dsl::Chown;
+use raptor_parser::ast::Chown;
 
 const BUSYBOX_PATH: &str = "/bin/busybox";
 

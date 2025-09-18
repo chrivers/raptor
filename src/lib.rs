@@ -15,7 +15,7 @@ use std::sync::mpsc;
 
 use camino::Utf8PathBuf;
 
-use raptor_parser::dsl::{InstMount, Origin};
+use raptor_parser::ast::{InstMount, Origin};
 
 #[derive(thiserror::Error, Debug)]
 pub enum RaptorError {

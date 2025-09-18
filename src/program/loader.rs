@@ -11,7 +11,7 @@ use crate::program::{
 };
 use crate::template::make_environment;
 use crate::{RaptorError, RaptorResult};
-use raptor_parser::dsl::{Instruction, Origin, ResolveArgs, Statement};
+use raptor_parser::ast::{Instruction, Origin, ResolveArgs, Statement};
 use raptor_parser::{ParseError, parser};
 
 pub struct Loader<'source> {

@@ -1,7 +1,7 @@
 use camino::Utf8PathBuf;
 
 use crate::Rule;
-use crate::dsl::Origin;
+use crate::ast::Origin;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ParseError {

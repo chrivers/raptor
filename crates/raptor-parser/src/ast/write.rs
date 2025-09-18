@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 use camino::Utf8PathBuf;
 
-use crate::dsl::Chown;
+use crate::ast::Chown;
 use crate::print::Theme;
 
 #[derive(Clone, Hash, Debug, PartialEq, Eq)]

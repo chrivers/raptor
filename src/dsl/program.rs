@@ -4,7 +4,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
 use minijinja::Value;
 
-use raptor_parser::dsl::{FromSource, InstCmd, InstEntrypoint, InstMount, Instruction, Statement};
+use raptor_parser::ast::{FromSource, InstCmd, InstEntrypoint, InstMount, Instruction, Statement};
 use raptor_parser::util::SafeParent;
 
 use crate::RaptorResult;

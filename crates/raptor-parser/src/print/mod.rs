@@ -3,7 +3,7 @@ use colored::Colorize;
 
 use std::fmt::{Debug, Formatter, Result};
 
-use crate::dsl::{Chown, FromSource, IncludeArg, InstEnvAssign};
+use crate::ast::{Chown, FromSource, IncludeArg, InstEnvAssign};
 
 pub trait Theme {
     fn keyword(&mut self, name: &str) -> Result;
