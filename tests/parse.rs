@@ -209,7 +209,10 @@ fn parse_entrypoint01() -> RaptorResult<()> {
 
 #[test]
 fn parse_entrypoint02() -> RaptorResult<()> {
-    test_single_inst_parse("entrypoint02.rapt", Instruction::entrypoint(["/bin/sh", "-c", "echo foo"]))
+    test_single_inst_parse(
+        "entrypoint02.rapt",
+        Instruction::entrypoint(["/bin/sh", "-c", "echo foo"]),
+    )
 }
 
 #[test]
@@ -219,7 +222,10 @@ fn parse_cmd01() -> RaptorResult<()> {
 
 #[test]
 fn parse_cmd02() -> RaptorResult<()> {
-    test_single_inst_parse("cmd02.rapt", Instruction::cmd(["/bin/sh", "-c", "echo foo"]))
+    test_single_inst_parse(
+        "cmd02.rapt",
+        Instruction::cmd(["/bin/sh", "-c", "echo foo"]),
+    )
 }
 
 #[test]
