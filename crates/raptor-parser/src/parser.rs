@@ -1,16 +1,15 @@
 use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
-use pest_consume::{Parser, match_nodes};
+use pest_consume::{Nodes, Parser, match_nodes};
 
-use crate::ParseResult;
 use crate::ast::{
     Chown, FromSource, IncludeArg, IncludeArgValue, InstCmd, InstCopy, InstEntrypoint, InstEnv,
     InstEnvAssign, InstFrom, InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun,
     InstWorkdir, InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
 use crate::util::module_name::ModuleName;
-use crate::{RaptorFileParser, Rule};
+use crate::{ParseResult, RaptorFileParser, Rule};
 
 #[derive(Clone, Debug)]
 pub struct UserData {
@@ -429,13 +428,16 @@ impl RaptorFileParser {
 }
 
 pub fn parse(path: impl AsRef<Utf8Path>, input: &str) -> ParseResult<Vec<Statement>> {
-    let inputs = RaptorFileParser::parse_with_userdata(
-        Rule::FILE,
-        input,
-        UserData {
-            path: Arc::new(path.as_ref().into()),
-        },
-    )?;
-    let input = inputs.single()?;
-    Ok(RaptorFileParser::FILE(input)?)
+    let filename = path.as_ref();
+
+    let userdata = UserData {
+        path: Arc::new(filename.into()),
+    };
+
+    let res = RaptorFileParser::parse_with_userdata(Rule::FILE, input, userdata)
+        .and_then(Nodes::single)
+        .and_then(RaptorFileParser::FILE)
+        .map_err(|err| err.with_path(filename.as_str()))?;
+
+    Ok(res)
 }
