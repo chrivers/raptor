@@ -3,6 +3,7 @@ pub mod error;
 pub mod parser;
 pub mod print;
 pub mod util;
+pub mod value;
 
 pub use error::ParseError;
 
