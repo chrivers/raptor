@@ -46,6 +46,9 @@ pub enum RaptorError {
     #[error(transparent)]
     FalconError(#[from] falcon::error::FalconError),
 
+    #[error("Undefined variable: {0}")]
+    UndefinedVarError(String, Origin),
+
     #[error("Error while checking cache status of {0:?}: {1}")]
     CacheIoError(Utf8PathBuf, std::io::Error),
 
@@ -84,6 +87,7 @@ impl RaptorError {
             Self::FalconError(_) => "Falcon error",
             Self::MountMissing(_) => "Missing mount error",
             Self::RootRequired => "Root required",
+            Self::UndefinedVarError(_, _) => "Undefined var error",
         }
     }
 }
