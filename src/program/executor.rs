@@ -7,11 +7,11 @@ use minijinja::Value;
 
 use crate::build::LayerInfo;
 use crate::dsl::Program;
-use crate::program::Loader;
+use crate::program::{Loader, ResolveArgs};
 use crate::sandbox::{Sandbox, SandboxExt};
 use crate::util::io_fast_copy;
 use crate::{RaptorResult, template};
-use raptor_parser::ast::{Instruction, ResolveArgs, Statement};
+use raptor_parser::ast::{Instruction, Statement};
 
 pub struct Executor {
     sandbox: Sandbox,
@@ -59,7 +59,7 @@ impl Executor {
             }
 
             Instruction::Render(inst) => {
-                let map = inst.args.clone().resolve_args(ctx)?;
+                let map = ctx.resolve_args(&inst.args)?;
 
                 let srcname = stmt.origin.basedir()?.join(&inst.src);
 

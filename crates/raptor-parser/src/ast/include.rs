@@ -1,14 +1,11 @@
-use std::collections::HashMap;
 use std::fmt::{self, Debug, Display};
 
 use camino::Utf8Path;
-use minijinja::Value;
-use serde::Serialize;
 
 use crate::ast::Origin;
 use crate::print::Theme;
 use crate::util::module_name::ModuleName;
-use crate::{ParseError, ParseResult};
+use crate::value::Value;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Lookup {
@@ -59,10 +56,10 @@ impl IncludeArg {
         }
     }
 
-    pub fn value(name: impl AsRef<str>, value: impl Serialize) -> Self {
+    pub fn value(name: impl AsRef<str>, value: impl Into<Value>) -> Self {
         Self {
             name: name.as_ref().to_string(),
-            value: IncludeArgValue::Value(Value::from_serialize(value)),
+            value: IncludeArgValue::Value(value.into()),
         }
     }
 }
@@ -71,42 +68,6 @@ impl IncludeArg {
 pub struct InstInclude {
     pub src: ModuleName,
     pub args: Vec<IncludeArg>,
-}
-
-impl IncludeArgValue {
-    pub fn resolve(self, ctx: &Value) -> ParseResult<Value> {
-        match self {
-            Self::Lookup(lookup) => {
-                let mut val = ctx.get_attr(&lookup.path.parts()[0])?;
-                if val.is_undefined() {
-                    return Err(ParseError::UndefinedVarError(
-                        lookup.path.parts()[0].to_string(),
-                        lookup.origin,
-                    ));
-                }
-                for name in &lookup.path.parts()[1..] {
-                    val = val.get_attr(name)?;
-                    if val.is_undefined() {
-                        return Err(ParseError::UndefinedVarError(name.into(), lookup.origin));
-                    }
-                }
-                Ok(val)
-            }
-            Self::Value(val) => Ok(val),
-        }
-    }
-}
-
-pub trait ResolveArgs {
-    fn resolve_args(self, ctx: &Value) -> ParseResult<HashMap<String, Value>>;
-}
-
-impl ResolveArgs for Vec<IncludeArg> {
-    fn resolve_args(self, ctx: &Value) -> ParseResult<HashMap<String, Value>> {
-        self.into_iter()
-            .map(|IncludeArg { name, value }| Ok((name, value.resolve(ctx)?)))
-            .collect()
-    }
 }
 
 impl Display for IncludeArg {

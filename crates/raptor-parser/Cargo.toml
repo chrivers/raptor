@@ -17,7 +17,6 @@ pest_consume = { workspace = true }
 pest_derive = { workspace = true }
 thiserror = { workspace = true }
 camino = { workspace = true }
-minijinja = { workspace = true }
 serde = { workspace = true }
 colored = { workspace = true }
 

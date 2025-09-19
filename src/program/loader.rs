@@ -6,12 +6,12 @@ use minijinja::{Environment, ErrorKind, Value, context};
 
 use crate::dsl::{Item, Program};
 use crate::program::{
-    show_error_context, show_jinja_error_context, show_origin_error_context,
+    ResolveArgs, show_error_context, show_jinja_error_context, show_origin_error_context,
     show_pest_error_context,
 };
 use crate::template::make_environment;
 use crate::{RaptorError, RaptorResult};
-use raptor_parser::ast::{Instruction, Origin, ResolveArgs, Statement};
+use raptor_parser::ast::{Instruction, Origin, Statement};
 use raptor_parser::{ParseError, parser};
 
 pub struct Loader<'source> {
@@ -67,7 +67,7 @@ impl Loader<'_> {
                 ));
             }
 
-            let map = include.args.clone().resolve_args(ctx)?;
+            let map = ctx.resolve_args(&include.args)?;
             let src = &origin.basedir()?.join(include.src.to_include_path());
 
             self.origins.push(origin.clone());
@@ -96,8 +96,7 @@ impl Loader<'_> {
 
     pub fn explain_error(&self, err: &RaptorError) -> RaptorResult<()> {
         match err {
-            RaptorError::ScriptError(_, origin)
-            | RaptorError::ParseError(ParseError::UndefinedVarError(_, origin)) => {
+            RaptorError::ScriptError(_, origin) | RaptorError::UndefinedVarError(_, origin) => {
                 self.show_include_stack(&self.origins);
                 show_origin_error_context(
                     &self.sources[origin.path.as_str()],
@@ -194,13 +193,7 @@ impl Loader<'_> {
 
         self.sources.insert(filename.into(), source);
 
-        let statements =
-            parser::parse(filename, &self.sources[filename]).map_err(|err| match err {
-                ParseError::PestError(err) => {
-                    ParseError::PestError(Box::new(err.with_path(filename)))
-                }
-                err => err,
-            })?;
+        let statements = parser::parse(filename, &self.sources[filename])?;
 
         let mut res = vec![];
 

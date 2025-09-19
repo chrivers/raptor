@@ -1275,7 +1275,6 @@ version = "0.1.0"
 dependencies = [
  "camino",
  "colored",
- "minijinja",
  "pest",
  "pest_consume",
  "pest_derive",
