@@ -7,12 +7,10 @@ use minijinja::{Environment, ErrorKind, Value, context};
 use crate::dsl::{Item, Program};
 use crate::program::{
     ResolveArgs, show_error_context, show_jinja_error_context, show_origin_error_context,
-    show_pest_error_context,
 };
 use crate::template::make_environment;
 use crate::{RaptorError, RaptorResult};
 use raptor_parser::ast::{Instruction, Origin, Statement};
-use raptor_parser::{ParseError, parser};
 
 pub struct Loader<'source> {
     env: Environment<'source>,
@@ -130,9 +128,9 @@ impl Loader<'_> {
                     }
                 }
             }
-            RaptorError::ParseError(ParseError::PestError(err)) => {
-                show_pest_error_context(&self.sources[err.path().unwrap()], err)?;
-            }
+            /* RaptorError::ParseError(ParseError::PestError(err)) => { */
+            /*     show_pest_error_context(&self.sources[err.path().unwrap()], err)?; */
+            /* } */
             err => {
                 error!("Unexpected error: {err}");
             }

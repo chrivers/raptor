@@ -1140,8 +1140,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "21e0a3a33733faeaf8651dfee72dd0f388f0c8e5ad496a3478fa5a922f49cfa8"
 dependencies = [
  "memchr",
- "serde",
- "serde_json",
  "thiserror",
  "ucd-trie",
 ]
@@ -1415,7 +1413,6 @@ dependencies = [
  "log",
  "minijinja",
  "nix",
- "pest",
  "pretty_assertions",
  "raptor-parser",
  "serde",
@@ -1436,9 +1433,6 @@ dependencies = [
  "lalrpop-util",
  "log",
  "minijinja",
- "pest",
- "pest_consume",
- "pest_derive",
  "serde",
  "thiserror",
 ]

@@ -23,15 +23,6 @@ impl Origin {
         Self::new(Arc::new(path.as_ref().into()), span)
     }
 
-    #[must_use]
-    pub fn from_node(node: &crate::parser::Node) -> Self {
-        let span = node.as_span();
-        Self {
-            path: node.user_data().path.clone(),
-            span: span.start()..span.end(),
-        }
-    }
-
     pub fn basedir(&self) -> ParseResult<&Utf8Path> {
         self.path.try_parent()
     }

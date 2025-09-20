@@ -1,10 +1,8 @@
 use std::ops::Range;
 
 use annotate_snippets::{AnnotationKind, Level, Renderer, Snippet};
-use pest::error::{ErrorVariant, InputLocation};
 
 use crate::RaptorResult;
-use raptor_parser::Rule;
 use raptor_parser::ast::Origin;
 
 #[must_use]
@@ -80,6 +78,7 @@ pub fn show_jinja_error_context(err: &minijinja::Error) -> RaptorResult<()> {
     Ok(())
 }
 
+/*
 pub fn show_pest_error_context(raw: &str, err: &pest::error::Error<Rule>) -> RaptorResult<()> {
     let source_path = err.path().unwrap();
 
@@ -113,3 +112,4 @@ pub fn show_pest_error_context(raw: &str, err: &pest::error::Error<Rule>) -> Rap
     );
     Ok(())
 }
+*/
