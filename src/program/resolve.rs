@@ -21,10 +21,7 @@ impl ResolveArg for Value {
                 let val = self.get_attr(&ident)?;
 
                 if val.is_undefined() {
-                    return Err(RaptorError::UndefinedVarError(
-                        ident.into(),
-                        Origin::blank(),
-                    ));
+                    return Err(RaptorError::UndefinedVarError(ident, Origin::blank()));
                 }
 
                 Ok(val)
@@ -36,7 +33,7 @@ impl ResolveArg for Value {
 
                 if val.is_undefined() {
                     return Err(RaptorError::UndefinedVarError(
-                        lookup.ident.name.into(),
+                        lookup.ident.name,
                         lookup.origin.clone(),
                     ));
                 }
