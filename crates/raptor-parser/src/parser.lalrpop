@@ -1,0 +1,134 @@
+use std::str::FromStr;
+use std::sync::Arc;
+use std::collections::BTreeMap;
+
+use lalrpop_util::ParseError;
+use minijinja::Value as Value;
+use camino::Utf8PathBuf;
+
+use crate::unescape;
+use crate::ast::{Instruction, MountType, Expression, Lookup, Origin, Statement, Location};
+
+grammar(path: &Arc<Utf8PathBuf>);
+
+Comma<T>: Vec<T> = {
+    <mut v:(<T> ",")*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            v.push(e);
+            v
+        }
+    }
+}
+
+Location<T>: Location<T> = {
+    <start: @L> <t: T> <end: @R> => Location {
+        path: path.clone(),
+        span: start..end,
+        inner: t,
+    }
+}
+
+match {
+    r#""(\\.|[^"\\])*""# => STRING,
+    r"[0-9]+" => NUMBER,
+    "true", "false",
+    "[", "]", ":", "{", "}", ".", ",",
+    "WORKDIR",
+    "--simple", "--layers", "--overlay",
+    "\n",
+} else {
+    r"[a-zA-Z_][a-zA-Z_0-9]*" => IDENT,
+} else {
+    r"[a-zA-Z_0-9/.-]+" => FILENAME,
+}
+
+pub String: String = {
+    <raw:STRING> =>? unescape(&raw[1..raw.len()-1])
+}
+
+pub Bool: bool = {
+    "true" => true,
+    "false" => false,
+}
+
+pub Num: i64 = {
+    NUMBER =>? i64::from_str(<>)
+        .map_err(|_| ParseError::User { error: "number is too big" })
+}
+
+pub List: Vec<Value> = {
+    "[" <v:Comma<Value>> "]" => v
+}
+
+Item: (Value, Value) = {
+    <k:Value> ":" <v:Value> => (k, v)
+}
+
+pub Map: BTreeMap<Value, Value> = {
+    "{" <v:Comma<Item>> "}" => BTreeMap::from_iter(v)
+}
+
+pub Value: Value = {
+    <v:Bool> => Value::from(v),
+    <v:Num> => Value::from(v),
+    <v:String> => Value::from(v),
+    <v:List> => Value::from(v),
+    <v:Map> => Value::from(v),
+}
+
+pub Lookup: Lookup = {
+    <v:Expression> "." <i:Ident> => Lookup::make(v, i, Origin::blank())
+}
+
+pub Expression: Expression = {
+    <v:Lookup> => Expression::Lookup(v),
+    <v:Value> => Expression::Value(v),
+    <v:Ident> => Expression::Ident(v),
+}
+
+pub Ident: String = {
+    IDENT => String::from(<>)
+}
+
+pub Filename: String = {
+    FILENAME => String::from(<>)
+}
+
+pub Workdir: Instruction = {
+    "WORKDIR" <v:Filename> => Instruction::workdir(v),
+}
+
+pub MountType: MountType = {
+    "--simple" => MountType::Simple,
+    "--layers" => MountType::Layers,
+    "--overlay" => MountType::Overlay,
+}
+
+// mount_options = { mount_type? }
+
+// expression  = { value | module_name }
+// filename    = { string }
+// user_spec   = { ident }
+// group_spec  = { ident }
+
+// Fundamental definitions
+pub File: Vec<Statement> = {
+    <stmt:(Statement "\n"?)*> => stmt.into_iter().map(|x| x.0).collect()
+}
+
+pub Statement: Statement = {
+    // <v:From>       => Statement { inst: Instruction::From(v), origin: Origin::blank() }
+    // <v:Mount>      => Statement { inst: Instruction::Mount(v), origin: Origin::blank() }
+    // <v:Render>     => Statement { inst: Instruction::Render(v), origin: Origin::blank() }
+    // <v:Write>      => Statement { inst: Instruction::Write(v), origin: Origin::blank() }
+    // <v:Mkdir>      => Statement { inst: Instruction::Mkdir(v), origin: Origin::blank() }
+    // <v:Copy>       => Statement { inst: Instruction::Copy(v), origin: Origin::blank() }
+    // <v:Include>    => Statement { inst: Instruction::Include(v), origin: Origin::blank() }
+    // <v:Invoke>     => Statement { inst: Instruction::Invoke(v), origin: Origin::blank() }
+    // <v:Run>        => Statement { inst: Instruction::Run(v), origin: Origin::blank() }
+    // <v:Env>        => Statement { inst: Instruction::Env(v), origin: Origin::blank() }
+    <v:Location<Workdir>>    => Statement { origin: v.origin(), inst: v.inner }
+    // <v:Entrypoint> => Statement { inst: Instruction::Entrypoint(v), origin: Origin::blank() }
+    // <v:Cmd>        => Statement { inst: Instruction::Cmd(v), origin: Origin::blank() }
+}
