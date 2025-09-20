@@ -4,11 +4,12 @@ use camino::{Utf8Path, Utf8PathBuf};
 use pest_consume::{Nodes, Parser, match_nodes};
 
 use crate::ast::{
-    Chown, FromSource, IncludeArg, IncludeArgValue, InstCmd, InstCopy, InstEntrypoint, InstEnv,
+    Chown, Expression, FromSource, IncludeArg, InstCmd, InstCopy, InstEntrypoint, InstEnv,
     InstEnvAssign, InstFrom, InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun,
     InstWorkdir, InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
 use crate::util::module_name::ModuleName;
+use crate::value::Value;
 use crate::{ParseResult, RaptorFileParser, Rule};
 
 #[derive(Clone, Debug)]
@@ -332,14 +333,21 @@ impl RaptorFileParser {
         Ok(input.as_str().parse::<i64>().map_err(|e| input.error(e))?)
     }
 
-    fn value(input: Node) -> Result<IncludeArgValue> {
+    fn value(input: Node) -> Result<Value> {
+        Ok(match_nodes!(
+            input.into_children();
+            [bool(b)] => b.into(),
+            [number(b)] => b.into(),
+            [string(b)] => b.into(),
+        ))
+    }
+
+    fn expression(input: Node) -> Result<Expression> {
         let origin = Origin::from_node(&input);
         Ok(match_nodes!(
             input.into_children();
-            [bool(b)] => IncludeArgValue::Value(b.into()),
-            [number(b)] => IncludeArgValue::Value(b.into()),
-            [string(b)] => IncludeArgValue::Value(b.into()),
-            [module_name(b)] => IncludeArgValue::Lookup(Lookup::new(b, origin)),
+            [value(v)] => Expression::Value(v),
+            [module_name(b)] => Expression::Lookup(Lookup::new(b, origin)),
         ))
     }
 
@@ -347,13 +355,13 @@ impl RaptorFileParser {
         let origin = Origin::from_node(&input);
         Ok(match_nodes!(
             input.into_children();
-            [ident(id), value(val)] => IncludeArg {
+            [ident(id), expression(val)] => IncludeArg {
                 name: id,
                 value: val,
             },
             [ident(id)] => IncludeArg {
                 name: id.clone(),
-                value: IncludeArgValue::Lookup(Lookup::new(ModuleName::new(vec![id]), origin)),
+                value: Expression::Lookup(Lookup::new(ModuleName::new(vec![id]), origin)),
             }
         ))
     }

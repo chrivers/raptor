@@ -27,7 +27,7 @@ impl Display for Lookup {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum IncludeArgValue {
+pub enum Expression {
     Lookup(Lookup),
     Value(Value),
 }
@@ -35,11 +35,11 @@ pub enum IncludeArgValue {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct IncludeArg {
     pub name: String,
-    pub value: IncludeArgValue,
+    pub value: Expression,
 }
 
 impl IncludeArg {
-    pub fn make(name: impl AsRef<str>, value: IncludeArgValue) -> Self {
+    pub fn make(name: impl AsRef<str>, value: Expression) -> Self {
         Self {
             name: name.as_ref().to_string(),
             value,
@@ -49,7 +49,7 @@ impl IncludeArg {
     pub fn lookup(name: impl AsRef<str>, path: &[impl ToString], origin: Origin) -> Self {
         Self {
             name: name.as_ref().to_string(),
-            value: IncludeArgValue::Lookup(Lookup {
+            value: Expression::Lookup(Lookup {
                 path: ModuleName::new(path.iter().map(ToString::to_string).collect()),
                 origin,
             }),
@@ -59,7 +59,7 @@ impl IncludeArg {
     pub fn value(name: impl AsRef<str>, value: impl Into<Value>) -> Self {
         Self {
             name: name.as_ref().to_string(),
-            value: IncludeArgValue::Value(value.into()),
+            value: Expression::Value(value.into()),
         }
     }
 }
@@ -77,7 +77,7 @@ impl Display for IncludeArg {
     }
 }
 
-impl Display for IncludeArgValue {
+impl Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Lookup(l) => write!(f, "{l}"),

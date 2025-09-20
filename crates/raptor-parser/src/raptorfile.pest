@@ -63,7 +63,8 @@ string      = { quoted_string | literal_string }
 bool        = { "true" | "false" }
 number      = { ('1'..'9') ~ ('0'..'9')* }
 module_name = { ident ~ ("." ~ ident)* }
-value       = { bool | number | module_name | string }
+value       = { bool | number | string }
+expression  = { module_name | value }
 filename    = { string }
 user_spec   = { ident }
 group_spec  = { ident }
@@ -96,7 +97,7 @@ mount_type = { "--simple" | "--layers" | "--overlay" }
 mount_options = { mount_type? }
 
 // INCLUDE
-include_arg = ${ ident ~ ("=" ~ value)? }
+include_arg = ${ ident ~ ("=" ~ expression)? }
 include_args = { include_arg* }
 
 // ENV
