@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use minijinja::Value;
 
-use raptor_parser::ast::{Expression, IncludeArg};
+use raptor_parser::ast::{Expression, IncludeArg, Origin};
 
 use crate::{RaptorError, RaptorResult};
 
@@ -17,23 +17,28 @@ pub trait ResolveArgs {
 impl ResolveArg for Value {
     fn resolve(&self, arg: Expression) -> RaptorResult<Value> {
         match arg {
-            Expression::Lookup(lookup) => {
-                let mut val = self.get_attr(&lookup.path.parts()[0])?;
+            Expression::Ident(ident) => {
+                let val = self.get_attr(&ident)?;
+
                 if val.is_undefined() {
                     return Err(RaptorError::UndefinedVarError(
-                        lookup.path.parts()[0].to_string(),
-                        lookup.origin.clone(),
+                        ident.into(),
+                        Origin::blank(),
                     ));
                 }
 
-                for name in &lookup.path.parts()[1..] {
-                    val = val.get_attr(name)?;
-                    if val.is_undefined() {
-                        return Err(RaptorError::UndefinedVarError(
-                            name.into(),
-                            lookup.origin.clone(),
-                        ));
-                    }
+                Ok(val)
+            }
+            Expression::Lookup(lookup) => {
+                let expr = self.resolve(*lookup.expr)?;
+
+                let val = expr.get_attr(&lookup.ident.name)?;
+
+                if val.is_undefined() {
+                    return Err(RaptorError::UndefinedVarError(
+                        lookup.ident.name.into(),
+                        lookup.origin.clone(),
+                    ));
                 }
 
                 Ok(val)

@@ -191,7 +191,7 @@ impl Loader<'_> {
 
         self.sources.insert(filename.into(), source);
 
-        let statements = parser::parse(filename, &self.sources[filename])?;
+        let statements = raptor_parser::parse(filename, &self.sources[filename])?;
 
         let mut res = vec![];
 
