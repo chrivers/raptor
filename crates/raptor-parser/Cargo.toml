@@ -19,6 +19,7 @@ thiserror = { workspace = true }
 camino = { workspace = true }
 serde = { workspace = true }
 colored = { workspace = true }
+minijinja = { workspace = true }
 
 [lints]
 workspace = true

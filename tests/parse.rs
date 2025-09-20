@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::os::unix::fs::MetadataExt;
 
 use camino::{Utf8Path, Utf8PathBuf};
-use minijinja::context;
+use minijinja::{Value, context};
 use pretty_assertions::assert_eq;
 
 use raptor::RaptorResult;
@@ -11,7 +11,6 @@ use raptor::{dsl::Program, program::Loader};
 use raptor_parser::ast::{
     Chown, FromSource, IncludeArg, InstEnvAssign, InstFrom, InstMkdir, Instruction, Origin,
 };
-use raptor_parser::value::Value;
 
 fn base_path() -> Utf8PathBuf {
     Utf8Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/cases/inst")
@@ -405,7 +404,7 @@ fn parse_expr04() -> RaptorResult<()> {
 #[test]
 fn parse_expr05() -> RaptorResult<()> {
     let mut map = BTreeMap::<Value, Value>::new();
-    map.insert("foo".into(), [1, 2, 3].into());
+    map.insert("foo".into(), Value::from_serialize([1, 2, 3]));
     map.insert("sub".into(), BTreeMap::from([("foo", "bar")]).into());
 
     test_single_inst_parse(

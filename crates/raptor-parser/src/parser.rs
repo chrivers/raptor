@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
+use minijinja::Value;
 use pest_consume::{Nodes, Parser, match_nodes};
 
 use crate::ast::{
@@ -10,7 +11,6 @@ use crate::ast::{
     InstWorkdir, InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
 use crate::util::module_name::ModuleName;
-use crate::value::Value;
 use crate::{ParseResult, RaptorFileParser, Rule};
 
 #[derive(Clone, Debug)]
@@ -344,7 +344,7 @@ impl RaptorFileParser {
     fn map_item(input: Node) -> Result<(Value, Value)> {
         Ok(match_nodes!(
             input.into_children();
-            [string(k), value(v)] => (Value::String(k), v)
+            [string(k), value(v)] => (Value::from(k), v)
         ))
     }
 
@@ -358,11 +358,11 @@ impl RaptorFileParser {
     fn value(input: Node) -> Result<Value> {
         Ok(match_nodes!(
             input.into_children();
-            [bool(b)] => Value::Bool(b),
-            [number(b)] => Value::Number(b),
-            [quoted_string(b)] => Value::String(b),
-            [map(b)] => Value::Map(b),
-            [list(b)] => Value::List(b),
+            [bool(b)] => Value::from(b),
+            [number(b)] => Value::from(b),
+            [quoted_string(b)] => Value::from(b),
+            [map(b)] => Value::from(b),
+            [list(b)] => Value::from(b),
         ))
     }
 

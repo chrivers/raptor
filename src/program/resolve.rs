@@ -1,9 +1,8 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 
 use minijinja::Value;
 
 use raptor_parser::ast::{Expression, IncludeArg};
-use raptor_parser::value::Value as RaptorValue;
 
 use crate::{RaptorError, RaptorResult};
 
@@ -13,20 +12,6 @@ pub trait ResolveArg {
 
 pub trait ResolveArgs {
     fn resolve_args<'a>(&'a self, args: &'a [IncludeArg]) -> RaptorResult<HashMap<&'a str, Value>>;
-}
-
-fn convert(value: RaptorValue) -> Value {
-    match value {
-        RaptorValue::Bool(v) => v.into(),
-        RaptorValue::Number(v) => v.into(),
-        RaptorValue::String(v) => v.into(),
-        RaptorValue::List(v) => v.into_iter().map(convert).collect::<Vec<_>>().into(),
-        RaptorValue::Map(v) => v
-            .into_iter()
-            .map(|(k, v)| (convert(k), convert(v)))
-            .collect::<BTreeMap<_, _>>()
-            .into(),
-    }
 }
 
 impl ResolveArg for Value {
@@ -54,7 +39,7 @@ impl ResolveArg for Value {
                 Ok(val)
             }
 
-            Expression::Value(val) => Ok(convert(val)),
+            Expression::Value(val) => Ok(val),
         }
     }
 }

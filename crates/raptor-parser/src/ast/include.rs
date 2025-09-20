@@ -1,11 +1,12 @@
 use std::fmt::{self, Debug, Display};
 
 use camino::Utf8Path;
+use minijinja::Value;
+use serde::Serialize;
 
 use crate::ast::Origin;
 use crate::print::Theme;
 use crate::util::module_name::ModuleName;
-use crate::value::Value;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Lookup {
@@ -56,10 +57,10 @@ impl IncludeArg {
         }
     }
 
-    pub fn value(name: impl AsRef<str>, value: impl Into<Value>) -> Self {
+    pub fn value(name: impl AsRef<str>, value: impl Serialize) -> Self {
         Self {
             name: name.as_ref().to_string(),
-            value: Expression::Value(value.into()),
+            value: Expression::Value(Value::from_serialize(value)),
         }
     }
 }
