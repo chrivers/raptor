@@ -20,6 +20,14 @@ camino = { workspace = true }
 serde = { workspace = true }
 colored = { workspace = true }
 minijinja = { workspace = true }
+lalrpop-util = { workspace = true, features = ["lexer", "unicode"] }
 
 [lints]
 workspace = true
+
+[build-dependencies]
+lalrpop = { workspace = true }
+
+[dev-dependencies]
+colog.workspace = true
+log.workspace = true

@@ -96,6 +96,8 @@ thiserror = "2.0.16"
 uuid = "1.18.1"
 indicatif = "0.18.0"
 pretty_assertions = "1.4.1"
+lalrpop = "0.22.2"
+lalrpop-util = "0.22.2"
 
 [dependencies]
 annotate-snippets = { workspace = true }
