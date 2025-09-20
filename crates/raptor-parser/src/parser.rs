@@ -345,7 +345,7 @@ impl RaptorFileParser {
             input.into_children();
             [bool(b)] => Value::Bool(b),
             [number(b)] => Value::Number(b),
-            [string(b)] => Value::String(b),
+            [quoted_string(b)] => Value::String(b),
             [list(b)] => Value::List(b),
         ))
     }
