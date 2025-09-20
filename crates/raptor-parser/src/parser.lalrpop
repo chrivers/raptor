@@ -6,7 +6,7 @@ use lalrpop_util::ParseError;
 use minijinja::Value as Value;
 use camino::Utf8PathBuf;
 
-use crate::unescape;
+use crate::unescape::unescape;
 use crate::ast::{Instruction, MountType, Expression, Lookup, Origin, Statement, Location};
 
 grammar(path: &Arc<Utf8PathBuf>);
