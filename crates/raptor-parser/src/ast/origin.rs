@@ -36,6 +36,15 @@ impl Origin {
         Self::new(Arc::new(path.as_ref().into()), span)
     }
 
+    #[must_use]
+    // FIXME: remove after lalrpop rework
+    pub fn blank() -> Self {
+        Self {
+            path: Arc::new(Utf8PathBuf::new()),
+            span: 0..0,
+        }
+    }
+
     pub fn basedir(&self) -> ParseResult<&Utf8Path> {
         self.path.try_parent()
     }
