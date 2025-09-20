@@ -13,6 +13,19 @@ pub struct Origin {
     pub span: Range<usize>,
 }
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct Location<T> {
+    pub path: Arc<Utf8PathBuf>,
+    pub span: Range<usize>,
+    pub inner: T,
+}
+
+impl<T> Location<T> {
+    pub fn origin(&self) -> Origin {
+        Origin::make(&*self.path, self.span.clone())
+    }
+}
+
 impl Origin {
     #[must_use]
     pub const fn new(path: Arc<Utf8PathBuf>, span: Range<usize>) -> Self {
