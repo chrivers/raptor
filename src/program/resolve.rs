@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use minijinja::Value;
 
@@ -21,6 +21,11 @@ fn convert(value: RaptorValue) -> Value {
         RaptorValue::Number(v) => v.into(),
         RaptorValue::String(v) => v.into(),
         RaptorValue::List(v) => v.into_iter().map(convert).collect::<Vec<_>>().into(),
+        RaptorValue::Map(v) => v
+            .into_iter()
+            .map(|(k, v)| (convert(k), convert(v)))
+            .collect::<BTreeMap<_, _>>()
+            .into(),
     }
 }
 

@@ -63,9 +63,11 @@ string      = { quoted_string | literal_string }
 bool        = { "true" | "false" }
 number      = { ('1'..'9') ~ ('0'..'9')* }
 module_name = { ident ~ ("." ~ ident)* }
-list        = { "[" ~ (value ~ ("," ~ value)*) ? ~ "]" }
-value       = { bool | number | quoted_string | list }
-expression  = { module_name | value }
+list        = { "[" ~ (value ~ ("," ~ value)* ~ ","?)? ~ "]" }
+map_item    = { string ~ ":" ~ value }
+map         = { "{" ~ (map_item ~ ("," ~ map_item)* ~ ","?)? ~ "}" }
+value       = { bool | number | quoted_string | list | map }
+expression  = { value | module_name }
 filename    = { string }
 user_spec   = { ident }
 group_spec  = { ident }
@@ -98,7 +100,7 @@ mount_type = { "--simple" | "--layers" | "--overlay" }
 mount_options = { mount_type? }
 
 // INCLUDE
-include_arg = ${ ident ~ ("=" ~ expression)? }
+include_arg = { ident ~ ("=" ~ expression)? }
 include_args = { include_arg* }
 
 // ENV

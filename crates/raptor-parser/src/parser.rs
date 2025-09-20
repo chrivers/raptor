@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
@@ -340,12 +341,27 @@ impl RaptorFileParser {
         ))
     }
 
+    fn map_item(input: Node) -> Result<(Value, Value)> {
+        Ok(match_nodes!(
+            input.into_children();
+            [string(k), value(v)] => (Value::String(k), v)
+        ))
+    }
+
+    fn map(input: Node) -> Result<BTreeMap<Value, Value>> {
+        Ok(match_nodes!(
+            input.into_children();
+            [map_item(i)..] => i.collect()
+        ))
+    }
+
     fn value(input: Node) -> Result<Value> {
         Ok(match_nodes!(
             input.into_children();
             [bool(b)] => Value::Bool(b),
             [number(b)] => Value::Number(b),
             [quoted_string(b)] => Value::String(b),
+            [map(b)] => Value::Map(b),
             [list(b)] => Value::List(b),
         ))
     }

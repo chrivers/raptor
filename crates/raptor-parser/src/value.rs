@@ -1,9 +1,12 @@
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+use std::collections::BTreeMap;
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub enum Value {
     Bool(bool),
     Number(i64),
     String(String),
     List(Vec<Value>),
+    Map(BTreeMap<Value, Value>),
 }
 
 impl From<bool> for Value {
@@ -33,5 +36,16 @@ impl From<&str> for Value {
 impl<const N: usize, T: Into<Self>> From<[T; N]> for Value {
     fn from(value: [T; N]) -> Self {
         Self::List(value.map(Into::into).to_vec())
+    }
+}
+
+impl<K: Into<Self>, V: Into<Self>> From<BTreeMap<K, V>> for Value {
+    fn from(value: BTreeMap<K, V>) -> Self {
+        Self::Map(
+            value
+                .into_iter()
+                .map(|(k, v)| (k.into(), v.into()))
+                .collect(),
+        )
     }
 }

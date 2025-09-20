@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::os::unix::fs::MetadataExt;
 
 use camino::{Utf8Path, Utf8PathBuf};
@@ -10,6 +11,7 @@ use raptor::{dsl::Program, program::Loader};
 use raptor_parser::ast::{
     Chown, FromSource, IncludeArg, InstEnvAssign, InstFrom, InstMkdir, Instruction, Origin,
 };
+use raptor_parser::value::Value;
 
 fn base_path() -> Utf8PathBuf {
     Utf8Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/cases/inst")
@@ -373,5 +375,41 @@ fn parse_expr02() -> RaptorResult<()> {
                 IncludeArg::value("b", [4, 5, 6]),
             ],
         ),
+    )
+}
+
+#[test]
+fn parse_expr03() -> RaptorResult<()> {
+    test_single_inst_parse(
+        "expr03.rapt",
+        Instruction::render(
+            "foo",
+            "bar",
+            [IncludeArg::value("a", BTreeMap::<Value, Value>::new())],
+        ),
+    )
+}
+
+#[test]
+fn parse_expr04() -> RaptorResult<()> {
+    test_single_inst_parse(
+        "expr04.rapt",
+        Instruction::render(
+            "foo",
+            "bar",
+            [IncludeArg::value("a", BTreeMap::from([("foo", "bar")]))],
+        ),
+    )
+}
+
+#[test]
+fn parse_expr05() -> RaptorResult<()> {
+    let mut map = BTreeMap::<Value, Value>::new();
+    map.insert("foo".into(), [1, 2, 3].into());
+    map.insert("sub".into(), BTreeMap::from([("foo", "bar")]).into());
+
+    test_single_inst_parse(
+        "expr05.rapt",
+        Instruction::render("foo", "bar", [IncludeArg::value("a", map)]),
     )
 }
