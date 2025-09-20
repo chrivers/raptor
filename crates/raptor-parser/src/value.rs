@@ -3,6 +3,7 @@ pub enum Value {
     Bool(bool),
     Number(i64),
     String(String),
+    List(Vec<Value>),
 }
 
 impl From<bool> for Value {
@@ -26,5 +27,11 @@ impl From<String> for Value {
 impl From<&str> for Value {
     fn from(value: &str) -> Self {
         Self::String(value.to_string())
+    }
+}
+
+impl<const N: usize, T: Into<Self>> From<[T; N]> for Value {
+    fn from(value: [T; N]) -> Self {
+        Self::List(value.map(Into::into).to_vec())
     }
 }

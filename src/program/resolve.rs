@@ -15,6 +15,15 @@ pub trait ResolveArgs {
     fn resolve_args<'a>(&'a self, args: &'a [IncludeArg]) -> RaptorResult<HashMap<&'a str, Value>>;
 }
 
+fn convert(value: RaptorValue) -> Value {
+    match value {
+        RaptorValue::Bool(v) => v.into(),
+        RaptorValue::Number(v) => v.into(),
+        RaptorValue::String(v) => v.into(),
+        RaptorValue::List(v) => v.into_iter().map(convert).collect::<Vec<_>>().into(),
+    }
+}
+
 impl ResolveArg for Value {
     fn resolve(&self, arg: Expression) -> RaptorResult<Value> {
         match arg {
@@ -40,11 +49,7 @@ impl ResolveArg for Value {
                 Ok(val)
             }
 
-            Expression::Value(val) => match val {
-                RaptorValue::Bool(v) => Ok(v.into()),
-                RaptorValue::Number(v) => Ok(v.into()),
-                RaptorValue::String(v) => Ok(v.into()),
-            },
+            Expression::Value(val) => Ok(convert(val)),
         }
     }
 }

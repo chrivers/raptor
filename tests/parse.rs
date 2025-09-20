@@ -352,3 +352,26 @@ fn parse_include04() -> RaptorResult<()> {
 fn parse_invoke01() -> RaptorResult<()> {
     test_single_inst_parse("invoke01.rapt", Instruction::invoke(&["echo", "foo"]))
 }
+
+#[test]
+fn parse_expr01() -> RaptorResult<()> {
+    test_single_inst_parse(
+        "expr01.rapt",
+        Instruction::render("foo", "bar", [IncludeArg::value("a", [1, 2, 3])]),
+    )
+}
+
+#[test]
+fn parse_expr02() -> RaptorResult<()> {
+    test_single_inst_parse(
+        "expr02.rapt",
+        Instruction::render(
+            "foo",
+            "bar",
+            [
+                IncludeArg::value("a", [1, 2, 3]),
+                IncludeArg::value("b", [4, 5, 6]),
+            ],
+        ),
+    )
+}

@@ -333,12 +333,20 @@ impl RaptorFileParser {
         Ok(input.as_str().parse::<i64>().map_err(|e| input.error(e))?)
     }
 
+    fn list(input: Node) -> Result<Vec<Value>> {
+        Ok(match_nodes!(
+            input.into_children();
+            [value(i)..] => i.collect()
+        ))
+    }
+
     fn value(input: Node) -> Result<Value> {
         Ok(match_nodes!(
             input.into_children();
-            [bool(b)] => b.into(),
-            [number(b)] => b.into(),
-            [string(b)] => b.into(),
+            [bool(b)] => Value::Bool(b),
+            [number(b)] => Value::Number(b),
+            [string(b)] => Value::String(b),
+            [list(b)] => Value::List(b),
         ))
     }
 
