@@ -9,8 +9,8 @@ use raptor::RaptorResult;
 use raptor::dsl::Item;
 use raptor::{dsl::Program, program::Loader};
 use raptor_parser::ast::{
-    Chown, FromSource, IncludeArg, InstEnvAssign, InstFrom, InstMkdir, InstMount, Instruction,
-    MountOptions, MountType, Origin,
+    Chown, Expression, FromSource, IncludeArg, InstEnvAssign, InstFrom, InstMkdir, InstMount,
+    Instruction, MountOptions, MountType, Origin,
 };
 
 fn base_path() -> Utf8PathBuf {
@@ -199,7 +199,8 @@ fn parse_render03() -> RaptorResult<()> {
                         "/a",
                         [IncludeArg::lookup(
                             "what",
-                            &["what"],
+                            Expression::ident("what"),
+                            "foo",
                             Origin::make("render03.rinc", 39..43),
                         )],
                     ),

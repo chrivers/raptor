@@ -9,21 +9,56 @@ use crate::print::Theme;
 use crate::util::module_name::ModuleName;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct Ident {
+    pub name: String,
+    pub origin: Origin,
+}
+
+impl Ident {
+    #[must_use]
+    pub const fn new(name: String, origin: Origin) -> Self {
+        Self { name, origin }
+    }
+}
+
+impl Display for Ident {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", &self.name)
+    }
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Lookup {
-    pub path: ModuleName,
+    pub expr: Box<Expression>,
+    pub ident: Ident,
     pub origin: Origin,
 }
 
 impl Lookup {
     #[must_use]
-    pub const fn new(path: ModuleName, origin: Origin) -> Self {
-        Self { path, origin }
+    pub const fn new(expr: Box<Expression>, ident: Ident, origin: Origin) -> Self {
+        Self {
+            expr,
+            ident,
+            origin,
+        }
+    }
+
+    pub fn make(expr: impl Into<Expression>, ident: impl Into<String>, origin: Origin) -> Self {
+        Self {
+            expr: Box::new(expr.into()),
+            ident: Ident {
+                name: ident.into(),
+                origin: origin.clone(),
+            },
+            origin,
+        }
     }
 }
 
 impl Display for Lookup {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", &self.path)
+        write!(f, "{}.{}", &self.expr, self.ident)
     }
 }
 
@@ -31,6 +66,14 @@ impl Display for Lookup {
 pub enum Expression {
     Lookup(Lookup),
     Value(Value),
+    Ident(String),
+}
+
+impl Expression {
+    #[must_use]
+    pub fn ident(name: &str) -> Self {
+        Self::Ident(name.to_string())
+    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -47,13 +90,15 @@ impl IncludeArg {
         }
     }
 
-    pub fn lookup(name: impl AsRef<str>, path: &[impl ToString], origin: Origin) -> Self {
+    pub fn lookup(
+        name: impl AsRef<str>,
+        expr: impl Into<Expression>,
+        ident: impl Into<String>,
+        origin: Origin,
+    ) -> Self {
         Self {
             name: name.as_ref().to_string(),
-            value: Expression::Lookup(Lookup {
-                path: ModuleName::new(path.iter().map(ToString::to_string).collect()),
-                origin,
-            }),
+            value: Expression::Lookup(Lookup::make(expr, ident, origin)),
         }
     }
 
@@ -83,6 +128,7 @@ impl Display for Expression {
         match self {
             Self::Lookup(l) => write!(f, "{l}"),
             Self::Value(v) => write!(f, "{v:?}"),
+            Self::Ident(i) => write!(f, "{i}"),
         }
     }
 }
