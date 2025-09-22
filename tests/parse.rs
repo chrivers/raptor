@@ -9,7 +9,8 @@ use raptor::RaptorResult;
 use raptor::dsl::Item;
 use raptor::{dsl::Program, program::Loader};
 use raptor_parser::ast::{
-    Chown, FromSource, IncludeArg, InstEnvAssign, InstFrom, InstMkdir, Instruction, Origin,
+    Chown, FromSource, IncludeArg, InstEnvAssign, InstFrom, InstMkdir, InstMount, Instruction,
+    MountOptions, MountType, Origin,
 };
 
 fn base_path() -> Utf8PathBuf {
@@ -57,6 +58,16 @@ fn parse_from01() -> RaptorResult<()> {
         "from01.rapt",
         Instruction::From(InstFrom {
             from: FromSource::Raptor("baselayer".into()),
+        }),
+    )
+}
+
+#[test]
+fn parse_from02() -> RaptorResult<()> {
+    test_single_inst_parse(
+        "from02.rapt",
+        Instruction::From(InstFrom {
+            from: FromSource::Docker("debian:stable".into()),
         }),
     )
 }
@@ -410,5 +421,19 @@ fn parse_expr05() -> RaptorResult<()> {
     test_single_inst_parse(
         "expr05.rapt",
         Instruction::render("foo", "bar", [IncludeArg::value("a", map)]),
+    )
+}
+
+#[test]
+fn parse_mount01() -> RaptorResult<()> {
+    test_single_inst_parse(
+        "mount01.rapt",
+        Instruction::Mount(InstMount {
+            opts: MountOptions {
+                mtype: MountType::Simple,
+            },
+            name: "foo".into(),
+            dest: "/bar".into(),
+        }),
     )
 }
