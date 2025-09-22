@@ -4,7 +4,7 @@ use camino::Utf8Path;
 use minijinja::Value;
 use serde::Serialize;
 
-use crate::ast::Origin;
+use crate::ast::{Location, Origin};
 use crate::print::Theme;
 use crate::util::module_name::ModuleName;
 
@@ -66,13 +66,13 @@ impl Display for Lookup {
 pub enum Expression {
     Lookup(Lookup),
     Value(Value),
-    Ident(String),
+    Ident(Location<String>),
 }
 
 impl Expression {
     #[must_use]
-    pub fn ident(name: &str) -> Self {
-        Self::Ident(name.to_string())
+    pub fn ident(name: &str, origin: Origin) -> Self {
+        Self::Ident(Location::make(origin, name.to_string()))
     }
 }
 
@@ -128,7 +128,7 @@ impl Display for Expression {
         match self {
             Self::Lookup(l) => write!(f, "{l}"),
             Self::Value(v) => write!(f, "{v:?}"),
-            Self::Ident(i) => write!(f, "{i}"),
+            Self::Ident(i) => write!(f, "{}", i.inner),
         }
     }
 }

@@ -10,12 +10,17 @@ use camino::Utf8Path;
 
 use crate::ast::Statement;
 
-pub use error::ParseError;
-pub type ParseResult<T> = Result<T, ParseError>;
+pub use error::{ParseError, ParseErrorDetails};
+pub type ParseResult<T> = Result<T, ParseErrorDetails>;
 
-pub fn parse(filename: &str, data: &str) -> ParseResult<Vec<Statement>> {
-    let path = Utf8Path::new(filename).to_path_buf();
-    Ok(parser::FileParser::new().parse(&Arc::new(path), data)?)
+pub fn parse(filename: &str, data: &str) -> Result<Vec<Statement>, ParseError> {
+    let path = Arc::new(Utf8Path::new(filename).to_path_buf());
+    parser::FileParser::new()
+        .parse(&path, data)
+        .map_err(|err| ParseError {
+            path,
+            details: err.into(),
+        })
 }
 
 lalrpop_util::lalrpop_mod!(
@@ -35,6 +40,8 @@ lalrpop_util::lalrpop_mod!(
     #[allow(clippy::needless_raw_string_hashes)]
     #[allow(clippy::unnecessary_wraps)]
     #[allow(clippy::use_self)]
+    #[allow(clippy::cognitive_complexity)]
+    #[allow(clippy::useless_conversion)]
     #[allow(unused_lifetimes)]
     #[allow(unused_qualifications)]
     #[rustfmt::skip]

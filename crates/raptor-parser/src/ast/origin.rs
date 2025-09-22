@@ -4,8 +4,8 @@ use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 
-use crate::ParseResult;
 use crate::util::SafeParent;
+use crate::{ParseError, ParseErrorDetails};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Origin {
@@ -15,14 +15,17 @@ pub struct Origin {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Location<T> {
-    pub path: Arc<Utf8PathBuf>,
-    pub span: Range<usize>,
+    pub origin: Origin,
     pub inner: T,
 }
 
 impl<T> Location<T> {
     pub fn origin(&self) -> Origin {
-        Origin::make(&*self.path, self.span.clone())
+        self.origin.clone()
+    }
+
+    pub const fn make(origin: Origin, inner: T) -> Self {
+        Self { origin, inner }
     }
 }
 
@@ -36,16 +39,10 @@ impl Origin {
         Self::new(Arc::new(path.as_ref().into()), span)
     }
 
-    #[must_use]
-    // FIXME: remove after lalrpop rework
-    pub fn blank() -> Self {
-        Self {
-            path: Arc::new(Utf8PathBuf::new()),
-            span: 0..0,
-        }
-    }
-
-    pub fn basedir(&self) -> ParseResult<&Utf8Path> {
-        self.path.try_parent()
+    pub fn basedir(&self) -> Result<&Utf8Path, ParseError> {
+        self.path.try_parent().map_err(|err| ParseError {
+            path: self.path.clone(),
+            details: ParseErrorDetails::PathParse(err),
+        })
     }
 }
