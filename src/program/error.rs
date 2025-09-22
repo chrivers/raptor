@@ -1,9 +1,9 @@
 use std::ops::Range;
 
-use annotate_snippets::{AnnotationKind, Level, Renderer, Snippet};
+use annotate_snippets::{AnnotationKind, Element, Level, Renderer, Snippet};
 
 use crate::RaptorResult;
-use raptor_parser::ast::Origin;
+use raptor_parser::{ParseError, ParseErrorDetails, ast::Origin};
 
 #[must_use]
 pub fn line_number_to_span(text: &str, line: usize) -> Range<usize> {
@@ -33,19 +33,24 @@ pub fn index_to_line_remainder(text: &str, idx: usize) -> Option<Range<usize>> {
     None
 }
 
-pub fn show_error_context(
+pub fn show_error_context<'a>(
     source: &str,
     source_path: impl AsRef<str>,
     title: &str,
     label: &str,
     err_range: Range<usize>,
+    elements: impl IntoIterator<Item = Element<'a>>,
 ) {
-    let message = Level::ERROR.primary_title(title).element(
+    let mut message = Level::ERROR.primary_title(title).element(
         Snippet::source(source)
             .fold(false)
             .annotation(AnnotationKind::Primary.span(err_range).label(label))
             .path(source_path.as_ref()),
     );
+
+    for element in elements {
+        message = message.element(element);
+    }
 
     let renderer = Renderer::styled();
     anstream::println!("{}", renderer.render(&[message]));
@@ -58,6 +63,7 @@ pub fn show_origin_error_context(source: &str, origin: &Origin, title: &str, lab
         title,
         label,
         origin.span.clone(),
+        [],
     );
 }
 
@@ -74,34 +80,54 @@ pub fn show_jinja_error_context(err: &minijinja::Error) -> RaptorResult<()> {
         .or_else(|| err.line().map(|line| line_number_to_span(&raw, line)))
         .unwrap_or(0..raw.len() - 1);
 
-    show_error_context(&raw, source_path, title, &label, err_range);
+    show_error_context(&raw, source_path, title, &label, err_range, []);
     Ok(())
 }
 
-/*
-pub fn show_pest_error_context(raw: &str, err: &pest::error::Error<Rule>) -> RaptorResult<()> {
-    let source_path = err.path().unwrap();
+pub fn show_pest_error_context(raw: &str, err: &ParseError) -> RaptorResult<()> {
+    let source_path = err.path.as_str();
 
-    let span = match err.location {
-        InputLocation::Pos(idx) => index_to_line_remainder(raw, idx).unwrap_or(0..raw.len() - 1),
-        InputLocation::Span((begin, end)) => begin..end,
+    let span = match err.details {
+        ParseErrorDetails::PathParse(_) | ParseErrorDetails::ParseError(_) => {
+            index_to_line_remainder(raw, 0).unwrap_or(0..raw.len() - 1)
+        }
+        ParseErrorDetails::InvalidToken(pos) | ParseErrorDetails::UnexpectedEof(pos, _) => {
+            index_to_line_remainder(raw, pos).unwrap_or(0..raw.len() - 1)
+        }
+        ParseErrorDetails::UnrecognizedToken {
+            token: (start, _, end),
+            ..
+        }
+        | ParseErrorDetails::UnexpectedToken {
+            token: (start, _, end),
+        } => start..end,
     };
 
-    let mut msg = err.variant.message();
+    let mut elements = vec![];
 
-    match &err.variant {
-        ErrorVariant::ParsingError { positives, .. } if positives.len() == 1 => {
-            match positives[0] {
-                Rule::docker_source | Rule::from_source => {
-                    msg = "Invalid FROM declaration. Specify the basename of a .rapt file, or a docker::<image>.".into();
-                }
+    let make_expected = |exp: &[String]| {
+        Level::NOTE
+            .with_name("Expected one of")
+            .message(exp.join(", "))
+            .into()
+    };
 
-                _ => {}
-            }
+    let msg = match &err.details {
+        ParseErrorDetails::PathParse(_) => "Path parse error".into(),
+        ParseErrorDetails::InvalidToken(_) => "Invalid token".into(),
+        ParseErrorDetails::UnexpectedEof(_, expected) => {
+            elements.push(make_expected(expected));
+            "Unexpected end of file".into()
         }
-
-        _ => {}
-    }
+        ParseErrorDetails::UnrecognizedToken { expected, .. } => {
+            elements.push(make_expected(expected));
+            "Unrecognized token".into()
+        }
+        ParseErrorDetails::UnexpectedToken { token: (_, tok, _) } => {
+            format!("Unexpected token {tok}")
+        }
+        ParseErrorDetails::ParseError(err) => format!("parse error: {err}"),
+    };
 
     show_error_context(
         raw,
@@ -109,7 +135,8 @@ pub fn show_pest_error_context(raw: &str, err: &pest::error::Error<Rule>) -> Rap
         &format!("parsing error: {msg}"),
         &msg,
         span,
+        elements,
     );
+
     Ok(())
 }
-*/

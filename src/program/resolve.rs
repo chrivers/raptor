@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use minijinja::Value;
 
-use raptor_parser::ast::{Expression, IncludeArg, Origin};
+use raptor_parser::ast::{Expression, IncludeArg};
 
 use crate::{RaptorError, RaptorResult};
 
@@ -18,10 +18,11 @@ impl ResolveArg for Value {
     fn resolve(&self, arg: Expression) -> RaptorResult<Value> {
         match arg {
             Expression::Ident(ident) => {
-                let val = self.get_attr(&ident)?;
+                let val = self.get_attr(&ident.inner)?;
 
                 if val.is_undefined() {
-                    return Err(RaptorError::UndefinedVarError(ident, Origin::blank()));
+                    let origin = ident.origin();
+                    return Err(RaptorError::UndefinedVarError(ident.inner, origin));
                 }
 
                 Ok(val)

@@ -7,6 +7,7 @@ use minijinja::{Environment, ErrorKind, Value, context};
 use crate::dsl::{Item, Program};
 use crate::program::{
     ResolveArgs, show_error_context, show_jinja_error_context, show_origin_error_context,
+    show_pest_error_context,
 };
 use crate::template::make_environment;
 use crate::{RaptorError, RaptorResult};
@@ -114,6 +115,7 @@ impl Loader<'_> {
                             "Error while evaluating INCLUDE",
                             err.detail().unwrap_or("error"),
                             err.range().unwrap_or_else(|| last.span.clone()),
+                            [],
                         );
                     } else {
                         error!("Cannot provide error context: {err}");
@@ -128,9 +130,9 @@ impl Loader<'_> {
                     }
                 }
             }
-            /* RaptorError::ParseError(ParseError::PestError(err)) => { */
-            /*     show_pest_error_context(&self.sources[err.path().unwrap()], err)?; */
-            /* } */
+            RaptorError::ParseError(err) => {
+                show_pest_error_context(&self.sources[err.path.as_str()], err)?;
+            }
             err => {
                 error!("Unexpected error: {err}");
             }
