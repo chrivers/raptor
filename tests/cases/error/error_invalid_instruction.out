@@ -1,8 +1,8 @@
-error: parsing error: expected FILE
+error: parsing error: Unrecognized token
  --> tests/cases/error/error_invalid_instruction.rapt:1:1
   |
 1 | FLORG --foo "bar"
-  | ^^^^^^^^^^^^^^^^^ expected FILE
+  | ^^^^^ Unrecognized token
 2 | RUN ls -l
 3 | RUN ls -l
 4 | RUN ls -l
@@ -10,3 +10,4 @@ error: parsing error: expected FILE
 6 | RUN ls -l
 7 |
   |
+  = Expected one of: COMMENT, NEWLINE, "CMD", "COPY", "ENTRYPOINT", "ENV", "FROM", "INCLUDE", "INVOKE", "MKDIR", "MOUNT", "RENDER", "RUN", "WORKDIR", "WRITE"
