@@ -29,6 +29,9 @@ pub enum RaptorError {
     ParseError(#[from] raptor_parser::ParseError),
 
     #[error(transparent)]
+    PathParseError(#[from] raptor_parser::error::PathParseError),
+
+    #[error(transparent)]
     VarError(#[from] std::env::VarError),
 
     #[error(transparent)]
@@ -88,6 +91,7 @@ impl RaptorError {
             Self::MountMissing(_) => "Missing mount error",
             Self::RootRequired => "Root required",
             Self::UndefinedVarError(_, _) => "Undefined var error",
+            Self::PathParseError(_) => "Path parse error",
         }
     }
 }
