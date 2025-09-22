@@ -7,7 +7,10 @@ use minijinja::Value as Value;
 use camino::Utf8PathBuf;
 
 use crate::unescape::unescape;
-use crate::ast::{Instruction, MountType, Expression, Lookup, Origin, Statement, Location};
+use crate::ast::{Instruction, MountType, Expression, Lookup, Origin, Statement, Location, Chown,
+                 InstWrite, InstEnvAssign, InstEnv, InstMkdir, IncludeArg, InstRender, InstInclude,
+                 InstRun, InstFrom, FromSource, InstCopy, InstInvoke, InstMount, MountOptions};
+use crate::util::module_name::ModuleName;
 
 grammar(path: &Arc<Utf8PathBuf>);
 
@@ -23,24 +26,33 @@ Comma<T>: Vec<T> = {
 
 Location<T>: Location<T> = {
     <start: @L> <t: T> <end: @R> => Location {
-        path: path.clone(),
-        span: start..end,
+        origin: Origin {
+            path: path.clone(),
+            span: start..end,
+        },
         inner: t,
     }
 }
 
 match {
     r#""(\\.|[^"\\])*""# => STRING,
-    r"[0-9]+" => NUMBER,
     "true", "false",
-    "[", "]", ":", "{", "}", ".", ",",
-    "WORKDIR",
-    "--simple", "--layers", "--overlay",
-    "\n",
+    r"docker://[^ \n]+" => DOCKER,
+    // "[", "]", ":", "{", "}", ".", ",", "=",
+    // "WRITE", "WORKDIR", "ENTRYPOINT", "CMD", "ENV", "MKDIR", "RENDER", "INCLUDE", "RUN", "FROM", "COPY", "INVOKE", "MOUNT",
+    // "--simple", "--layers", "--overlay", "--chmod", "--chown", "-p",
+    "\\\n" => {},
+    "\n" => NEWLINE,
+    r"\s*" => {},
+    r"#[^\n]*\n" => COMMENT,
+    // r"[a-zA-Z_/-][a-zA-Z_0-9/-]*" => FILENAME,
+    // r"[a-zA-Z_][a-zA-Z_0-9]*" => IDENT,
+    r"[0-9]+" => NUMBER,
+    _
 } else {
-    r"[a-zA-Z_][a-zA-Z_0-9]*" => IDENT,
+    r"[a-zA-Z0-9_/-][a-zA-Z_0-9/.-]*" => BAREWORD,
 } else {
-    r"[a-zA-Z_0-9/.-]+" => FILENAME,
+    r"[a-zA-Z_][a-zA-Z0-9_]*"
 }
 
 pub String: String = {
@@ -61,12 +73,12 @@ pub List: Vec<Value> = {
     "[" <v:Comma<Value>> "]" => v
 }
 
-Item: (Value, Value) = {
+MapItem: (Value, Value) = {
     <k:Value> ":" <v:Value> => (k, v)
 }
 
 pub Map: BTreeMap<Value, Value> = {
-    "{" <v:Comma<Item>> "}" => BTreeMap::from_iter(v)
+    "{" <v:Comma<MapItem>> "}" => BTreeMap::from_iter(v)
 }
 
 pub Value: Value = {
@@ -78,25 +90,184 @@ pub Value: Value = {
 }
 
 pub Lookup: Lookup = {
-    <v:Expression> "." <i:Ident> => Lookup::make(v, i, Origin::blank())
+    <v:Expression> "." <i:Location<Ident>> => {
+        Lookup::make(v, i.inner, i.origin)
+    }
 }
 
 pub Expression: Expression = {
     <v:Lookup> => Expression::Lookup(v),
     <v:Value> => Expression::Value(v),
-    <v:Ident> => Expression::Ident(v),
+    <v:Location<Ident>> => Expression::Ident(v),
 }
 
 pub Ident: String = {
-    IDENT => String::from(<>)
+    BAREWORD => String::from(<>),
 }
 
 pub Filename: String = {
-    FILENAME => String::from(<>)
+    NUMBER => String::from(<>),
+    BAREWORD => String::from(<>),
+    <v:String> => v,
 }
 
 pub Workdir: Instruction = {
     "WORKDIR" <v:Filename> => Instruction::workdir(v),
+}
+
+pub UserSpec: String = {
+    BAREWORD => String::from(<>),
+    <v:String> => v,
+}
+
+pub OptionChown: Chown = {
+    // chown <user>
+    "--chown" <user:r"[a-zA-Z_][a-zA-Z0-9_]*"> => {
+        Chown {
+            user: Some(user.to_string()),
+            group: None,
+        }
+    },
+
+    // chown :<group>
+    "--chown" <group:r":[a-zA-Z_][a-zA-Z0-9_]*"> => {
+        let group = &group[1..];
+        Chown {
+            user: None,
+            group: Some(group.to_string()),
+        }
+    },
+
+    "--chown" <name:r"[a-zA-Z_][a-zA-Z0-9_]*:"> => {
+        let name = &name[..name.len()-1];
+        Chown {
+            user: Some(name.to_string()),
+            group: Some(name.to_string()),
+        }
+    },
+
+    "--chown" <name:r"[a-zA-Z_][a-zA-Z0-9_]*:[a-zA-Z_][a-zA-Z0-9_]*"> => {
+        let (user, group) = name.split_once(':').unwrap();
+        Chown {
+            user: Some(user.to_string()),
+            group: Some(group.to_string()),
+        }
+    },
+}
+
+pub OptionChmod: u32 = {
+    "--chmod" <v:NUMBER> =>? u32::from_str_radix(v, 8).map_err(|_| ParseError::User { error: "Failed to read octal" })
+}
+
+FileOpts: (Option<u32>, Option<Chown>) = {
+    () => (None, None),
+    <OptionChown> => (None, Some(<>)),
+    <OptionChmod> => (Some(<>), None),
+    <a:OptionChmod> <b:OptionChown> => (Some(a), Some(b)),
+    <a:OptionChown> <b:OptionChmod> => (Some(b), Some(a)),
+    // <a:OptionChown?> <b:OptionChmod?> => (b, a),
+    // <a:OptionChmod?> <b:OptionChown?> => (b, a),
+}
+
+pub Write: Instruction = {
+    "WRITE" <opts:FileOpts> <data:String> <name:Filename> => Instruction::Write(InstWrite {
+        dest: name.into(),
+        body: data.into(),
+        chmod: opts.0,
+        chown: opts.1,
+    }),
+}
+
+pub EnvAssign: InstEnvAssign = {
+    <key:BAREWORD> "=" <value:BAREWORD> => InstEnvAssign { key: key.to_string(), value: value.to_string() },
+}
+
+pub Env: Instruction = {
+    "ENV" <env:EnvAssign*> => Instruction::Env(InstEnv { env }),
+}
+
+pub Copy: Instruction = {
+    "COPY" <opts:FileOpts> <srcs:Filename*> <dest:Filename> => Instruction::Copy(InstCopy {
+        srcs: srcs.into_iter().map(Into::into).collect(),
+        dest: dest.into(),
+        chmod: opts.0,
+        chown: opts.1,
+    }),
+}
+
+pub Entrypoint: Instruction = {
+    "ENTRYPOINT" <v:Filename*> => Instruction::entrypoint(v),
+}
+
+pub Cmd: Instruction = {
+    "CMD" <v:Filename*> => Instruction::cmd(v),
+}
+
+pub Mkdir: Instruction = {
+    "MKDIR" <p:"-p"?> <opts:FileOpts> <dest:Filename> => Instruction::Mkdir(InstMkdir {
+        dest: dest.into(),
+        chmod: opts.0,
+        chown: opts.1,
+        parents: p.is_some(),
+    }),
+}
+
+pub IncludeArg: IncludeArg = {
+    <name:Ident> "=" <value:Expression> => IncludeArg { name, value }
+}
+
+pub Render: Instruction = {
+    "RENDER" <opts:FileOpts> <src:Filename> <dest:Filename> <args:IncludeArg*> => Instruction::Render(InstRender {
+        src: src.into(),
+        dest: dest.into(),
+        chmod: opts.0,
+        chown: opts.1,
+        args,
+    }),
+}
+
+ModuleName: ModuleName = {
+    <v:BAREWORD> => {
+        ModuleName::new(v.split('.').map(str::to_string).collect())
+    }
+}
+
+DockerSource: String = {
+    <v:DOCKER> => v.strip_prefix("docker://").unwrap().to_string()
+}
+
+RaptorSource = { ModuleName }
+
+FromSource: FromSource = {
+    <v:DockerSource> => FromSource::Docker(v),
+    <v:RaptorSource> => FromSource::Raptor(v),
+}
+
+pub From: Instruction = {
+    "FROM" <from:FromSource> => Instruction::From(InstFrom { from }),
+}
+
+pub Run: Instruction = {
+    "RUN" <run:Filename*> => Instruction::Run(InstRun { run }),
+}
+
+pub Invoke: Instruction = {
+    "INVOKE" <args:Filename*> => Instruction::Invoke(InstInvoke { args }),
+}
+
+pub Include: Instruction = {
+    "INCLUDE" <src:ModuleName> <args:IncludeArg*> => Instruction::Include(InstInclude {
+        src,
+        args,
+    }),
+}
+
+pub Mount: Instruction = {
+    "MOUNT" <mtype:MountType> <name:Ident> <dest:Filename> => Instruction::Mount(InstMount {
+        opts: MountOptions { mtype },
+        name,
+        dest: dest.into(),
+    }),
 }
 
 pub MountType: MountType = {
@@ -105,30 +276,29 @@ pub MountType: MountType = {
     "--overlay" => MountType::Overlay,
 }
 
-// mount_options = { mount_type? }
-
-// expression  = { value | module_name }
-// filename    = { string }
-// user_spec   = { ident }
-// group_spec  = { ident }
-
 // Fundamental definitions
 pub File: Vec<Statement> = {
-    <stmt:(Statement "\n"?)*> => stmt.into_iter().map(|x| x.0).collect()
+    <items:Item*> => items.into_iter().flatten().collect(),
+}
+
+Item: Option<Statement> = {
+    NEWLINE => None,
+    COMMENT => None,
+    <v:Statement> => Some(v),
 }
 
 pub Statement: Statement = {
-    // <v:From>       => Statement { inst: Instruction::From(v), origin: Origin::blank() }
-    // <v:Mount>      => Statement { inst: Instruction::Mount(v), origin: Origin::blank() }
-    // <v:Render>     => Statement { inst: Instruction::Render(v), origin: Origin::blank() }
-    // <v:Write>      => Statement { inst: Instruction::Write(v), origin: Origin::blank() }
-    // <v:Mkdir>      => Statement { inst: Instruction::Mkdir(v), origin: Origin::blank() }
-    // <v:Copy>       => Statement { inst: Instruction::Copy(v), origin: Origin::blank() }
-    // <v:Include>    => Statement { inst: Instruction::Include(v), origin: Origin::blank() }
-    // <v:Invoke>     => Statement { inst: Instruction::Invoke(v), origin: Origin::blank() }
-    // <v:Run>        => Statement { inst: Instruction::Run(v), origin: Origin::blank() }
-    // <v:Env>        => Statement { inst: Instruction::Env(v), origin: Origin::blank() }
-    <v:Location<Workdir>>    => Statement { origin: v.origin(), inst: v.inner }
-    // <v:Entrypoint> => Statement { inst: Instruction::Entrypoint(v), origin: Origin::blank() }
-    // <v:Cmd>        => Statement { inst: Instruction::Cmd(v), origin: Origin::blank() }
+    <v:Location<From>>       => Statement { origin: v.origin(), inst: v.inner },
+    <v:Location<Mount>>      => Statement { origin: v.origin(), inst: v.inner },
+    <v:Location<Render>>     => Statement { origin: v.origin(), inst: v.inner },
+    <v:Location<Write>>      => Statement { origin: v.origin(), inst: v.inner },
+    <v:Location<Mkdir>>      => Statement { origin: v.origin(), inst: v.inner },
+    <v:Location<Copy>>       => Statement { origin: v.origin(), inst: v.inner },
+    <v:Location<Include>>    => Statement { origin: v.origin(), inst: v.inner },
+    <v:Location<Invoke>>     => Statement { origin: v.origin(), inst: v.inner },
+    <v:Location<Run>>        => Statement { origin: v.origin(), inst: v.inner },
+    <v:Location<Env>>        => Statement { origin: v.origin(), inst: v.inner },
+    <v:Location<Workdir>>    => Statement { origin: v.origin(), inst: v.inner },
+    <v:Location<Entrypoint>> => Statement { origin: v.origin(), inst: v.inner },
+    <v:Location<Cmd>>        => Statement { origin: v.origin(), inst: v.inner },
 }
