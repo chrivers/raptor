@@ -199,7 +199,9 @@ fn raptor() -> RaptorResult<()> {
                 let program = builder.load(file)?;
 
                 if args.mode.build() {
-                    check_for_root()?;
+                    if !args.no_act {
+                        check_for_root()?;
+                    }
                     builder.build(program)?;
                 }
             }
