@@ -111,7 +111,7 @@ falcon = { workspace = true }
 indicatif = { workspace = true, features = ["improved_unicode"] }
 itertools = { workspace = true }
 log = { workspace = true }
-minijinja = { workspace = true, features = ["custom_syntax", "debug", "deserialization", "loader", "loop_controls", "serde", "std_collections"] }
+minijinja = { workspace = true, features = ["custom_syntax", "debug", "deserialization", "loader", "loop_controls", "macros", "multi_template", "serde", "std_collections"] }
 nix = { workspace = true, features = ["fs", "user"] }
 pest = { workspace = true, features = ["pretty-print"] }
 raptor-parser = { workspace = true }
