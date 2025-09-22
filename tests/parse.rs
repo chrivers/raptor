@@ -197,11 +197,9 @@ fn parse_render03() -> RaptorResult<()> {
                     Instruction::render(
                         "include/template02.tmpl",
                         "/a",
-                        [IncludeArg::lookup(
+                        [IncludeArg::make(
                             "what",
-                            Expression::ident("what"),
-                            "foo",
-                            Origin::make("render03.rinc", 39..43),
+                            Expression::ident("what", Origin::make("render03.rinc", 39..43))
                         )],
                     ),
                     Origin::make("render03.rinc", 0..43)
