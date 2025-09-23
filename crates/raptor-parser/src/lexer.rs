@@ -1,6 +1,17 @@
-use logos::{Lexer, Logos};
+use logos::{Lexer, Logos, Span};
+
+#[derive(thiserror::Error, Debug, Clone, PartialEq, Eq, Default)]
+pub enum LexerError {
+    #[error("Unterminated string literal at position {}", .0.start)]
+    UnterminatedString(Span),
+
+    #[default]
+    #[error("Lexer error")]
+    LexerError,
+}
 
 #[derive(Logos, Debug, PartialEq, Eq, Clone)]
+#[logos(error = LexerError)]
 pub enum WordToken<'a> {
     #[regex("[^ \n\t\"]+")]
     Text(&'a str),
@@ -19,6 +30,7 @@ pub enum WordToken<'a> {
 }
 
 #[derive(Logos, Debug, PartialEq, Eq, Clone)]
+#[logos(error = LexerError)]
 enum StringToken {
     #[token("\"")]
     ExitString,
@@ -39,7 +51,7 @@ enum StringToken {
     Chars,
 }
 
-fn string_callback<'a>(lex: &mut Lexer<'a, WordToken<'a>>) -> Result<String, ()> {
+fn string_callback<'a>(lex: &mut Lexer<'a, WordToken<'a>>) -> Result<String, LexerError> {
     let mut res = String::new();
     let mut string_lexer = lex.clone().morph();
 
@@ -54,7 +66,7 @@ fn string_callback<'a>(lex: &mut Lexer<'a, WordToken<'a>>) -> Result<String, ()>
             StringToken::EscTab => res.push('\t'),
             StringToken::EscQuote => res.push('"'),
             StringToken::Chars => res.push_str(string_lexer.slice()),
-            StringToken::Newline => return Err(()),
+            StringToken::Newline => return Err(LexerError::UnterminatedString(string_lexer.span())),
         }
     }
 

@@ -20,17 +20,11 @@ fn main() -> Result<(), std::io::Error> {
     for token in lexer {
         match token {
             Ok(WordToken::Text(txt)) => write!(stdout, "{}", txt.bright_white())?,
-            Ok(WordToken::Newline(txt)) => {
-                write!(stdout, "{txt}")?;
-            }
+            Ok(WordToken::Newline(txt)) => write!(stdout, "{txt}")?,
             Ok(WordToken::String(txt)) => write!(stdout, "{}", format!("{txt:?}").yellow())?,
-            Ok(WordToken::Comment(txt)) => {
-                writeln!(stdout, "{}", &txt[..txt.len() - 1].dimmed())?;
-            }
+            Ok(WordToken::Comment(txt)) => writeln!(stdout, "{}", &txt[..txt.len() - 1].dimmed())?,
             Ok(WordToken::Whitespace(txt)) => write!(stdout, "{txt}")?,
-            Err(err) => {
-                error!("Lexer error: {err:?}");
-            }
+            Err(err) => error!("Lexer error: {err}"),
         }
     }
 
