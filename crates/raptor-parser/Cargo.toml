@@ -24,3 +24,7 @@ logos = { workspace = true, features = ["forbid_unsafe"] }
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+colog.workspace = true
+log.workspace = true
