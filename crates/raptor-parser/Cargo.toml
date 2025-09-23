@@ -20,6 +20,7 @@ camino = { workspace = true }
 serde = { workspace = true }
 colored = { workspace = true }
 minijinja = { workspace = true }
+logos = { workspace = true, features = ["forbid_unsafe"] }
 
 [lints]
 workspace = true
