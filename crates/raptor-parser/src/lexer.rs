@@ -25,7 +25,7 @@ pub enum WordToken<'a> {
     #[token("\"", string_callback)]
     String(String),
 
-    #[regex(r"( |\t|\\\n)+", priority = 3)]
+    #[regex(r"( |\t|\\\n)+")]
     Whitespace(&'a str),
 }
 
