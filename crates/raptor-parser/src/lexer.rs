@@ -14,7 +14,7 @@ pub enum LexerError {
 #[logos(error = LexerError)]
 pub enum WordToken<'a> {
     #[regex("[^ \n\t\"]+")]
-    Text(&'a str),
+    Bareword(&'a str),
 
     #[token("\n")]
     Newline(&'a str),

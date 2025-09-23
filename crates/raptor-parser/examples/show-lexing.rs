@@ -19,7 +19,7 @@ fn main() -> Result<(), std::io::Error> {
 
     for token in lexer {
         match token {
-            Ok(WordToken::Text(txt)) => write!(stdout, "{}", txt.bright_white())?,
+            Ok(WordToken::Bareword(txt)) => write!(stdout, "{}", txt.bright_white())?,
             Ok(WordToken::Newline(txt) | WordToken::Whitespace(txt)) => {
                 write!(stdout, "{txt}")?;
             }
