@@ -66,7 +66,7 @@ fn string_callback<'a>(lex: &mut Lexer<'a, WordToken<'a>>) -> Result<String, Lex
             StringToken::EscTab => res.push('\t'),
             StringToken::EscQuote => res.push('"'),
             StringToken::Chars => res.push_str(string_lexer.slice()),
-            StringToken::Newline => return Err(LexerError::UnterminatedString(string_lexer.span())),
+            StringToken::Newline => Err(LexerError::UnterminatedString(string_lexer.span()))?,
         }
     }
 
