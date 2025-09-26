@@ -70,6 +70,18 @@ struct CopyArgs {
     files: Vec<Utf8PathBuf>,
 }
 
+#[derive(clap::Parser, Debug)]
+#[clap(disable_help_flag = true)]
+#[command(about = "bar", name = "WRITE", long_about = "foo")]
+struct WriteArgs {
+    #[clap(flatten)]
+    opts: FileOpts,
+
+    body: String,
+
+    dest: Utf8PathBuf,
+}
+
 trait Lex<'a, 'b, T> {
     fn bareword(&self) -> ParseResult<&'a str>;
     fn value(&'b self) -> ParseResult<&'b str>;
@@ -235,6 +247,25 @@ impl<'src> Parser<'src> {
         Ok(InstEnv { env })
     }
 
+    pub fn parse_write(&mut self) -> ParseResult<InstWrite> {
+        // clap requires dummy string to simulate argv[0]
+        let mut copy = vec![String::new()];
+        self.consume_line_to(&mut copy)?;
+
+        let WriteArgs {
+            opts: FileOpts { chmod, chown },
+            body,
+            dest,
+        } = WriteArgs::try_parse_from(copy)?;
+
+        Ok(InstWrite {
+            dest,
+            body,
+            chmod,
+            chown,
+        })
+    }
+
     pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
         // clap requires dummy string to simulate argv[0]
         let mut copy = vec![String::new()];
@@ -272,7 +303,7 @@ impl<'src> Parser<'src> {
             /* FROM */
             /* MOUNT */
             /* RENDER */
-            /* WRITE */
+            "WRITE" => Instruction::Write(self.parse_write()?),
             /* MKDIR */
             "COPY" => Instruction::Copy(self.parse_copy()?),
             /* INCLUDE */
