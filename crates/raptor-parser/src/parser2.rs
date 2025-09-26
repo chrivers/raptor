@@ -3,11 +3,12 @@ use std::sync::Arc;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use logos::{Lexer, Logos};
+use minijinja::Value;
 
 use crate::ast::{
-    Chown, FromSource, InstCmd, InstCopy, InstEntrypoint, InstEnv, InstEnvAssign, InstFrom,
-    InstInvoke, InstMkdir, InstMount, InstRun, InstWorkdir, InstWrite, Instruction, MountOptions,
-    MountType, Origin, Statement,
+    Chown, Expression, FromSource, IncludeArg, InstCmd, InstCopy, InstEntrypoint, InstEnv,
+    InstEnvAssign, InstFrom, InstInclude, InstInvoke, InstMkdir, InstMount, InstRun, InstWorkdir,
+    InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
 use crate::lexer::WordToken;
 use crate::util::module_name::ModuleName;
@@ -143,6 +144,7 @@ trait Lex<'a, 'b, T> {
     fn bareword(&self) -> ParseResult<&'a str>;
     fn value(&'b self) -> ParseResult<&'b str>;
     fn path(&self) -> ParseResult<Utf8PathBuf>;
+    fn module_name(&self) -> ParseResult<ModuleName>;
 }
 
 impl<'src, 'this> Lex<'src, 'this, Self> for WordToken<'src> {
@@ -176,6 +178,13 @@ impl<'src, 'this> Lex<'src, 'this, Self> for WordToken<'src> {
             WordToken::Whitespace(_) => Err(ParseError::ExpectedWord),
             WordToken::Eof => Err(ParseError::UnexpectedEof),
         }
+    }
+
+    fn module_name(&self) -> ParseResult<ModuleName> {
+        let word = self.bareword()?;
+        let res = ModuleName::new(word.split('.').map(str::to_string).collect());
+
+        Ok(res)
     }
 }
 
@@ -350,14 +359,12 @@ impl<'src> Parser<'src> {
 
     #[allow(clippy::option_if_let_else)]
     pub fn parse_from(&mut self) -> ParseResult<InstFrom> {
-        let word = self.word()?.bareword()?;
+        let word = self.word()?;
 
-        let from = if let Some(docker) = word.strip_prefix("docker://") {
+        let from = if let Some(docker) = word.bareword()?.strip_prefix("docker://") {
             FromSource::Docker(docker.to_string())
         } else {
-            FromSource::Raptor(ModuleName::new(
-                word.split('.').map(str::to_string).collect(),
-            ))
+            FromSource::Raptor(word.module_name()?)
         };
 
         self.end_of_line()?;
@@ -380,6 +387,44 @@ impl<'src> Parser<'src> {
             name,
             dest,
         })
+    }
+
+    pub fn parse_include_arg(&mut self) -> ParseResult<Option<IncludeArg>> {
+        if let WordToken::Newline(_) = self.peek()? {
+            return Ok(None);
+        }
+
+        let word = self.word()?;
+        let value = word.value()?;
+
+        let Some((head, tail)) = value.split_once('=') else {
+            return Err(ParseError::ExpectedWord);
+        };
+
+        let name = head.to_string();
+
+        let value = if tail.contains('.') {
+            let path = ModuleName::new(tail.split('.').map(str::to_string).collect());
+            Expression::Lookup(Lookup::new(path, Origin::new(self.filename.clone(), 0..0)))
+        } else {
+            Expression::Value(Value::from_serialize(tail))
+        };
+
+        let arg = IncludeArg { name, value };
+
+        Ok(Some(arg))
+    }
+
+    pub fn parse_include(&mut self) -> ParseResult<InstInclude> {
+        let src = self.word()?.module_name()?;
+
+        let mut args = vec![];
+        while let Some(arg) = self.parse_include_arg()? {
+            args.push(arg);
+        }
+        self.end_of_line()?;
+
+        Ok(InstInclude { src, args })
     }
 
     pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
@@ -426,7 +471,7 @@ impl<'src> Parser<'src> {
             "WRITE" => Instruction::Write(self.parse_write()?),
             "MKDIR" => Instruction::Mkdir(self.parse_mkdir()?),
             "COPY" => Instruction::Copy(self.parse_copy()?),
-            /* INCLUDE */
+            "INCLUDE" => Instruction::Include(self.parse_include()?),
             "INVOKE" => Instruction::Invoke(self.parse_invoke()?),
             "RUN" => Instruction::Run(self.parse_run()?),
             "ENV" => Instruction::Env(self.parse_env()?),
