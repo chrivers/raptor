@@ -2,17 +2,18 @@ use std::sync::Arc;
 
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use logos::Lexer;
+use logos::{Lexer, Logos};
 
 use crate::ast::{
     Chown, InstCmd, InstCopy, InstEntrypoint, InstEnv, InstEnvAssign, InstRun, InstWorkdir,
-    Instruction, Origin, Statement,
+    InstWrite, Instruction, Origin, Statement,
 };
 use crate::lexer::WordToken;
 use crate::{ParseError, ParseResult};
 
 pub struct Parser<'src> {
     lexer: Lexer<'src, WordToken<'src>>,
+    filename: Arc<Utf8PathBuf>,
 }
 
 fn parse_chmod_permission(string: &str) -> Result<u32, ParseError> {
@@ -124,8 +125,8 @@ impl<'src, 'this> Lex<'src, 'this, Self> for WordToken<'src> {
 
 impl<'src> Parser<'src> {
     #[must_use]
-    pub const fn new(lexer: Lexer<'src, WordToken<'src>>) -> Self {
-        Self { lexer }
+    pub const fn new(lexer: Lexer<'src, WordToken<'src>>, filename: Arc<Utf8PathBuf>) -> Self {
+        Self { lexer, filename }
     }
 
     fn next(&mut self) -> ParseResult<WordToken<'src>> {
@@ -297,7 +298,11 @@ impl<'src> Parser<'src> {
             return Ok(None);
         }
 
-        let origin = Origin::new(Arc::new("foo".into()), 0..0);
+        if matches!(word, WordToken::Newline(_)) {
+            return self.statement();
+        }
+
+        let start = self.lexer.span().start;
 
         let inst = match word.bareword()? {
             /* FROM */
@@ -316,6 +321,10 @@ impl<'src> Parser<'src> {
             _ => return Err(ParseError::ExpectedWord),
         };
 
+        let end = self.lexer.span().end;
+
+        let origin = Origin::new(self.filename.clone(), start..end - 1);
+
         Ok(Some(Statement { inst, origin }))
     }
 
@@ -328,4 +337,11 @@ impl<'src> Parser<'src> {
 
         Ok(res)
     }
+}
+
+pub fn parse(name: &str, buf: &str) -> ParseResult<Vec<Statement>> {
+    let lexer = WordToken::lexer(buf);
+    let mut parser = Parser::new(lexer, Arc::new(name.into()));
+
+    parser.file()
 }
