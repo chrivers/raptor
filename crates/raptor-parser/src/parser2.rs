@@ -126,6 +126,20 @@ impl<'src> Parser<'src> {
         }
     }
 
+    fn end_of_line(&mut self) -> ParseResult<()> {
+        while let Some(token) = self.next() {
+            match token? {
+                WordToken::Newline(_) | WordToken::Comment(_) => break,
+                WordToken::Whitespace(_) => {}
+                WordToken::Bareword(_) | WordToken::String(_) => {
+                    return Err(ParseError::ExpectedEol);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     #[allow(clippy::needless_continue)]
     fn consume_line_to(&mut self, args: &mut Vec<String>) -> ParseResult<()> {
         loop {

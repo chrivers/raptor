@@ -28,6 +28,9 @@ pub enum ParseError {
     #[error("Unexpected eof")]
     UnexpectedEof,
 
+    #[error("Expected end of line")]
+    ExpectedEol,
+
     #[error("Expected word")]
     ExpectedWord,
 
