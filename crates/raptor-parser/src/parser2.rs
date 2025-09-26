@@ -5,7 +5,7 @@ use clap::Parser as _;
 use logos::Lexer;
 
 use crate::ast::{
-    Chown, InstCmd, InstCopy, InstEntrypoint, InstRun, Instruction, Origin, Statement,
+    Chown, InstCmd, InstCopy, InstEntrypoint, InstRun, InstWorkdir, Instruction, Origin, Statement,
 };
 use crate::lexer::WordToken;
 use crate::{ParseError, ParseResult};
@@ -179,6 +179,13 @@ impl<'src> Parser<'src> {
         Ok(InstCmd { cmd })
     }
 
+    pub fn parse_workdir(&mut self) -> ParseResult<InstWorkdir> {
+        let dir = self.word().required()?.path()?;
+        self.end_of_line()?;
+
+        Ok(InstWorkdir { dir })
+    }
+
     pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
         // clap requires dummy string to simulate argv[0]
         let mut copy = vec![String::new()];
@@ -223,7 +230,7 @@ impl<'src> Parser<'src> {
             /* INVOKE */
             "RUN" => Instruction::Run(self.parse_run()?),
             /* ENV */
-            /* WORKDIR */
+            "WORKDIR" => Instruction::Workdir(self.parse_workdir()?),
             "ENTRYPOINT" => Instruction::Entrypoint(self.parse_entrypoint()?),
             "CMD" => Instruction::Cmd(self.parse_cmd()?),
             _ => return Err(ParseError::ExpectedWord),
