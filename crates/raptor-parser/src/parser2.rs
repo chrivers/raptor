@@ -112,57 +112,44 @@ impl<'src> Parser<'src> {
     }
 
     #[allow(clippy::needless_continue)]
-    pub fn parse_run(&mut self) -> ParseResult<InstRun> {
-        let mut run = vec![];
-
+    fn consume_line_to(&mut self, args: &mut Vec<String>) -> ParseResult<()> {
         loop {
             let token = self.word().required()?;
             match token {
-                WordToken::Bareword(word) => run.push(word.to_string()),
+                WordToken::Bareword(word) => args.push(word.to_string()),
                 WordToken::Newline(_) | WordToken::Comment(_) => break,
-                WordToken::String(word) => run.push(word),
+                WordToken::String(word) => args.push(word),
                 WordToken::Whitespace(_) => continue,
             }
         }
+
+        Ok(())
+    }
+
+    fn consume_line(&mut self) -> ParseResult<Vec<String>> {
+        let mut args = vec![];
+        self.consume_line_to(&mut args)?;
+        Ok(args)
+    }
+
+    pub fn parse_run(&mut self) -> ParseResult<InstRun> {
+        let run = self.consume_line()?;
 
         Ok(InstRun { run })
     }
 
-    #[allow(clippy::needless_continue)]
     pub fn parse_entrypoint(&mut self) -> ParseResult<InstEntrypoint> {
-        let mut entrypoint = vec![];
-
-        loop {
-            let token = self.word().required()?;
-            match token {
-                WordToken::Bareword(word) => entrypoint.push(word.to_string()),
-                WordToken::Newline(_) | WordToken::Comment(_) => break,
-                WordToken::String(word) => entrypoint.push(word),
-                WordToken::Whitespace(_) => continue,
-            }
-        }
+        let entrypoint = self.consume_line()?;
 
         Ok(InstEntrypoint { entrypoint })
     }
 
-    #[allow(clippy::needless_continue)]
     pub fn parse_cmd(&mut self) -> ParseResult<InstCmd> {
-        let mut cmd = vec![];
-
-        loop {
-            let token = self.word().required()?;
-            match token {
-                WordToken::Bareword(word) => cmd.push(word.to_string()),
-                WordToken::Newline(_) | WordToken::Comment(_) => break,
-                WordToken::String(word) => cmd.push(word),
-                WordToken::Whitespace(_) => continue,
-            }
-        }
+        let cmd = self.consume_line()?;
 
         Ok(InstCmd { cmd })
     }
 
-    #[allow(clippy::needless_continue)]
     pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
         let mut copy = vec![String::new()];
 
