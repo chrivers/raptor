@@ -1,4 +1,3 @@
-use std::mem;
 use std::sync::Arc;
 
 use camino::Utf8PathBuf;
@@ -13,7 +12,6 @@ use crate::{ParseError, ParseResult};
 
 pub struct Parser<'src> {
     lexer: Lexer<'src, WordToken<'src>>,
-    token: Option<ParseResult<WordToken<'src>>>,
 }
 
 trait Required<T> {
@@ -100,9 +98,12 @@ impl<'src> Lex<'src, Self> for WordToken<'src> {
 
 impl<'src> Parser<'src> {
     #[must_use]
-    pub fn new(mut lexer: Lexer<'src, WordToken<'src>>) -> Self {
-        let token = lexer.next().map(|word| word.map_err(ParseError::from));
-        Self { lexer, token }
+    pub fn new(lexer: Lexer<'src, WordToken<'src>>) -> Self {
+        Self { lexer }
+    }
+
+    fn next(&mut self) -> Option<ParseResult<WordToken<'src>>> {
+        self.lexer.next().map(|word| word.map_err(ParseError::from))
     }
 
     fn word(&mut self) -> Option<ParseResult<WordToken<'src>>> {
