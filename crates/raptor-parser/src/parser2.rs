@@ -5,10 +5,11 @@ use clap::Parser as _;
 use logos::{Lexer, Logos};
 
 use crate::ast::{
-    Chown, InstCmd, InstCopy, InstEntrypoint, InstEnv, InstEnvAssign, InstRun, InstWorkdir,
-    InstWrite, Instruction, Origin, Statement,
+    Chown, FromSource, InstCmd, InstCopy, InstEntrypoint, InstEnv, InstEnvAssign, InstFrom,
+    InstRun, InstWorkdir, InstWrite, Instruction, Origin, Statement,
 };
 use crate::lexer::WordToken;
+use crate::util::module_name::ModuleName;
 use crate::{ParseError, ParseResult};
 
 pub struct Parser<'src> {
@@ -267,6 +268,23 @@ impl<'src> Parser<'src> {
         })
     }
 
+    #[allow(clippy::option_if_let_else)]
+    pub fn parse_from(&mut self) -> ParseResult<InstFrom> {
+        let word = self.word()?.bareword()?;
+
+        let from = if let Some(docker) = word.strip_prefix("docker://") {
+            FromSource::Docker(docker.to_string())
+        } else {
+            FromSource::Raptor(ModuleName::new(
+                word.split('.').map(str::to_string).collect(),
+            ))
+        };
+
+        self.end_of_line()?;
+
+        Ok(InstFrom { from })
+    }
+
     pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
         // clap requires dummy string to simulate argv[0]
         let mut copy = vec![String::new()];
@@ -305,7 +323,7 @@ impl<'src> Parser<'src> {
         let start = self.lexer.span().start;
 
         let inst = match word.bareword()? {
-            /* FROM */
+            "FROM" => Instruction::From(self.parse_from()?),
             /* MOUNT */
             /* RENDER */
             "WRITE" => Instruction::Write(self.parse_write()?),
