@@ -1,5 +1,4 @@
 use std::mem;
-use std::num::ParseIntError;
 use std::sync::Arc;
 
 use camino::Utf8PathBuf;
@@ -30,8 +29,11 @@ impl<'src> Required<WordToken<'src>> for Option<ParseResult<WordToken<'src>>> {
     }
 }
 
-const fn parse_chmod_permission(string: &str) -> Result<u32, ParseIntError> {
-    u32::from_str_radix(string, 8)
+fn parse_chmod_permission(string: &str) -> Result<u32, ParseError> {
+    if !(3..=4).contains(&string.len()) {
+        return Err(ParseError::InvalidPermissionMask);
+    }
+    Ok(u32::from_str_radix(string, 8)?)
 }
 
 fn parse_chown(string: &str) -> Result<Chown, ParseError> {
