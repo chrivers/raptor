@@ -96,6 +96,7 @@ impl<'src> Lex<'src, Self> for WordToken<'src> {
         }
     }
 
+    #[allow(clippy::match_same_arms)]
     fn path(&self) -> ParseResult<Utf8PathBuf> {
         match self {
             WordToken::Bareword(word) => Ok(word.into()),
@@ -109,7 +110,7 @@ impl<'src> Lex<'src, Self> for WordToken<'src> {
 
 impl<'src> Parser<'src> {
     #[must_use]
-    pub fn new(lexer: Lexer<'src, WordToken<'src>>) -> Self {
+    pub const fn new(lexer: Lexer<'src, WordToken<'src>>) -> Self {
         Self { lexer }
     }
 
