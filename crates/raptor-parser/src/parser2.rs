@@ -5,7 +5,8 @@ use clap::Parser as _;
 use logos::Lexer;
 
 use crate::ast::{
-    Chown, InstCmd, InstCopy, InstEntrypoint, InstRun, InstWorkdir, Instruction, Origin, Statement,
+    Chown, InstCmd, InstCopy, InstEntrypoint, InstEnv, InstEnvAssign, InstRun, InstWorkdir,
+    Instruction, Origin, Statement,
 };
 use crate::lexer::WordToken;
 use crate::{ParseError, ParseResult};
@@ -69,17 +70,30 @@ struct CopyArgs {
     files: Vec<Utf8PathBuf>,
 }
 
-trait Lex<'a, T> {
+trait Lex<'a, 'b, T> {
     fn bareword(&self) -> ParseResult<&'a str>;
+    fn value(&'b self) -> ParseResult<&'b str>;
     fn path(&self) -> ParseResult<Utf8PathBuf>;
 }
 
-impl<'src> Lex<'src, Self> for WordToken<'src> {
+impl<'src, 'this> Lex<'src, 'this, Self> for WordToken<'src> {
     fn bareword(&self) -> ParseResult<&'src str> {
         if let Self::Bareword(word) = self {
             Ok(word)
         } else {
             Err(ParseError::ExpectedWord)
+        }
+    }
+
+    #[allow(clippy::match_same_arms)]
+    fn value(&'this self) -> ParseResult<&'this str> {
+        match self {
+            WordToken::Bareword(word) => Ok(word),
+            WordToken::String(string) => Ok(string.as_ref()),
+            WordToken::Newline(_) => Err(ParseError::ExpectedWord),
+            WordToken::Comment(_) => Err(ParseError::ExpectedWord),
+            WordToken::Whitespace(_) => Err(ParseError::ExpectedWord),
+            WordToken::Eof => Err(ParseError::UnexpectedEof),
         }
     }
 
@@ -104,6 +118,15 @@ impl<'src> Parser<'src> {
 
     fn next(&mut self) -> ParseResult<WordToken<'src>> {
         self.lexer
+            .next()
+            .unwrap_or(Ok(WordToken::Eof))
+            .map_err(ParseError::from)
+    }
+
+    fn peek(&self) -> ParseResult<WordToken<'src>> {
+        // FIXME: do away with the .clone() here
+        self.lexer
+            .clone()
             .next()
             .unwrap_or(Ok(WordToken::Eof))
             .map_err(ParseError::from)
@@ -179,6 +202,39 @@ impl<'src> Parser<'src> {
         Ok(InstWorkdir { dir })
     }
 
+    pub fn parse_env_assign(&mut self) -> ParseResult<Option<InstEnvAssign>> {
+        if let WordToken::Newline(_) = self.peek()? {
+            return Ok(None);
+        }
+
+        let word = self.word()?;
+        let value = word.value()?;
+
+        let assign = if let Some((head, tail)) = value.split_once('=') {
+            InstEnvAssign {
+                key: head.to_string(),
+                value: tail.to_string(),
+            }
+        } else {
+            InstEnvAssign {
+                key: value.to_string(),
+                value: value.to_string(),
+            }
+        };
+
+        Ok(Some(assign))
+    }
+
+    pub fn parse_env(&mut self) -> ParseResult<InstEnv> {
+        let mut env = vec![];
+        while let Some(assign) = self.parse_env_assign()? {
+            env.push(assign);
+        }
+        self.end_of_line()?;
+
+        Ok(InstEnv { env })
+    }
+
     pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
         // clap requires dummy string to simulate argv[0]
         let mut copy = vec![String::new()];
@@ -222,7 +278,7 @@ impl<'src> Parser<'src> {
             /* INCLUDE */
             /* INVOKE */
             "RUN" => Instruction::Run(self.parse_run()?),
-            /* ENV */
+            "ENV" => Instruction::Env(self.parse_env()?),
             "WORKDIR" => Instruction::Workdir(self.parse_workdir()?),
             "ENTRYPOINT" => Instruction::Entrypoint(self.parse_entrypoint()?),
             "CMD" => Instruction::Cmd(self.parse_cmd()?),
