@@ -14,6 +14,9 @@ pub enum ParseError {
     #[error(transparent)]
     LexerError(#[from] LexerError),
 
+    #[error(transparent)]
+    ClapError(#[from] clap::error::Error),
+
     #[error("Unexpected eof")]
     UnexpectedEof,
 
