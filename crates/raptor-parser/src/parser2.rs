@@ -1,15 +1,20 @@
+use std::mem;
+use std::num::ParseIntError;
 use std::sync::Arc;
 
+use camino::Utf8PathBuf;
+use clap::Parser as _;
 use logos::Lexer;
 
-use crate::{
-    ParseError, ParseResult,
-    ast::{InstRun, Instruction, Origin, Statement},
-    lexer::WordToken,
+use crate::ast::{
+    Chown, InstCmd, InstCopy, InstEntrypoint, InstRun, Instruction, Origin, Statement,
 };
+use crate::lexer::WordToken;
+use crate::{ParseError, ParseResult};
 
 pub struct Parser<'src> {
     lexer: Lexer<'src, WordToken<'src>>,
+    token: Option<ParseResult<WordToken<'src>>>,
 }
 
 trait Required<T> {
@@ -23,6 +28,58 @@ impl<'src> Required<WordToken<'src>> for Option<ParseResult<WordToken<'src>>> {
             None => Err(ParseError::UnexpectedEof),
         }
     }
+}
+
+const fn parse_chmod_permission(string: &str) -> Result<u32, ParseIntError> {
+    u32::from_str_radix(string, 8)
+}
+
+fn parse_chown(string: &str) -> Result<Chown, ParseError> {
+    let res = if let Some((head, tail)) = string.split_once(':') {
+        match (head, tail) {
+            ("", "") => return Err(ParseError::ExpectedWord),
+            (head, "") => Chown {
+                user: Some(head.to_string()),
+                group: Some(head.to_string()),
+            },
+            ("", tail) => Chown {
+                user: None,
+                group: Some(tail.to_string()),
+            },
+            (head, tail) => Chown {
+                user: Some(head.to_string()),
+                group: Some(tail.to_string()),
+            },
+        }
+    } else {
+        Chown {
+            user: Some(string.to_string()),
+            group: None,
+        }
+    };
+
+    Ok(res)
+}
+
+#[derive(clap::Args, Debug)]
+#[command(about = "bar", name = "COPY", long_about = "foo")]
+struct FileOpts {
+    #[arg(long, value_parser = parse_chmod_permission)]
+    chmod: Option<u32>,
+
+    #[arg(long, value_parser = parse_chown)]
+    chown: Option<Chown>,
+}
+
+#[derive(clap::Parser, Debug)]
+#[clap(disable_help_flag = true)]
+#[command(about = "bar", name = "COPY", long_about = "foo")]
+struct CopyArgs {
+    #[clap(flatten)]
+    opts: FileOpts,
+
+    #[arg(num_args = 2.., value_names = ["source", "dest"])]
+    files: Vec<Utf8PathBuf>,
 }
 
 trait Lex<'a, T> {
@@ -41,12 +98,15 @@ impl<'src> Lex<'src, Self> for WordToken<'src> {
 
 impl<'src> Parser<'src> {
     #[must_use]
-    pub const fn new(lexer: Lexer<'src, WordToken<'src>>) -> Self {
-        Self { lexer }
+    pub fn new(mut lexer: Lexer<'src, WordToken<'src>>) -> Self {
+        let token = lexer.next().map(|word| word.map_err(ParseError::from));
+        Self { lexer, token }
     }
 
     fn word(&mut self) -> Option<ParseResult<WordToken<'src>>> {
-        self.lexer.next().map(|word| word.map_err(ParseError::from))
+        let mut next = self.lexer.next().map(|word| word.map_err(ParseError::from));
+        mem::swap(&mut self.token, &mut next);
+        next
     }
 
     #[allow(clippy::needless_continue)]
@@ -66,16 +126,80 @@ impl<'src> Parser<'src> {
         Ok(InstRun { run })
     }
 
+    #[allow(clippy::needless_continue)]
+    pub fn parse_entrypoint(&mut self) -> ParseResult<InstEntrypoint> {
+        let mut entrypoint = vec![];
+
+        loop {
+            let token = self.word().required()?;
+            match token {
+                WordToken::Bareword(word) => entrypoint.push(word.to_string()),
+                WordToken::Newline(_) | WordToken::Comment(_) => break,
+                WordToken::String(word) => entrypoint.push(word),
+                WordToken::Whitespace(_) => continue,
+            }
+        }
+
+        Ok(InstEntrypoint { entrypoint })
+    }
+
+    #[allow(clippy::needless_continue)]
+    pub fn parse_cmd(&mut self) -> ParseResult<InstCmd> {
+        let mut cmd = vec![];
+
+        loop {
+            let token = self.word().required()?;
+            match token {
+                WordToken::Bareword(word) => cmd.push(word.to_string()),
+                WordToken::Newline(_) | WordToken::Comment(_) => break,
+                WordToken::String(word) => cmd.push(word),
+                WordToken::Whitespace(_) => continue,
+            }
+        }
+
+        Ok(InstCmd { cmd })
+    }
+
+    #[allow(clippy::needless_continue)]
+    pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
+        let mut copy = vec![String::new()];
+
+        loop {
+            let token = self.word().required()?;
+            match token {
+                WordToken::Bareword(word) => copy.push(word.to_string()),
+                WordToken::Newline(_) | WordToken::Comment(_) => break,
+                WordToken::String(word) => copy.push(word),
+                WordToken::Whitespace(_) => continue,
+            }
+        }
+
+        let CopyArgs { opts, mut files } = CopyArgs::try_parse_from(copy)?;
+
+        let dest = files.pop().unwrap();
+
+        Ok(InstCopy {
+            dest,
+            srcs: files,
+            chmod: opts.chmod,
+            chown: opts.chown,
+        })
+    }
+
     pub fn statement(&mut self) -> ParseResult<Option<Statement>> {
         let word = self.word();
+
         if word.is_none() {
             return Ok(None);
         }
 
         let origin = Origin::new(Arc::new("foo".into()), 0..0);
+
         let inst = match word.required()?.bareword()? {
             "RUN" => Instruction::Run(self.parse_run()?),
-
+            "CMD" => Instruction::Cmd(self.parse_cmd()?),
+            "COPY" => Instruction::Copy(self.parse_copy()?),
+            "ENTRYPOINT" => Instruction::Entrypoint(self.parse_entrypoint()?),
             _ => return Err(ParseError::ExpectedWord),
         };
 
