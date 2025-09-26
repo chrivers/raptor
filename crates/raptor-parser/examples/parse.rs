@@ -1,0 +1,30 @@
+use std::io::Read;
+
+use log::error;
+use logos::Logos;
+use raptor_parser::ParseResult;
+use raptor_parser::lexer::WordToken;
+use raptor_parser::parser2::Parser;
+
+fn parse(buf: &str) -> ParseResult<()> {
+    let lexer = WordToken::lexer(buf);
+    let mut parser = Parser::new(lexer);
+
+    for stmt in parser.file()? {
+        println!("{}", stmt.inst);
+    }
+
+    Ok(())
+}
+
+fn main() -> ParseResult<()> {
+    colog::init();
+
+    let mut buf = String::new();
+    std::io::stdin().read_to_string(&mut buf)?;
+
+    if let Err(err) = parse(&buf) {
+        error!("Parse failed: {err}");
+    }
+    Ok(())
+}
