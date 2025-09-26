@@ -151,27 +151,26 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
+        // clap requires dummy string to simulate argv[0]
         let mut copy = vec![String::new()];
+        self.consume_line_to(&mut copy)?;
 
-        loop {
-            let token = self.word().required()?;
-            match token {
-                WordToken::Bareword(word) => copy.push(word.to_string()),
-                WordToken::Newline(_) | WordToken::Comment(_) => break,
-                WordToken::String(word) => copy.push(word),
-                WordToken::Whitespace(_) => continue,
-            }
-        }
+        let CopyArgs {
+            opts: FileOpts { chmod, chown },
+            mut files,
+        } = CopyArgs::try_parse_from(copy)?;
 
-        let CopyArgs { opts, mut files } = CopyArgs::try_parse_from(copy)?;
-
+        // clap does not support variable arguments before fixed argument,
+        // but we know the destination is the last name.
+        //
+        // Safety: clap requires at least 2 arguments.
         let dest = files.pop().unwrap();
 
         Ok(InstCopy {
             dest,
             srcs: files,
-            chmod: opts.chmod,
-            chown: opts.chown,
+            chmod,
+            chown,
         })
     }
 
