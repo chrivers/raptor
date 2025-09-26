@@ -6,7 +6,8 @@ use logos::{Lexer, Logos};
 
 use crate::ast::{
     Chown, FromSource, InstCmd, InstCopy, InstEntrypoint, InstEnv, InstEnvAssign, InstFrom,
-    InstRun, InstWorkdir, InstWrite, Instruction, Origin, Statement,
+    InstMount, InstRun, InstWorkdir, InstWrite, Instruction, MountOptions, MountType, Origin,
+    Statement,
 };
 use crate::lexer::WordToken;
 use crate::util::module_name::ModuleName;
@@ -60,6 +61,36 @@ struct FileOpts {
     chown: Option<Chown>,
 }
 
+#[derive(clap::Args, Debug)]
+#[group(multiple = false)]
+struct MountTypeArg {
+    #[arg(long)]
+    simple: bool,
+
+    #[arg(long)]
+    layers: bool,
+
+    #[arg(long)]
+    overlay: bool,
+}
+
+impl MountTypeArg {
+    pub const fn mtype(&self) -> Option<MountType> {
+        match (self.simple, self.layers, self.overlay) {
+            (false, false, false) => None,
+            (true, _, _) => Some(MountType::Simple),
+            (_, true, _) => Some(MountType::Layers),
+            (_, _, true) => Some(MountType::Overlay),
+        }
+    }
+}
+
+#[derive(clap::Args, Debug)]
+struct MountOpts {
+    #[clap(flatten)]
+    mtype: MountTypeArg,
+}
+
 #[derive(clap::Parser, Debug)]
 #[clap(disable_help_flag = true)]
 #[command(name = "COPY")]
@@ -79,6 +110,18 @@ struct WriteArgs {
     opts: FileOpts,
 
     body: String,
+
+    dest: Utf8PathBuf,
+}
+
+#[derive(clap::Parser, Debug)]
+#[clap(disable_help_flag = true)]
+#[command(name = "MOUNT")]
+struct MountArgs {
+    #[clap(flatten)]
+    opts: MountOpts,
+
+    name: String,
 
     dest: Utf8PathBuf,
 }
@@ -284,6 +327,23 @@ impl<'src> Parser<'src> {
         Ok(InstFrom { from })
     }
 
+    #[allow(clippy::option_if_let_else)]
+    pub fn parse_mount(&mut self) -> ParseResult<InstMount> {
+        // clap requires dummy string to simulate argv[0]
+        let mut copy = vec![String::new()];
+        self.consume_line_to(&mut copy)?;
+
+        let MountArgs { opts, name, dest } = MountArgs::try_parse_from(copy)?;
+
+        let mtype = opts.mtype.mtype().unwrap_or(MountType::Simple);
+
+        Ok(InstMount {
+            opts: MountOptions { mtype },
+            name,
+            dest,
+        })
+    }
+
     pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
         // clap requires dummy string to simulate argv[0]
         let mut copy = vec![String::new()];
@@ -323,7 +383,7 @@ impl<'src> Parser<'src> {
 
         let inst = match word.bareword()? {
             "FROM" => Instruction::From(self.parse_from()?),
-            /* MOUNT */
+            "MOUNT" => Instruction::Mount(self.parse_mount()?),
             /* RENDER */
             "WRITE" => Instruction::Write(self.parse_write()?),
             /* MKDIR */
