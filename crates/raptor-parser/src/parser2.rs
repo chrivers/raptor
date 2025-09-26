@@ -84,6 +84,7 @@ struct CopyArgs {
 
 trait Lex<'a, T> {
     fn bareword(&self) -> ParseResult<&'a str>;
+    fn path(&self) -> ParseResult<Utf8PathBuf>;
 }
 
 impl<'src> Lex<'src, Self> for WordToken<'src> {
@@ -92,6 +93,16 @@ impl<'src> Lex<'src, Self> for WordToken<'src> {
             Ok(word)
         } else {
             Err(ParseError::ExpectedWord)
+        }
+    }
+
+    fn path(&self) -> ParseResult<Utf8PathBuf> {
+        match self {
+            WordToken::Bareword(word) => Ok(word.into()),
+            WordToken::String(string) => Ok(string.into()),
+            WordToken::Newline(_) => Err(ParseError::ExpectedWord),
+            WordToken::Comment(_) => Err(ParseError::ExpectedWord),
+            WordToken::Whitespace(_) => Err(ParseError::ExpectedWord),
         }
     }
 }
