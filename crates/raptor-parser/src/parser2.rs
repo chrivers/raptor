@@ -118,9 +118,12 @@ impl<'src> Parser<'src> {
     }
 
     fn word(&mut self) -> Option<ParseResult<WordToken<'src>>> {
-        let mut next = self.lexer.next().map(|word| word.map_err(ParseError::from));
-        mem::swap(&mut self.token, &mut next);
-        next
+        loop {
+            let next = self.next();
+            if !matches!(next, Some(Ok(WordToken::Whitespace(_)))) {
+                return next;
+            }
+        }
     }
 
     #[allow(clippy::needless_continue)]
