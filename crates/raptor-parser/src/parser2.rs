@@ -176,10 +176,10 @@ impl<'src, 'this> Lex<'src, 'this, Self> for WordToken<'src> {
         match self {
             WordToken::Bareword(word) => Ok(word),
             WordToken::String(string) => Ok(string.as_ref()),
+            WordToken::Eof => Err(ParseError::UnexpectedEof),
             WordToken::Newline(_) => Err(ParseError::ExpectedWord),
             WordToken::Comment(_) => Err(ParseError::ExpectedWord),
-            WordToken::Whitespace(_) => Err(ParseError::ExpectedWord),
-            WordToken::Eof => Err(ParseError::UnexpectedEof),
+            WordToken::Whitespace(_) | _ => Err(ParseError::ExpectedWord),
         }
     }
 
@@ -190,8 +190,8 @@ impl<'src, 'this> Lex<'src, 'this, Self> for WordToken<'src> {
             WordToken::String(string) => Ok(string.into()),
             WordToken::Newline(_) => Err(ParseError::ExpectedWord),
             WordToken::Comment(_) => Err(ParseError::ExpectedWord),
-            WordToken::Whitespace(_) => Err(ParseError::ExpectedWord),
             WordToken::Eof => Err(ParseError::UnexpectedEof),
+            WordToken::Whitespace(_) | _ => Err(ParseError::ExpectedWord),
         }
     }
 
@@ -239,10 +239,8 @@ impl<'src> Parser<'src> {
             match self.next()? {
                 WordToken::Newline(_) | WordToken::Comment(_) => break,
                 WordToken::Whitespace(_) => {}
-                WordToken::Bareword(_) | WordToken::String(_) => {
-                    return Err(ParseError::ExpectedEol);
-                }
                 WordToken::Eof => return Err(ParseError::UnexpectedEof),
+                _ => return Err(ParseError::ExpectedEol),
             }
         }
 
@@ -251,14 +249,27 @@ impl<'src> Parser<'src> {
 
     #[allow(clippy::needless_continue)]
     fn consume_line_to(&mut self, args: &mut Vec<String>) -> ParseResult<()> {
+        let mut value = String::new();
+
         loop {
-            let token = self.word()?;
+            let token = self.next()?;
             match token {
-                WordToken::Bareword(word) => args.push(word.to_string()),
+                WordToken::Bareword(word) => value.push_str(word),
                 WordToken::String(word) => args.push(word),
-                WordToken::Whitespace(_) => continue,
+                WordToken::Whitespace(_) => {
+                    if !value.is_empty() {
+                        let mut val = String::new();
+                        std::mem::swap(&mut value, &mut val);
+                        args.push(val);
+                    }
+                }
                 WordToken::Newline(_) | WordToken::Comment(_) | WordToken::Eof => break,
+                _ => value.push_str(self.lexer.slice()),
             }
+        }
+
+        if !value.is_empty() {
+            args.push(value);
         }
 
         Ok(())

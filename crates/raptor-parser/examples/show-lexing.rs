@@ -13,11 +13,11 @@ fn main() -> Result<(), std::io::Error> {
     let mut buf = String::new();
     std::io::stdin().read_to_string(&mut buf)?;
 
-    let lexer = WordToken::lexer(&buf);
+    let mut lexer = WordToken::lexer(&buf);
 
     let mut stdout = std::io::stdout().lock();
 
-    for token in lexer {
+    while let Some(token) = lexer.next() {
         match token {
             Ok(WordToken::Bareword(txt)) => write!(stdout, "{}", txt.bright_white())?,
             Ok(WordToken::Newline(txt) | WordToken::Whitespace(txt)) => {
@@ -26,6 +26,7 @@ fn main() -> Result<(), std::io::Error> {
             Ok(WordToken::String(txt)) => write!(stdout, "{}", format!("{txt:?}").yellow())?,
             Ok(WordToken::Comment(txt)) => writeln!(stdout, "{}", &txt[..txt.len() - 1].dimmed())?,
             Ok(WordToken::Eof) => break,
+            Ok(_) => write!(stdout, "{}", lexer.slice().purple())?,
             Err(err) => error!("Lexer error: {err}"),
         }
     }

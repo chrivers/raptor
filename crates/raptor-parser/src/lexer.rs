@@ -13,7 +13,34 @@ pub enum LexerError {
 #[derive(Logos, Debug, PartialEq, Eq, Clone)]
 #[logos(error = LexerError)]
 pub enum WordToken<'a> {
-    #[regex("[^ \n\t\"]+")]
+    #[token("[")]
+    LBracket,
+
+    #[token("]")]
+    RBracket,
+
+    #[token("{")]
+    LBrace,
+
+    #[token("}")]
+    RBrace,
+
+    #[token(":")]
+    Colon,
+
+    #[token("=")]
+    Equals,
+
+    #[token(",")]
+    Comma,
+
+    #[token("/")]
+    Slash,
+
+    #[token(".")]
+    Dot,
+
+    #[regex("[^\\]/. \n\t\",=:{}\\[]+")]
     Bareword(&'a str),
 
     #[token("\n")]
