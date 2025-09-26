@@ -6,8 +6,8 @@ use logos::{Lexer, Logos};
 
 use crate::ast::{
     Chown, FromSource, InstCmd, InstCopy, InstEntrypoint, InstEnv, InstEnvAssign, InstFrom,
-    InstMkdir, InstMount, InstRun, InstWorkdir, InstWrite, Instruction, MountOptions, MountType,
-    Origin, Statement,
+    InstInvoke, InstMkdir, InstMount, InstRun, InstWorkdir, InstWrite, Instruction, MountOptions,
+    MountType, Origin, Statement,
 };
 use crate::lexer::WordToken;
 use crate::util::module_name::ModuleName;
@@ -252,6 +252,12 @@ impl<'src> Parser<'src> {
         Ok(InstRun { run })
     }
 
+    pub fn parse_invoke(&mut self) -> ParseResult<InstInvoke> {
+        let args = self.consume_line()?;
+
+        Ok(InstInvoke { args })
+    }
+
     pub fn parse_entrypoint(&mut self) -> ParseResult<InstEntrypoint> {
         let entrypoint = self.consume_line()?;
 
@@ -421,7 +427,7 @@ impl<'src> Parser<'src> {
             "MKDIR" => Instruction::Mkdir(self.parse_mkdir()?),
             "COPY" => Instruction::Copy(self.parse_copy()?),
             /* INCLUDE */
-            /* INVOKE */
+            "INVOKE" => Instruction::Invoke(self.parse_invoke()?),
             "RUN" => Instruction::Run(self.parse_run()?),
             "ENV" => Instruction::Env(self.parse_env()?),
             "WORKDIR" => Instruction::Workdir(self.parse_workdir()?),
