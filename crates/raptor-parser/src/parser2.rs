@@ -6,8 +6,8 @@ use logos::{Lexer, Logos};
 
 use crate::ast::{
     Chown, FromSource, InstCmd, InstCopy, InstEntrypoint, InstEnv, InstEnvAssign, InstFrom,
-    InstMount, InstRun, InstWorkdir, InstWrite, Instruction, MountOptions, MountType, Origin,
-    Statement,
+    InstMkdir, InstMount, InstRun, InstWorkdir, InstWrite, Instruction, MountOptions, MountType,
+    Origin, Statement,
 };
 use crate::lexer::WordToken;
 use crate::util::module_name::ModuleName;
@@ -110,6 +110,19 @@ struct WriteArgs {
     opts: FileOpts,
 
     body: String,
+
+    dest: Utf8PathBuf,
+}
+
+#[derive(clap::Parser, Debug)]
+#[clap(disable_help_flag = true)]
+#[command(name = "MKDIR")]
+struct MkdirArgs {
+    #[clap(flatten)]
+    opts: FileOpts,
+
+    #[arg(short = 'p', default_value_t = false)]
+    parents: bool,
 
     dest: Utf8PathBuf,
 }
@@ -310,6 +323,25 @@ impl<'src> Parser<'src> {
         })
     }
 
+    pub fn parse_mkdir(&mut self) -> ParseResult<InstMkdir> {
+        // clap requires dummy string to simulate argv[0]
+        let mut copy = vec![String::new()];
+        self.consume_line_to(&mut copy)?;
+
+        let MkdirArgs {
+            opts: FileOpts { chmod, chown },
+            parents,
+            dest,
+        } = MkdirArgs::try_parse_from(copy)?;
+
+        Ok(InstMkdir {
+            dest,
+            chmod,
+            chown,
+            parents,
+        })
+    }
+
     #[allow(clippy::option_if_let_else)]
     pub fn parse_from(&mut self) -> ParseResult<InstFrom> {
         let word = self.word()?.bareword()?;
@@ -386,7 +418,7 @@ impl<'src> Parser<'src> {
             "MOUNT" => Instruction::Mount(self.parse_mount()?),
             /* RENDER */
             "WRITE" => Instruction::Write(self.parse_write()?),
-            /* MKDIR */
+            "MKDIR" => Instruction::Mkdir(self.parse_mkdir()?),
             "COPY" => Instruction::Copy(self.parse_copy()?),
             /* INCLUDE */
             /* INVOKE */
