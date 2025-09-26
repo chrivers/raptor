@@ -7,8 +7,8 @@ use minijinja::Value;
 
 use crate::ast::{
     Chown, Expression, FromSource, IncludeArg, InstCmd, InstCopy, InstEntrypoint, InstEnv,
-    InstEnvAssign, InstFrom, InstInclude, InstInvoke, InstMkdir, InstMount, InstRun, InstWorkdir,
-    InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
+    InstEnvAssign, InstFrom, InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun,
+    InstWorkdir, InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
 use crate::lexer::WordToken;
 use crate::util::module_name::ModuleName;
@@ -138,6 +138,21 @@ struct MountArgs {
     name: String,
 
     dest: Utf8PathBuf,
+}
+
+#[derive(clap::Parser, Debug)]
+#[clap(disable_help_flag = true)]
+#[command(name = "RENDER")]
+struct RenderArgs {
+    #[clap(flatten)]
+    opts: FileOpts,
+
+    src: Utf8PathBuf,
+
+    dest: Utf8PathBuf,
+
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true, hide = true)]
+    remainder: Vec<String>,
 }
 
 trait Lex<'a, 'b, T> {
@@ -427,6 +442,27 @@ impl<'src> Parser<'src> {
         Ok(InstInclude { src, args })
     }
 
+    pub fn parse_render(&mut self) -> ParseResult<InstRender> {
+        // clap requires dummy string to simulate argv[0]
+        let mut copy = vec![String::new()];
+        self.consume_line_to(&mut copy)?;
+
+        let RenderArgs {
+            opts: FileOpts { chmod, chown },
+            src,
+            dest,
+            ..
+        } = RenderArgs::try_parse_from(&copy)?;
+
+        Ok(InstRender {
+            src,
+            dest,
+            chmod,
+            chown,
+            args: vec![],
+        })
+    }
+
     pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
         // clap requires dummy string to simulate argv[0]
         let mut copy = vec![String::new()];
@@ -467,7 +503,7 @@ impl<'src> Parser<'src> {
         let inst = match word.bareword()? {
             "FROM" => Instruction::From(self.parse_from()?),
             "MOUNT" => Instruction::Mount(self.parse_mount()?),
-            /* RENDER */
+            "RENDER" => Instruction::Render(self.parse_render()?),
             "WRITE" => Instruction::Write(self.parse_write()?),
             "MKDIR" => Instruction::Mkdir(self.parse_mkdir()?),
             "COPY" => Instruction::Copy(self.parse_copy()?),
