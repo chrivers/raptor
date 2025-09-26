@@ -184,10 +184,19 @@ impl<'src> Parser<'src> {
         let origin = Origin::new(Arc::new("foo".into()), 0..0);
 
         let inst = match word.required()?.bareword()? {
-            "RUN" => Instruction::Run(self.parse_run()?),
-            "CMD" => Instruction::Cmd(self.parse_cmd()?),
+            /* FROM */
+            /* MOUNT */
+            /* RENDER */
+            /* WRITE */
+            /* MKDIR */
             "COPY" => Instruction::Copy(self.parse_copy()?),
+            /* INCLUDE */
+            /* INVOKE */
+            "RUN" => Instruction::Run(self.parse_run()?),
+            /* ENV */
+            /* WORKDIR */
             "ENTRYPOINT" => Instruction::Entrypoint(self.parse_entrypoint()?),
+            "CMD" => Instruction::Cmd(self.parse_cmd()?),
             _ => return Err(ParseError::ExpectedWord),
         };
 
