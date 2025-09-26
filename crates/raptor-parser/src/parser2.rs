@@ -177,9 +177,9 @@ impl<'src, 'this> Lex<'src, 'this, Self> for WordToken<'src> {
             WordToken::Bareword(word) => Ok(word),
             WordToken::String(string) => Ok(string.as_ref()),
             WordToken::Eof => Err(ParseError::UnexpectedEof),
-            WordToken::Newline(_) => Err(ParseError::ExpectedWord),
-            WordToken::Comment(_) => Err(ParseError::ExpectedWord),
-            WordToken::Whitespace(_) | _ => Err(ParseError::ExpectedWord),
+            WordToken::Newline => Err(ParseError::ExpectedWord),
+            WordToken::Comment => Err(ParseError::ExpectedWord),
+            WordToken::Whitespace | _ => Err(ParseError::ExpectedWord),
         }
     }
 
@@ -188,10 +188,10 @@ impl<'src, 'this> Lex<'src, 'this, Self> for WordToken<'src> {
         match self {
             WordToken::Bareword(word) => Ok(word.into()),
             WordToken::String(string) => Ok(string.into()),
-            WordToken::Newline(_) => Err(ParseError::ExpectedWord),
-            WordToken::Comment(_) => Err(ParseError::ExpectedWord),
+            WordToken::Newline => Err(ParseError::ExpectedWord),
+            WordToken::Comment => Err(ParseError::ExpectedWord),
             WordToken::Eof => Err(ParseError::UnexpectedEof),
-            WordToken::Whitespace(_) | _ => Err(ParseError::ExpectedWord),
+            WordToken::Whitespace | _ => Err(ParseError::ExpectedWord),
         }
     }
 
@@ -228,7 +228,7 @@ impl<'src> Parser<'src> {
     fn word(&mut self) -> ParseResult<WordToken<'src>> {
         loop {
             let next = self.next()?;
-            if !matches!(next, WordToken::Whitespace(_)) {
+            if !matches!(next, WordToken::Whitespace) {
                 return Ok(next);
             }
         }
@@ -237,8 +237,8 @@ impl<'src> Parser<'src> {
     fn end_of_line(&mut self) -> ParseResult<()> {
         loop {
             match self.next()? {
-                WordToken::Newline(_) | WordToken::Comment(_) => break,
-                WordToken::Whitespace(_) => {}
+                WordToken::Newline | WordToken::Comment => break,
+                WordToken::Whitespace => {}
                 WordToken::Eof => return Err(ParseError::UnexpectedEof),
                 _ => return Err(ParseError::ExpectedEol),
             }
@@ -256,14 +256,14 @@ impl<'src> Parser<'src> {
             match token {
                 WordToken::Bareword(word) => value.push_str(word),
                 WordToken::String(word) => args.push(word),
-                WordToken::Whitespace(_) => {
+                WordToken::Whitespace => {
                     if !value.is_empty() {
                         let mut val = String::new();
                         std::mem::swap(&mut value, &mut val);
                         args.push(val);
                     }
                 }
-                WordToken::Newline(_) | WordToken::Comment(_) | WordToken::Eof => break,
+                WordToken::Newline | WordToken::Comment | WordToken::Eof => break,
                 _ => value.push_str(self.lexer.slice()),
             }
         }
@@ -313,7 +313,7 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_env_assign(&mut self) -> ParseResult<Option<InstEnvAssign>> {
-        if let WordToken::Newline(_) = self.peek()? {
+        if let WordToken::Newline = self.peek()? {
             return Ok(None);
         }
 
@@ -416,7 +416,7 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_include_arg(&mut self) -> ParseResult<Option<IncludeArg>> {
-        if let WordToken::Newline(_) = self.peek()? {
+        if let WordToken::Newline = self.peek()? {
             return Ok(None);
         }
 
@@ -505,7 +505,7 @@ impl<'src> Parser<'src> {
             return Ok(None);
         }
 
-        if matches!(word, WordToken::Newline(_)) {
+        if matches!(word, WordToken::Newline) {
             return self.statement();
         }
 

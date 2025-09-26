@@ -44,16 +44,16 @@ pub enum WordToken<'a> {
     Bareword(&'a str),
 
     #[token("\n")]
-    Newline(&'a str),
+    Newline,
 
     #[regex(r"#.+\n")]
-    Comment(&'a str),
+    Comment,
 
     #[token("\"", string_callback)]
     String(String),
 
     #[regex(r"( |\t|\\\n)+")]
-    Whitespace(&'a str),
+    Whitespace,
 
     Eof,
 }
