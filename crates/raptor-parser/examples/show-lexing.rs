@@ -25,6 +25,7 @@ fn main() -> Result<(), std::io::Error> {
             }
             Ok(WordToken::String(txt)) => write!(stdout, "{}", format!("{txt:?}").yellow())?,
             Ok(WordToken::Comment(txt)) => writeln!(stdout, "{}", &txt[..txt.len() - 1].dimmed())?,
+            Ok(WordToken::Eof) => break,
             Err(err) => error!("Lexer error: {err}"),
         }
     }

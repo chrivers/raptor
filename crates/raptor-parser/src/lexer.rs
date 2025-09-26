@@ -27,6 +27,8 @@ pub enum WordToken<'a> {
 
     #[regex(r"( |\t|\\\n)+")]
     Whitespace(&'a str),
+
+    Eof,
 }
 
 #[derive(Logos, Debug, PartialEq, Eq, Clone)]

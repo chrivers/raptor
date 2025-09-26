@@ -14,19 +14,6 @@ pub struct Parser<'src> {
     lexer: Lexer<'src, WordToken<'src>>,
 }
 
-trait Required<T> {
-    fn required(self) -> ParseResult<T>;
-}
-
-impl<'src> Required<WordToken<'src>> for Option<ParseResult<WordToken<'src>>> {
-    fn required(self) -> ParseResult<WordToken<'src>> {
-        match self {
-            Some(inner) => Ok(inner?),
-            None => Err(ParseError::UnexpectedEof),
-        }
-    }
-}
-
 fn parse_chmod_permission(string: &str) -> Result<u32, ParseError> {
     if !(3..=4).contains(&string.len()) {
         return Err(ParseError::InvalidPermissionMask);
@@ -104,6 +91,7 @@ impl<'src> Lex<'src, Self> for WordToken<'src> {
             WordToken::Newline(_) => Err(ParseError::ExpectedWord),
             WordToken::Comment(_) => Err(ParseError::ExpectedWord),
             WordToken::Whitespace(_) => Err(ParseError::ExpectedWord),
+            WordToken::Eof => Err(ParseError::UnexpectedEof),
         }
     }
 }
@@ -114,27 +102,31 @@ impl<'src> Parser<'src> {
         Self { lexer }
     }
 
-    fn next(&mut self) -> Option<ParseResult<WordToken<'src>>> {
-        self.lexer.next().map(|word| word.map_err(ParseError::from))
+    fn next(&mut self) -> ParseResult<WordToken<'src>> {
+        self.lexer
+            .next()
+            .unwrap_or(Ok(WordToken::Eof))
+            .map_err(ParseError::from)
     }
 
-    fn word(&mut self) -> Option<ParseResult<WordToken<'src>>> {
+    fn word(&mut self) -> ParseResult<WordToken<'src>> {
         loop {
-            let next = self.next();
-            if !matches!(next, Some(Ok(WordToken::Whitespace(_)))) {
-                return next;
+            let next = self.next()?;
+            if !matches!(next, WordToken::Whitespace(_)) {
+                return Ok(next);
             }
         }
     }
 
     fn end_of_line(&mut self) -> ParseResult<()> {
-        while let Some(token) = self.next() {
-            match token? {
+        loop {
+            match self.next()? {
                 WordToken::Newline(_) | WordToken::Comment(_) => break,
                 WordToken::Whitespace(_) => {}
                 WordToken::Bareword(_) | WordToken::String(_) => {
                     return Err(ParseError::ExpectedEol);
                 }
+                WordToken::Eof => return Err(ParseError::UnexpectedEof),
             }
         }
 
@@ -144,12 +136,12 @@ impl<'src> Parser<'src> {
     #[allow(clippy::needless_continue)]
     fn consume_line_to(&mut self, args: &mut Vec<String>) -> ParseResult<()> {
         loop {
-            let token = self.word().required()?;
+            let token = self.word()?;
             match token {
                 WordToken::Bareword(word) => args.push(word.to_string()),
-                WordToken::Newline(_) | WordToken::Comment(_) => break,
                 WordToken::String(word) => args.push(word),
                 WordToken::Whitespace(_) => continue,
+                WordToken::Newline(_) | WordToken::Comment(_) | WordToken::Eof => break,
             }
         }
 
@@ -181,7 +173,7 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_workdir(&mut self) -> ParseResult<InstWorkdir> {
-        let dir = self.word().required()?.path()?;
+        let dir = self.word()?.path()?;
         self.end_of_line()?;
 
         Ok(InstWorkdir { dir })
@@ -212,15 +204,15 @@ impl<'src> Parser<'src> {
     }
 
     pub fn statement(&mut self) -> ParseResult<Option<Statement>> {
-        let word = self.word();
+        let word = self.word()?;
 
-        if word.is_none() {
+        if matches!(word, WordToken::Eof) {
             return Ok(None);
         }
 
         let origin = Origin::new(Arc::new("foo".into()), 0..0);
 
-        let inst = match word.required()?.bareword()? {
+        let inst = match word.bareword()? {
             /* FROM */
             /* MOUNT */
             /* RENDER */
