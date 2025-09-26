@@ -52,7 +52,6 @@ fn parse_chown(string: &str) -> Result<Chown, ParseError> {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(about = "bar", name = "COPY", long_about = "foo")]
 struct FileOpts {
     #[arg(long, value_parser = parse_chmod_permission)]
     chmod: Option<u32>,
@@ -63,7 +62,7 @@ struct FileOpts {
 
 #[derive(clap::Parser, Debug)]
 #[clap(disable_help_flag = true)]
-#[command(about = "bar", name = "COPY", long_about = "foo")]
+#[command(name = "COPY")]
 struct CopyArgs {
     #[clap(flatten)]
     opts: FileOpts,
@@ -74,7 +73,7 @@ struct CopyArgs {
 
 #[derive(clap::Parser, Debug)]
 #[clap(disable_help_flag = true)]
-#[command(about = "bar", name = "WRITE", long_about = "foo")]
+#[command(name = "WRITE")]
 struct WriteArgs {
     #[clap(flatten)]
     opts: FileOpts,
