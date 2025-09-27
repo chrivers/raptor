@@ -116,6 +116,8 @@ impl<'src> Parser<'src> {
             return Err(ParseError::Expected("path"));
         }
 
+        self.trim()?;
+
         Ok(res.into())
     }
 
@@ -265,7 +267,6 @@ impl<'src> Parser<'src> {
         self.trim()?;
 
         let dest = self.path()?;
-        self.trim()?;
 
         self.end_of_line()?;
 
@@ -379,7 +380,6 @@ impl<'src> Parser<'src> {
         self.trim()?;
 
         let dest = self.path()?;
-        self.trim()?;
 
         self.end_of_line()?;
 
@@ -575,10 +575,7 @@ impl<'src> Parser<'src> {
         let (chown, chmod) = self.parse_fileopts(None)?;
 
         let src = self.path()?;
-        self.trim()?;
-
         let dest = self.path()?;
-        self.trim()?;
 
         let mut args = vec![];
         while let Some(arg) = self.parse_include_arg()? {
@@ -605,7 +602,6 @@ impl<'src> Parser<'src> {
         let mut files = vec![];
         while self.peek()? != Token::Newline {
             files.push(self.path()?);
-            self.trim()?;
         }
 
         self.end_of_line()?;
