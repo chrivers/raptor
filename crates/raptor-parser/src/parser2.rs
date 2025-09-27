@@ -94,17 +94,6 @@ struct MountOpts {
 
 #[derive(clap::Parser, Debug)]
 #[clap(disable_help_flag = true)]
-#[command(name = "COPY")]
-struct CopyArgs {
-    #[clap(flatten)]
-    opts: FileOpts,
-
-    #[arg(num_args = 2.., value_names = ["source", "dest"])]
-    files: Vec<Utf8PathBuf>,
-}
-
-#[derive(clap::Parser, Debug)]
-#[clap(disable_help_flag = true)]
 #[command(name = "WRITE")]
 struct WriteArgs {
     #[clap(flatten)]
