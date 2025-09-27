@@ -26,42 +26,6 @@ fn parse_chmod_permission(string: &str) -> Result<u32, ParseError> {
     Ok(u32::from_str_radix(string, 8)?)
 }
 
-fn parse_chown(string: &str) -> Result<Chown, ParseError> {
-    let res = if let Some((head, tail)) = string.split_once(':') {
-        match (head, tail) {
-            ("", "") => return Err(ParseError::ExpectedWord),
-            (head, "") => Chown {
-                user: Some(head.to_string()),
-                group: Some(head.to_string()),
-            },
-            ("", tail) => Chown {
-                user: None,
-                group: Some(tail.to_string()),
-            },
-            (head, tail) => Chown {
-                user: Some(head.to_string()),
-                group: Some(tail.to_string()),
-            },
-        }
-    } else {
-        Chown {
-            user: Some(string.to_string()),
-            group: None,
-        }
-    };
-
-    Ok(res)
-}
-
-#[derive(clap::Args, Debug)]
-struct FileOpts {
-    #[arg(long, value_parser = parse_chmod_permission)]
-    chmod: Option<u32>,
-
-    #[arg(long, value_parser = parse_chown)]
-    chown: Option<Chown>,
-}
-
 #[derive(clap::Args, Debug)]
 #[group(multiple = false)]
 struct MountTypeArg {
@@ -94,31 +58,6 @@ struct MountOpts {
 
 #[derive(clap::Parser, Debug)]
 #[clap(disable_help_flag = true)]
-#[command(name = "WRITE")]
-struct WriteArgs {
-    #[clap(flatten)]
-    opts: FileOpts,
-
-    body: String,
-
-    dest: Utf8PathBuf,
-}
-
-#[derive(clap::Parser, Debug)]
-#[clap(disable_help_flag = true)]
-#[command(name = "MKDIR")]
-struct MkdirArgs {
-    #[clap(flatten)]
-    opts: FileOpts,
-
-    #[arg(short = 'p', default_value_t = false)]
-    parents: bool,
-
-    dest: Utf8PathBuf,
-}
-
-#[derive(clap::Parser, Debug)]
-#[clap(disable_help_flag = true)]
 #[command(name = "MOUNT")]
 struct MountArgs {
     #[clap(flatten)]
@@ -127,21 +66,6 @@ struct MountArgs {
     name: String,
 
     dest: Utf8PathBuf,
-}
-
-#[derive(clap::Parser, Debug)]
-#[clap(disable_help_flag = true)]
-#[command(name = "RENDER")]
-struct RenderArgs {
-    #[clap(flatten)]
-    opts: FileOpts,
-
-    src: Utf8PathBuf,
-
-    dest: Utf8PathBuf,
-
-    #[arg(trailing_var_arg = true, allow_hyphen_values = true, hide = true)]
-    remainder: Vec<String>,
 }
 
 impl<'src> Parser<'src> {
