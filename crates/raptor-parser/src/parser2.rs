@@ -249,10 +249,13 @@ impl<'src> Parser<'src> {
     }
 
     fn module_name(&mut self) -> ParseResult<ModuleName> {
-        let word = self.bareword()?;
-        let res = ModuleName::new(word.split('.').map(str::to_string).collect());
+        let mut words = vec![self.bareword()?.to_string()];
 
-        Ok(res)
+        while self.accept(&Token::Dot)? {
+            words.push(self.bareword()?.to_string());
+        }
+
+        Ok(ModuleName::new(words))
     }
 
     fn word(&mut self) -> ParseResult<Token> {
@@ -481,25 +484,49 @@ impl<'src> Parser<'src> {
         })
     }
 
+    pub fn parse_expression(&mut self) -> ParseResult<Expression> {
+        match self.next()? {
+            Token::LBracket => todo!(),
+            Token::LBrace => todo!(),
+            Token::Bareword => {
+                let mut path = vec![self.lexer.slice().to_string()];
+                let start = self.lexer.span().start;
+                while self.accept(&Token::Dot)? {
+                    self.expect(&Token::Bareword)?;
+                    path.push(self.lexer.slice().to_string());
+                }
+                let end = self.lexer.span().end;
+                let origin = Origin::new(self.filename.clone(), start..end);
+                Ok(Expression::Lookup(Lookup {
+                    path: ModuleName::new(path),
+                    origin,
+                }))
+            }
+            Token::String(value) => {
+                let value = Value::from_serialize(value);
+                Ok(Expression::Value(value))
+            }
+
+            _ => Err(ParseError::Expected("expression")),
+        }
+    }
+
     pub fn parse_include_arg(&mut self) -> ParseResult<Option<IncludeArg>> {
         if self.peek()? == Token::Newline {
             return Ok(None);
         }
 
-        let value = self.value()?;
+        let name = self.bareword()?.to_string();
 
-        let Some((head, tail)) = value.split_once('=') else {
-            return Err(ParseError::ExpectedWord);
-        };
+        if !self.accept(&Token::Equals)? {
+            let origin = Origin::new(self.filename.clone(), self.lexer.span());
+            let path = ModuleName::new(vec![name.clone()]);
+            let value = Expression::Lookup(Lookup { path, origin });
 
-        let name = head.to_string();
+            return Ok(Some(IncludeArg { name, value }));
+        }
 
-        let value = if tail.contains('.') {
-            let path = ModuleName::new(tail.split('.').map(str::to_string).collect());
-            Expression::Lookup(Lookup::new(path, Origin::new(self.filename.clone(), 0..0)))
-        } else {
-            Expression::Value(Value::from_serialize(tail))
-        };
+        let value = self.parse_expression()?;
 
         let arg = IncludeArg { name, value };
 
@@ -573,6 +600,12 @@ impl<'src> Parser<'src> {
         let dest = self.path()?;
         self.trim()?;
 
+        let mut args = vec![];
+        while let Some(arg) = self.parse_include_arg()? {
+            args.push(arg);
+            self.trim()?;
+        }
+
         self.end_of_line()?;
 
         Ok(InstRender {
@@ -580,7 +613,7 @@ impl<'src> Parser<'src> {
             dest,
             chmod,
             chown,
-            args: vec![],
+            args,
         })
     }
 

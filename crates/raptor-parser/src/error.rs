@@ -31,6 +31,9 @@ pub enum ParseError {
     #[error("Expected end of line")]
     ExpectedEol,
 
+    #[error("Expected {0:?}")]
+    Expected(&'static str),
+
     #[error("Expected word")]
     ExpectedWord,
 
