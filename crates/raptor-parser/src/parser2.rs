@@ -87,7 +87,7 @@ impl<'src> Parser<'src> {
     }
 
     fn trim(&mut self) -> ParseResult<()> {
-        while self.peek()?.is_whitespace() {
+        while self.peek()? == Token::Whitespace {
             self.next()?;
         }
 

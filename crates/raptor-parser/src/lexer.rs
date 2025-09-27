@@ -88,11 +88,6 @@ enum StringToken {
 
 impl Token {
     #[must_use]
-    pub const fn is_whitespace(&self) -> bool {
-        matches!(self, Self::Whitespace)
-    }
-
-    #[must_use]
     pub const fn name(&self) -> &'static str {
         match self {
             Self::LBracket => "[",
