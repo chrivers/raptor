@@ -88,6 +88,28 @@ impl Token {
     pub const fn is_whitespace(&self) -> bool {
         matches!(self, Self::Whitespace)
     }
+
+    #[must_use]
+    pub const fn name(&self) -> &'static str {
+        match self {
+            Self::LBracket => "[",
+            Self::RBracket => "]",
+            Self::LBrace => "{",
+            Self::RBrace => "}",
+            Self::Colon => ":",
+            Self::Equals => "=",
+            Self::Comma => ",",
+            Self::Slash => "/",
+            Self::Dot => ".",
+            Self::Minus => "-",
+            Self::Bareword => "<bareword>",
+            Self::Newline => "\\n",
+            Self::Comment => "<comment>",
+            Self::String(_) => "<string>",
+            Self::Whitespace => "<whitespace>",
+            Self::Eof => "<end of file>",
+        }
+    }
 }
 
 fn string_callback(lex: &mut Lexer<Token>) -> Result<String, LexerError> {
