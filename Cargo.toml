@@ -85,7 +85,6 @@ minijinja = { version = "2.12.0", default-features = false }
 nix = "0.30.1"
 pest = "2.8.2"
 pest_consume = "1.1.3"
-pest_derive = "2.8.2"
 reqwest = { version = "0.12.23", default-features = false }
 serde = "1.0.227"
 serde_json = "1.0.145"
@@ -113,7 +112,6 @@ itertools = { workspace = true }
 log = { workspace = true }
 minijinja = { workspace = true, features = ["custom_syntax", "debug", "deserialization", "loader", "loop_controls", "macros", "multi_template", "serde", "std_collections"] }
 nix = { workspace = true, features = ["fs", "user"] }
-pest = { workspace = true, features = ["pretty-print"] }
 raptor-parser = { workspace = true }
 serde = { workspace = true, features = ["serde_derive"] }
 serde_variant = { workspace = true }

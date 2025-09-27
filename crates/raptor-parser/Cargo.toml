@@ -12,9 +12,6 @@ keywords.workspace = true
 authors.workspace = true
 
 [dependencies]
-pest = { workspace = true }
-pest_consume = { workspace = true }
-pest_derive = { workspace = true }
 thiserror = { workspace = true }
 camino = { workspace = true }
 serde = { workspace = true }

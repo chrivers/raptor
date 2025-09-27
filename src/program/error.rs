@@ -1,10 +1,8 @@
 use std::ops::Range;
 
 use annotate_snippets::{AnnotationKind, Level, Renderer, Snippet};
-use pest::error::{ErrorVariant, InputLocation};
 
 use crate::RaptorResult;
-use raptor_parser::Rule;
 use raptor_parser::ast::Origin;
 
 #[must_use]
@@ -77,39 +75,5 @@ pub fn show_jinja_error_context(err: &minijinja::Error) -> RaptorResult<()> {
         .unwrap_or(0..raw.len() - 1);
 
     show_error_context(&raw, source_path, title, &label, err_range);
-    Ok(())
-}
-
-pub fn show_pest_error_context(raw: &str, err: &pest::error::Error<Rule>) -> RaptorResult<()> {
-    let source_path = err.path().unwrap();
-
-    let span = match err.location {
-        InputLocation::Pos(idx) => index_to_line_remainder(raw, idx).unwrap_or(0..raw.len() - 1),
-        InputLocation::Span((begin, end)) => begin..end,
-    };
-
-    let mut msg = err.variant.message();
-
-    match &err.variant {
-        ErrorVariant::ParsingError { positives, .. } if positives.len() == 1 => {
-            match positives[0] {
-                Rule::docker_source | Rule::from_source => {
-                    msg = "Invalid FROM declaration. Specify the basename of a .rapt file, or a docker::<image>.".into();
-                }
-
-                _ => {}
-            }
-        }
-
-        _ => {}
-    }
-
-    show_error_context(
-        raw,
-        source_path,
-        &format!("parsing error: {msg}"),
-        &msg,
-        span,
-    );
     Ok(())
 }
