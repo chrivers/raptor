@@ -244,6 +244,8 @@ impl<'src> Parser<'src> {
             }
         };
 
+        self.trim()?;
+
         Ok(Some(assign))
     }
 
@@ -253,7 +255,6 @@ impl<'src> Parser<'src> {
         let mut env = vec![];
         while let Some(assign) = self.parse_env_assign()? {
             env.push(assign);
-            self.trim()?;
         }
         self.end_of_line()?;
 
