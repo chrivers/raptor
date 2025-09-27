@@ -109,6 +109,29 @@ impl Token {
             Self::Eof => "<end of file>",
         }
     }
+
+    #[must_use]
+    pub const fn description(&self) -> &'static str {
+        match self {
+            Self::LBracket => "'[' (left bracket)",
+            Self::RBracket => "']' (right bracket)",
+            Self::LBrace => "'{' (left brace)",
+            Self::RBrace => "'}' (right brace)",
+            Self::Colon => "':' (colon)",
+            Self::Equals => "'=' (equals)",
+            Self::Comma => "',' (comma)",
+            Self::Slash => "'/' (slash)",
+            Self::Dot => "'.' (dot)",
+            Self::Minus => "'-' (minus)",
+            Self::Bareword => "<bareword>",
+            Self::Number => "<number>",
+            Self::Newline => "\\n (newline)",
+            Self::Comment => "<comment>",
+            Self::String(_) => "<string>",
+            Self::Whitespace => "<whitespace>",
+            Self::Eof => "<end of file>",
+        }
+    }
 }
 
 fn string_callback(lex: &mut Lexer<Token>) -> Result<String, LexerError> {
