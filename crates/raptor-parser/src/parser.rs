@@ -246,20 +246,15 @@ impl<'src> Parser<'src> {
             return Ok(None);
         }
 
-        let ident = self.bareword()?.to_string();
+        let key = self.bareword()?.to_string();
 
-        let assign = if self.accept(&Token::Equals)? {
-            let value = self.bareword()?;
-            InstEnvAssign {
-                key: ident,
-                value: value.to_string(),
-            }
+        let value = if self.accept(&Token::Equals)? {
+            self.bareword()?.to_string()
         } else {
-            InstEnvAssign {
-                key: ident.clone(),
-                value: ident,
-            }
+            key.clone()
         };
+
+        let assign = InstEnvAssign { key, value };
 
         self.trim()?;
 
