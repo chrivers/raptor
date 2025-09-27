@@ -396,20 +396,29 @@ impl<'src> Parser<'src> {
         Ok(InstMount { opts, name, dest })
     }
 
-    pub fn parse_list(&mut self) -> ParseResult<Value> {
-        let mut list = vec![];
+    pub fn parse_delim<T>(
+        &mut self,
+        start: &Token,
+        end: &Token,
+        func: impl Fn(&mut Self, &mut T) -> ParseResult<()>,
+    ) -> ParseResult<Value>
+    where
+        Value: From<T>,
+        T: Default,
+    {
+        let mut list = T::default();
 
-        self.expect_trimmed(&Token::LBracket)?;
+        self.expect_trimmed(start)?;
 
         loop {
-            if self.accept_trimmed(&Token::RBracket)? {
+            if self.accept_trimmed(end)? {
                 break;
             }
 
-            list.push(self.parse_value()?);
+            func(self, &mut list)?;
 
             if !self.accept_trimmed(&Token::Comma)? {
-                self.expect_trimmed(&Token::RBracket)?;
+                self.expect_trimmed(end)?;
                 break;
             }
         }
@@ -417,28 +426,28 @@ impl<'src> Parser<'src> {
         Ok(Value::from(list))
     }
 
+    pub fn parse_list(&mut self) -> ParseResult<Value> {
+        self.parse_delim(
+            &Token::LBracket,
+            &Token::RBracket,
+            |this, list: &mut Vec<Value>| Ok(list.push(this.parse_value()?)),
+        )
+    }
+
     pub fn parse_map(&mut self) -> ParseResult<Value> {
-        self.expect_trimmed(&Token::LBrace)?;
+        self.parse_delim(
+            &Token::LBrace,
+            &Token::RBrace,
+            |this, map: &mut BTreeMap<_, _>| {
+                let key = this.parse_value()?;
+                this.expect_trimmed(&Token::Colon)?;
+                let value = this.parse_value()?;
 
-        let mut map = BTreeMap::new();
-        loop {
-            if self.accept_trimmed(&Token::RBrace)? {
-                break;
-            }
+                map.insert(key, value);
 
-            let key = self.parse_value()?;
-            self.expect_trimmed(&Token::Colon)?;
-            let value = self.parse_value()?;
-
-            map.insert(key, value);
-
-            if !self.accept_trimmed(&Token::Comma)? {
-                self.expect_trimmed(&Token::RBrace)?;
-                break;
-            }
-        }
-
-        Ok(Value::from(map))
+                Ok(())
+            },
+        )
     }
 
     pub fn parse_value(&mut self) -> ParseResult<Value> {
