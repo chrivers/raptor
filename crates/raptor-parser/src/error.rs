@@ -1,3 +1,5 @@
+use crate::lexer::Token;
+
 #[derive(thiserror::Error, Debug)]
 pub enum ParseError {
     #[error(transparent)]
@@ -19,6 +21,9 @@ pub enum ParseError {
 
     #[error("Expected {0}")]
     Expected(&'static str),
+
+    #[error("Expected {} but found {}", .exp.description(), .found.description())]
+    Mismatch { exp: Token, found: Token },
 
     #[error("Expected word")]
     ExpectedWord,
