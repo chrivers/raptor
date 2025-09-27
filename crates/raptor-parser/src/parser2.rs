@@ -381,15 +381,16 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_write(&mut self) -> ParseResult<InstWrite> {
-        // clap requires dummy string to simulate argv[0]
-        let mut copy = vec![String::new()];
-        self.consume_line_to(&mut copy)?;
+        let (chown, chmod) = self.parse_fileopts()?;
+        self.trim()?;
 
-        let WriteArgs {
-            opts: FileOpts { chmod, chown },
-            body,
-            dest,
-        } = WriteArgs::try_parse_from(copy)?;
+        let body = self.value()?;
+        self.trim()?;
+
+        let dest = self.path()?;
+        self.trim()?;
+
+        self.end_of_line()?;
 
         Ok(InstWrite {
             dest,
