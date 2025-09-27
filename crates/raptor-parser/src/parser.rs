@@ -58,6 +58,24 @@ impl<'src> Parser<'src> {
         }
     }
 
+    fn expect_trimmed(&mut self, exp: &Token) -> ParseResult<()> {
+        self.trim()?;
+        self.expect(exp)?;
+        self.trim()?;
+
+        Ok(())
+    }
+
+    fn accept_trimmed(&mut self, exp: &Token) -> ParseResult<bool> {
+        self.trim()?;
+        let accepted = self.accept(exp)?;
+        if accepted {
+            self.trim()?;
+        }
+
+        Ok(accepted)
+    }
+
     fn peek(&self) -> ParseResult<Token> {
         // FIXME: do away with the .clone() here
         self.lexer
@@ -388,15 +406,18 @@ impl<'src> Parser<'src> {
 
     pub fn parse_list(&mut self) -> ParseResult<Value> {
         let mut list = vec![];
+
+        self.expect_trimmed(&Token::LBracket)?;
+
         loop {
-            if self.accept(&Token::RBracket)? {
+            if self.accept_trimmed(&Token::RBracket)? {
                 break;
             }
 
             list.push(self.parse_value()?);
 
-            if !self.accept(&Token::Comma)? {
-                self.expect(&Token::RBracket)?;
+            if !self.accept_trimmed(&Token::Comma)? {
+                self.expect_trimmed(&Token::RBracket)?;
                 break;
             }
         }
@@ -405,26 +426,24 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_map(&mut self) -> ParseResult<Value> {
+        self.expect(&Token::LBrace)?;
+
         let mut map = BTreeMap::new();
         loop {
-            self.trim()?;
-            if self.accept(&Token::RBrace)? {
+            if self.accept_trimmed(&Token::RBrace)? {
                 break;
             }
 
             let key = self.parse_value()?;
-            self.trim()?;
 
-            self.expect(&Token::Colon)?;
-            self.trim()?;
+            self.expect_trimmed(&Token::Colon)?;
 
             let value = self.parse_value()?;
-            self.trim()?;
 
             map.insert(key, value);
 
-            if !self.accept(&Token::Comma)? {
-                self.expect(&Token::RBrace)?;
+            if !self.accept_trimmed(&Token::Comma)? {
+                self.expect_trimmed(&Token::RBrace)?;
                 break;
             }
         }
@@ -435,11 +454,18 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_value(&mut self) -> ParseResult<Value> {
-        match self.next()? {
+        self.trim()?;
+        match self.peek()? {
             Token::LBracket => self.parse_list(),
             Token::LBrace => self.parse_map(),
-            Token::String(value) => Ok(Value::from_serialize(value)),
-            Token::Number => Ok(Value::from_serialize(self.token().parse::<i64>()?)),
+            Token::String(value) => {
+                self.next()?;
+                Ok(Value::from_serialize(value))
+            }
+            Token::Number => {
+                self.expect(&Token::Number)?;
+                Ok(Value::from_serialize(self.token().parse::<i64>()?))
+            }
 
             _ => Err(ParseError::Expected("value4")),
         }
