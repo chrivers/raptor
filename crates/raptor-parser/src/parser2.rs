@@ -74,7 +74,6 @@ impl<'src> Parser<'src> {
         }
     }
 
-    #[allow(clippy::match_same_arms)]
     fn value(&mut self) -> ParseResult<String> {
         match self.next()? {
             Token::Bareword => Ok(self.lexer.slice().to_string()),
@@ -92,7 +91,6 @@ impl<'src> Parser<'src> {
         Ok(())
     }
 
-    #[allow(clippy::match_same_arms)]
     fn path(&mut self) -> ParseResult<Utf8PathBuf> {
         let mut res = String::new();
         loop {
@@ -281,7 +279,6 @@ impl<'src> Parser<'src> {
         })
     }
 
-    #[allow(clippy::option_if_let_else)]
     pub fn parse_from(&mut self) -> ParseResult<InstFrom> {
         let state = self.lexer.clone();
         let next = self.bareword()?;
