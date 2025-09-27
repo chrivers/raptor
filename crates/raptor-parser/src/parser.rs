@@ -68,7 +68,7 @@ impl<'src> Parser<'src> {
     }
 
     fn bareword(&mut self) -> ParseResult<&'src str> {
-        let word = self.word()?;
+        let word = self.next()?;
         if word == Token::Bareword {
             Ok(self.lexer.slice())
         } else {
@@ -133,15 +133,6 @@ impl<'src> Parser<'src> {
         }
 
         Ok(ModuleName::new(words))
-    }
-
-    fn word(&mut self) -> ParseResult<Token> {
-        loop {
-            let next = self.next()?;
-            if !matches!(next, Token::Whitespace) {
-                return Ok(next);
-            }
-        }
     }
 
     fn end_of_line(&mut self) -> ParseResult<()> {
