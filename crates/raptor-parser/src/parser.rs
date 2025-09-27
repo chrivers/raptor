@@ -185,8 +185,7 @@ impl<'src> Parser<'src> {
         let mut value = String::new();
 
         loop {
-            let token = self.next()?;
-            match token {
+            match self.next()? {
                 Token::String(word) => args.push(word),
                 Token::Whitespace => {
                     if !value.is_empty() {
