@@ -474,21 +474,19 @@ impl<'src> Parser<'src> {
         }
     }
 
-    pub fn parse_expression(&mut self) -> ParseResult<Expression> {
-        if self.accept(&Token::Bareword)? {
-            let mut path = vec![self.token_string()];
+    pub fn parse_lookup(&mut self) -> ParseResult<Lookup> {
+        // use `span().end` since we are peeking at the next token
+        let start = self.lexer.span().end;
+        let path = self.module_name()?;
+        let end = self.lexer.span().end;
+        let origin = Origin::new(self.filename.clone(), start..end);
 
-            let start = self.lexer.span().start;
-            while self.accept(&Token::Dot)? {
-                self.expect(&Token::Bareword)?;
-                path.push(self.token_string());
-            }
-            let end = self.lexer.span().end;
-            let origin = Origin::new(self.filename.clone(), start..end);
-            Ok(Expression::Lookup(Lookup {
-                path: ModuleName::new(path),
-                origin,
-            }))
+        Ok(Lookup { path, origin })
+    }
+
+    pub fn parse_expression(&mut self) -> ParseResult<Expression> {
+        if self.peek()? == Token::Bareword {
+            Ok(Expression::Lookup(self.parse_lookup()?))
         } else {
             Ok(Expression::Value(self.parse_value()?))
         }
@@ -510,6 +508,7 @@ impl<'src> Parser<'src> {
         }
 
         let value = self.parse_expression()?;
+        self.trim()?;
 
         let arg = IncludeArg { name, value };
 
@@ -525,7 +524,6 @@ impl<'src> Parser<'src> {
         let mut args = vec![];
         while let Some(arg) = self.parse_include_arg()? {
             args.push(arg);
-            self.trim()?;
         }
         self.end_of_line()?;
 
@@ -542,8 +540,7 @@ impl<'src> Parser<'src> {
         while self.accept(&Token::Minus)? {
             if !self.accept(&Token::Minus)? {
                 if let Some(pflag) = parent_flag.as_mut() {
-                    self.bareword()?;
-                    if self.token() != "p" {
+                    if self.bareword()? != "p" {
                         return Err(ParseError::Expected("flag"));
                     }
 
@@ -610,7 +607,6 @@ impl<'src> Parser<'src> {
         let mut args = vec![];
         while let Some(arg) = self.parse_include_arg()? {
             args.push(arg);
-            self.trim()?;
         }
 
         self.end_of_line()?;
