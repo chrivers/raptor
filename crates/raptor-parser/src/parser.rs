@@ -777,6 +777,37 @@ mod tests {
         };
     }
 
+    macro_rules! fileopts_test_full {
+        ($src:expr, $chmod:expr, $user:expr, $group:expr, $parent:expr) => {
+            let mut parser = make_parser($src);
+
+            let mut parent = false;
+            let mut chown = Chown::default();
+            let user: Option<&str> = $user;
+            let group: Option<&str> = $group;
+
+            if let Some(user) = user {
+                chown.user = Some(user.to_string());
+            }
+            if let Some(group) = group {
+                chown.group = Some(group.to_string());
+            }
+
+            assert_eq!(
+                parser.parse_fileopts(Some(&mut parent))?,
+                (
+                    if user.is_some() || group.is_some() {
+                        Some(chown)
+                    } else {
+                        None
+                    },
+                    $chmod
+                )
+            );
+            assert_eq!(parent, $parent);
+        };
+    }
+
     #[test]
     fn parse_list() -> ParseResult<()> {
         list_test!("[]", []);
@@ -845,6 +876,20 @@ mod tests {
 
         fileopts_test_chown!("--chown user:", Some("user"), Some("user"));
         fileopts_test_chown!("--chown :group", None, Some("group"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn parse_fileopts_parent() -> ParseResult<()> {
+        fileopts_test_full!("", None, None, None, false);
+        fileopts_test_full!("-p", None, None, None, true);
+
+        fileopts_test_full!("--chmod 1234 -p", Some(0o1234), None, None, true);
+        fileopts_test_full!("-p --chmod 1234 -p", Some(0o1234), None, None, true);
+        fileopts_test_full!("-p --chmod 1234", Some(0o1234), None, None, true);
+
+        fileopts_test_full!("-p --chmod 1234 --chown user:group", Some(0o1234), Some("user"), Some("group"), true);
 
         Ok(())
     }
