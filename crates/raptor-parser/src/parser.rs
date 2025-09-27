@@ -477,6 +477,7 @@ impl<'src> Parser<'src> {
     pub fn parse_expression(&mut self) -> ParseResult<Expression> {
         if self.accept(&Token::Bareword)? {
             let mut path = vec![self.token_string()];
+
             let start = self.lexer.span().start;
             while self.accept(&Token::Dot)? {
                 self.expect(&Token::Bareword)?;
@@ -565,23 +566,17 @@ impl<'src> Parser<'src> {
                         Some(self.value()?)
                     };
 
-                    chown = if self.accept(&Token::Colon)? {
-                        if self.accept(&Token::Bareword)? {
-                            let group = self.token();
+                    let mut group = None;
 
-                            Some(Chown {
-                                user,
-                                group: Some(group.to_string()),
-                            })
+                    if self.accept(&Token::Colon)? {
+                        group = if self.accept(&Token::Bareword)? {
+                            Some(self.token_string())
                         } else {
-                            Some(Chown {
-                                group: user.clone(),
-                                user,
-                            })
+                            user.clone()
                         }
-                    } else {
-                        Some(Chown { user, group: None })
-                    };
+                    }
+
+                    chown = Some(Chown { user, group });
                 }
 
                 "chmod" => {
