@@ -20,11 +20,11 @@ fn main() -> Result<(), std::io::Error> {
     while let Some(token) = lexer.next() {
         match token {
             Ok(WordToken::Bareword(txt)) => write!(stdout, "{}", txt.bright_white())?,
-            Ok(WordToken::Newline(txt) | WordToken::Whitespace(txt)) => {
-                write!(stdout, "{txt}")?;
+            Ok(WordToken::Newline | WordToken::Whitespace) => {
+                write!(stdout, "{}", lexer.slice())?;
             }
             Ok(WordToken::String(txt)) => write!(stdout, "{}", format!("{txt:?}").yellow())?,
-            Ok(WordToken::Comment(txt)) => writeln!(stdout, "{}", &txt[..txt.len() - 1].dimmed())?,
+            Ok(WordToken::Comment) => writeln!(stdout, "{}", lexer.slice().dimmed())?,
             Ok(WordToken::Eof) => break,
             Ok(_) => write!(stdout, "{}", lexer.slice().purple())?,
             Err(err) => error!("Lexer error: {err}"),

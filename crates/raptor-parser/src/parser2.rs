@@ -14,6 +14,7 @@ use crate::lexer::WordToken;
 use crate::util::module_name::ModuleName;
 use crate::{ParseError, ParseResult};
 
+#[derive(Clone)]
 pub struct Parser<'src> {
     lexer: Lexer<'src, WordToken<'src>>,
     filename: Arc<Utf8PathBuf>,
@@ -155,58 +156,14 @@ struct RenderArgs {
     remainder: Vec<String>,
 }
 
-trait Lex<'a, 'b, T> {
-    fn bareword(&self) -> ParseResult<&'a str>;
-    fn value(&'b self) -> ParseResult<&'b str>;
-    fn path(&self) -> ParseResult<Utf8PathBuf>;
-    fn module_name(&self) -> ParseResult<ModuleName>;
-}
-
-impl<'src, 'this> Lex<'src, 'this, Self> for WordToken<'src> {
-    fn bareword(&self) -> ParseResult<&'src str> {
-        if let Self::Bareword(word) = self {
-            Ok(word)
-        } else {
-            Err(ParseError::ExpectedWord)
-        }
-    }
-
-    #[allow(clippy::match_same_arms)]
-    fn value(&'this self) -> ParseResult<&'this str> {
-        match self {
-            WordToken::Bareword(word) => Ok(word),
-            WordToken::String(string) => Ok(string.as_ref()),
-            WordToken::Eof => Err(ParseError::UnexpectedEof),
-            WordToken::Newline => Err(ParseError::ExpectedWord),
-            WordToken::Comment => Err(ParseError::ExpectedWord),
-            WordToken::Whitespace | _ => Err(ParseError::ExpectedWord),
-        }
-    }
-
-    #[allow(clippy::match_same_arms)]
-    fn path(&self) -> ParseResult<Utf8PathBuf> {
-        match self {
-            WordToken::Bareword(word) => Ok(word.into()),
-            WordToken::String(string) => Ok(string.into()),
-            WordToken::Newline => Err(ParseError::ExpectedWord),
-            WordToken::Comment => Err(ParseError::ExpectedWord),
-            WordToken::Eof => Err(ParseError::UnexpectedEof),
-            WordToken::Whitespace | _ => Err(ParseError::ExpectedWord),
-        }
-    }
-
-    fn module_name(&self) -> ParseResult<ModuleName> {
-        let word = self.bareword()?;
-        let res = ModuleName::new(word.split('.').map(str::to_string).collect());
-
-        Ok(res)
-    }
-}
-
 impl<'src> Parser<'src> {
     #[must_use]
     pub const fn new(lexer: Lexer<'src, WordToken<'src>>, filename: Arc<Utf8PathBuf>) -> Self {
         Self { lexer, filename }
+    }
+
+    fn fork(&self) -> Self {
+        self.clone()
     }
 
     fn next(&mut self) -> ParseResult<WordToken<'src>> {
@@ -216,6 +173,18 @@ impl<'src> Parser<'src> {
             .map_err(ParseError::from)
     }
 
+    fn expect(
+        &mut self,
+        predicate: impl Fn(&WordToken<'src>) -> bool,
+    ) -> ParseResult<WordToken<'src>> {
+        let next = self.next()?;
+        if predicate(&next) {
+            Ok(next)
+        } else {
+            Err(ParseError::ExpectedWord)
+        }
+    }
+
     fn peek(&self) -> ParseResult<WordToken<'src>> {
         // FIXME: do away with the .clone() here
         self.lexer
@@ -223,6 +192,66 @@ impl<'src> Parser<'src> {
             .next()
             .unwrap_or(Ok(WordToken::Eof))
             .map_err(ParseError::from)
+    }
+
+    fn bareword(&mut self) -> ParseResult<&'src str> {
+        if let WordToken::Bareword(word) = self.word()? {
+            Ok(word)
+        } else {
+            Err(ParseError::ExpectedWord)
+        }
+    }
+
+    #[allow(clippy::match_same_arms)]
+    fn value(&mut self) -> ParseResult<String> {
+        match self.next()? {
+            WordToken::Bareword(word) => Ok(word.to_string()),
+            WordToken::String(string) => Ok(string),
+            WordToken::Eof => Err(ParseError::UnexpectedEof),
+            WordToken::Newline => Err(ParseError::ExpectedWord),
+            WordToken::Comment => Err(ParseError::ExpectedWord),
+            _ => Err(ParseError::ExpectedWord),
+        }
+    }
+
+    fn trim(&mut self) -> ParseResult<()> {
+        while self.peek()?.is_whitespace() {
+            self.next()?;
+        }
+
+        Ok(())
+    }
+
+    #[allow(clippy::match_same_arms)]
+    fn path(&mut self) -> ParseResult<Utf8PathBuf> {
+        let mut res = String::new();
+        loop {
+            let state = self.lexer.clone();
+            match self.next()? {
+                WordToken::Bareword(word) => res.push_str(word),
+                WordToken::String(string) => res.push_str(&string),
+                WordToken::Colon | WordToken::Dot | WordToken::Slash => {
+                    res.push_str(self.lexer.slice());
+                }
+                _ => {
+                    self.lexer = state;
+                    break;
+                }
+            }
+        }
+
+        if res.is_empty() {
+            return Err(ParseError::ExpectedWord);
+        }
+
+        Ok(res.into())
+    }
+
+    fn module_name(&mut self) -> ParseResult<ModuleName> {
+        let word = self.bareword()?;
+        let res = ModuleName::new(word.split('.').map(str::to_string).collect());
+
+        Ok(res)
     }
 
     fn word(&mut self) -> ParseResult<WordToken<'src>> {
@@ -306,29 +335,31 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_workdir(&mut self) -> ParseResult<InstWorkdir> {
-        let dir = self.word()?.path()?;
+        self.trim()?;
+        let dir = self.path()?;
         self.end_of_line()?;
 
         Ok(InstWorkdir { dir })
     }
 
     pub fn parse_env_assign(&mut self) -> ParseResult<Option<InstEnvAssign>> {
-        if let WordToken::Newline = self.peek()? {
+        if self.peek()? == WordToken::Newline {
             return Ok(None);
         }
 
-        let word = self.word()?;
-        let value = word.value()?;
+        let ident = self.value()?;
 
-        let assign = if let Some((head, tail)) = value.split_once('=') {
+        let assign = if self.peek()? == WordToken::Equals {
+            self.next()?;
+            let value = self.bareword()?;
             InstEnvAssign {
-                key: head.to_string(),
-                value: tail.to_string(),
+                key: ident,
+                value: value.to_string(),
             }
         } else {
             InstEnvAssign {
-                key: value.to_string(),
-                value: value.to_string(),
+                key: ident.clone(),
+                value: ident,
             }
         };
 
@@ -339,6 +370,7 @@ impl<'src> Parser<'src> {
         let mut env = vec![];
         while let Some(assign) = self.parse_env_assign()? {
             env.push(assign);
+            self.trim()?;
         }
         self.end_of_line()?;
 
@@ -385,12 +417,43 @@ impl<'src> Parser<'src> {
 
     #[allow(clippy::option_if_let_else)]
     pub fn parse_from(&mut self) -> ParseResult<InstFrom> {
-        let word = self.word()?;
+        let next = self.fork().bareword()?;
 
-        let from = if let Some(docker) = word.bareword()?.strip_prefix("docker://") {
+        let from = if next == "docker" {
+            self.bareword()?;
+            self.expect(|t| matches!(t, WordToken::Colon))?;
+            self.expect(|t| matches!(t, WordToken::Slash))?;
+            self.expect(|t| matches!(t, WordToken::Slash))?;
+            let mut docker = String::new();
+            loop {
+                let state = self.lexer.clone();
+                let next = self.next()?;
+                match next {
+                    WordToken::LBracket
+                    | WordToken::RBracket
+                    | WordToken::LBrace
+                    | WordToken::RBrace
+                    | WordToken::Colon
+                    | WordToken::Equals
+                    | WordToken::Comma
+                    | WordToken::Slash
+                    | WordToken::Dot
+                    | WordToken::Bareword(_) => {
+                        docker.push_str(self.lexer.slice());
+                    }
+                    WordToken::Newline
+                    | WordToken::Comment
+                    | WordToken::String(_)
+                    | WordToken::Whitespace
+                    | WordToken::Eof => {
+                        self.lexer = state;
+                        break;
+                    }
+                }
+            }
             FromSource::Docker(docker.to_string())
         } else {
-            FromSource::Raptor(word.module_name()?)
+            FromSource::Raptor(self.module_name()?)
         };
 
         self.end_of_line()?;
@@ -416,12 +479,11 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_include_arg(&mut self) -> ParseResult<Option<IncludeArg>> {
-        if let WordToken::Newline = self.peek()? {
+        if self.peek()? == WordToken::Newline {
             return Ok(None);
         }
 
-        let word = self.word()?;
-        let value = word.value()?;
+        let value = self.value()?;
 
         let Some((head, tail)) = value.split_once('=') else {
             return Err(ParseError::ExpectedWord);
@@ -442,7 +504,7 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_include(&mut self) -> ParseResult<InstInclude> {
-        let src = self.word()?.module_name()?;
+        let src = self.module_name()?;
 
         let mut args = vec![];
         while let Some(arg) = self.parse_include_arg()? {
@@ -499,7 +561,10 @@ impl<'src> Parser<'src> {
     }
 
     pub fn statement(&mut self) -> ParseResult<Option<Statement>> {
+        let start = self.lexer.span().start;
+
         let word = self.word()?;
+        self.trim()?;
 
         if matches!(word, WordToken::Eof) {
             return Ok(None);
@@ -508,8 +573,6 @@ impl<'src> Parser<'src> {
         if matches!(word, WordToken::Newline) {
             return self.statement();
         }
-
-        let start = self.lexer.span().start;
 
         let inst = match word.bareword()? {
             "FROM" => Instruction::From(self.parse_from()?),
