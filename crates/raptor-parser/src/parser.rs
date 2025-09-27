@@ -357,6 +357,8 @@ impl<'src> Parser<'src> {
             }
         }
 
+        self.trim()?;
+
         Ok(opts)
     }
 
@@ -364,7 +366,6 @@ impl<'src> Parser<'src> {
         self.trim()?;
 
         let opts = self.parse_mount_options()?;
-        self.trim()?;
 
         let name = self.bareword()?.to_string();
         self.trim()?;
