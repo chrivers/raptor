@@ -894,6 +894,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::cognitive_complexity)]
     fn parse_fileopts_parent() -> ParseResult<()> {
         fileopts_test_full!("", None, None, None, false);
         fileopts_test_full!("-p", None, None, None, true);
