@@ -1,5 +1,7 @@
 use logos::{Lexer, Logos, Span};
 
+use crate::{ParseError, ParseResult};
+
 #[derive(thiserror::Error, Debug, Clone, PartialEq, Eq, Default)]
 pub enum LexerError {
     #[error("Unterminated string literal at position {}", .0.start)]
@@ -78,6 +80,21 @@ enum StringToken {
 
     #[regex(r#"[^\\"\n]+"#)]
     Chars,
+}
+
+impl<'a> WordToken<'a> {
+    pub const fn bareword(&self) -> ParseResult<&'a str> {
+        if let Self::Bareword(word) = self {
+            Ok(word)
+        } else {
+            Err(ParseError::ExpectedWord)
+        }
+    }
+
+    #[must_use]
+    pub const fn is_whitespace(&self) -> bool {
+        matches!(self, Self::Whitespace)
+    }
 }
 
 fn string_callback<'a>(lex: &mut Lexer<'a, WordToken<'a>>) -> Result<String, LexerError> {
