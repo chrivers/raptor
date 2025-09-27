@@ -248,8 +248,7 @@ impl<'src> Parser<'src> {
 
         let ident = self.bareword()?.to_string();
 
-        let assign = if self.peek()? == Token::Equals {
-            self.next()?;
+        let assign = if self.accept(&Token::Equals)? {
             let value = self.bareword()?;
             InstEnvAssign {
                 key: ident,
@@ -371,8 +370,7 @@ impl<'src> Parser<'src> {
             mtype: MountType::Simple,
         };
 
-        while self.peek()? == Token::Minus {
-            self.next()?;
+        while self.accept(&Token::Minus)? {
             self.expect(&Token::Minus)?;
             self.expect(&Token::Bareword)?;
 
@@ -426,7 +424,7 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_map(&mut self) -> ParseResult<Value> {
-        self.expect(&Token::LBrace)?;
+        self.expect_trimmed(&Token::LBrace)?;
 
         let mut map = BTreeMap::new();
         loop {
@@ -435,9 +433,7 @@ impl<'src> Parser<'src> {
             }
 
             let key = self.parse_value()?;
-
             self.expect_trimmed(&Token::Colon)?;
-
             let value = self.parse_value()?;
 
             map.insert(key, value);
@@ -447,8 +443,6 @@ impl<'src> Parser<'src> {
                 break;
             }
         }
-
-        self.trim()?;
 
         Ok(Value::from(map))
     }
@@ -535,8 +529,7 @@ impl<'src> Parser<'src> {
         let mut chown = None;
         let mut chmod = None;
 
-        while self.peek()? == Token::Minus {
-            self.next()?;
+        while self.accept(&Token::Minus)? {
             if !self.accept(&Token::Minus)? {
                 if let Some(pflag) = parent_flag.as_mut() {
                     self.bareword()?;
