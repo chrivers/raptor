@@ -728,17 +728,26 @@ mod tests {
         Parser::new(lexer, Arc::new("<inline>".into()))
     }
 
-    macro_rules! list_test {
-        ($src:expr, $tree:tt) => {
+    macro_rules! parse_test {
+        ($parse:ident, $src:expr, $tree:tt) => {
             let mut parser = make_parser($src);
-            assert_eq!(parser.parse_list()?, Value::from_serialize(json!($tree)));
+            assert_eq!(parser.$parse()?, Value::from_serialize(json!($tree)));
         };
     }
 
+    macro_rules! value_test {
+        ($src:expr, $tree:tt) => {
+            parse_test!(parse_value, $src, $tree)
+        };
+    }
+    macro_rules! list_test {
+        ($src:expr, $tree:tt) => {
+            parse_test!(parse_list, $src, $tree)
+        };
+    }
     macro_rules! map_test {
         ($src:expr, $tree:tt) => {
-            let mut parser = make_parser($src);
-            assert_eq!(parser.parse_map()?, Value::from_serialize(json!($tree)));
+            parse_test!(parse_map, $src, $tree)
         };
     }
 
@@ -809,7 +818,15 @@ mod tests {
     }
 
     #[test]
-    fn parse_list() -> ParseResult<()> {
+    fn parse_bool() -> ParseResult<()> {
+        value_test!("true", true);
+        value_test!("false", false);
+
+        Ok(())
+    }
+
+    #[test]
+    fn parse_list2() -> ParseResult<()> {
         list_test!("[]", []);
         list_test!("[0]", [0]);
         list_test!("[1234]", [1234]);
@@ -889,7 +906,13 @@ mod tests {
         fileopts_test_full!("-p --chmod 1234 -p", Some(0o1234), None, None, true);
         fileopts_test_full!("-p --chmod 1234", Some(0o1234), None, None, true);
 
-        fileopts_test_full!("-p --chmod 1234 --chown user:group", Some(0o1234), Some("user"), Some("group"), true);
+        fileopts_test_full!(
+            "-p --chmod 1234 --chown user:group",
+            Some(0o1234),
+            Some("user"),
+            Some("group"),
+            true
+        );
 
         Ok(())
     }
