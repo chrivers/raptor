@@ -148,6 +148,8 @@ impl<'src> Parser<'src> {
     }
 
     fn consume_line(&mut self) -> ParseResult<Vec<String>> {
+        self.trim()?;
+
         let mut args = vec![];
         let mut value = String::new();
 
@@ -200,7 +202,9 @@ impl<'src> Parser<'src> {
 
     pub fn parse_workdir(&mut self) -> ParseResult<InstWorkdir> {
         self.trim()?;
+
         let dir = self.path()?;
+
         self.end_of_line()?;
 
         Ok(InstWorkdir { dir })
@@ -231,6 +235,8 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_env(&mut self) -> ParseResult<InstEnv> {
+        self.trim()?;
+
         let mut env = vec![];
         while let Some(assign) = self.parse_env_assign()? {
             env.push(assign);
@@ -242,6 +248,8 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_write(&mut self) -> ParseResult<InstWrite> {
+        self.trim()?;
+
         let (chown, chmod) = self.parse_fileopts(None)?;
         self.trim()?;
 
@@ -262,6 +270,8 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_mkdir(&mut self) -> ParseResult<InstMkdir> {
+        self.trim()?;
+
         let mut parents = false;
         let (chown, chmod) = self.parse_fileopts(Some(&mut parents))?;
         self.trim()?;
@@ -280,6 +290,8 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_from(&mut self) -> ParseResult<InstFrom> {
+        self.trim()?;
+
         let state = self.lexer.clone();
         let next = self.bareword()?;
         self.lexer = state;
@@ -350,6 +362,8 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_mount(&mut self) -> ParseResult<InstMount> {
+        self.trim()?;
+
         let opts = self.parse_mount_options()?;
         self.trim()?;
 
@@ -465,6 +479,8 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_include(&mut self) -> ParseResult<InstInclude> {
+        self.trim()?;
+
         let src = self.module_name()?;
         self.trim()?;
 
@@ -546,6 +562,8 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_render(&mut self) -> ParseResult<InstRender> {
+        self.trim()?;
+
         let (chown, chmod) = self.parse_fileopts(None)?;
 
         let src = self.path()?;
@@ -572,6 +590,8 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
+        self.trim()?;
+
         let (chown, chmod) = self.parse_fileopts(None)?;
 
         let mut files = vec![];
@@ -595,21 +615,18 @@ impl<'src> Parser<'src> {
     pub fn statement(&mut self) -> ParseResult<Option<Statement>> {
         let start = self.lexer.span().start;
 
-        while matches!(self.peek()?, Token::Whitespace | Token::Comment) {
-            self.next()?;
+        loop {
+            match self.peek()? {
+                Token::Whitespace | Token::Comment | Token::Newline => {
+                    self.next()?;
+                }
+                Token::Eof => return Ok(None),
+                _ => break,
+            }
         }
 
-        let word = self.word()?;
+        self.expect(&Token::Bareword)?;
         let inst = self.lexer.slice();
-        self.trim()?;
-
-        if matches!(word, Token::Eof) {
-            return Ok(None);
-        }
-
-        if matches!(word, Token::Newline) {
-            return self.statement();
-        }
 
         let inst = match inst {
             "FROM" => Instruction::From(self.parse_from()?),
@@ -625,7 +642,7 @@ impl<'src> Parser<'src> {
             "WORKDIR" => Instruction::Workdir(self.parse_workdir()?),
             "ENTRYPOINT" => Instruction::Entrypoint(self.parse_entrypoint()?),
             "CMD" => Instruction::Cmd(self.parse_cmd()?),
-            _ => return Err(ParseError::ExpectedWord),
+            _ => return Err(ParseError::Expected("statement")),
         };
 
         let end = self.lexer.span().end;
