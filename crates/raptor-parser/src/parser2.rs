@@ -380,21 +380,40 @@ impl<'src> Parser<'src> {
         Ok(InstFrom { from })
     }
 
-    #[allow(clippy::option_if_let_else)]
+    pub fn parse_mount_options(&mut self) -> ParseResult<MountOptions> {
+        let mut opts = MountOptions {
+            mtype: MountType::Simple,
+        };
+
+        while self.peek()? == Token::Minus {
+            self.next()?;
+            self.expect(&Token::Minus)?;
+            self.expect(&Token::Bareword)?;
+
+            match self.lexer.slice() {
+                "simple" => opts.mtype = MountType::Simple,
+                "layers" => opts.mtype = MountType::Layers,
+                "overlay" => opts.mtype = MountType::Overlay,
+                _ => return Err(ParseError::Expected("mount option")),
+            }
+        }
+
+        Ok(opts)
+    }
+
     pub fn parse_mount(&mut self) -> ParseResult<InstMount> {
-        // clap requires dummy string to simulate argv[0]
-        let mut copy = vec![String::new()];
-        self.consume_line_to(&mut copy)?;
+        let opts = self.parse_mount_options()?;
+        self.trim()?;
 
-        let MountArgs { opts, name, dest } = MountArgs::try_parse_from(copy)?;
+        let name = self.bareword()?.to_string();
+        self.trim()?;
 
-        let mtype = opts.mtype.mtype().unwrap_or(MountType::Simple);
+        let dest = self.path()?;
+        self.trim()?;
 
-        Ok(InstMount {
-            opts: MountOptions { mtype },
-            name,
-            dest,
-        })
+        self.end_of_line()?;
+
+        Ok(InstMount { opts, name, dest })
     }
 
     pub fn parse_expression(&mut self) -> ParseResult<Expression> {
