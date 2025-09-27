@@ -11,7 +11,7 @@ use crate::program::{
 use crate::template::make_environment;
 use crate::{RaptorError, RaptorResult};
 use raptor_parser::ast::{Instruction, Origin, Statement};
-use raptor_parser::parser2;
+use raptor_parser::parser;
 
 pub struct Loader<'source> {
     env: Environment<'source>,
@@ -192,7 +192,7 @@ impl Loader<'_> {
 
         self.sources.insert(filename.into(), source);
 
-        let statements = parser2::parse(filename, &self.sources[filename])?;
+        let statements = parser::parse(filename, &self.sources[filename])?;
 
         let mut res = vec![];
 

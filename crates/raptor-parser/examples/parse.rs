@@ -5,7 +5,7 @@ use log::error;
 use logos::Logos;
 use raptor_parser::ParseResult;
 use raptor_parser::lexer::Token;
-use raptor_parser::parser2::Parser;
+use raptor_parser::parser::Parser;
 
 fn parse(buf: &str) -> ParseResult<()> {
     let lexer = Token::lexer(buf);
