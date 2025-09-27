@@ -712,6 +712,8 @@ mod tests {
 
     use logos::Logos;
     use minijinja::Value;
+    use pretty_assertions::assert_eq;
+    use serde_json::json;
 
     use crate::ParseResult;
     use crate::lexer::Token;
@@ -723,34 +725,51 @@ mod tests {
         Parser::new(lexer, Arc::new("<inline>".into()))
     }
 
+    macro_rules! list_test {
+        ($src:expr, $tree:tt) => {
+            let mut parser = make_parser($src);
+            assert_eq!(parser.parse_list()?, Value::from_serialize(json!($tree)));
+        };
+    }
+
+    macro_rules! map_test {
+        ($src:expr, $tree:tt) => {
+            let mut parser = make_parser($src);
+            assert_eq!(parser.parse_map()?, Value::from_serialize(json!($tree)));
+        };
+    }
+
     #[test]
     fn parse_list() -> ParseResult<()> {
-        let mut parser = make_parser("[]");
-        assert_eq!(parser.parse_list()?, Value::from_serialize::<&[u64]>(&[]));
+        list_test!("[]", []);
+        list_test!("[0]", [0]);
+        list_test!("[1234]", [1234]);
+        list_test!("[1,2,3,4]", [1, 2, 3, 4]);
+        list_test!("[ 1, 2,3 , 4 ]", [1, 2, 3, 4]);
+        list_test!(" [ 1 ] ", [1]);
 
-        let mut parser = make_parser("[0]");
-        assert_eq!(parser.parse_list()?, Value::from_serialize::<&[u64]>(&[0]));
+        Ok(())
+    }
 
-        let mut parser = make_parser("[1234]");
-        assert_eq!(
-            parser.parse_list()?,
-            Value::from_serialize::<&[u64]>(&[1234])
+    #[test]
+    fn parse_map() -> ParseResult<()> {
+        map_test!("{}", {});
+        map_test!(r#"{"foo":"bar"}"#, {"foo": "bar"});
+        map_test!(r#" { "foo" : "bar" } "#, {"foo": "bar"});
+        map_test!(r#" { "123" : [] } "#, {"123": []});
+        map_test!(r#" { "123" : [[], []] } "#, {"123": [[], []]});
+        map_test!(
+            r#" { "123" : [[true, false], [{}, {"foo": ["bar1","bar2"]}] ] } "#,
+            {
+                "123": [
+                    [true, false],
+                    [
+                        {},
+                        {"foo": ["bar1", "bar2"]}
+                    ]
+                ]
+            }
         );
-
-        let mut parser = make_parser("[1,2,3,4]");
-        assert_eq!(
-            parser.parse_list()?,
-            Value::from_serialize::<&[u64]>(&[1, 2, 3, 4])
-        );
-
-        let mut parser = make_parser("[ 1, 2,3 , 4 ]");
-        assert_eq!(
-            parser.parse_list()?,
-            Value::from_serialize::<&[u64]>(&[1, 2, 3, 4])
-        );
-
-        let mut parser = make_parser(" [ 1 ] ");
-        assert_eq!(parser.parse_list()?, Value::from_serialize::<&[u64]>(&[1]));
 
         Ok(())
     }

@@ -25,3 +25,5 @@ workspace = true
 [dev-dependencies]
 colog.workspace = true
 log.workspace = true
+pretty_assertions.workspace = true
+serde_json.workspace = true
