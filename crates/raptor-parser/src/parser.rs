@@ -526,25 +526,25 @@ impl<'src> Parser<'src> {
 
             match self.bareword()? {
                 "chown" => {
-                    self.bareword()?;
-                    let user = self.lexer.slice();
+                    self.trim()?;
+                    let user = self.value()?;
                     chown = if self.accept(&Token::Colon)? {
                         if self.accept(&Token::Bareword)? {
                             let group = self.lexer.slice();
 
                             Some(Chown {
-                                user: Some(user.to_string()),
+                                user: Some(user),
                                 group: Some(group.to_string()),
                             })
                         } else {
                             Some(Chown {
-                                user: Some(user.to_string()),
-                                group: Some(user.to_string()),
+                                user: Some(user.clone()),
+                                group: Some(user),
                             })
                         }
                     } else {
                         Some(Chown {
-                            user: Some(user.to_string()),
+                            user: Some(user),
                             group: None,
                         })
                     };
