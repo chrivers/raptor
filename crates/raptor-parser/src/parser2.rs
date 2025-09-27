@@ -350,7 +350,7 @@ impl<'src> Parser<'src> {
             return Ok(None);
         }
 
-        let ident = self.value()?;
+        let ident = self.bareword()?.to_string();
 
         let assign = if self.peek()? == Token::Equals {
             self.next()?;
