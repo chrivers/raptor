@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use camino::Utf8PathBuf;
-use clap::Parser as _;
 use logos::{Lexer, Logos};
 use minijinja::Value;
 
@@ -24,48 +23,6 @@ fn parse_chmod_permission(string: &str) -> Result<u32, ParseError> {
         return Err(ParseError::InvalidPermissionMask);
     }
     Ok(u32::from_str_radix(string, 8)?)
-}
-
-#[derive(clap::Args, Debug)]
-#[group(multiple = false)]
-struct MountTypeArg {
-    #[arg(long)]
-    simple: bool,
-
-    #[arg(long)]
-    layers: bool,
-
-    #[arg(long)]
-    overlay: bool,
-}
-
-impl MountTypeArg {
-    pub const fn mtype(&self) -> Option<MountType> {
-        match (self.simple, self.layers, self.overlay) {
-            (false, false, false) => None,
-            (true, _, _) => Some(MountType::Simple),
-            (_, true, _) => Some(MountType::Layers),
-            (_, _, true) => Some(MountType::Overlay),
-        }
-    }
-}
-
-#[derive(clap::Args, Debug)]
-struct MountOpts {
-    #[clap(flatten)]
-    mtype: MountTypeArg,
-}
-
-#[derive(clap::Parser, Debug)]
-#[clap(disable_help_flag = true)]
-#[command(name = "MOUNT")]
-struct MountArgs {
-    #[clap(flatten)]
-    opts: MountOpts,
-
-    name: String,
-
-    dest: Utf8PathBuf,
 }
 
 impl<'src> Parser<'src> {

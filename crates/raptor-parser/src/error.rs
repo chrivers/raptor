@@ -15,9 +15,6 @@ pub enum ParseError {
     LexerError(#[from] LexerError),
 
     #[error(transparent)]
-    ClapError(#[from] clap::error::Error),
-
-    #[error(transparent)]
     ParseIntError(#[from] std::num::ParseIntError),
 
     #[error(

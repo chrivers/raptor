@@ -21,7 +21,6 @@ serde = { workspace = true }
 colored = { workspace = true }
 minijinja = { workspace = true }
 logos = { workspace = true, features = ["forbid_unsafe"] }
-clap = { workspace = true, features = ["derive"] }
 
 [lints]
 workspace = true
