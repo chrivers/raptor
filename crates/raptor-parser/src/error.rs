@@ -13,9 +13,6 @@ pub enum ParseError {
     )]
     InvalidPermissionMask,
 
-    #[error("Unexpected eof")]
-    UnexpectedEof,
-
     #[error("Expected {0}")]
     Expected(&'static str),
 

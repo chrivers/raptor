@@ -83,7 +83,6 @@ impl<'src> Parser<'src> {
         match self.next()? {
             Token::Bareword => Ok(self.lexer.slice().to_string()),
             Token::String(string) => Ok(string),
-            Token::Eof => Err(ParseError::UnexpectedEof),
             _ => Err(ParseError::Expected("value")),
         }
     }
