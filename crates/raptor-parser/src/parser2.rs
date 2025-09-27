@@ -604,6 +604,10 @@ impl<'src> Parser<'src> {
     pub fn statement(&mut self) -> ParseResult<Option<Statement>> {
         let start = self.lexer.span().start;
 
+        while matches!(self.peek()?, Token::Whitespace | Token::Comment) {
+            self.next()?;
+        }
+
         let word = self.word()?;
         let inst = self.lexer.slice();
         self.trim()?;
