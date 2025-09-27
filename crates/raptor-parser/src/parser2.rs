@@ -100,12 +100,12 @@ impl<'src> Parser<'src> {
             match self.next()? {
                 Token::Bareword => res.push_str(self.lexer.slice()),
                 Token::String(string) => res.push_str(&string),
-                Token::Colon | Token::Dot | Token::Slash => {
-                    res.push_str(self.lexer.slice());
-                }
-                _ => {
+                Token::Comment | Token::Whitespace | Token::Newline | Token::Eof => {
                     self.lexer = state;
                     break;
+                }
+                _ => {
+                    res.push_str(self.lexer.slice());
                 }
             }
         }
