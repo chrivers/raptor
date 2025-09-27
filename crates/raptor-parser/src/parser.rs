@@ -550,6 +550,7 @@ impl<'src> Parser<'src> {
                         })
                     };
                 }
+
                 "chmod" => {
                     if !self.accept(&Token::Equals)? {
                         self.trim()?;
@@ -558,9 +559,8 @@ impl<'src> Parser<'src> {
                     self.expect(&Token::Number)?;
                     chmod = Some(parse_chmod_permission(self.lexer.slice())?);
                 }
-                _ => {
-                    return Err(ParseError::Expected("file option"));
-                }
+
+                _ => return Err(ParseError::Expected("file option")),
             }
 
             self.trim()?;
