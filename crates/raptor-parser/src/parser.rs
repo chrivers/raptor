@@ -80,11 +80,15 @@ impl<'src> Parser<'src> {
     }
 
     fn value(&mut self) -> ParseResult<String> {
-        match self.next()? {
+        let res = match self.next()? {
             Token::Bareword => Ok(self.lexer.slice().to_string()),
             Token::String(string) => Ok(string),
             _ => Err(ParseError::Expected("value")),
-        }
+        };
+
+        self.trim()?;
+
+        res
     }
 
     fn trim(&mut self) -> ParseResult<()> {
@@ -263,8 +267,6 @@ impl<'src> Parser<'src> {
         let (chown, chmod) = self.parse_fileopts(None)?;
 
         let body = self.value()?;
-        self.trim()?;
-
         let dest = self.parse_path()?;
 
         self.end_of_line()?;
@@ -284,7 +286,6 @@ impl<'src> Parser<'src> {
         let (chown, chmod) = self.parse_fileopts(Some(&mut parents))?;
 
         let dest = self.parse_path()?;
-        self.trim()?;
 
         self.end_of_line()?;
 
