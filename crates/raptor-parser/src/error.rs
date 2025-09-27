@@ -21,7 +21,4 @@ pub enum ParseError {
 
     #[error("Expected {} but found {}", .exp.description(), .found.description())]
     Mismatch { exp: Token, found: Token },
-
-    #[error("Expected word")]
-    ExpectedWord,
 }

@@ -68,10 +68,14 @@ impl<'src> Parser<'src> {
     }
 
     fn bareword(&mut self) -> ParseResult<&'src str> {
-        if self.word()? == Token::Bareword {
+        let word = self.word()?;
+        if word == Token::Bareword {
             Ok(self.lexer.slice())
         } else {
-            Err(ParseError::ExpectedWord)
+            Err(ParseError::Mismatch {
+                exp: Token::Bareword,
+                found: word,
+            })
         }
     }
 
@@ -556,7 +560,7 @@ impl<'src> Parser<'src> {
                     chmod = Some(parse_chmod_permission(self.lexer.slice())?);
                 }
                 _ => {
-                    return Err(ParseError::ExpectedWord);
+                    return Err(ParseError::Expected("file option"));
                 }
             }
 
