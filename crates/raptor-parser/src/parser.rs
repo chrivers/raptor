@@ -308,6 +308,15 @@ impl<'src> Parser<'src> {
         })
     }
 
+    pub fn parse_docker_from(&mut self) -> ParseResult<String> {
+        self.expect(&Token::Bareword)?;
+        self.expect(&Token::Colon)?;
+        self.expect(&Token::Slash)?;
+        self.expect(&Token::Slash)?;
+
+        Ok(self.parse_path()?.to_string())
+    }
+
     pub fn parse_from(&mut self) -> ParseResult<InstFrom> {
         self.trim()?;
 
@@ -316,40 +325,7 @@ impl<'src> Parser<'src> {
         self.lexer = state;
 
         let from = if next == "docker" {
-            self.expect(&Token::Bareword)?;
-            self.expect(&Token::Colon)?;
-            self.expect(&Token::Slash)?;
-            self.expect(&Token::Slash)?;
-            let mut docker = String::new();
-            loop {
-                let state = self.lexer.clone();
-                let next = self.next()?;
-                match next {
-                    Token::LBracket
-                    | Token::RBracket
-                    | Token::LBrace
-                    | Token::RBrace
-                    | Token::Colon
-                    | Token::Equals
-                    | Token::Comma
-                    | Token::Slash
-                    | Token::Dot
-                    | Token::Minus
-                    | Token::Number
-                    | Token::Bareword => {
-                        docker.push_str(self.token());
-                    }
-                    Token::Newline
-                    | Token::Comment
-                    | Token::String(_)
-                    | Token::Whitespace
-                    | Token::Eof => {
-                        self.lexer = state;
-                        break;
-                    }
-                }
-            }
-            FromSource::Docker(docker.to_string())
+            FromSource::Docker(self.parse_docker_from()?)
         } else {
             FromSource::Raptor(self.module_name()?)
         };
