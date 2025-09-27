@@ -95,7 +95,7 @@ impl<'src> Parser<'src> {
         Ok(())
     }
 
-    fn path(&mut self) -> ParseResult<Utf8PathBuf> {
+    fn parse_path(&mut self) -> ParseResult<Utf8PathBuf> {
         let mut res = String::new();
         loop {
             let state = self.lexer.clone();
@@ -213,7 +213,7 @@ impl<'src> Parser<'src> {
     pub fn parse_workdir(&mut self) -> ParseResult<InstWorkdir> {
         self.trim()?;
 
-        let dir = self.path()?;
+        let dir = self.parse_path()?;
 
         self.end_of_line()?;
 
@@ -266,7 +266,7 @@ impl<'src> Parser<'src> {
         let body = self.value()?;
         self.trim()?;
 
-        let dest = self.path()?;
+        let dest = self.parse_path()?;
 
         self.end_of_line()?;
 
@@ -285,7 +285,7 @@ impl<'src> Parser<'src> {
         let (chown, chmod) = self.parse_fileopts(Some(&mut parents))?;
         self.trim()?;
 
-        let dest = self.path()?;
+        let dest = self.parse_path()?;
         self.trim()?;
 
         self.end_of_line()?;
@@ -379,7 +379,7 @@ impl<'src> Parser<'src> {
         let name = self.bareword()?.to_string();
         self.trim()?;
 
-        let dest = self.path()?;
+        let dest = self.parse_path()?;
 
         self.end_of_line()?;
 
@@ -574,8 +574,8 @@ impl<'src> Parser<'src> {
 
         let (chown, chmod) = self.parse_fileopts(None)?;
 
-        let src = self.path()?;
-        let dest = self.path()?;
+        let src = self.parse_path()?;
+        let dest = self.parse_path()?;
 
         let mut args = vec![];
         while let Some(arg) = self.parse_include_arg()? {
@@ -601,7 +601,7 @@ impl<'src> Parser<'src> {
 
         let mut files = vec![];
         while self.peek()? != Token::Newline {
-            files.push(self.path()?);
+            files.push(self.parse_path()?);
         }
 
         self.end_of_line()?;
