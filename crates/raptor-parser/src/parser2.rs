@@ -14,7 +14,6 @@ use crate::lexer::Token;
 use crate::util::module_name::ModuleName;
 use crate::{ParseError, ParseResult};
 
-#[derive(Clone)]
 pub struct Parser<'src> {
     lexer: Lexer<'src, Token>,
     filename: Arc<Utf8PathBuf>,
@@ -162,10 +161,6 @@ impl<'src> Parser<'src> {
         Self { lexer, filename }
     }
 
-    fn fork(&self) -> Self {
-        self.clone()
-    }
-
     fn next(&mut self) -> ParseResult<Token> {
         self.lexer
             .next()
@@ -173,9 +168,9 @@ impl<'src> Parser<'src> {
             .map_err(ParseError::from)
     }
 
-    fn expect(&mut self, predicate: impl Fn(&Token) -> bool) -> ParseResult<Token> {
+    fn expect(&mut self, exp: &Token) -> ParseResult<Token> {
         let next = self.next()?;
-        if predicate(&next) {
+        if &next == exp {
             Ok(next)
         } else {
             Err(ParseError::ExpectedWord)
@@ -413,13 +408,15 @@ impl<'src> Parser<'src> {
 
     #[allow(clippy::option_if_let_else)]
     pub fn parse_from(&mut self) -> ParseResult<InstFrom> {
-        let next = self.fork().bareword()?;
+        let state = self.lexer.clone();
+        let next = self.bareword()?;
+        self.lexer = state;
 
         let from = if next == "docker" {
-            self.bareword()?;
-            self.expect(|t| matches!(t, Token::Colon))?;
-            self.expect(|t| matches!(t, Token::Slash))?;
-            self.expect(|t| matches!(t, Token::Slash))?;
+            self.expect(&Token::Bareword)?;
+            self.expect(&Token::Colon)?;
+            self.expect(&Token::Slash)?;
+            self.expect(&Token::Slash)?;
             let mut docker = String::new();
             loop {
                 let state = self.lexer.clone();
