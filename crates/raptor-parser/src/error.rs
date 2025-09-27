@@ -29,7 +29,4 @@ pub enum ParseError {
 
     #[error("Expected word")]
     ExpectedWord,
-
-    #[error("Cannot get parent path from {0:?}")]
-    BadPathNoParent(Utf8PathBuf),
 }

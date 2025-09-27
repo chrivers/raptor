@@ -46,6 +46,9 @@ pub enum RaptorError {
     #[error(transparent)]
     FalconError(#[from] falcon::error::FalconError),
 
+    #[error(transparent)]
+    SafeParentError(#[from] raptor_parser::util::SafeParentError),
+
     #[error("Undefined variable: {0}")]
     UndefinedVarError(String, Origin),
 
@@ -87,6 +90,7 @@ impl RaptorError {
             Self::FalconError(_) => "Falcon error",
             Self::MountMissing(_) => "Missing mount error",
             Self::RootRequired => "Root required",
+            Self::SafeParentError(_) => "Safe parent error",
             Self::UndefinedVarError(_, _) => "Undefined var error",
         }
     }
