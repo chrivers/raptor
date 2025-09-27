@@ -43,8 +43,11 @@ pub enum Token {
     #[token("-")]
     Minus,
 
-    #[regex("[^\\]/. \n\t\",=:{}\\[-]+")]
+    #[regex("[a-zA-Z_][^\\]/. \n\t\",=:{}\\[-]*")]
     Bareword,
+
+    #[regex("[0-9]+")]
+    Number,
 
     #[token("\n")]
     Newline,
@@ -103,6 +106,7 @@ impl Token {
             Self::Dot => ".",
             Self::Minus => "-",
             Self::Bareword => "<bareword>",
+            Self::Number => "<number>",
             Self::Newline => "\\n",
             Self::Comment => "<comment>",
             Self::String(_) => "<string>",

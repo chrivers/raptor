@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use camino::Utf8PathBuf;
@@ -314,6 +315,7 @@ impl<'src> Parser<'src> {
                     | Token::Slash
                     | Token::Dot
                     | Token::Minus
+                    | Token::Number
                     | Token::Bareword => {
                         docker.push_str(self.lexer.slice());
                     }
@@ -373,30 +375,81 @@ impl<'src> Parser<'src> {
         Ok(InstMount { opts, name, dest })
     }
 
-    pub fn parse_expression(&mut self) -> ParseResult<Expression> {
-        match self.next()? {
-            Token::LBracket => todo!(),
-            Token::LBrace => todo!(),
-            Token::Bareword => {
-                let mut path = vec![self.lexer.slice().to_string()];
-                let start = self.lexer.span().start;
-                while self.accept(&Token::Dot)? {
-                    self.expect(&Token::Bareword)?;
-                    path.push(self.lexer.slice().to_string());
-                }
-                let end = self.lexer.span().end;
-                let origin = Origin::new(self.filename.clone(), start..end);
-                Ok(Expression::Lookup(Lookup {
-                    path: ModuleName::new(path),
-                    origin,
-                }))
-            }
-            Token::String(value) => {
-                let value = Value::from_serialize(value);
-                Ok(Expression::Value(value))
+    pub fn parse_list(&mut self) -> ParseResult<Value> {
+        let mut list = vec![];
+        loop {
+            if self.accept(&Token::RBracket)? {
+                break;
             }
 
-            _ => Err(ParseError::Expected("expression")),
+            list.push(self.parse_value()?);
+
+            if !self.accept(&Token::Comma)? {
+                self.expect(&Token::RBracket)?;
+                break;
+            }
+        }
+
+        Ok(Value::from(list))
+    }
+
+    pub fn parse_map(&mut self) -> ParseResult<Value> {
+        let mut map = BTreeMap::new();
+        loop {
+            self.trim()?;
+            if self.accept(&Token::RBrace)? {
+                break;
+            }
+
+            let key = self.parse_value()?;
+            self.trim()?;
+
+            self.expect(&Token::Colon)?;
+            self.trim()?;
+
+            let value = self.parse_value()?;
+            self.trim()?;
+
+            map.insert(key, value);
+
+            if !self.accept(&Token::Comma)? {
+                self.expect(&Token::RBrace)?;
+                break;
+            }
+        }
+
+        self.trim()?;
+
+        Ok(Value::from(map))
+    }
+
+    pub fn parse_value(&mut self) -> ParseResult<Value> {
+        match self.next()? {
+            Token::LBracket => self.parse_list(),
+            Token::LBrace => self.parse_map(),
+            Token::String(value) => Ok(Value::from_serialize(value)),
+            Token::Number => Ok(Value::from_serialize(self.lexer.slice().parse::<i64>()?)),
+
+            _ => Err(ParseError::Expected("value4")),
+        }
+    }
+
+    pub fn parse_expression(&mut self) -> ParseResult<Expression> {
+        if self.accept(&Token::Bareword)? {
+            let mut path = vec![self.lexer.slice().to_string()];
+            let start = self.lexer.span().start;
+            while self.accept(&Token::Dot)? {
+                self.expect(&Token::Bareword)?;
+                path.push(self.lexer.slice().to_string());
+            }
+            let end = self.lexer.span().end;
+            let origin = Origin::new(self.filename.clone(), start..end);
+            Ok(Expression::Lookup(Lookup {
+                path: ModuleName::new(path),
+                origin,
+            }))
+        } else {
+            Ok(Expression::Value(self.parse_value()?))
         }
     }
 
@@ -424,10 +477,12 @@ impl<'src> Parser<'src> {
 
     pub fn parse_include(&mut self) -> ParseResult<InstInclude> {
         let src = self.module_name()?;
+        self.trim()?;
 
         let mut args = vec![];
         while let Some(arg) = self.parse_include_arg()? {
             args.push(arg);
+            self.trim()?;
         }
         self.end_of_line()?;
 
@@ -487,7 +542,7 @@ impl<'src> Parser<'src> {
                         self.trim()?;
                     }
 
-                    self.expect(&Token::Bareword)?;
+                    self.expect(&Token::Number)?;
                     chmod = Some(parse_chmod_permission(self.lexer.slice())?);
                 }
                 _ => {
