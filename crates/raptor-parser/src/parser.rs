@@ -261,7 +261,6 @@ impl<'src> Parser<'src> {
         self.trim()?;
 
         let (chown, chmod) = self.parse_fileopts(None)?;
-        self.trim()?;
 
         let body = self.value()?;
         self.trim()?;
@@ -283,7 +282,6 @@ impl<'src> Parser<'src> {
 
         let mut parents = false;
         let (chown, chmod) = self.parse_fileopts(Some(&mut parents))?;
-        self.trim()?;
 
         let dest = self.parse_path()?;
         self.trim()?;
@@ -565,6 +563,8 @@ impl<'src> Parser<'src> {
 
             self.trim()?;
         }
+
+        self.trim()?;
 
         Ok((chown, chmod))
     }
