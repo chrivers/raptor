@@ -581,7 +581,7 @@ impl<'src> Parser<'src> {
 
                 "chmod" => {
                     if !self.accept(&Token::Equals)? {
-                        self.trim()?;
+                        self.expect(&Token::Whitespace)?;
                     }
 
                     self.expect(&Token::Number)?;
