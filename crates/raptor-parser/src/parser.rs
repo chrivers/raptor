@@ -705,3 +705,53 @@ pub fn parse(name: &str, buf: &str) -> Result<Vec<Statement>, Location<ParseErro
         Location::make(origin, err)
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use logos::Logos;
+    use minijinja::Value;
+
+    use crate::ParseResult;
+    use crate::lexer::Token;
+    use crate::parser::Parser;
+
+    fn make_parser(input: &str) -> Parser {
+        let lexer = Token::lexer(input);
+
+        Parser::new(lexer, Arc::new("<inline>".into()))
+    }
+
+    #[test]
+    fn parse_list() -> ParseResult<()> {
+        let mut parser = make_parser("[]");
+        assert_eq!(parser.parse_list()?, Value::from_serialize::<&[u64]>(&[]));
+
+        let mut parser = make_parser("[0]");
+        assert_eq!(parser.parse_list()?, Value::from_serialize::<&[u64]>(&[0]));
+
+        let mut parser = make_parser("[1234]");
+        assert_eq!(
+            parser.parse_list()?,
+            Value::from_serialize::<&[u64]>(&[1234])
+        );
+
+        let mut parser = make_parser("[1,2,3,4]");
+        assert_eq!(
+            parser.parse_list()?,
+            Value::from_serialize::<&[u64]>(&[1, 2, 3, 4])
+        );
+
+        let mut parser = make_parser("[ 1, 2,3 , 4 ]");
+        assert_eq!(
+            parser.parse_list()?,
+            Value::from_serialize::<&[u64]>(&[1, 2, 3, 4])
+        );
+
+        let mut parser = make_parser(" [ 1 ] ");
+        assert_eq!(parser.parse_list()?, Value::from_serialize::<&[u64]>(&[1]));
+
+        Ok(())
+    }
+}
