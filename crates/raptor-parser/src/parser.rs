@@ -94,15 +94,9 @@ impl<'src> Parser<'src> {
     }
 
     fn bareword(&mut self) -> ParseResult<&'src str> {
-        let word = self.next()?;
-        if word == Token::Bareword {
-            Ok(self.token())
-        } else {
-            Err(ParseError::Mismatch {
-                exp: Token::Bareword,
-                found: word,
-            })
-        }
+        self.expect(&Token::Bareword)?;
+
+        Ok(self.token())
     }
 
     fn value(&mut self) -> ParseResult<String> {
