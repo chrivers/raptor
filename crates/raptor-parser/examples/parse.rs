@@ -4,11 +4,11 @@ use std::sync::Arc;
 use log::error;
 use logos::Logos;
 use raptor_parser::ParseResult;
-use raptor_parser::lexer::WordToken;
+use raptor_parser::lexer::Token;
 use raptor_parser::parser2::Parser;
 
 fn parse(buf: &str) -> ParseResult<()> {
-    let lexer = WordToken::lexer(buf);
+    let lexer = Token::lexer(buf);
     let mut parser = Parser::new(lexer, Arc::new("<inline>".into()));
 
     for stmt in parser.file()? {

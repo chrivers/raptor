@@ -12,7 +12,7 @@ pub enum LexerError {
 
 #[derive(Logos, Debug, PartialEq, Eq, Clone)]
 #[logos(error = LexerError)]
-pub enum WordToken {
+pub enum Token {
     #[token("[")]
     LBracket,
 
@@ -80,14 +80,14 @@ enum StringToken {
     Chars,
 }
 
-impl WordToken {
+impl Token {
     #[must_use]
     pub const fn is_whitespace(&self) -> bool {
         matches!(self, Self::Whitespace)
     }
 }
 
-fn string_callback(lex: &mut Lexer<WordToken>) -> Result<String, LexerError> {
+fn string_callback(lex: &mut Lexer<Token>) -> Result<String, LexerError> {
     let mut res = String::new();
     let mut string_lexer = lex.clone().morph();
 

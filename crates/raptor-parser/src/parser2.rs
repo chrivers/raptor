@@ -10,13 +10,13 @@ use crate::ast::{
     InstEnvAssign, InstFrom, InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun,
     InstWorkdir, InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
-use crate::lexer::WordToken;
+use crate::lexer::Token;
 use crate::util::module_name::ModuleName;
 use crate::{ParseError, ParseResult};
 
 #[derive(Clone)]
 pub struct Parser<'src> {
-    lexer: Lexer<'src, WordToken>,
+    lexer: Lexer<'src, Token>,
     filename: Arc<Utf8PathBuf>,
 }
 
@@ -158,7 +158,7 @@ struct RenderArgs {
 
 impl<'src> Parser<'src> {
     #[must_use]
-    pub const fn new(lexer: Lexer<'src, WordToken>, filename: Arc<Utf8PathBuf>) -> Self {
+    pub const fn new(lexer: Lexer<'src, Token>, filename: Arc<Utf8PathBuf>) -> Self {
         Self { lexer, filename }
     }
 
@@ -166,14 +166,14 @@ impl<'src> Parser<'src> {
         self.clone()
     }
 
-    fn next(&mut self) -> ParseResult<WordToken> {
+    fn next(&mut self) -> ParseResult<Token> {
         self.lexer
             .next()
-            .unwrap_or(Ok(WordToken::Eof))
+            .unwrap_or(Ok(Token::Eof))
             .map_err(ParseError::from)
     }
 
-    fn expect(&mut self, predicate: impl Fn(&WordToken) -> bool) -> ParseResult<WordToken> {
+    fn expect(&mut self, predicate: impl Fn(&Token) -> bool) -> ParseResult<Token> {
         let next = self.next()?;
         if predicate(&next) {
             Ok(next)
@@ -182,17 +182,17 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn peek(&self) -> ParseResult<WordToken> {
+    fn peek(&self) -> ParseResult<Token> {
         // FIXME: do away with the .clone() here
         self.lexer
             .clone()
             .next()
-            .unwrap_or(Ok(WordToken::Eof))
+            .unwrap_or(Ok(Token::Eof))
             .map_err(ParseError::from)
     }
 
     fn bareword(&mut self) -> ParseResult<&'src str> {
-        if self.word()? == WordToken::Bareword {
+        if self.word()? == Token::Bareword {
             Ok(self.lexer.slice())
         } else {
             Err(ParseError::ExpectedWord)
@@ -202,11 +202,11 @@ impl<'src> Parser<'src> {
     #[allow(clippy::match_same_arms)]
     fn value(&mut self) -> ParseResult<String> {
         match self.next()? {
-            WordToken::Bareword => Ok(self.lexer.slice().to_string()),
-            WordToken::String(string) => Ok(string),
-            WordToken::Eof => Err(ParseError::UnexpectedEof),
-            WordToken::Newline => Err(ParseError::ExpectedWord),
-            WordToken::Comment => Err(ParseError::ExpectedWord),
+            Token::Bareword => Ok(self.lexer.slice().to_string()),
+            Token::String(string) => Ok(string),
+            Token::Eof => Err(ParseError::UnexpectedEof),
+            Token::Newline => Err(ParseError::ExpectedWord),
+            Token::Comment => Err(ParseError::ExpectedWord),
             _ => Err(ParseError::ExpectedWord),
         }
     }
@@ -225,9 +225,9 @@ impl<'src> Parser<'src> {
         loop {
             let state = self.lexer.clone();
             match self.next()? {
-                WordToken::Bareword => res.push_str(self.lexer.slice()),
-                WordToken::String(string) => res.push_str(&string),
-                WordToken::Colon | WordToken::Dot | WordToken::Slash => {
+                Token::Bareword => res.push_str(self.lexer.slice()),
+                Token::String(string) => res.push_str(&string),
+                Token::Colon | Token::Dot | Token::Slash => {
                     res.push_str(self.lexer.slice());
                 }
                 _ => {
@@ -251,10 +251,10 @@ impl<'src> Parser<'src> {
         Ok(res)
     }
 
-    fn word(&mut self) -> ParseResult<WordToken> {
+    fn word(&mut self) -> ParseResult<Token> {
         loop {
             let next = self.next()?;
-            if !matches!(next, WordToken::Whitespace) {
+            if !matches!(next, Token::Whitespace) {
                 return Ok(next);
             }
         }
@@ -263,9 +263,9 @@ impl<'src> Parser<'src> {
     fn end_of_line(&mut self) -> ParseResult<()> {
         loop {
             match self.next()? {
-                WordToken::Newline | WordToken::Comment => break,
-                WordToken::Whitespace => {}
-                WordToken::Eof => return Err(ParseError::UnexpectedEof),
+                Token::Newline | Token::Comment => break,
+                Token::Whitespace => {}
+                Token::Eof => return Err(ParseError::UnexpectedEof),
                 _ => return Err(ParseError::ExpectedEol),
             }
         }
@@ -280,15 +280,15 @@ impl<'src> Parser<'src> {
         loop {
             let token = self.next()?;
             match token {
-                WordToken::String(word) => args.push(word),
-                WordToken::Whitespace => {
+                Token::String(word) => args.push(word),
+                Token::Whitespace => {
                     if !value.is_empty() {
                         let mut val = String::new();
                         std::mem::swap(&mut value, &mut val);
                         args.push(val);
                     }
                 }
-                WordToken::Newline | WordToken::Comment | WordToken::Eof => break,
+                Token::Newline | Token::Comment | Token::Eof => break,
                 _ => value.push_str(self.lexer.slice()),
             }
         }
@@ -339,13 +339,13 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_env_assign(&mut self) -> ParseResult<Option<InstEnvAssign>> {
-        if self.peek()? == WordToken::Newline {
+        if self.peek()? == Token::Newline {
             return Ok(None);
         }
 
         let ident = self.value()?;
 
-        let assign = if self.peek()? == WordToken::Equals {
+        let assign = if self.peek()? == Token::Equals {
             self.next()?;
             let value = self.bareword()?;
             InstEnvAssign {
@@ -417,31 +417,31 @@ impl<'src> Parser<'src> {
 
         let from = if next == "docker" {
             self.bareword()?;
-            self.expect(|t| matches!(t, WordToken::Colon))?;
-            self.expect(|t| matches!(t, WordToken::Slash))?;
-            self.expect(|t| matches!(t, WordToken::Slash))?;
+            self.expect(|t| matches!(t, Token::Colon))?;
+            self.expect(|t| matches!(t, Token::Slash))?;
+            self.expect(|t| matches!(t, Token::Slash))?;
             let mut docker = String::new();
             loop {
                 let state = self.lexer.clone();
                 let next = self.next()?;
                 match next {
-                    WordToken::LBracket
-                    | WordToken::RBracket
-                    | WordToken::LBrace
-                    | WordToken::RBrace
-                    | WordToken::Colon
-                    | WordToken::Equals
-                    | WordToken::Comma
-                    | WordToken::Slash
-                    | WordToken::Dot
-                    | WordToken::Bareword => {
+                    Token::LBracket
+                    | Token::RBracket
+                    | Token::LBrace
+                    | Token::RBrace
+                    | Token::Colon
+                    | Token::Equals
+                    | Token::Comma
+                    | Token::Slash
+                    | Token::Dot
+                    | Token::Bareword => {
                         docker.push_str(self.lexer.slice());
                     }
-                    WordToken::Newline
-                    | WordToken::Comment
-                    | WordToken::String(_)
-                    | WordToken::Whitespace
-                    | WordToken::Eof => {
+                    Token::Newline
+                    | Token::Comment
+                    | Token::String(_)
+                    | Token::Whitespace
+                    | Token::Eof => {
                         self.lexer = state;
                         break;
                     }
@@ -475,7 +475,7 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_include_arg(&mut self) -> ParseResult<Option<IncludeArg>> {
-        if self.peek()? == WordToken::Newline {
+        if self.peek()? == Token::Newline {
             return Ok(None);
         }
 
@@ -563,11 +563,11 @@ impl<'src> Parser<'src> {
         let inst = self.lexer.slice();
         self.trim()?;
 
-        if matches!(word, WordToken::Eof) {
+        if matches!(word, Token::Eof) {
             return Ok(None);
         }
 
-        if matches!(word, WordToken::Newline) {
+        if matches!(word, Token::Newline) {
             return self.statement();
         }
 
@@ -607,7 +607,7 @@ impl<'src> Parser<'src> {
 }
 
 pub fn parse(name: &str, buf: &str) -> ParseResult<Vec<Statement>> {
-    let lexer = WordToken::lexer(buf);
+    let lexer = Token::lexer(buf);
     let mut parser = Parser::new(lexer, Arc::new(name.into()));
 
     parser.file()
