@@ -168,10 +168,19 @@ impl<'src> Parser<'src> {
             .map_err(ParseError::from)
     }
 
-    fn expect(&mut self, exp: &Token) -> ParseResult<Token> {
+    fn accept(&mut self, exp: &Token) -> ParseResult<bool> {
+        if &self.peek()? == exp {
+            self.next()?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    fn expect(&mut self, exp: &Token) -> ParseResult<()> {
         let next = self.next()?;
         if &next == exp {
-            Ok(next)
+            Ok(())
         } else {
             Err(ParseError::ExpectedWord)
         }
@@ -431,6 +440,7 @@ impl<'src> Parser<'src> {
                     | Token::Comma
                     | Token::Slash
                     | Token::Dot
+                    | Token::Minus
                     | Token::Bareword => {
                         docker.push_str(self.lexer.slice());
                     }
@@ -508,17 +518,62 @@ impl<'src> Parser<'src> {
         Ok(InstInclude { src, args })
     }
 
-    pub fn parse_render(&mut self) -> ParseResult<InstRender> {
-        // clap requires dummy string to simulate argv[0]
-        let mut copy = vec![String::new()];
-        self.consume_line_to(&mut copy)?;
+    pub fn parse_fileopts(&mut self) -> ParseResult<(Option<Chown>, Option<u32>)> {
+        let mut chown = None;
+        let mut chmod = None;
 
-        let RenderArgs {
-            opts: FileOpts { chmod, chown },
-            src,
-            dest,
-            ..
-        } = RenderArgs::try_parse_from(&copy)?;
+        while self.peek()? == Token::Minus {
+            self.next()?;
+            self.expect(&Token::Minus)?;
+
+            match self.bareword()? {
+                "chown" => {
+                    let user = self.lexer.slice();
+                    chown = if self.accept(&Token::Colon)? {
+                        if self.accept(&Token::Bareword)? {
+                            let group = self.lexer.slice();
+
+                            Some(Chown {
+                                user: Some(user.to_string()),
+                                group: Some(group.to_string()),
+                            })
+                        } else {
+                            Some(Chown {
+                                user: Some(user.to_string()),
+                                group: Some(user.to_string()),
+                            })
+                        }
+                    } else {
+                        Some(Chown {
+                            user: Some(user.to_string()),
+                            group: None,
+                        })
+                    };
+                }
+                "chmod" => {
+                    self.accept(&Token::Equals)?;
+                    self.expect(&Token::Bareword)?;
+                    chmod = Some(parse_chmod_permission(self.lexer.slice())?);
+                }
+                _ => {
+                    return Err(ParseError::ExpectedWord);
+                }
+            }
+        }
+
+        Ok((chown, chmod))
+    }
+
+    pub fn parse_render(&mut self) -> ParseResult<InstRender> {
+        let (chown, chmod) = self.parse_fileopts()?;
+
+        let src = self.path()?;
+        self.trim()?;
+
+        let dest = self.path()?;
+        self.trim()?;
+
+        self.end_of_line()?;
 
         Ok(InstRender {
             src,

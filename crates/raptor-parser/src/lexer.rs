@@ -40,7 +40,10 @@ pub enum Token {
     #[token(".")]
     Dot,
 
-    #[regex("[^\\]/. \n\t\",=:{}\\[]+")]
+    #[token("-")]
+    Minus,
+
+    #[regex("[^\\]/. \n\t\",=:{}\\[-]+")]
     Bareword,
 
     #[token("\n")]
