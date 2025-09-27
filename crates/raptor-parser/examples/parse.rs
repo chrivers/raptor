@@ -3,11 +3,22 @@ use std::sync::Arc;
 
 use log::error;
 use logos::Logos;
-use raptor_parser::ParseResult;
+use raptor_parser::ParseError;
 use raptor_parser::lexer::Token;
 use raptor_parser::parser::Parser;
 
-fn parse(buf: &str) -> ParseResult<()> {
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
+
+    #[error(transparent)]
+    ParseError(#[from] ParseError),
+}
+
+type Result<T> = std::result::Result<T, Error>;
+
+fn parse(buf: &str) -> Result<()> {
     let lexer = Token::lexer(buf);
     let mut parser = Parser::new(lexer, Arc::new("<inline>".into()));
 
@@ -18,7 +29,7 @@ fn parse(buf: &str) -> ParseResult<()> {
     Ok(())
 }
 
-fn main() -> ParseResult<()> {
+fn main() -> Result<()> {
     colog::init();
 
     let mut buf = String::new();
