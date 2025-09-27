@@ -718,6 +718,7 @@ mod tests {
     use serde_json::json;
 
     use crate::ParseResult;
+    use crate::ast::Chown;
     use crate::lexer::Token;
     use crate::parser::Parser;
 
@@ -746,6 +747,33 @@ mod tests {
             let mut parser = make_parser($src);
 
             assert_eq!(parser.parse_fileopts(None)?, $tree);
+        };
+    }
+
+    macro_rules! fileopts_test_err {
+        ($src:expr) => {
+            let mut parser = make_parser($src);
+
+            parser.parse_fileopts(None).unwrap_err();
+        };
+    }
+
+    macro_rules! fileopts_test_chown {
+        ($src:expr, $user:expr, $group:expr) => {
+            let mut parser = make_parser($src);
+
+            let mut chown = Chown::default();
+            let user: Option<&str> = $user;
+            let group: Option<&str> = $group;
+
+            if let Some(user) = user {
+                chown.user = Some(user.to_string());
+            }
+            if let Some(group) = group {
+                chown.group = Some(group.to_string());
+            }
+
+            assert_eq!(parser.parse_fileopts(None)?, (Some(chown), None));
         };
     }
 
@@ -785,8 +813,14 @@ mod tests {
     }
 
     #[test]
-    fn parse_fileopts() -> ParseResult<()> {
+    fn parse_fileopts_chmod() -> ParseResult<()> {
         fileopts_test!("", (None, None));
+
+        fileopts_test_err!("--chmod");
+        fileopts_test_err!("--chmod ");
+        fileopts_test_err!("--chmod=1");
+        fileopts_test_err!("--chmod=12");
+        fileopts_test_err!("--chmod=12345");
 
         fileopts_test!("--chmod=000", (None, Some(0)));
         fileopts_test!("--chmod=1234", (None, Some(0o1234)));
@@ -794,6 +828,23 @@ mod tests {
         fileopts_test!("--chmod=7777", (None, Some(0o7777)));
 
         fileopts_test!("--chmod \\\n 1750", (None, Some(0o1750)));
+
+        Ok(())
+    }
+
+    #[test]
+    fn parse_fileopts_chown() -> ParseResult<()> {
+        fileopts_test_err!("--chown");
+        fileopts_test_err!("--chown ");
+        fileopts_test_err!("--chown:grp");
+
+        fileopts_test_chown!("--chown :", None, None);
+
+        fileopts_test_chown!("--chown user", Some("user"), None);
+        fileopts_test_chown!("--chown=user", Some("user"), None);
+
+        fileopts_test_chown!("--chown user:", Some("user"), Some("user"));
+        fileopts_test_chown!("--chown :group", None, Some("group"));
 
         Ok(())
     }
