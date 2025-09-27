@@ -555,27 +555,32 @@ impl<'src> Parser<'src> {
 
             match self.bareword()? {
                 "chown" => {
-                    self.trim()?;
-                    let user = self.value()?;
+                    if !self.accept(&Token::Equals)? {
+                        self.expect(&Token::Whitespace)?;
+                    }
+
+                    let user = if self.peek()? == Token::Colon {
+                        None
+                    } else {
+                        Some(self.value()?)
+                    };
+
                     chown = if self.accept(&Token::Colon)? {
                         if self.accept(&Token::Bareword)? {
                             let group = self.token();
 
                             Some(Chown {
-                                user: Some(user),
+                                user,
                                 group: Some(group.to_string()),
                             })
                         } else {
                             Some(Chown {
-                                user: Some(user.clone()),
-                                group: Some(user),
+                                group: user.clone(),
+                                user,
                             })
                         }
                     } else {
-                        Some(Chown {
-                            user: Some(user),
-                            group: None,
-                        })
+                        Some(Chown { user, group: None })
                     };
                 }
 
