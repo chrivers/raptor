@@ -1,8 +1,8 @@
-error: parsing error: expected FILE
+error: Parse error
  --> tests/cases/error/error_invalid_instruction.rapt:1:1
   |
 1 | FLORG --foo "bar"
-  | ^^^^^^^^^^^^^^^^^ expected FILE
+  | ^^^^^ Expected statement
 2 | RUN ls -l
 3 | RUN ls -l
 4 | RUN ls -l
