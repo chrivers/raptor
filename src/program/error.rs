@@ -4,6 +4,7 @@ use annotate_snippets::{AnnotationKind, Level, Renderer, Snippet};
 
 use crate::RaptorResult;
 use raptor_parser::ast::Origin;
+use raptor_parser::util::Location;
 
 #[must_use]
 pub fn line_number_to_span(text: &str, line: usize) -> Range<usize> {
@@ -75,5 +76,19 @@ pub fn show_jinja_error_context(err: &minijinja::Error) -> RaptorResult<()> {
         .unwrap_or(0..raw.len() - 1);
 
     show_error_context(&raw, source_path, title, &label, err_range);
+    Ok(())
+}
+
+pub fn show_parse_error_context(
+    source: &str,
+    err: &Location<raptor_parser::ParseError>,
+) -> RaptorResult<()> {
+    let source_path = err.origin.path.as_str();
+    let title = "Parse error";
+    let label = err.to_string();
+    let err_range = err.origin.span.clone();
+
+    show_error_context(source, source_path, title, &label, err_range);
+
     Ok(())
 }

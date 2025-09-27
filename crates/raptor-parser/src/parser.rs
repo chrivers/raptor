@@ -11,6 +11,7 @@ use crate::ast::{
     InstWorkdir, InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
 use crate::lexer::Token;
+use crate::util::Location;
 use crate::util::module_name::ModuleName;
 use crate::{ParseError, ParseResult};
 
@@ -19,7 +20,7 @@ pub struct Parser<'src> {
     filename: Arc<Utf8PathBuf>,
 }
 
-fn parse_chmod_permission(string: &str) -> Result<u32, ParseError> {
+fn parse_chmod_permission(string: &str) -> ParseResult<u32> {
     if !(3..=4).contains(&string.len()) {
         return Err(ParseError::InvalidPermissionMask);
     }
@@ -663,9 +664,13 @@ impl<'src> Parser<'src> {
     }
 }
 
-pub fn parse(name: &str, buf: &str) -> ParseResult<Vec<Statement>> {
+pub fn parse(name: &str, buf: &str) -> Result<Vec<Statement>, Location<ParseError>> {
     let lexer = Token::lexer(buf);
-    let mut parser = Parser::new(lexer, Arc::new(name.into()));
+    let path = Arc::new(Utf8PathBuf::from(name));
+    let mut parser = Parser::new(lexer, path.clone());
 
-    parser.file()
+    parser.file().map_err(|err| {
+        let origin = Origin::new(path.clone(), parser.lexer.span());
+        Location::make(origin, err)
+    })
 }

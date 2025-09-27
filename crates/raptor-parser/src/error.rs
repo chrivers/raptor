@@ -1,14 +1,10 @@
-use camino::Utf8PathBuf;
-
-use crate::lexer::LexerError;
-
 #[derive(thiserror::Error, Debug)]
 pub enum ParseError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
 
     #[error(transparent)]
-    LexerError(#[from] LexerError),
+    LexerError(#[from] crate::lexer::LexerError),
 
     #[error(transparent)]
     ParseIntError(#[from] std::num::ParseIntError),
