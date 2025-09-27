@@ -1,7 +1,5 @@
 use logos::{Lexer, Logos, Span};
 
-use crate::{ParseError, ParseResult};
-
 #[derive(thiserror::Error, Debug, Clone, PartialEq, Eq, Default)]
 pub enum LexerError {
     #[error("Unterminated string literal at position {}", .0.start)]
@@ -14,7 +12,7 @@ pub enum LexerError {
 
 #[derive(Logos, Debug, PartialEq, Eq, Clone)]
 #[logos(error = LexerError)]
-pub enum WordToken<'a> {
+pub enum WordToken {
     #[token("[")]
     LBracket,
 
@@ -43,7 +41,7 @@ pub enum WordToken<'a> {
     Dot,
 
     #[regex("[^\\]/. \n\t\",=:{}\\[]+")]
-    Bareword(&'a str),
+    Bareword,
 
     #[token("\n")]
     Newline,
@@ -82,22 +80,14 @@ enum StringToken {
     Chars,
 }
 
-impl<'a> WordToken<'a> {
-    pub const fn bareword(&self) -> ParseResult<&'a str> {
-        if let Self::Bareword(word) = self {
-            Ok(word)
-        } else {
-            Err(ParseError::ExpectedWord)
-        }
-    }
-
+impl WordToken {
     #[must_use]
     pub const fn is_whitespace(&self) -> bool {
         matches!(self, Self::Whitespace)
     }
 }
 
-fn string_callback<'a>(lex: &mut Lexer<'a, WordToken<'a>>) -> Result<String, LexerError> {
+fn string_callback(lex: &mut Lexer<WordToken>) -> Result<String, LexerError> {
     let mut res = String::new();
     let mut string_lexer = lex.clone().morph();
 

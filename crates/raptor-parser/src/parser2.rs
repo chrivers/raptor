@@ -16,7 +16,7 @@ use crate::{ParseError, ParseResult};
 
 #[derive(Clone)]
 pub struct Parser<'src> {
-    lexer: Lexer<'src, WordToken<'src>>,
+    lexer: Lexer<'src, WordToken>,
     filename: Arc<Utf8PathBuf>,
 }
 
@@ -158,7 +158,7 @@ struct RenderArgs {
 
 impl<'src> Parser<'src> {
     #[must_use]
-    pub const fn new(lexer: Lexer<'src, WordToken<'src>>, filename: Arc<Utf8PathBuf>) -> Self {
+    pub const fn new(lexer: Lexer<'src, WordToken>, filename: Arc<Utf8PathBuf>) -> Self {
         Self { lexer, filename }
     }
 
@@ -166,17 +166,14 @@ impl<'src> Parser<'src> {
         self.clone()
     }
 
-    fn next(&mut self) -> ParseResult<WordToken<'src>> {
+    fn next(&mut self) -> ParseResult<WordToken> {
         self.lexer
             .next()
             .unwrap_or(Ok(WordToken::Eof))
             .map_err(ParseError::from)
     }
 
-    fn expect(
-        &mut self,
-        predicate: impl Fn(&WordToken<'src>) -> bool,
-    ) -> ParseResult<WordToken<'src>> {
+    fn expect(&mut self, predicate: impl Fn(&WordToken) -> bool) -> ParseResult<WordToken> {
         let next = self.next()?;
         if predicate(&next) {
             Ok(next)
@@ -185,7 +182,7 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn peek(&self) -> ParseResult<WordToken<'src>> {
+    fn peek(&self) -> ParseResult<WordToken> {
         // FIXME: do away with the .clone() here
         self.lexer
             .clone()
@@ -195,8 +192,8 @@ impl<'src> Parser<'src> {
     }
 
     fn bareword(&mut self) -> ParseResult<&'src str> {
-        if let WordToken::Bareword(word) = self.word()? {
-            Ok(word)
+        if self.word()? == WordToken::Bareword {
+            Ok(self.lexer.slice())
         } else {
             Err(ParseError::ExpectedWord)
         }
@@ -205,7 +202,7 @@ impl<'src> Parser<'src> {
     #[allow(clippy::match_same_arms)]
     fn value(&mut self) -> ParseResult<String> {
         match self.next()? {
-            WordToken::Bareword(word) => Ok(word.to_string()),
+            WordToken::Bareword => Ok(self.lexer.slice().to_string()),
             WordToken::String(string) => Ok(string),
             WordToken::Eof => Err(ParseError::UnexpectedEof),
             WordToken::Newline => Err(ParseError::ExpectedWord),
@@ -228,7 +225,7 @@ impl<'src> Parser<'src> {
         loop {
             let state = self.lexer.clone();
             match self.next()? {
-                WordToken::Bareword(word) => res.push_str(word),
+                WordToken::Bareword => res.push_str(self.lexer.slice()),
                 WordToken::String(string) => res.push_str(&string),
                 WordToken::Colon | WordToken::Dot | WordToken::Slash => {
                     res.push_str(self.lexer.slice());
@@ -254,7 +251,7 @@ impl<'src> Parser<'src> {
         Ok(res)
     }
 
-    fn word(&mut self) -> ParseResult<WordToken<'src>> {
+    fn word(&mut self) -> ParseResult<WordToken> {
         loop {
             let next = self.next()?;
             if !matches!(next, WordToken::Whitespace) {
@@ -283,7 +280,6 @@ impl<'src> Parser<'src> {
         loop {
             let token = self.next()?;
             match token {
-                WordToken::Bareword(word) => value.push_str(word),
                 WordToken::String(word) => args.push(word),
                 WordToken::Whitespace => {
                     if !value.is_empty() {
@@ -438,7 +434,7 @@ impl<'src> Parser<'src> {
                     | WordToken::Comma
                     | WordToken::Slash
                     | WordToken::Dot
-                    | WordToken::Bareword(_) => {
+                    | WordToken::Bareword => {
                         docker.push_str(self.lexer.slice());
                     }
                     WordToken::Newline
@@ -564,6 +560,7 @@ impl<'src> Parser<'src> {
         let start = self.lexer.span().start;
 
         let word = self.word()?;
+        let inst = self.lexer.slice();
         self.trim()?;
 
         if matches!(word, WordToken::Eof) {
@@ -574,7 +571,7 @@ impl<'src> Parser<'src> {
             return self.statement();
         }
 
-        let inst = match word.bareword()? {
+        let inst = match inst {
             "FROM" => Instruction::From(self.parse_from()?),
             "MOUNT" => Instruction::Mount(self.parse_mount()?),
             "RENDER" => Instruction::Render(self.parse_render()?),

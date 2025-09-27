@@ -19,7 +19,7 @@ fn main() -> Result<(), std::io::Error> {
 
     while let Some(token) = lexer.next() {
         match token {
-            Ok(WordToken::Bareword(txt)) => write!(stdout, "{}", txt.bright_white())?,
+            Ok(WordToken::Bareword) => write!(stdout, "{}", lexer.slice().bright_white())?,
             Ok(WordToken::Newline | WordToken::Whitespace) => {
                 write!(stdout, "{}", lexer.slice())?;
             }
