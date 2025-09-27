@@ -555,6 +555,7 @@ impl<'src> Parser<'src> {
 
             match self.bareword()? {
                 "chown" => {
+                    self.bareword()?;
                     let user = self.lexer.slice();
                     chown = if self.accept(&Token::Colon)? {
                         if self.accept(&Token::Bareword)? {
