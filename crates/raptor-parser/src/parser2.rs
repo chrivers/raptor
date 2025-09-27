@@ -171,7 +171,7 @@ impl<'src> Parser<'src> {
         if &next == exp {
             Ok(())
         } else {
-            Err(ParseError::ExpectedWord)
+            Err(ParseError::Expected(exp.name()))
         }
     }
 
@@ -198,9 +198,9 @@ impl<'src> Parser<'src> {
             Token::Bareword => Ok(self.lexer.slice().to_string()),
             Token::String(string) => Ok(string),
             Token::Eof => Err(ParseError::UnexpectedEof),
-            Token::Newline => Err(ParseError::ExpectedWord),
-            Token::Comment => Err(ParseError::ExpectedWord),
-            _ => Err(ParseError::ExpectedWord),
+            Token::Newline => Err(ParseError::Expected("value")),
+            Token::Comment => Err(ParseError::Expected("value")),
+            _ => Err(ParseError::Expected("value")),
         }
     }
 
@@ -231,7 +231,7 @@ impl<'src> Parser<'src> {
         }
 
         if res.is_empty() {
-            return Err(ParseError::ExpectedWord);
+            return Err(ParseError::Expected("path"));
         }
 
         Ok(res.into())
