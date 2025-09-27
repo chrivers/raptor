@@ -80,8 +80,6 @@ impl<'src> Parser<'src> {
             Token::Bareword => Ok(self.lexer.slice().to_string()),
             Token::String(string) => Ok(string),
             Token::Eof => Err(ParseError::UnexpectedEof),
-            Token::Newline => Err(ParseError::Expected("value")),
-            Token::Comment => Err(ParseError::Expected("value")),
             _ => Err(ParseError::Expected("value")),
         }
     }
