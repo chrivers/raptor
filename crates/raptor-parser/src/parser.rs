@@ -67,10 +67,18 @@ impl<'src> Parser<'src> {
             .map_err(ParseError::from)
     }
 
+    fn token(&self) -> &'src str {
+        self.lexer.slice()
+    }
+
+    fn token_string(&self) -> String {
+        self.lexer.slice().to_string()
+    }
+
     fn bareword(&mut self) -> ParseResult<&'src str> {
         let word = self.next()?;
         if word == Token::Bareword {
-            Ok(self.lexer.slice())
+            Ok(self.token())
         } else {
             Err(ParseError::Mismatch {
                 exp: Token::Bareword,
@@ -81,7 +89,7 @@ impl<'src> Parser<'src> {
 
     fn value(&mut self) -> ParseResult<String> {
         let res = match self.next()? {
-            Token::Bareword => Ok(self.lexer.slice().to_string()),
+            Token::Bareword => Ok(self.token_string()),
             Token::String(string) => Ok(string),
             _ => Err(ParseError::Expected("value")),
         };
@@ -104,14 +112,14 @@ impl<'src> Parser<'src> {
         loop {
             let state = self.lexer.clone();
             match self.next()? {
-                Token::Bareword => res.push_str(self.lexer.slice()),
+                Token::Bareword => res.push_str(self.token()),
                 Token::String(string) => res.push_str(&string),
                 Token::Comment | Token::Whitespace | Token::Newline | Token::Eof => {
                     self.lexer = state;
                     break;
                 }
                 _ => {
-                    res.push_str(self.lexer.slice());
+                    res.push_str(self.token());
                 }
             }
         }
@@ -170,7 +178,7 @@ impl<'src> Parser<'src> {
                     }
                 }
                 Token::Newline | Token::Comment | Token::Eof => break,
-                _ => value.push_str(self.lexer.slice()),
+                _ => value.push_str(self.token()),
             }
         }
 
@@ -317,7 +325,7 @@ impl<'src> Parser<'src> {
                     | Token::Minus
                     | Token::Number
                     | Token::Bareword => {
-                        docker.push_str(self.lexer.slice());
+                        docker.push_str(self.token());
                     }
                     Token::Newline
                     | Token::Comment
@@ -349,7 +357,7 @@ impl<'src> Parser<'src> {
             self.expect(&Token::Minus)?;
             self.expect(&Token::Bareword)?;
 
-            match self.lexer.slice() {
+            match self.token() {
                 "simple" => opts.mtype = MountType::Simple,
                 "layers" => opts.mtype = MountType::Layers,
                 "overlay" => opts.mtype = MountType::Overlay,
@@ -430,7 +438,7 @@ impl<'src> Parser<'src> {
             Token::LBracket => self.parse_list(),
             Token::LBrace => self.parse_map(),
             Token::String(value) => Ok(Value::from_serialize(value)),
-            Token::Number => Ok(Value::from_serialize(self.lexer.slice().parse::<i64>()?)),
+            Token::Number => Ok(Value::from_serialize(self.token().parse::<i64>()?)),
 
             _ => Err(ParseError::Expected("value4")),
         }
@@ -438,11 +446,11 @@ impl<'src> Parser<'src> {
 
     pub fn parse_expression(&mut self) -> ParseResult<Expression> {
         if self.accept(&Token::Bareword)? {
-            let mut path = vec![self.lexer.slice().to_string()];
+            let mut path = vec![self.token_string()];
             let start = self.lexer.span().start;
             while self.accept(&Token::Dot)? {
                 self.expect(&Token::Bareword)?;
-                path.push(self.lexer.slice().to_string());
+                path.push(self.token_string());
             }
             let end = self.lexer.span().end;
             let origin = Origin::new(self.filename.clone(), start..end);
@@ -505,7 +513,7 @@ impl<'src> Parser<'src> {
             if !self.accept(&Token::Minus)? {
                 if let Some(pflag) = parent_flag.as_mut() {
                     self.bareword()?;
-                    if self.lexer.slice() != "p" {
+                    if self.token() != "p" {
                         return Err(ParseError::Expected("flag"));
                     }
 
@@ -522,7 +530,7 @@ impl<'src> Parser<'src> {
                     let user = self.value()?;
                     chown = if self.accept(&Token::Colon)? {
                         if self.accept(&Token::Bareword)? {
-                            let group = self.lexer.slice();
+                            let group = self.token();
 
                             Some(Chown {
                                 user: Some(user),
@@ -548,7 +556,7 @@ impl<'src> Parser<'src> {
                     }
 
                     self.expect(&Token::Number)?;
-                    chmod = Some(parse_chmod_permission(self.lexer.slice())?);
+                    chmod = Some(parse_chmod_permission(self.token())?);
                 }
 
                 _ => return Err(ParseError::Expected("file option")),
@@ -623,7 +631,7 @@ impl<'src> Parser<'src> {
         }
 
         self.expect(&Token::Bareword)?;
-        let inst = self.lexer.slice();
+        let inst = self.token();
 
         let inst = match inst {
             "FROM" => Instruction::From(self.parse_from()?),
