@@ -741,6 +741,14 @@ mod tests {
         };
     }
 
+    macro_rules! fileopts_test {
+        ($src:expr, $tree:tt) => {
+            let mut parser = make_parser($src);
+
+            assert_eq!(parser.parse_fileopts(None)?, $tree);
+        };
+    }
+
     #[test]
     fn parse_list() -> ParseResult<()> {
         list_test!("[]", []);
@@ -772,6 +780,20 @@ mod tests {
                 ]
             }
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn parse_fileopts() -> ParseResult<()> {
+        fileopts_test!("", (None, None));
+
+        fileopts_test!("--chmod=000", (None, Some(0)));
+        fileopts_test!("--chmod=1234", (None, Some(0o1234)));
+        fileopts_test!("--chmod=1750", (None, Some(0o1750)));
+        fileopts_test!("--chmod=7777", (None, Some(0o7777)));
+
+        fileopts_test!("--chmod \\\n 1750", (None, Some(0o1750)));
 
         Ok(())
     }
