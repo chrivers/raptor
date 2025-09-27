@@ -618,19 +618,16 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
-        // clap requires dummy string to simulate argv[0]
-        let mut copy = vec![String::new()];
-        self.consume_line_to(&mut copy)?;
+        let (chown, chmod) = self.parse_fileopts()?;
 
-        let CopyArgs {
-            opts: FileOpts { chmod, chown },
-            mut files,
-        } = CopyArgs::try_parse_from(copy)?;
+        let mut files = vec![];
+        while self.peek()? != Token::Newline {
+            files.push(self.path()?);
+            self.trim()?;
+        }
 
-        // clap does not support variable arguments before fixed argument,
-        // but we know the destination is the last name.
-        //
-        // Safety: clap requires at least 2 arguments.
+        self.end_of_line()?;
+
         let dest = files.pop().unwrap();
 
         Ok(InstCopy {
