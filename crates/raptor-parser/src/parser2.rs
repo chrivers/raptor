@@ -370,7 +370,7 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_write(&mut self) -> ParseResult<InstWrite> {
-        let (chown, chmod) = self.parse_fileopts()?;
+        let (chown, chmod) = self.parse_fileopts(None)?;
         self.trim()?;
 
         let body = self.value()?;
@@ -390,15 +390,14 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_mkdir(&mut self) -> ParseResult<InstMkdir> {
-        // clap requires dummy string to simulate argv[0]
-        let mut copy = vec![String::new()];
-        self.consume_line_to(&mut copy)?;
+        let mut parents = false;
+        let (chown, chmod) = self.parse_fileopts(Some(&mut parents))?;
+        self.trim()?;
 
-        let MkdirArgs {
-            opts: FileOpts { chmod, chown },
-            parents,
-            dest,
-        } = MkdirArgs::try_parse_from(copy)?;
+        let dest = self.path()?;
+        self.trim()?;
+
+        self.end_of_line()?;
 
         Ok(InstMkdir {
             dest,
@@ -535,13 +534,28 @@ impl<'src> Parser<'src> {
         Ok(InstInclude { src, args })
     }
 
-    pub fn parse_fileopts(&mut self) -> ParseResult<(Option<Chown>, Option<u32>)> {
+    pub fn parse_fileopts(
+        &mut self,
+        mut parent_flag: Option<&mut bool>,
+    ) -> ParseResult<(Option<Chown>, Option<u32>)> {
         let mut chown = None;
         let mut chmod = None;
 
         while self.peek()? == Token::Minus {
             self.next()?;
-            self.expect(&Token::Minus)?;
+            if !self.accept(&Token::Minus)? {
+                if let Some(pflag) = parent_flag.as_mut() {
+                    self.bareword()?;
+                    if self.lexer.slice() != "p" {
+                        return Err(ParseError::Expected("flag"));
+                    }
+
+                    **pflag = true;
+                    self.trim()?;
+                    continue;
+                }
+                return Err(ParseError::Expected("fileopt"));
+            }
 
             match self.bareword()? {
                 "chown" => {
@@ -569,7 +583,10 @@ impl<'src> Parser<'src> {
                     };
                 }
                 "chmod" => {
-                    self.accept(&Token::Equals)?;
+                    if !self.accept(&Token::Equals)? {
+                        self.trim()?;
+                    }
+
                     self.expect(&Token::Bareword)?;
                     chmod = Some(parse_chmod_permission(self.lexer.slice())?);
                 }
@@ -577,13 +594,15 @@ impl<'src> Parser<'src> {
                     return Err(ParseError::ExpectedWord);
                 }
             }
+
+            self.trim()?;
         }
 
         Ok((chown, chmod))
     }
 
     pub fn parse_render(&mut self) -> ParseResult<InstRender> {
-        let (chown, chmod) = self.parse_fileopts()?;
+        let (chown, chmod) = self.parse_fileopts(None)?;
 
         let src = self.path()?;
         self.trim()?;
@@ -609,7 +628,7 @@ impl<'src> Parser<'src> {
     }
 
     pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
-        let (chown, chmod) = self.parse_fileopts()?;
+        let (chown, chmod) = self.parse_fileopts(None)?;
 
         let mut files = vec![];
         while self.peek()? != Token::Newline {
