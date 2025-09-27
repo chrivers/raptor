@@ -149,8 +149,8 @@ impl<'src> Parser<'src> {
         Ok(())
     }
 
-    #[allow(clippy::needless_continue)]
-    fn consume_line_to(&mut self, args: &mut Vec<String>) -> ParseResult<()> {
+    fn consume_line(&mut self) -> ParseResult<Vec<String>> {
+        let mut args = vec![];
         let mut value = String::new();
 
         loop {
@@ -173,12 +173,6 @@ impl<'src> Parser<'src> {
             args.push(value);
         }
 
-        Ok(())
-    }
-
-    fn consume_line(&mut self) -> ParseResult<Vec<String>> {
-        let mut args = vec![];
-        self.consume_line_to(&mut args)?;
         Ok(args)
     }
 
