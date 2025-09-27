@@ -140,8 +140,12 @@ impl<'src> Parser<'src> {
             match self.next()? {
                 Token::Newline | Token::Comment => break,
                 Token::Whitespace => {}
-                Token::Eof => return Err(ParseError::UnexpectedEof),
-                _ => return Err(ParseError::ExpectedEol),
+                found => {
+                    return Err(ParseError::Mismatch {
+                        exp: Token::Newline,
+                        found,
+                    });
+                }
             }
         }
 
