@@ -27,6 +27,9 @@ pub enum RaptorError {
     MinijinjaError(#[from] minijinja::Error),
 
     #[error(transparent)]
+    SerdeJsonError(#[from] serde_json::Error),
+
+    #[error(transparent)]
     VarError(#[from] std::env::VarError),
 
     #[error(transparent)]
@@ -78,6 +81,7 @@ impl RaptorError {
         match self {
             Self::IoError(_) => "IO Error",
             Self::MinijinjaError(_) => "Template error",
+            Self::SerdeJsonError(_) => "Serde json error",
             Self::ParseError(_) => "Parser error",
             Self::VarError(_) => "Environment error",
             Self::Errno(_) => "Errno",

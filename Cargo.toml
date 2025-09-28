@@ -114,6 +114,7 @@ minijinja = { workspace = true, features = ["custom_syntax", "debug", "deseriali
 nix = { workspace = true, features = ["fs", "user"] }
 raptor-parser = { workspace = true }
 serde = { workspace = true, features = ["serde_derive"] }
+serde_json.workspace = true
 serde_variant = { workspace = true }
 serde_yml = { workspace = true }
 thiserror = { workspace = true }
