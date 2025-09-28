@@ -26,7 +26,7 @@ fn load_file(path: impl AsRef<Utf8Path>) -> RaptorResult<Program> {
 fn assert_single_inst_eq(path: &Utf8Path, size: usize, res: &Program, inst: Instruction) {
     let origin = Origin::make(path, 0..size - 1);
 
-    assert_eq!(&res.code, &[Item::statement(inst, origin)]);
+    assert_eq!([Item::statement(inst, origin)], &res.code[..]);
 }
 
 #[allow(clippy::cast_possible_truncation)]
@@ -186,7 +186,6 @@ fn parse_render03() -> RaptorResult<()> {
     let program = load_file("render03.rapt")?;
 
     assert_eq!(
-        &program.code,
         &[
             Item::statement(
                 Instruction::include("render03", [IncludeArg::value("what", "world")]),
@@ -208,7 +207,8 @@ fn parse_render03() -> RaptorResult<()> {
                 context! { what => "world" },
                 "render03.rinc",
             )
-        ]
+        ],
+        program.code.as_slice()
     );
 
     Ok(())
@@ -245,7 +245,6 @@ fn parse_include01() -> RaptorResult<()> {
     let program = load_file("include01.rapt")?;
 
     assert_eq!(
-        &program.code,
         &[
             Item::statement(
                 Instruction::include("write01", []),
@@ -259,7 +258,8 @@ fn parse_include01() -> RaptorResult<()> {
                 context! {},
                 "write01.rinc",
             )
-        ]
+        ],
+        program.code.as_slice()
     );
 
     Ok(())
@@ -270,7 +270,6 @@ fn parse_include02() -> RaptorResult<()> {
     let program = load_file("include02.rapt")?;
 
     assert_eq!(
-        &program.code,
         &[
             Item::statement(
                 Instruction::include("include01", []),
@@ -294,7 +293,8 @@ fn parse_include02() -> RaptorResult<()> {
                 context! {},
                 "include01.rinc",
             )
-        ]
+        ],
+        program.code.as_slice()
     );
 
     Ok(())
@@ -305,7 +305,6 @@ fn parse_include03() -> RaptorResult<()> {
     let program = load_file("include03.rapt")?;
 
     assert_eq!(
-        &program.code,
         &[
             Item::statement(
                 Instruction::include("include.run01", []),
@@ -319,7 +318,8 @@ fn parse_include03() -> RaptorResult<()> {
                 context! {},
                 "include/run01.rinc",
             )
-        ]
+        ],
+        program.code.as_slice(),
     );
 
     Ok(())
@@ -330,7 +330,6 @@ fn parse_include04() -> RaptorResult<()> {
     let program = load_file("include04.rapt")?;
 
     assert_eq!(
-        &program.code,
         &[
             Item::statement(
                 Instruction::include("include.include01", []),
@@ -354,7 +353,8 @@ fn parse_include04() -> RaptorResult<()> {
                 context! {},
                 "include/include01.rinc",
             )
-        ]
+        ],
+        program.code.as_slice(),
     );
 
     Ok(())

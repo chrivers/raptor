@@ -1,18 +1,21 @@
-use camino::Utf8PathBuf;
-
-use crate::Rule;
+use crate::lexer::Token;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ParseError {
     #[error(transparent)]
-    PestError(Box<pest::error::Error<Rule>>),
+    LexerError(#[from] crate::lexer::LexerError),
 
-    #[error("Cannot get parent path from {0:?}")]
-    BadPathNoParent(Utf8PathBuf),
-}
+    #[error(transparent)]
+    ParseIntError(#[from] std::num::ParseIntError),
 
-impl From<pest_consume::Error<Rule>> for ParseError {
-    fn from(e: pest_consume::Error<Rule>) -> Self {
-        Self::PestError(Box::new(e))
-    }
+    #[error(
+        "Invalid permission mask\n\nValue must specified as 3 or 4 octal digits (0755, 1777, 644, 640, etc)"
+    )]
+    InvalidPermissionMask,
+
+    #[error("Expected {0}")]
+    Expected(&'static str),
+
+    #[error("Expected {} but found {}", .exp.description(), .found.description())]
+    Mismatch { exp: Token, found: Token },
 }

@@ -1,0 +1,159 @@
+use logos::{Lexer, Logos, Span};
+
+#[derive(thiserror::Error, Debug, Clone, PartialEq, Eq, Default)]
+pub enum LexerError {
+    #[error("Unterminated string literal at position {}", .0.start)]
+    UnterminatedString(Span),
+
+    #[default]
+    #[error("Lexer error")]
+    LexerError,
+}
+
+#[derive(Logos, Debug, PartialEq, Eq, Clone)]
+#[logos(error = LexerError)]
+pub enum Token {
+    #[token("[")]
+    LBracket,
+
+    #[token("]")]
+    RBracket,
+
+    #[token("{")]
+    LBrace,
+
+    #[token("}")]
+    RBrace,
+
+    #[token(":")]
+    Colon,
+
+    #[token("=")]
+    Equals,
+
+    #[token(",")]
+    Comma,
+
+    #[token("/")]
+    Slash,
+
+    #[token(".")]
+    Dot,
+
+    #[token("-")]
+    Minus,
+
+    #[regex("[a-zA-Z_][^\\]/. \n\t\",=:{}\\[-]*")]
+    Bareword,
+
+    #[regex("[0-9]+")]
+    Number,
+
+    #[token("\n")]
+    Newline,
+
+    #[regex(r"#.+\n")]
+    Comment,
+
+    #[token("\"", string_callback)]
+    String(String),
+
+    #[regex(r"( |\t|\\\n)+")]
+    Whitespace,
+
+    Eof,
+}
+
+#[derive(Logos, Debug, PartialEq, Eq, Clone)]
+#[logos(error = LexerError)]
+enum StringToken {
+    #[token("\"")]
+    ExitString,
+
+    #[token(r"\n")]
+    EscNewline,
+
+    #[token(r"\t")]
+    EscTab,
+
+    #[token("\\\"")]
+    EscQuote,
+
+    #[token("\n")]
+    Newline,
+
+    #[regex(r#"[^\\"\n]+"#)]
+    Chars,
+}
+
+impl Token {
+    #[must_use]
+    pub const fn name(&self) -> &'static str {
+        match self {
+            Self::LBracket => "[",
+            Self::RBracket => "]",
+            Self::LBrace => "{",
+            Self::RBrace => "}",
+            Self::Colon => ":",
+            Self::Equals => "=",
+            Self::Comma => ",",
+            Self::Slash => "/",
+            Self::Dot => ".",
+            Self::Minus => "-",
+            Self::Bareword => "<bareword>",
+            Self::Number => "<number>",
+            Self::Newline => "\\n",
+            Self::Comment => "<comment>",
+            Self::String(_) => "<string>",
+            Self::Whitespace => "<whitespace>",
+            Self::Eof => "<end of file>",
+        }
+    }
+
+    #[must_use]
+    pub const fn description(&self) -> &'static str {
+        match self {
+            Self::LBracket => "'[' (left bracket)",
+            Self::RBracket => "']' (right bracket)",
+            Self::LBrace => "'{' (left brace)",
+            Self::RBrace => "'}' (right brace)",
+            Self::Colon => "':' (colon)",
+            Self::Equals => "'=' (equals)",
+            Self::Comma => "',' (comma)",
+            Self::Slash => "'/' (slash)",
+            Self::Dot => "'.' (dot)",
+            Self::Minus => "'-' (minus)",
+            Self::Bareword => "<bareword>",
+            Self::Number => "<number>",
+            Self::Newline => "\\n (newline)",
+            Self::Comment => "<comment>",
+            Self::String(_) => "<string>",
+            Self::Whitespace => "<whitespace>",
+            Self::Eof => "<end of file>",
+        }
+    }
+}
+
+fn string_callback(lex: &mut Lexer<Token>) -> Result<String, LexerError> {
+    let mut res = String::new();
+    let mut string_lexer = lex.clone().morph();
+
+    loop {
+        let Some(token) = string_lexer.next() else {
+            break;
+        };
+
+        match token? {
+            StringToken::ExitString => break,
+            StringToken::EscNewline => res.push('\n'),
+            StringToken::EscTab => res.push('\t'),
+            StringToken::EscQuote => res.push('"'),
+            StringToken::Chars => res.push_str(string_lexer.slice()),
+            StringToken::Newline => Err(LexerError::UnterminatedString(string_lexer.span()))?,
+        }
+    }
+
+    *lex = string_lexer.morph();
+
+    Ok(res)
+}

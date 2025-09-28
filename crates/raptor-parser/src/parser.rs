@@ -1,475 +1,892 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8PathBuf;
+use logos::{Lexer, Logos};
 use minijinja::Value;
-use pest_consume::{Nodes, Parser, match_nodes};
 
 use crate::ast::{
     Chown, Expression, FromSource, IncludeArg, InstCmd, InstCopy, InstEntrypoint, InstEnv,
     InstEnvAssign, InstFrom, InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun,
     InstWorkdir, InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
+use crate::lexer::Token;
+use crate::util::Location;
 use crate::util::module_name::ModuleName;
-use crate::{ParseResult, RaptorFileParser, Rule};
+use crate::{ParseError, ParseResult};
 
-#[derive(Clone, Debug)]
-pub struct UserData {
-    pub path: Arc<Utf8PathBuf>,
+pub struct Parser<'src> {
+    lexer: Lexer<'src, Token>,
+    filename: Arc<Utf8PathBuf>,
 }
 
-type Result<T> = std::result::Result<T, pest_consume::Error<Rule>>;
-pub type Node<'i> = pest_consume::Node<'i, Rule, UserData>;
+fn parse_chmod_permission(string: &str) -> ParseResult<u32> {
+    if !(3..=4).contains(&string.len()) {
+        return Err(ParseError::InvalidPermissionMask);
+    }
+    Ok(u32::from_str_radix(string, 8)?)
+}
 
-#[allow(non_snake_case, clippy::unnecessary_wraps)]
-#[pest_consume::parser]
-impl RaptorFileParser {
-    fn EOI(input: Node) -> Result<()> {
-        Ok(())
+impl<'src> Parser<'src> {
+    #[must_use]
+    pub const fn new(lexer: Lexer<'src, Token>, filename: Arc<Utf8PathBuf>) -> Self {
+        Self { lexer, filename }
     }
 
-    fn COMMENT(input: Node) -> Result<()> {
-        Ok(())
+    fn next(&mut self) -> ParseResult<Token> {
+        self.lexer
+            .next()
+            .unwrap_or(Ok(Token::Eof))
+            .map_err(ParseError::from)
     }
 
-    fn string_escape_seq(input: Node) -> Result<&str> {
-        match input.as_str() {
-            "\\t" => Ok("\t"),
-            "\\n" => Ok("\n"),
-            "\\\"" => Ok("\""),
-            "\\\\" => Ok("\\"),
-            x => Err(input.error(format!("Unexpected escape: {x}"))),
+    fn accept(&mut self, exp: &Token) -> ParseResult<bool> {
+        if &self.peek()? == exp {
+            self.next()?;
+            Ok(true)
+        } else {
+            Ok(false)
         }
     }
 
-    fn string_inner(input: Node) -> Result<String> {
-        let mut res = String::new();
+    fn expect(&mut self, exp: &Token) -> ParseResult<()> {
+        let next = self.next()?;
+        if &next == exp {
+            Ok(())
+        } else {
+            Err(ParseError::Expected(exp.name()))
+        }
+    }
 
-        for node in input.into_children() {
-            match node.as_rule() {
-                Rule::string_escape_seq => {
-                    res += Self::string_escape_seq(node)?;
+    fn expect_trimmed(&mut self, exp: &Token) -> ParseResult<()> {
+        self.trim()?;
+        self.expect(exp)?;
+        self.trim()?;
+
+        Ok(())
+    }
+
+    fn accept_trimmed(&mut self, exp: &Token) -> ParseResult<bool> {
+        self.trim()?;
+        let accepted = self.accept(exp)?;
+        if accepted {
+            self.trim()?;
+        }
+
+        Ok(accepted)
+    }
+
+    fn peek(&self) -> ParseResult<Token> {
+        // FIXME: do away with the .clone() here
+        self.lexer
+            .clone()
+            .next()
+            .unwrap_or(Ok(Token::Eof))
+            .map_err(ParseError::from)
+    }
+
+    fn token(&self) -> &'src str {
+        self.lexer.slice()
+    }
+
+    fn token_string(&self) -> String {
+        self.lexer.slice().to_string()
+    }
+
+    fn bareword(&mut self) -> ParseResult<&'src str> {
+        self.expect(&Token::Bareword)?;
+
+        Ok(self.token())
+    }
+
+    fn value(&mut self) -> ParseResult<String> {
+        let res = match self.next()? {
+            Token::Bareword => Ok(self.token_string()),
+            Token::String(string) => Ok(string),
+            _ => Err(ParseError::Expected("value")),
+        };
+
+        self.trim()?;
+
+        res
+    }
+
+    fn trim(&mut self) -> ParseResult<()> {
+        while self.peek()? == Token::Whitespace {
+            self.next()?;
+        }
+
+        Ok(())
+    }
+
+    fn parse_path(&mut self) -> ParseResult<Utf8PathBuf> {
+        let mut res = String::new();
+        loop {
+            let state = self.lexer.clone();
+            match self.next()? {
+                Token::Bareword => res.push_str(self.token()),
+                Token::String(string) => res.push_str(&string),
+                Token::Comment | Token::Whitespace | Token::Newline | Token::Eof => {
+                    self.lexer = state;
+                    break;
                 }
-                Rule::string_non_escape => {
-                    res += node.as_str();
+                _ => {
+                    res.push_str(self.token());
                 }
-                _ => {}
             }
         }
-        Ok(res)
-    }
 
-    fn quoted_string(input: Node) -> Result<String> {
-        Ok(match_nodes!(
-            input.into_children();
-            [string_inner(s)] => Ok(s),
-        )?)
-    }
-
-    fn literal_string(input: Node) -> Result<String> {
-        Ok(input.as_str().to_string())
-    }
-
-    fn user_spec(input: Node) -> Result<String> {
-        Ok(input.as_str().to_string())
-    }
-
-    fn group_spec(input: Node) -> Result<String> {
-        Ok(input.as_str().to_string())
-    }
-
-    fn string(input: Node) -> Result<String> {
-        Ok(match_nodes!(
-            input.into_children();
-            [quoted_string(s)] => Ok(s),
-            [literal_string(s)] => Ok(s),
-        )?)
-    }
-
-    fn filename(input: Node) -> Result<Utf8PathBuf> {
-        Ok(match_nodes!(
-            input.into_children();
-            [string(s)] => Ok(s.into()),
-            [literal_string(s)] => Ok(s.into()),
-        )?)
-    }
-
-    fn option_chown(input: Node) -> Result<Chown> {
-        match_nodes!(
-            input.into_children();
-            [user_spec(user), group_spec(grp)] => Ok(Chown {
-                user: Some(user),
-                group: Some(grp),
-            }),
-            [group_spec(grp)] => Ok(Chown {
-                user: None,
-                group: Some(grp),
-            }),
-            [user_spec(user)] => Ok(Chown {
-                user: Some(user),
-                group: None,
-            }),
-        )
-    }
-
-    fn option_chmod(input: Node) -> Result<u32> {
-        Ok(u32::from_str_radix(input.as_str(), 8).map_err(|e| input.error(e))?)
-    }
-
-    fn file_option(input: Node) -> Result<(Option<u32>, Option<Chown>)> {
-        match_nodes!(
-            input.into_children();
-            [option_chown(chown)] => Ok((None, Some(chown))),
-            [option_chmod(chmod)] => Ok((Some(chmod), None)),
-        )
-    }
-
-    fn file_options(input: Node) -> Result<(Option<u32>, Option<Chown>)> {
-        let mut chown = None;
-        let mut chmod = None;
-
-        let opts: Vec<_> = match_nodes!(
-            input.into_children();
-            [file_option(opt)..] => opt.collect()
-        );
-
-        for (opt_chmod, opt_chown) in opts {
-            chown = opt_chown.or(chown);
-            chmod = opt_chmod.or(chmod);
+        if res.is_empty() {
+            return Err(ParseError::Expected("path"));
         }
 
-        Ok((chmod, chown))
+        self.trim()?;
+
+        Ok(res.into())
     }
 
-    fn parents_flag(input: Node) -> Result<bool> {
-        match input.as_str() {
-            "-p" => Ok(true),
-            _ => todo!(),
+    fn module_name(&mut self) -> ParseResult<ModuleName> {
+        let mut words = vec![self.bareword()?.to_string()];
+
+        while self.accept(&Token::Dot)? {
+            words.push(self.bareword()?.to_string());
         }
+
+        Ok(ModuleName::new(words))
     }
 
-    fn COPY(input: Node) -> Result<InstCopy> {
-        let mut srcs: Vec<Utf8PathBuf>;
-        let chmod;
-        let chown;
+    fn end_of_line(&mut self) -> ParseResult<()> {
+        loop {
+            match self.next()? {
+                Token::Newline | Token::Comment => break,
+                Token::Whitespace => {}
+                found => {
+                    return Err(ParseError::Mismatch {
+                        exp: Token::Newline,
+                        found,
+                    });
+                }
+            }
+        }
 
-        match_nodes!(
-            input.into_children();
-            [file_options(opts), filename(filenames)..] => {
-                (chmod, chown) = opts;
-                srcs = filenames.collect();
-            },
-        );
+        Ok(())
+    }
 
-        let dest = srcs.pop().unwrap();
+    fn consume_line(&mut self) -> ParseResult<Vec<String>> {
+        self.trim()?;
 
-        Ok(InstCopy {
-            srcs,
+        let mut args = vec![];
+        let mut value = String::new();
+
+        loop {
+            match self.next()? {
+                Token::String(word) => args.push(word),
+                Token::Whitespace => {
+                    if !value.is_empty() {
+                        let mut val = String::new();
+                        std::mem::swap(&mut value, &mut val);
+                        args.push(val);
+                    }
+                }
+                Token::Newline | Token::Comment | Token::Eof => break,
+                _ => value.push_str(self.token()),
+            }
+        }
+
+        if !value.is_empty() {
+            args.push(value);
+        }
+
+        Ok(args)
+    }
+
+    pub fn parse_run(&mut self) -> ParseResult<InstRun> {
+        let run = self.consume_line()?;
+
+        Ok(InstRun { run })
+    }
+
+    pub fn parse_invoke(&mut self) -> ParseResult<InstInvoke> {
+        let args = self.consume_line()?;
+
+        Ok(InstInvoke { args })
+    }
+
+    pub fn parse_entrypoint(&mut self) -> ParseResult<InstEntrypoint> {
+        let entrypoint = self.consume_line()?;
+
+        Ok(InstEntrypoint { entrypoint })
+    }
+
+    pub fn parse_cmd(&mut self) -> ParseResult<InstCmd> {
+        let cmd = self.consume_line()?;
+
+        Ok(InstCmd { cmd })
+    }
+
+    pub fn parse_workdir(&mut self) -> ParseResult<InstWorkdir> {
+        self.trim()?;
+
+        let dir = self.parse_path()?;
+
+        self.end_of_line()?;
+
+        Ok(InstWorkdir { dir })
+    }
+
+    pub fn parse_env_assign(&mut self) -> ParseResult<Option<InstEnvAssign>> {
+        if self.peek()? == Token::Newline {
+            return Ok(None);
+        }
+
+        let key = self.bareword()?.to_string();
+
+        let value = if self.accept(&Token::Equals)? {
+            self.bareword()?.to_string()
+        } else {
+            key.clone()
+        };
+
+        let assign = InstEnvAssign { key, value };
+
+        self.trim()?;
+
+        Ok(Some(assign))
+    }
+
+    pub fn parse_env(&mut self) -> ParseResult<InstEnv> {
+        self.trim()?;
+
+        let mut env = vec![];
+        while let Some(assign) = self.parse_env_assign()? {
+            env.push(assign);
+        }
+        self.end_of_line()?;
+
+        Ok(InstEnv { env })
+    }
+
+    pub fn parse_write(&mut self) -> ParseResult<InstWrite> {
+        self.trim()?;
+
+        let (chown, chmod) = self.parse_fileopts(None)?;
+
+        let body = self.value()?;
+        let dest = self.parse_path()?;
+
+        self.end_of_line()?;
+
+        Ok(InstWrite {
             dest,
+            body,
             chmod,
             chown,
         })
     }
 
-    fn mount_type(input: Node) -> Result<MountType> {
-        let res = match input.as_str() {
-            "--simple" => MountType::Simple,
-            "--layers" => MountType::Layers,
-            "--overlay" => MountType::Overlay,
-            _ => unreachable!(),
+    pub fn parse_mkdir(&mut self) -> ParseResult<InstMkdir> {
+        self.trim()?;
+
+        let mut parents = false;
+        let (chown, chmod) = self.parse_fileopts(Some(&mut parents))?;
+
+        let dest = self.parse_path()?;
+
+        self.end_of_line()?;
+
+        Ok(InstMkdir {
+            dest,
+            chmod,
+            chown,
+            parents,
+        })
+    }
+
+    pub fn parse_docker_from(&mut self) -> ParseResult<String> {
+        self.expect(&Token::Bareword)?;
+        self.expect(&Token::Colon)?;
+        self.expect(&Token::Slash)?;
+        self.expect(&Token::Slash)?;
+
+        Ok(self.parse_path()?.to_string())
+    }
+
+    pub fn parse_from(&mut self) -> ParseResult<InstFrom> {
+        self.trim()?;
+
+        let state = self.lexer.clone();
+        let next = self.bareword()?;
+        self.lexer = state;
+
+        let from = if next == "docker" {
+            FromSource::Docker(self.parse_docker_from()?)
+        } else {
+            FromSource::Raptor(self.module_name()?)
         };
 
-        Ok(res)
+        self.end_of_line()?;
+
+        Ok(InstFrom { from })
     }
 
-    fn mount_options(input: Node) -> Result<MountOptions> {
-        match_nodes!(
-            input.into_children();
-            [] => Ok(MountOptions{ mtype: MountType::Simple }),
-            [mount_type(mtype)] => Ok(MountOptions{ mtype }),
-        )
+    pub fn parse_mount_options(&mut self) -> ParseResult<MountOptions> {
+        let mut opts = MountOptions {
+            mtype: MountType::Simple,
+        };
+
+        while self.accept(&Token::Minus)? {
+            self.expect(&Token::Minus)?;
+            self.expect(&Token::Bareword)?;
+
+            match self.token() {
+                "simple" => opts.mtype = MountType::Simple,
+                "layers" => opts.mtype = MountType::Layers,
+                "overlay" => opts.mtype = MountType::Overlay,
+                _ => return Err(ParseError::Expected("mount option")),
+            }
+        }
+
+        self.trim()?;
+
+        Ok(opts)
     }
 
-    fn MOUNT(input: Node) -> Result<InstMount> {
-        match_nodes!(
-            input.into_children();
-            [mount_options(opts), ident(name), filename(dest)] => {
-                Ok(InstMount {
-                    opts,
-                    name,
-                    dest,
-                })
+    pub fn parse_mount(&mut self) -> ParseResult<InstMount> {
+        self.trim()?;
+
+        let opts = self.parse_mount_options()?;
+
+        let name = self.bareword()?.to_string();
+        self.trim()?;
+
+        let dest = self.parse_path()?;
+
+        self.end_of_line()?;
+
+        Ok(InstMount { opts, name, dest })
+    }
+
+    pub fn parse_delim<T>(
+        &mut self,
+        start: &Token,
+        end: &Token,
+        func: impl Fn(&mut Self, &mut T) -> ParseResult<()>,
+    ) -> ParseResult<Value>
+    where
+        Value: From<T>,
+        T: Default,
+    {
+        let mut list = T::default();
+
+        self.expect_trimmed(start)?;
+
+        loop {
+            if self.accept_trimmed(end)? {
+                break;
+            }
+
+            func(self, &mut list)?;
+
+            if !self.accept_trimmed(&Token::Comma)? {
+                self.expect_trimmed(end)?;
+                break;
+            }
+        }
+
+        Ok(Value::from(list))
+    }
+
+    pub fn parse_list(&mut self) -> ParseResult<Value> {
+        self.parse_delim(
+            &Token::LBracket,
+            &Token::RBracket,
+            |this, list: &mut Vec<Value>| {
+                list.push(this.parse_value()?);
+                Ok(())
             },
         )
     }
 
-    fn RENDER(input: Node) -> Result<InstRender> {
-        match_nodes!(
-            input.into_children();
-            [file_options((chmod, chown)), filename(src), filename(dest), include_args(args)] => {
-                Ok(InstRender {
-                    src,
-                    dest,
-                    chmod,
-                    chown,
-                    args
-                })
+    pub fn parse_map(&mut self) -> ParseResult<Value> {
+        self.parse_delim(
+            &Token::LBrace,
+            &Token::RBrace,
+            |this, map: &mut BTreeMap<_, _>| {
+                let key = this.parse_value()?;
+                this.expect_trimmed(&Token::Colon)?;
+                let value = this.parse_value()?;
+
+                map.insert(key, value);
+
+                Ok(())
             },
         )
     }
 
-    fn WRITE(input: Node) -> Result<InstWrite> {
-        match_nodes!(
-            input.into_children();
-            [file_options((chmod, chown)), quoted_string(body), filename(dest)] => {
-                Ok(InstWrite {
-                    dest,
-                    body,
-                    chmod,
-                    chown,
-                })
-            },
-        )
-    }
+    pub fn parse_value(&mut self) -> ParseResult<Value> {
+        self.trim()?;
+        match self.peek()? {
+            Token::LBracket => self.parse_list(),
+            Token::LBrace => self.parse_map(),
+            Token::String(value) => {
+                self.next()?;
+                Ok(Value::from_serialize(value))
+            }
+            Token::Number => {
+                self.expect(&Token::Number)?;
+                Ok(Value::from_serialize(self.token().parse::<i64>()?))
+            }
+            Token::Bareword => {
+                self.expect(&Token::Bareword)?;
+                let value = match self.token() {
+                    "true" => true,
+                    "false" => false,
+                    _ => return Err(ParseError::Expected("boolean")),
+                };
+                Ok(Value::from_serialize(value))
+            }
 
-    fn MKDIR(input: Node) -> Result<InstMkdir> {
-        match_nodes!(
-            input.into_children();
-            [parents_flag(_), file_options((chmod, chown)), filename(dest)] => {
-                Ok(InstMkdir {
-                    dest,
-                    chmod,
-                    chown,
-                    parents: true,
-                })
-            },
-            [file_options((chmod, chown)), filename(dest)] => {
-                Ok(InstMkdir {
-                    dest,
-                    chmod,
-                    chown,
-                    parents : false,
-                })
-            },
-        )
-    }
-
-    fn INVOKE(input: Node) -> Result<InstInvoke> {
-        Ok(match_nodes!(input.into_children();
-        [string(i)..] => InstInvoke {
-            args: i.collect(),
-        }))
-    }
-
-    fn ident(input: Node) -> Result<String> {
-        Ok(input.as_str().to_string())
-    }
-
-    fn module_name(input: Node) -> Result<ModuleName> {
-        Ok(match_nodes!(
-            input.into_children();
-            [ident(i)..] => ModuleName::new(i.collect())
-        ))
-    }
-
-    fn raptor_source(input: Node) -> Result<ModuleName> {
-        Ok(match_nodes!(
-            input.into_children();
-            [module_name(from), include_args(_)] => from
-        ))
-    }
-
-    fn docker_source(input: Node) -> Result<String> {
-        Ok(match_nodes!(
-            input.into_children();
-            [string(i)] => i.as_str().to_string()
-        ))
-    }
-
-    fn from_source(input: Node) -> Result<FromSource> {
-        Ok(match_nodes!(
-            input.into_children();
-            [raptor_source(i)] => FromSource::Raptor(i),
-            [docker_source(i)] => FromSource::Docker(i),
-        ))
-    }
-
-    fn FROM(input: Node) -> Result<InstFrom> {
-        Ok(match_nodes!(input.into_children();
-        [from_source(i)] => InstFrom {
-            from: i,
-        }))
-    }
-
-    fn RUN(input: Node) -> Result<InstRun> {
-        Ok(match_nodes!(input.into_children();
-        [string(i)..] => InstRun {
-            run: i.collect(),
-        }))
-    }
-
-    fn ENTRYPOINT(input: Node) -> Result<InstEntrypoint> {
-        Ok(match_nodes!(input.into_children();
-        [string(i)..] => InstEntrypoint {
-            entrypoint: i.collect(),
-        }))
-    }
-
-    fn CMD(input: Node) -> Result<InstCmd> {
-        Ok(match_nodes!(input.into_children();
-        [string(i)..] => InstCmd {
-            cmd: i.collect(),
-        }))
-    }
-
-    fn bool(input: Node) -> Result<bool> {
-        match input.as_str() {
-            "true" => Ok(true),
-            "false" => Ok(false),
-            _ => todo!(),
+            _ => Err(ParseError::Expected("value4")),
         }
     }
 
-    fn number(input: Node) -> Result<i64> {
-        Ok(input.as_str().parse::<i64>().map_err(|e| input.error(e))?)
+    pub fn parse_lookup(&mut self) -> ParseResult<Lookup> {
+        // use `span().end` since we are peeking at the next token
+        let start = self.lexer.span().end;
+        let path = self.module_name()?;
+        let end = self.lexer.span().end;
+        let origin = Origin::new(self.filename.clone(), start..end);
+
+        Ok(Lookup { path, origin })
     }
 
-    fn list(input: Node) -> Result<Vec<Value>> {
-        Ok(match_nodes!(
-            input.into_children();
-            [value(i)..] => i.collect()
-        ))
+    pub fn parse_expression(&mut self) -> ParseResult<Expression> {
+        if self.peek()? == Token::Bareword {
+            Ok(Expression::Lookup(self.parse_lookup()?))
+        } else {
+            Ok(Expression::Value(self.parse_value()?))
+        }
     }
 
-    fn map_item(input: Node) -> Result<(Value, Value)> {
-        Ok(match_nodes!(
-            input.into_children();
-            [string(k), value(v)] => (Value::from(k), v)
-        ))
+    pub fn parse_include_arg(&mut self) -> ParseResult<Option<IncludeArg>> {
+        if self.peek()? == Token::Newline {
+            return Ok(None);
+        }
+
+        let name = self.bareword()?.to_string();
+
+        if !self.accept(&Token::Equals)? {
+            let origin = Origin::new(self.filename.clone(), self.lexer.span());
+            let path = ModuleName::new(vec![name.clone()]);
+            let value = Expression::Lookup(Lookup { path, origin });
+
+            return Ok(Some(IncludeArg { name, value }));
+        }
+
+        let value = self.parse_expression()?;
+        self.trim()?;
+
+        let arg = IncludeArg { name, value };
+
+        Ok(Some(arg))
     }
 
-    fn map(input: Node) -> Result<BTreeMap<Value, Value>> {
-        Ok(match_nodes!(
-            input.into_children();
-            [map_item(i)..] => i.collect()
-        ))
+    pub fn parse_include(&mut self) -> ParseResult<InstInclude> {
+        self.trim()?;
+
+        let src = self.module_name()?;
+        self.trim()?;
+
+        let mut args = vec![];
+        while let Some(arg) = self.parse_include_arg()? {
+            args.push(arg);
+        }
+        self.end_of_line()?;
+
+        Ok(InstInclude { src, args })
     }
 
-    fn value(input: Node) -> Result<Value> {
-        Ok(match_nodes!(
-            input.into_children();
-            [bool(b)] => Value::from(b),
-            [number(b)] => Value::from(b),
-            [quoted_string(b)] => Value::from(b),
-            [map(b)] => Value::from(b),
-            [list(b)] => Value::from(b),
-        ))
-    }
+    pub fn parse_fileopts(
+        &mut self,
+        mut parent_flag: Option<&mut bool>,
+    ) -> ParseResult<(Option<Chown>, Option<u32>)> {
+        let mut chown = None;
+        let mut chmod = None;
 
-    fn expression(input: Node) -> Result<Expression> {
-        let origin = Origin::from_node(&input);
-        Ok(match_nodes!(
-            input.into_children();
-            [value(v)] => Expression::Value(v),
-            [module_name(b)] => Expression::Lookup(Lookup::new(b, origin)),
-        ))
-    }
+        while self.accept(&Token::Minus)? {
+            if !self.accept(&Token::Minus)? {
+                if let Some(pflag) = parent_flag.as_mut() {
+                    if self.bareword()? != "p" {
+                        return Err(ParseError::Expected("flag"));
+                    }
 
-    fn include_arg(input: Node) -> Result<IncludeArg> {
-        let origin = Origin::from_node(&input);
-        Ok(match_nodes!(
-            input.into_children();
-            [ident(id), expression(val)] => IncludeArg {
-                name: id,
-                value: val,
-            },
-            [ident(id)] => IncludeArg {
-                name: id.clone(),
-                value: Expression::Lookup(Lookup::new(ModuleName::new(vec![id]), origin)),
+                    **pflag = true;
+                    self.trim()?;
+                    continue;
+                }
+                return Err(ParseError::Expected("fileopt"));
             }
-        ))
+
+            match self.bareword()? {
+                "chown" => {
+                    if !self.accept(&Token::Equals)? {
+                        self.expect(&Token::Whitespace)?;
+                    }
+
+                    let user = if self.peek()? == Token::Colon {
+                        None
+                    } else {
+                        Some(self.value()?)
+                    };
+
+                    let mut group = None;
+
+                    if self.accept(&Token::Colon)? {
+                        group = if self.accept(&Token::Bareword)? {
+                            Some(self.token_string())
+                        } else {
+                            user.clone()
+                        }
+                    }
+
+                    chown = Some(Chown { user, group });
+                }
+
+                "chmod" => {
+                    if !self.accept(&Token::Equals)? {
+                        self.expect(&Token::Whitespace)?;
+                    }
+
+                    self.expect(&Token::Number)?;
+                    chmod = Some(parse_chmod_permission(self.token())?);
+                }
+
+                _ => return Err(ParseError::Expected("file option")),
+            }
+
+            self.trim()?;
+        }
+
+        self.trim()?;
+
+        Ok((chown, chmod))
     }
 
-    fn include_args(input: Node) -> Result<Vec<IncludeArg>> {
-        Ok(match_nodes!(input.into_children();
-        [include_arg(args)..] => args.collect()))
+    pub fn parse_render(&mut self) -> ParseResult<InstRender> {
+        self.trim()?;
+
+        let (chown, chmod) = self.parse_fileopts(None)?;
+
+        let src = self.parse_path()?;
+        let dest = self.parse_path()?;
+
+        let mut args = vec![];
+        while let Some(arg) = self.parse_include_arg()? {
+            args.push(arg);
+        }
+
+        self.end_of_line()?;
+
+        Ok(InstRender {
+            src,
+            dest,
+            chmod,
+            chown,
+            args,
+        })
     }
 
-    fn env_assign(input: Node) -> Result<InstEnvAssign> {
-        Ok(match_nodes!(input.into_children();
-        [ident(key), string(value)] => InstEnvAssign {
-            key,
-            value,
-        }))
+    pub fn parse_copy(&mut self) -> ParseResult<InstCopy> {
+        self.trim()?;
+
+        let (chown, chmod) = self.parse_fileopts(None)?;
+
+        let mut files = vec![];
+        while self.peek()? != Token::Newline {
+            files.push(self.parse_path()?);
+        }
+
+        self.end_of_line()?;
+
+        let dest = files.pop().unwrap();
+
+        Ok(InstCopy {
+            dest,
+            srcs: files,
+            chmod,
+            chown,
+        })
     }
 
-    fn ENV(input: Node) -> Result<InstEnv> {
-        Ok(match_nodes!(input.into_children();
-        [env_assign(res)..] => InstEnv {
-            env: res.collect(),
-        }))
+    pub fn statement(&mut self) -> ParseResult<Option<Statement>> {
+        let start = self.lexer.span().start;
+
+        loop {
+            match self.peek()? {
+                Token::Whitespace | Token::Comment | Token::Newline => {
+                    self.next()?;
+                }
+                Token::Eof => return Ok(None),
+                _ => break,
+            }
+        }
+
+        self.expect(&Token::Bareword)?;
+        let inst = self.token();
+
+        let inst = match inst {
+            "FROM" => Instruction::From(self.parse_from()?),
+            "MOUNT" => Instruction::Mount(self.parse_mount()?),
+            "RENDER" => Instruction::Render(self.parse_render()?),
+            "WRITE" => Instruction::Write(self.parse_write()?),
+            "MKDIR" => Instruction::Mkdir(self.parse_mkdir()?),
+            "COPY" => Instruction::Copy(self.parse_copy()?),
+            "INCLUDE" => Instruction::Include(self.parse_include()?),
+            "INVOKE" => Instruction::Invoke(self.parse_invoke()?),
+            "RUN" => Instruction::Run(self.parse_run()?),
+            "ENV" => Instruction::Env(self.parse_env()?),
+            "WORKDIR" => Instruction::Workdir(self.parse_workdir()?),
+            "ENTRYPOINT" => Instruction::Entrypoint(self.parse_entrypoint()?),
+            "CMD" => Instruction::Cmd(self.parse_cmd()?),
+            _ => return Err(ParseError::Expected("statement")),
+        };
+
+        let end = self.lexer.span().end;
+
+        let origin = Origin::new(self.filename.clone(), start..end - 1);
+
+        Ok(Some(Statement { inst, origin }))
     }
 
-    fn WORKDIR(input: Node) -> Result<InstWorkdir> {
-        Ok(match_nodes!(input.into_children();
-        [filename(dir)] => InstWorkdir {
-            dir
-        }))
-    }
+    pub fn file(&mut self) -> ParseResult<Vec<Statement>> {
+        let mut res = vec![];
 
-    fn INCLUDE(input: Node) -> Result<InstInclude> {
-        match_nodes!(
-            input.into_children();
-            [module_name(src), include_args(args)] => {
-                Ok(InstInclude {
-                    src,
-                    args,
-                })
-            },
-        )
-    }
+        while let Some(stmt) = self.statement()? {
+            res.push(stmt);
+        }
 
-    fn STATEMENT(input: Node) -> Result<Option<Statement>> {
-        let origin = Origin::from_node(&input);
-
-        Ok(match_nodes!(
-            input.into_children();
-            [FROM(stmt)] => Some(Statement { inst: Instruction::From(stmt), origin }),
-            [MOUNT(stmt)] => Some(Statement { inst: Instruction::Mount(stmt), origin }),
-            [COPY(stmt)] => Some(Statement { inst: Instruction::Copy(stmt), origin }),
-            [WRITE(stmt)] => Some(Statement { inst: Instruction::Write(stmt), origin }),
-            [RENDER(stmt)] => Some(Statement { inst: Instruction::Render(stmt), origin }),
-            [MKDIR(stmt)] => Some(Statement { inst: Instruction::Mkdir(stmt), origin }),
-            [INCLUDE(stmt)] => Some(Statement { inst: Instruction::Include(stmt), origin }),
-            [INVOKE(stmt)] => Some(Statement { inst: Instruction::Invoke(stmt), origin }),
-            [RUN(stmt)] => Some(Statement { inst: Instruction::Run(stmt), origin }),
-            [ENV(stmt)] => Some(Statement { inst: Instruction::Env(stmt), origin }),
-            [WORKDIR(stmt)] => Some(Statement { inst: Instruction::Workdir(stmt), origin }),
-            [ENTRYPOINT(stmt)] => Some(Statement { inst: Instruction::Entrypoint(stmt), origin }),
-            [CMD(stmt)] => Some(Statement { inst: Instruction::Cmd(stmt), origin }),
-            [] => None,
-        ))
-    }
-
-    fn FILE(input: Node) -> Result<Vec<Statement>> {
-        match_nodes!(
-            input.into_children();
-            [STATEMENT(stmt).., _EOI] => Ok(stmt.flatten().collect())
-        )
+        Ok(res)
     }
 }
 
-pub fn parse(path: impl AsRef<Utf8Path>, input: &str) -> ParseResult<Vec<Statement>> {
-    let filename = path.as_ref();
+pub fn parse(name: &str, buf: &str) -> Result<Vec<Statement>, Location<ParseError>> {
+    let lexer = Token::lexer(buf);
+    let path = Arc::new(Utf8PathBuf::from(name));
+    let mut parser = Parser::new(lexer, path.clone());
 
-    let userdata = UserData {
-        path: Arc::new(filename.into()),
-    };
+    parser.file().map_err(|err| {
+        let origin = Origin::new(path.clone(), parser.lexer.span());
+        Location::make(origin, err)
+    })
+}
 
-    let res = RaptorFileParser::parse_with_userdata(Rule::FILE, input, userdata)
-        .and_then(Nodes::single)
-        .and_then(RaptorFileParser::FILE)
-        .map_err(|err| err.with_path(filename.as_str()))?;
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
 
-    Ok(res)
+    use logos::Logos;
+    use minijinja::Value;
+    use pretty_assertions::assert_eq;
+    use serde_json::json;
+
+    use crate::ParseResult;
+    use crate::ast::Chown;
+    use crate::lexer::Token;
+    use crate::parser::Parser;
+
+    fn make_parser(input: &str) -> Parser {
+        let lexer = Token::lexer(input);
+
+        Parser::new(lexer, Arc::new("<inline>".into()))
+    }
+
+    macro_rules! parse_test {
+        ($parse:ident, $src:expr, $tree:tt) => {
+            let mut parser = make_parser($src);
+            assert_eq!(parser.$parse()?, Value::from_serialize(json!($tree)));
+        };
+    }
+
+    macro_rules! value_test {
+        ($src:expr, $tree:tt) => {
+            parse_test!(parse_value, $src, $tree)
+        };
+    }
+    macro_rules! list_test {
+        ($src:expr, $tree:tt) => {
+            parse_test!(parse_list, $src, $tree)
+        };
+    }
+    macro_rules! map_test {
+        ($src:expr, $tree:tt) => {
+            parse_test!(parse_map, $src, $tree)
+        };
+    }
+
+    macro_rules! fileopts_test {
+        ($src:expr, $tree:tt) => {
+            let mut parser = make_parser($src);
+
+            assert_eq!(parser.parse_fileopts(None)?, $tree);
+        };
+    }
+
+    macro_rules! fileopts_test_err {
+        ($src:expr) => {
+            let mut parser = make_parser($src);
+
+            parser.parse_fileopts(None).unwrap_err();
+        };
+    }
+
+    macro_rules! fileopts_test_chown {
+        ($src:expr, $user:expr, $group:expr) => {
+            let mut parser = make_parser($src);
+
+            let mut chown = Chown::default();
+            let user: Option<&str> = $user;
+            let group: Option<&str> = $group;
+
+            if let Some(user) = user {
+                chown.user = Some(user.to_string());
+            }
+            if let Some(group) = group {
+                chown.group = Some(group.to_string());
+            }
+
+            assert_eq!(parser.parse_fileopts(None)?, (Some(chown), None));
+        };
+    }
+
+    macro_rules! fileopts_test_full {
+        ($src:expr, $chmod:expr, $user:expr, $group:expr, $parent:expr) => {
+            let mut parser = make_parser($src);
+
+            let mut parent = false;
+            let mut chown = Chown::default();
+            let user: Option<&str> = $user;
+            let group: Option<&str> = $group;
+
+            if let Some(user) = user {
+                chown.user = Some(user.to_string());
+            }
+            if let Some(group) = group {
+                chown.group = Some(group.to_string());
+            }
+
+            assert_eq!(
+                parser.parse_fileopts(Some(&mut parent))?,
+                (
+                    if user.is_some() || group.is_some() {
+                        Some(chown)
+                    } else {
+                        None
+                    },
+                    $chmod
+                )
+            );
+            assert_eq!(parent, $parent);
+        };
+    }
+
+    #[test]
+    fn parse_bool() -> ParseResult<()> {
+        value_test!("true", true);
+        value_test!("false", false);
+
+        Ok(())
+    }
+
+    #[test]
+    fn parse_list2() -> ParseResult<()> {
+        list_test!("[]", []);
+        list_test!("[0]", [0]);
+        list_test!("[1234]", [1234]);
+        list_test!("[1,2,3,4]", [1, 2, 3, 4]);
+        list_test!("[ 1, 2,3 , 4 ]", [1, 2, 3, 4]);
+        list_test!(" [ 1 ] ", [1]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn parse_map() -> ParseResult<()> {
+        map_test!("{}", {});
+        map_test!(r#"{"foo":"bar"}"#, {"foo": "bar"});
+        map_test!(r#" { "foo" : "bar" } "#, {"foo": "bar"});
+        map_test!(r#" { "123" : [] } "#, {"123": []});
+        map_test!(r#" { "123" : [[], []] } "#, {"123": [[], []]});
+        map_test!(
+            r#" { "123" : [[true, false], [{}, {"foo": ["bar1","bar2"]}] ] } "#,
+            {
+                "123": [
+                    [true, false],
+                    [
+                        {},
+                        {"foo": ["bar1", "bar2"]}
+                    ]
+                ]
+            }
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn parse_fileopts_chmod() -> ParseResult<()> {
+        fileopts_test!("", (None, None));
+
+        fileopts_test_err!("--chmod");
+        fileopts_test_err!("--chmod ");
+        fileopts_test_err!("--chmod=1");
+        fileopts_test_err!("--chmod=12");
+        fileopts_test_err!("--chmod=12345");
+
+        fileopts_test!("--chmod=000", (None, Some(0)));
+        fileopts_test!("--chmod=1234", (None, Some(0o1234)));
+        fileopts_test!("--chmod=1750", (None, Some(0o1750)));
+        fileopts_test!("--chmod=7777", (None, Some(0o7777)));
+
+        fileopts_test!("--chmod \\\n 1750", (None, Some(0o1750)));
+
+        Ok(())
+    }
+
+    #[test]
+    fn parse_fileopts_chown() -> ParseResult<()> {
+        fileopts_test_err!("--chown");
+        fileopts_test_err!("--chown ");
+        fileopts_test_err!("--chown:grp");
+
+        fileopts_test_chown!("--chown :", None, None);
+
+        fileopts_test_chown!("--chown user", Some("user"), None);
+        fileopts_test_chown!("--chown=user", Some("user"), None);
+
+        fileopts_test_chown!("--chown user:", Some("user"), Some("user"));
+        fileopts_test_chown!("--chown :group", None, Some("group"));
+
+        Ok(())
+    }
+
+    #[test]
+    #[allow(clippy::cognitive_complexity)]
+    fn parse_fileopts_parent() -> ParseResult<()> {
+        fileopts_test_full!("", None, None, None, false);
+        fileopts_test_full!("-p", None, None, None, true);
+
+        fileopts_test_full!("--chmod 1234 -p", Some(0o1234), None, None, true);
+        fileopts_test_full!("-p --chmod 1234 -p", Some(0o1234), None, None, true);
+        fileopts_test_full!("-p --chmod 1234", Some(0o1234), None, None, true);
+
+        fileopts_test_full!(
+            "-p --chmod 1234 --chown user:group",
+            Some(0o1234),
+            Some("user"),
+            Some("group"),
+            true
+        );
+
+        Ok(())
+    }
 }

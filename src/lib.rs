@@ -16,6 +16,7 @@ use std::sync::mpsc;
 use camino::Utf8PathBuf;
 
 use raptor_parser::ast::{InstMount, Origin};
+use raptor_parser::util::Location;
 
 #[derive(thiserror::Error, Debug)]
 pub enum RaptorError {
@@ -24,9 +25,6 @@ pub enum RaptorError {
 
     #[error(transparent)]
     MinijinjaError(#[from] minijinja::Error),
-
-    #[error(transparent)]
-    ParseError(#[from] raptor_parser::ParseError),
 
     #[error(transparent)]
     VarError(#[from] std::env::VarError),
@@ -45,6 +43,12 @@ pub enum RaptorError {
 
     #[error(transparent)]
     FalconError(#[from] falcon::error::FalconError),
+
+    #[error(transparent)]
+    SafeParentError(#[from] raptor_parser::util::SafeParentError),
+
+    #[error("Parse error: {0:?}")]
+    ParseError(Location<raptor_parser::ParseError>),
 
     #[error("Undefined variable: {0}")]
     UndefinedVarError(String, Origin),
@@ -87,8 +91,15 @@ impl RaptorError {
             Self::FalconError(_) => "Falcon error",
             Self::MountMissing(_) => "Missing mount error",
             Self::RootRequired => "Root required",
+            Self::SafeParentError(_) => "Safe parent error",
             Self::UndefinedVarError(_, _) => "Undefined var error",
         }
+    }
+}
+
+impl From<Location<raptor_parser::ParseError>> for RaptorError {
+    fn from(value: Location<raptor_parser::ParseError>) -> Self {
+        Self::ParseError(value)
     }
 }
 

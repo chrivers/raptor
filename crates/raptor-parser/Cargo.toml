@@ -12,14 +12,18 @@ keywords.workspace = true
 authors.workspace = true
 
 [dependencies]
-pest = { workspace = true }
-pest_consume = { workspace = true }
-pest_derive = { workspace = true }
 thiserror = { workspace = true }
 camino = { workspace = true }
 serde = { workspace = true }
 colored = { workspace = true }
 minijinja = { workspace = true }
+logos = { workspace = true, features = ["forbid_unsafe"] }
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+colog.workspace = true
+log.workspace = true
+pretty_assertions.workspace = true
+serde_json.workspace = true
