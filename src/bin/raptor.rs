@@ -89,7 +89,7 @@ struct RunCmd {
         value_name = "mount",
         help = "Specify cache mount. Shorthand for -M cache <mount>"
     )]
-    cache: Option<String>,
+    cache: Vec<String>,
 
     #[arg(
         short = 'I',
@@ -97,7 +97,7 @@ struct RunCmd {
         value_name = "mount",
         help = "Specify input mount. Shorthand for -M input <mount>"
     )]
-    input: Option<String>,
+    input: Vec<String>,
 
     #[arg(
         short = 'O',
@@ -136,23 +136,23 @@ impl Mode {
 }
 
 impl RunCmd {
-    fn mounts(&self) -> HashMap<&str, &str> {
-        let mut res: HashMap<&str, &str> = HashMap::new();
+    fn mounts(&self) -> HashMap<&str, Vec<&str>> {
+        let mut res: HashMap<&str, Vec<&str>> = HashMap::new();
 
         for kv in self.mount.chunks_exact(2) {
-            res.insert(&kv[0], &kv[1]);
+            res.entry(&kv[0]).or_default().push(&kv[1]);
         }
 
-        if let Some(cache) = &self.cache {
-            res.insert("cache", cache);
+        for cache in &self.cache {
+            res.entry("cache").or_default().push(cache);
         }
 
-        if let Some(input) = &self.input {
-            res.insert("input", input);
+        for input in &self.input {
+            res.entry("input").or_default().push(input);
         }
 
         if let Some(output) = &self.output {
-            res.insert("output", output);
+            res.entry("output").or_default().push(output);
         }
 
         res

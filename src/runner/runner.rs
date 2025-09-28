@@ -31,7 +31,7 @@ pub trait AddMounts: Sized {
         self,
         program: &Program,
         builder: &mut RaptorBuilder,
-        mounts: &HashMap<&str, &str, S>,
+        mounts: &HashMap<&str, Vec<&str>, S>,
         tempdir: &Utf8Path,
     ) -> RaptorResult<Self>;
 }
@@ -41,36 +41,40 @@ impl AddMounts for SpawnBuilder {
         mut self,
         program: &Program,
         builder: &mut RaptorBuilder,
-        mounts: &HashMap<&str, &str, S>,
+        mounts: &HashMap<&str, Vec<&str>, S>,
         tempdir: &Utf8Path,
     ) -> RaptorResult<Self> {
         for mount in program.mounts() {
-            let src: Utf8PathBuf = mounts
+            let srcs: Vec<Utf8PathBuf> = mounts
                 .get(&mount.name.as_str())
                 .ok_or_else(|| RaptorError::MountMissing(mount.clone()))?
-                .into();
+                .iter()
+                .map(Into::into)
+                .collect();
 
             match mount.opts.mtype {
                 MountType::Simple => {
-                    self = self.bind(BindMount::new(&src, Utf8Path::new(&mount.dest)));
+                    self = self.bind(BindMount::new(&srcs[0], Utf8Path::new(&mount.dest)));
                 }
 
                 MountType::Layers => {
-                    let program = builder.load(&src)?;
-                    let name = program.path.with_extension("").as_str().replace('/', ".");
-
-                    let layers = builder.build(program)?;
-
                     let mut info = MountsInfo::new();
 
-                    info.targets.push(name.clone());
+                    for src in srcs {
+                        let program = builder.load(&src)?;
+                        let name = program.path.with_extension("").as_str().replace('/', ".");
 
-                    let layer_info = info.layers.entry(name).or_default();
+                        let layers = builder.build(program)?;
 
-                    for layer in &layers {
-                        let filename = layer.file_name().unwrap();
-                        layer_info.push(filename.to_string());
-                        self = self.bind_ro(BindMount::new(layer, mount.dest.join(filename)));
+                        info.targets.push(name.clone());
+
+                        let layer_info = info.layers.entry(name).or_default();
+
+                        for layer in &layers {
+                            let filename = layer.file_name().unwrap();
+                            layer_info.push(filename.to_string());
+                            self = self.bind_ro(BindMount::new(layer, mount.dest.join(filename)));
+                        }
                     }
 
                     let listfile = tempdir.join(format!("mounts-{}", mount.name));
@@ -80,7 +84,7 @@ impl AddMounts for SpawnBuilder {
                 }
 
                 MountType::Overlay => {
-                    let program = builder.load(src)?;
+                    let program = builder.load(&srcs[0])?;
                     let layers = builder.build(program)?;
                     self = self.overlay_ro(&layers, &mount.dest);
                 }
