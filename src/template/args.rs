@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use clap::{ArgMatches, Command};
+use clap::{ArgMatches, Command, Id};
 use minijinja::value::{Enumerator, Kwargs, Object, ObjectRepr, from_args};
 use minijinja::{Environment, Error, ErrorKind, State, Value};
 
@@ -29,15 +29,16 @@ impl Object for MatchWrapper {
 
     fn get_value(self: &Arc<Self>, key: &Value) -> Option<Value> {
         self.0
-            .get_one(&key.to_string())
-            .map(|val: &String| Value::from_serialize(val))
+            .get_one::<&str>(&key.to_string())
+            .map(Value::from_serialize)
     }
 
     fn enumerate(self: &Arc<Self>) -> Enumerator {
         Enumerator::Values(
             self.0
                 .ids()
-                .map(|id| Value::from(id.as_str()))
+                .map(Id::as_str)
+                .map(Value::from)
                 .collect::<Vec<Value>>(),
         )
     }
