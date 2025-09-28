@@ -400,7 +400,10 @@ impl<'src> Parser<'src> {
         self.parse_delim(
             &Token::LBracket,
             &Token::RBracket,
-            |this, list: &mut Vec<Value>| Ok(list.push(this.parse_value()?)),
+            |this, list: &mut Vec<Value>| {
+                list.push(this.parse_value()?);
+                Ok(())
+            },
         )
     }
 
