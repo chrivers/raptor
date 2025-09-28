@@ -84,6 +84,14 @@ struct RunCmd {
     mount: Vec<String>,
 
     #[arg(
+        short = 'C',
+        long,
+        value_name = "mount",
+        help = "Specify cache mount. Shorthand for -M cache <mount>"
+    )]
+    cache: Option<String>,
+
+    #[arg(
         short = 'I',
         long,
         value_name = "mount",
@@ -133,6 +141,10 @@ impl RunCmd {
 
         for kv in self.mount.chunks_exact(2) {
             res.insert(&kv[0], &kv[1]);
+        }
+
+        if let Some(cache) = &self.cache {
+            res.insert("cache", cache);
         }
 
         if let Some(input) = &self.input {
