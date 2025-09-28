@@ -54,6 +54,10 @@ impl AddMounts for SpawnBuilder {
 
             match mount.opts.mtype {
                 MountType::Simple => {
+                    if srcs.len() != 1 {
+                        return Err(RaptorError::SingleMountOnly(mount.opts.mtype));
+                    }
+
                     self = self.bind(BindMount::new(&srcs[0], Utf8Path::new(&mount.dest)));
                 }
 
@@ -84,6 +88,10 @@ impl AddMounts for SpawnBuilder {
                 }
 
                 MountType::Overlay => {
+                    if srcs.len() != 1 {
+                        return Err(RaptorError::SingleMountOnly(mount.opts.mtype));
+                    }
+
                     let program = builder.load(&srcs[0])?;
                     let layers = builder.build(program)?;
                     self = self.overlay_ro(&layers, &mount.dest);

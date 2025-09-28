@@ -15,7 +15,7 @@ use std::sync::mpsc;
 
 use camino::Utf8PathBuf;
 
-use raptor_parser::ast::{InstMount, Origin};
+use raptor_parser::ast::{InstMount, MountType, Origin};
 use raptor_parser::util::Location;
 
 #[derive(thiserror::Error, Debug)]
@@ -73,6 +73,9 @@ pub enum RaptorError {
 
     #[error("Raptor requires root to run (please try again with sudo)")]
     RootRequired,
+
+    #[error("Only a single source is supported for mounts of type {0:?}")]
+    SingleMountOnly(MountType),
 }
 
 impl RaptorError {
@@ -97,6 +100,7 @@ impl RaptorError {
             Self::RootRequired => "Root required",
             Self::SafeParentError(_) => "Safe parent error",
             Self::UndefinedVarError(_, _) => "Undefined var error",
+            Self::SingleMountOnly(_) => "Single mount error",
         }
     }
 }
