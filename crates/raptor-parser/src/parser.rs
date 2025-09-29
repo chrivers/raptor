@@ -148,8 +148,18 @@ impl<'src> Parser<'src> {
     fn module_name(&mut self) -> ParseResult<ModuleName> {
         let mut words = vec![self.bareword()?.to_string()];
 
-        while self.accept(&Token::Dot)? {
-            words.push(self.bareword()?.to_string());
+        loop {
+            match self.peek()? {
+                Token::Dot => {
+                    self.next()?;
+                    words.push(self.bareword()?.to_string());
+                }
+                Token::Minus | Token::Bareword => {
+                    self.next()?;
+                    words.last_mut().unwrap().push_str(self.token());
+                }
+                _ => break,
+            }
         }
 
         Ok(ModuleName::new(words))
