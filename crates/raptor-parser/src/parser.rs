@@ -339,6 +339,7 @@ impl<'src> Parser<'src> {
             self.expect(&Token::Bareword)?;
 
             match self.token() {
+                "file" => opts.mtype = MountType::File,
                 "simple" => opts.mtype = MountType::Simple,
                 "layers" => opts.mtype = MountType::Layers,
                 "overlay" => opts.mtype = MountType::Overlay,

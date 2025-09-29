@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fs;
+use std::fs::{self, File};
 use std::hash::BuildHasher;
 
 use camino::{Utf8Path, Utf8PathBuf};
@@ -53,6 +53,16 @@ impl AddMounts for SpawnBuilder {
                 .collect();
 
             match mount.opts.mtype {
+                MountType::File => {
+                    if srcs.len() != 1 {
+                        return Err(RaptorError::SingleMountOnly(mount.opts.mtype));
+                    }
+
+                    File::create(&srcs[0])?.set_len(0)?;
+
+                    self = self.bind(BindMount::new(&srcs[0], Utf8Path::new(&mount.dest)));
+                }
+
                 MountType::Simple => {
                     if srcs.len() != 1 {
                         return Err(RaptorError::SingleMountOnly(mount.opts.mtype));
