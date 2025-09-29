@@ -79,6 +79,11 @@ struct RunCmd {
     #[arg(value_name = "state-dir")]
     state: Option<Utf8PathBuf>,
 
+    /// Environment variables
+    #[arg(short = 'e', long)]
+    #[arg(value_name = "env")]
+    env: Vec<String>,
+
     /// Specify mounts
     #[arg(short = 'M', long, value_names = ["name", "mount"], num_args = 2, action = clap::ArgAction::Append)]
     mount: Vec<String>,
@@ -271,7 +276,7 @@ fn raptor() -> RaptorResult<()> {
                 ConsoleMode::Pipe
             };
 
-            Sandbox::builder()
+            let mut sandbox = Sandbox::builder()
                 .uuid(uuid)
                 .console(console_mode)
                 .arg("--background=")
@@ -281,10 +286,21 @@ fn raptor() -> RaptorResult<()> {
                 .directory(&root)
                 .bind(BindMount::new("/dev/kvm", "/dev/kvm"))
                 .args(&command)
-                .add_mounts(&program, &mut builder, &run.mounts(), tempdir.path())?
-                .command()
-                .spawn()?
-                .wait()?;
+                .add_mounts(&program, &mut builder, &run.mounts(), tempdir.path())?;
+
+            for env in &run.env {
+                if let Some((key, value)) = env.split_once('=') {
+                    sandbox = sandbox.setenv(key, value);
+                } else {
+                    sandbox = sandbox.setenv(env, "");
+                }
+            }
+
+            let res = sandbox.command().spawn()?.wait()?;
+
+            if !res.success() {
+                error!("Run failed with status {}", res.code().unwrap_or_default());
+            }
         }
 
         Mode::Show { dirs } => {
