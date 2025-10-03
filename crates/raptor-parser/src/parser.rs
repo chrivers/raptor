@@ -630,8 +630,6 @@ impl<'src> Parser<'src> {
     }
 
     pub fn statement(&mut self) -> ParseResult<Option<Statement>> {
-        let start = self.lexer.span().start;
-
         loop {
             match self.peek()? {
                 Token::Whitespace | Token::Comment | Token::Newline => {
@@ -643,6 +641,9 @@ impl<'src> Parser<'src> {
         }
 
         self.expect(&Token::Bareword)?;
+
+        let start = self.lexer.span().start;
+
         let inst = self.token();
 
         let inst = match inst {
