@@ -87,12 +87,15 @@ impl Cacher {
     }
 }
 
+#[derive(Debug)]
 pub struct LayerInfo {
     name: String,
     hash: u64,
 }
 
 impl LayerInfo {
+    pub const HASH_WIDTH: usize = 16;
+
     #[must_use]
     pub const fn new(name: String, hash: u64) -> Self {
         Self { name, hash }
@@ -105,12 +108,17 @@ impl LayerInfo {
 
     #[must_use]
     pub fn hash(&self) -> String {
-        format!("{:016X}", self.hash)
+        format!("{:0width$X}", self.hash, width = Self::HASH_WIDTH)
     }
 
     #[must_use]
     pub fn id(&self) -> String {
-        format!("{}-{:016X}", self.name, self.hash)
+        format!(
+            "{}-{:0width$X}",
+            self.name,
+            self.hash,
+            width = Self::HASH_WIDTH
+        )
     }
 
     #[must_use]
@@ -121,5 +129,24 @@ impl LayerInfo {
     #[must_use]
     pub fn done_path(&self) -> Utf8PathBuf {
         Utf8Path::new("layers").join(self.id())
+    }
+}
+
+impl TryFrom<&str> for LayerInfo {
+    type Error = RaptorError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let Some((head, tail)) = value.rsplit_once('-') else {
+            return Err(RaptorError::LayerCacheParseError);
+        };
+
+        if tail.len() != Self::HASH_WIDTH {
+            return Err(RaptorError::LayerCacheParseError);
+        }
+
+        let name = head.to_string();
+        let hash = u64::from_str_radix(tail, 16)?;
+
+        Ok(Self::new(name, hash))
     }
 }
