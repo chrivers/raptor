@@ -10,7 +10,7 @@ use crate::build::RaptorBuilder;
 use crate::dsl::Program;
 use crate::{RaptorError, RaptorResult};
 use raptor_parser::ast::{FromSource, Instruction};
-use raptor_parser::util::SafeParent;
+use raptor_parser::util::{SafeParent, SafeParentError};
 
 pub struct Cacher;
 
@@ -55,8 +55,8 @@ impl Cacher {
                     data.extend(
                         inst.srcs
                             .iter()
-                            .map(|file| prog.path_for(file))
-                            .collect::<Result<Vec<_>, _>>()?,
+                            .map(|file| Ok(stmt.origin.basedir()?.join(file)))
+                            .collect::<Result<Vec<_>, SafeParentError>>()?,
                     );
                 }
 
