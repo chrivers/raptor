@@ -150,3 +150,26 @@ impl TryFrom<&str> for LayerInfo {
         Ok(Self::new(name, hash))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::build::LayerInfo;
+
+    #[test]
+    fn layerinfo_format() {
+        let info = LayerInfo::new("name".to_string(), 0x01234567_89ABCDEF);
+        assert_eq!(info.name(), "name");
+        assert_eq!(info.hash(), "0123456789ABCDEF");
+        assert_eq!(info.id(), "name-0123456789ABCDEF");
+    }
+
+    #[test]
+    fn layerinfo_parse() {
+        let res = LayerInfo::try_from("name-0123456789ABCDEF").unwrap();
+        assert_eq!(res.name, "name");
+        assert_eq!(res.hash, 0x0123456789ABCDEF);
+
+        LayerInfo::try_from("name-123456789ABCDEF").unwrap_err();
+        LayerInfo::try_from("name-0123456789ABCDEF0").unwrap_err();
+    }
+}
