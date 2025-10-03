@@ -50,6 +50,9 @@ pub enum RaptorError {
     #[error(transparent)]
     SafeParentError(#[from] raptor_parser::util::SafeParentError),
 
+    #[error(transparent)]
+    ParseIntError(#[from] std::num::ParseIntError),
+
     #[error("Parse error: {0:?}")]
     ParseError(Location<raptor_parser::ParseError>),
 
@@ -76,6 +79,9 @@ pub enum RaptorError {
 
     #[error("Only a single source is supported for mounts of type {0:?}")]
     SingleMountOnly(MountType),
+
+    #[error("Invalid layer cache name")]
+    LayerCacheParseError,
 }
 
 impl RaptorError {
@@ -101,6 +107,8 @@ impl RaptorError {
             Self::SafeParentError(_) => "Safe parent error",
             Self::UndefinedVarError(_, _) => "Undefined var error",
             Self::SingleMountOnly(_) => "Single mount error",
+            Self::ParseIntError(_) => "Parse int error",
+            Self::LayerCacheParseError => "Layer cache parse error",
         }
     }
 }
