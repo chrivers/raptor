@@ -58,7 +58,7 @@ impl AddMounts for SpawnBuilder {
                         return Err(RaptorError::SingleMountOnly(mount.opts.mtype));
                     }
 
-                    File::create(&srcs[0])?.set_len(0)?;
+                    File::options().create(true).append(true).open(&srcs[0])?;
 
                     self = self.bind(BindMount::new(&srcs[0], Utf8Path::new(&mount.dest)));
                 }
