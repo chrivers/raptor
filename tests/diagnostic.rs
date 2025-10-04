@@ -27,6 +27,7 @@ pub fn cargo_dir() -> PathBuf {
 fn run_raptor(filename: &Utf8Path) -> RaptorResult<String> {
     let mut proc = Command::new(cargo_dir().join("raptor"))
         .arg("build")
+        .arg("-n")
         .arg(filename)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
