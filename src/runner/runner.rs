@@ -112,3 +112,22 @@ impl AddMounts for SpawnBuilder {
         Ok(self)
     }
 }
+
+pub trait AddEnvironment: Sized {
+    #[must_use]
+    fn add_environment(self, env: &[String]) -> Self;
+}
+
+impl AddEnvironment for SpawnBuilder {
+    fn add_environment(mut self, envs: &[String]) -> Self {
+        for env in envs {
+            if let Some((key, value)) = env.split_once('=') {
+                self = self.setenv(key, value);
+            } else {
+                self = self.setenv(env, "");
+            }
+        }
+
+        self
+    }
+}
