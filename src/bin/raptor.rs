@@ -1,19 +1,20 @@
 use std::collections::HashMap;
+use std::env;
 use std::io::{IsTerminal, stdout};
 
 use camino::Utf8PathBuf;
 use camino_tempfile::Builder;
-use clap::Parser as _;
+use clap::{ArgAction, Parser as _};
 use colored::Colorize;
-use log::{debug, error, info};
-
+use log::{LevelFilter, debug, error, info};
 use nix::unistd::Uid;
+use uuid::Uuid;
+
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
 use raptor::program::Loader;
 use raptor::runner::AddMounts;
 use raptor::sandbox::{BindMount, ConsoleMode, Sandbox};
 use raptor::{RaptorError, RaptorResult};
-use uuid::Uuid;
 
 #[derive(clap::Parser, Debug)]
 #[command(about, long_about = None, styles=raptor::util::clapcolor::style())]
@@ -22,8 +23,31 @@ struct Cli {
     #[arg(short = 'n', long, global = true)]
     no_act: bool,
 
+    /// Increase verbosity (can be repeated)
+    #[arg(short = 'v', long, action = ArgAction::Count, global = true, help_heading="Verbosity")]
+    verbose: u8,
+
+    /// Decrease verbosity (can be repeated)
+    #[arg(short = 'q', long, action = ArgAction::Count, global = true, help_heading="Verbosity")]
+    quiet: u8,
+
     #[command(subcommand)]
     mode: Mode,
+}
+
+impl Cli {
+    #[must_use]
+    const fn log_level(&self) -> LevelFilter {
+        let verbosity = self.verbose as i32 - self.quiet as i32;
+        match verbosity {
+            ..=-3 => LevelFilter::Off,
+            -2 => LevelFilter::Error,
+            -1 => LevelFilter::Warn,
+            0 => LevelFilter::Info,
+            1 => LevelFilter::Debug,
+            2.. => LevelFilter::Trace,
+        }
+    }
 }
 
 #[derive(clap::Subcommand, Clone, Debug)]
@@ -204,6 +228,8 @@ fn check_for_falcon_binary() -> RaptorResult<()> {
 fn raptor() -> RaptorResult<()> {
     let args = Cli::parse();
 
+    log::set_max_level(args.log_level());
+
     check_for_falcon_binary()?;
 
     let loader = Loader::new()?.with_dump(args.mode.dump());
@@ -320,7 +346,14 @@ fn raptor() -> RaptorResult<()> {
 }
 
 fn main() {
-    colog::init();
+    let mut builder = colog::default_builder();
+
+    builder.filter(None, LevelFilter::Trace);
+
+    if let Ok(rust_log) = env::var("RUST_LOG") {
+        builder.parse_filters(&rust_log);
+    }
+    builder.init();
 
     match raptor() {
         Ok(()) => {
@@ -328,7 +361,7 @@ fn main() {
         }
 
         Err(err) => {
-            debug!("Raptor failed: {err}");
+            error!("Raptor failed: {err}");
             std::process::exit(1);
         }
     }
