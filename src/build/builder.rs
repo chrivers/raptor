@@ -190,7 +190,7 @@ impl<'a> RaptorBuilder<'a> {
         visitor: &mut impl FnMut(BuildTarget) -> RaptorResult<()>,
     ) -> RaptorResult<()> {
         match program.from() {
-            Some(FromSource::Docker(src)) => {
+            Some((FromSource::Docker(src), _origin)) => {
                 let image = if src.contains('/') {
                     src.clone()
                 } else {
@@ -199,10 +199,10 @@ impl<'a> RaptorBuilder<'a> {
                 let source = dregistry::reference::parse(&image)?;
                 visitor(BuildTarget::DockerSource(source))?;
             }
-            Some(FromSource::Raptor(from)) => {
+            Some((FromSource::Raptor(from), origin)) => {
                 let filename = program.path.try_parent()?.join(from.to_program_path());
 
-                let fromprog = self.load(filename)?;
+                let fromprog = self.load_with_source(filename, origin.clone())?;
 
                 self.recurse(fromprog, visitor)?;
             }
