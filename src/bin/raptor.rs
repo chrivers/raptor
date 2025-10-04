@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
 use raptor::program::Loader;
-use raptor::runner::AddMounts;
+use raptor::runner::{AddEnvironment, AddMounts};
 use raptor::sandbox::{BindMount, ConsoleMode, Sandbox};
 use raptor::{RaptorError, RaptorResult};
 
@@ -302,7 +302,7 @@ fn raptor() -> RaptorResult<()> {
                 ConsoleMode::Pipe
             };
 
-            let mut sandbox = Sandbox::builder()
+            let res = Sandbox::builder()
                 .uuid(uuid)
                 .console(console_mode)
                 .arg("--background=")
@@ -312,17 +312,11 @@ fn raptor() -> RaptorResult<()> {
                 .directory(&root)
                 .bind(BindMount::new("/dev/kvm", "/dev/kvm"))
                 .args(&command)
-                .add_mounts(&program, &mut builder, &run.mounts(), tempdir.path())?;
-
-            for env in &run.env {
-                if let Some((key, value)) = env.split_once('=') {
-                    sandbox = sandbox.setenv(key, value);
-                } else {
-                    sandbox = sandbox.setenv(env, "");
-                }
-            }
-
-            let res = sandbox.command().spawn()?.wait()?;
+                .add_mounts(&program, &mut builder, &run.mounts(), tempdir.path())?
+                .add_environment(&run.env)
+                .command()
+                .spawn()?
+                .wait()?;
 
             if !res.success() {
                 error!("Run failed with status {}", res.code().unwrap_or_default());
