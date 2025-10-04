@@ -15,7 +15,7 @@ use crate::build::{Cacher, LayerInfo};
 use crate::dsl::Program;
 use crate::program::{Executor, Loader, PrintExecutor};
 use crate::sandbox::Sandbox;
-use raptor_parser::ast::FromSource;
+use raptor_parser::ast::{FromSource, Origin};
 use raptor_parser::util::SafeParent;
 
 pub struct RaptorBuilder<'a> {
@@ -166,6 +166,17 @@ impl<'a> RaptorBuilder<'a> {
         self.programs.insert(key.into(), Arc::new(program));
 
         Ok(self.programs[key].clone())
+    }
+
+    pub fn load_with_source(
+        &mut self,
+        path: impl AsRef<Utf8Path>,
+        source: Origin,
+    ) -> RaptorResult<Arc<Program>> {
+        self.loader.push_origin(source);
+        let res = self.load(path);
+        self.loader.pop_origin();
+        res
     }
 
     pub fn clear_cache(&mut self) {
