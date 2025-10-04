@@ -1,0 +1,7 @@
+error: Error while loading source file
+ --> tests/cases/error/error_missing_from.rapt:1:1
+  |
+1 | FROM missingbase
+  | ^^^^^^^^^^^^^^^^ Could not open [tests/cases/error/missingbase.rapt]: No such file or directory (os error 2)
+2 |
+  |
