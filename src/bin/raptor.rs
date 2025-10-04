@@ -4,7 +4,8 @@ use std::io::{IsTerminal, stdout};
 
 use camino::Utf8PathBuf;
 use camino_tempfile::Builder;
-use clap::{ArgAction, Parser as _};
+use clap::{ArgAction, CommandFactory, Parser as _};
+use clap_complete::Shell;
 use colored::Colorize;
 use log::{LevelFilter, debug, error, info};
 use nix::unistd::Uid;
@@ -85,6 +86,12 @@ enum Mode {
     /// Show mode: print list of build targets
     #[command(alias = "s")]
     Show { dirs: Vec<Utf8PathBuf> },
+
+    /// Completions mode: generate shell completion scripts
+    Completion {
+        #[arg(value_name = "shell")]
+        shell: Shell,
+    },
 }
 
 #[derive(clap::Args, Clone, Debug)]
@@ -344,6 +351,10 @@ fn raptor() -> RaptorResult<()> {
             }
 
             Presenter::new(&stats).present()?;
+        }
+
+        Mode::Completion { shell } => {
+            clap_complete::generate(*shell, &mut Cli::command(), "raptor", &mut stdout());
         }
     }
 

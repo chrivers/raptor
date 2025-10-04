@@ -95,6 +95,7 @@ uuid = "1.18.1"
 indicatif = "0.18.0"
 pretty_assertions = "1.4.1"
 logos = "0.15.1"
+clap_complete = "4.5.58"
 
 [dependencies]
 annotate-snippets = { workspace = true }
@@ -103,6 +104,7 @@ anstyle = { workspace = true, features = ["std"] }
 camino = { workspace = true, features = ["serde1"] }
 camino-tempfile = { workspace = true }
 clap = { workspace = true, features = ["cargo", "derive", "string"] }
+clap_complete = { workspace = true }
 colog = { workspace = true }
 colored = { workspace = true }
 dregistry = { workspace = true }
