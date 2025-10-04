@@ -80,11 +80,6 @@ enum Mode {
 
     /// Run mode: run a shell or command inside the layer
     #[command(alias = "r")]
-    #[command(after_help = [
-        "  If <state-dir> is specified, any changes made in the session will be saved there.",
-        "",
-        "  If <state-dir> is not specified, all changes will be lost."
-    ].join("\n"))]
     Run(RunCmd),
 
     /// Show mode: print list of build targets
@@ -101,6 +96,12 @@ struct RunCmd {
     /// State directory for changes (ephemeral if unset)
     #[arg(short = 's', long)]
     #[arg(value_name = "state-dir")]
+    #[arg(help = "The state directory will save the changes made during run")]
+    #[arg(long_help = [
+        "If <state-dir> is specified, any changes made in the session will be saved there.",
+        "",
+        "If <state-dir> is not specified, all changes will be lost."
+    ].join("\n"))]
     state: Option<Utf8PathBuf>,
 
     /// Environment variables
@@ -109,14 +110,22 @@ struct RunCmd {
     env: Vec<String>,
 
     /// Specify mounts
-    #[arg(short = 'M', long, value_names = ["name", "mount"], num_args = 2, action = clap::ArgAction::Append)]
+    #[arg(
+        short = 'M',
+        long,
+        value_names = ["name", "mount"],
+        num_args = 2,
+        action = ArgAction::Append,
+        help_heading="Mount options",
+    )]
     mount: Vec<String>,
 
     #[arg(
         short = 'C',
         long,
         value_name = "mount",
-        help = "Specify cache mount. Shorthand for -M cache <mount>"
+        help = "Specify cache mount. Shorthand for -M cache <mount>",
+        help_heading = "Mount options"
     )]
     cache: Vec<String>,
 
@@ -124,7 +133,8 @@ struct RunCmd {
         short = 'I',
         long,
         value_name = "mount",
-        help = "Specify input mount. Shorthand for -M input <mount>"
+        help = "Specify input mount. Shorthand for -M input <mount>",
+        help_heading = "Mount options"
     )]
     input: Vec<String>,
 
@@ -132,7 +142,8 @@ struct RunCmd {
         short = 'O',
         long,
         value_name = "mount",
-        help = "Specify output mount. Shorthand for -M output <mount>"
+        help = "Specify output mount. Shorthand for -M output <mount>",
+        help_heading = "Mount options"
     )]
     output: Option<String>,
 
