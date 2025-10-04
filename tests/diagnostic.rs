@@ -25,13 +25,22 @@ pub fn cargo_dir() -> PathBuf {
 }
 
 fn run_raptor(filename: &Utf8Path) -> RaptorResult<String> {
-    let mut proc = Command::new(cargo_dir().join("raptor"))
-        .arg("build")
-        .arg("-n")
-        .arg(filename)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .spawn()?;
+    let should_build = filename.as_str().contains("error_failing_inst");
+    let raptor = cargo_dir().join("raptor");
+
+    let mut cmd = if should_build {
+        let mut cmd = Command::new("sudo");
+        cmd.arg(raptor).arg("build").arg(filename);
+        cmd
+    } else {
+        let mut cmd = Command::new(raptor);
+        cmd.arg("build").arg("-n").arg(filename);
+        cmd
+    };
+
+    cmd.stdin(Stdio::null()).stdout(Stdio::piped());
+
+    let mut proc = cmd.spawn()?;
     let mut stdout = proc.stdout.take().unwrap();
     let mut message = String::new();
     stdout.read_to_string(&mut message)?;
