@@ -1,13 +1,17 @@
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::hash::BuildHasher;
+use std::io::{IsTerminal, stdout};
+use std::process::ExitStatus;
 
 use camino::{Utf8Path, Utf8PathBuf};
+use camino_tempfile::{Builder, Utf8TempDir};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::build::RaptorBuilder;
 use crate::dsl::Program;
-use crate::sandbox::{BindMount, SpawnBuilder};
+use crate::sandbox::{BindMount, ConsoleMode, Sandbox, SpawnBuilder};
 use crate::{RaptorError, RaptorResult};
 use raptor_parser::ast::MountType;
 
@@ -129,5 +133,103 @@ impl AddEnvironment for SpawnBuilder {
         }
 
         self
+    }
+}
+
+const EMPTY: &[String] = &[];
+
+pub struct Runner<'a> {
+    tempdir: Utf8TempDir,
+    env: &'a [String],
+    args: &'a [String],
+    state_dir: Option<Utf8PathBuf>,
+    mounts: HashMap<&'a str, Vec<&'a str>>,
+}
+
+impl<'a> Runner<'a> {
+    pub fn new() -> RaptorResult<Self> {
+        let tempdir = Builder::new().prefix("raptor-temp-").tempdir()?;
+        Ok(Self {
+            tempdir,
+            env: EMPTY,
+            args: EMPTY,
+            state_dir: None,
+            mounts: HashMap::new(),
+        })
+    }
+
+    pub fn with_state_dir(&mut self, dir: Utf8PathBuf) -> &mut Self {
+        self.state_dir = Some(dir);
+        self
+    }
+
+    pub const fn with_args(&mut self, args: &'a [String]) -> &mut Self {
+        self.args = args;
+        self
+    }
+
+    pub fn with_mounts(&mut self, mounts: HashMap<&'a str, Vec<&'a str>>) -> &mut Self {
+        self.mounts = mounts;
+        self
+    }
+
+    pub const fn with_env(&mut self, env: &'a [String]) -> &mut Self {
+        self.env = env;
+        self
+    }
+
+    pub fn spawn(
+        self,
+        program: &Program,
+        builder: &mut RaptorBuilder,
+        layers: &[Utf8PathBuf],
+    ) -> RaptorResult<ExitStatus> {
+        /* the ephemeral root directory needs to have /usr for systemd-nspawn to accept it */
+        let root = self.tempdir.path().join("root");
+        fs::create_dir_all(root.join("usr"))?;
+
+        let work = self
+            .state_dir
+            .unwrap_or_else(|| self.tempdir.path().join("work"));
+
+        fs::create_dir_all(&work)?;
+
+        let mut command = vec![];
+
+        if let Some(entr) = program.entrypoint() {
+            command.extend(entr.entrypoint.iter().map(String::as_str));
+        } else {
+            command.push("/bin/sh");
+        }
+
+        if !self.args.is_empty() {
+            command.extend(self.args.iter().map(String::as_str));
+        } else if let Some(cmd) = program.cmd() {
+            command.extend(cmd.cmd.iter().map(String::as_str));
+        }
+
+        let console_mode = if stdout().is_terminal() {
+            ConsoleMode::Interactive
+        } else {
+            ConsoleMode::Pipe
+        };
+
+        let res = Sandbox::builder()
+            .uuid(Uuid::new_v4())
+            .console(console_mode)
+            .arg("--background=")
+            .arg("--no-pager")
+            .root_overlays(layers)
+            .root_overlay(work)
+            .directory(&root)
+            .bind(BindMount::new("/dev/kvm", "/dev/kvm"))
+            .args(&command)
+            .add_mounts(program, builder, &self.mounts, self.tempdir.path())?
+            .add_environment(self.env)
+            .command()
+            .spawn()?
+            .wait()?;
+
+        Ok(res)
     }
 }
