@@ -1,20 +1,18 @@
 use std::collections::HashMap;
 use std::env;
-use std::io::{IsTerminal, stdout};
+use std::io::stdout;
 
 use camino::Utf8PathBuf;
-use camino_tempfile::Builder;
 use clap::{ArgAction, CommandFactory, Parser as _};
 use clap_complete::Shell;
 use colored::Colorize;
 use log::{LevelFilter, debug, error, info};
 use nix::unistd::Uid;
-use uuid::Uuid;
 
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
 use raptor::program::Loader;
-use raptor::runner::{AddEnvironment, AddMounts};
-use raptor::sandbox::{BindMount, ConsoleMode, Sandbox};
+use raptor::runner::Runner;
+use raptor::sandbox::Sandbox;
 use raptor::{RaptorError, RaptorResult};
 
 #[derive(clap::Parser, Debug)]
@@ -285,54 +283,18 @@ fn raptor() -> RaptorResult<()> {
                 layers.push(target.layer_info(&mut builder)?.done_path());
             }
 
-            let tempdir = Builder::new().prefix("raptor-temp-").tempdir()?;
+            let mut runner = Runner::new()?;
 
-            /* the ephemeral root directory needs to have /usr for systemd-nspawn to accept it */
-            let root = tempdir.path().join("root");
-            std::fs::create_dir_all(root.join("usr"))?;
+            runner
+                .with_args(&run.args)
+                .with_env(&run.env)
+                .with_mounts(run.mounts());
 
-            let work = run
-                .state
-                .clone()
-                .unwrap_or_else(|| tempdir.path().join("work"));
-
-            std::fs::create_dir_all(&work)?;
-
-            let mut command = vec![];
-
-            if let Some(entr) = program.entrypoint() {
-                command.extend(entr.entrypoint.iter().map(String::as_str));
-            } else {
-                command.push("/bin/sh");
+            if let Some(state_dir) = &run.state {
+                runner.with_state_dir(state_dir.clone());
             }
 
-            if !run.args.is_empty() {
-                command.extend(run.args.iter().map(String::as_str));
-            } else if let Some(cmd) = program.cmd() {
-                command.extend(cmd.cmd.iter().map(String::as_str));
-            }
-
-            let console_mode = if stdout().is_terminal() {
-                ConsoleMode::Interactive
-            } else {
-                ConsoleMode::Pipe
-            };
-
-            let res = Sandbox::builder()
-                .uuid(Uuid::new_v4())
-                .console(console_mode)
-                .arg("--background=")
-                .arg("--no-pager")
-                .root_overlays(&layers)
-                .root_overlay(work)
-                .directory(&root)
-                .bind(BindMount::new("/dev/kvm", "/dev/kvm"))
-                .args(&command)
-                .add_mounts(&program, &mut builder, &run.mounts(), tempdir.path())?
-                .add_environment(&run.env)
-                .command()
-                .spawn()?
-                .wait()?;
+            let res = runner.spawn(&program, &mut builder, &layers)?;
 
             if !res.success() {
                 error!("Run failed with status {}", res.code().unwrap_or_default());
