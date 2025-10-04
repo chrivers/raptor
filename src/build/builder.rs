@@ -97,13 +97,14 @@ impl BuildTarget {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     fn build(&self, loader: &Loader, layers: &[Utf8PathBuf], layer: LayerInfo) -> RaptorResult<()> {
         match self {
             Self::Program(prog) => {
                 let rootdir = layer.work_path();
                 let sandbox = Sandbox::new(layers, Utf8Path::new(&rootdir))?;
 
-                let mut exec = Executor::new(sandbox, layer);
+                let mut exec = Executor::new(sandbox);
 
                 exec.run(loader, prog)?;
 

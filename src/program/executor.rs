@@ -1,11 +1,9 @@
 use std::fs::File;
-use std::process::Command;
 
 use camino::Utf8PathBuf;
 use indicatif::{ProgressBar, ProgressStyle};
 use minijinja::Value;
 
-use crate::build::LayerInfo;
 use crate::dsl::Program;
 use crate::program::{Loader, ResolveArgs};
 use crate::sandbox::{Sandbox, SandboxExt};
@@ -15,15 +13,14 @@ use raptor_parser::ast::{Instruction, Statement};
 
 pub struct Executor {
     sandbox: Sandbox,
-    layer: LayerInfo,
 }
 
 impl Executor {
     const PROGRESS_STYLE: &str = "[{elapsed_precise}] {bar:40.cyan/blue} {bytes:>7}/{total_bytes:7} {binary_bytes_per_sec} {msg}";
 
     #[must_use]
-    pub const fn new(sandbox: Sandbox, layer: LayerInfo) -> Self {
-        Self { sandbox, layer }
+    pub const fn new(sandbox: Sandbox) -> Self {
+        Self { sandbox }
     }
 
     fn progress_bar(len: u64) -> ProgressBar {
@@ -91,18 +88,6 @@ impl Executor {
 
             Instruction::Run(inst) => {
                 client.run(&inst.run)?;
-            }
-
-            Instruction::Invoke(inst) => {
-                Command::new(&inst.args[0])
-                    .args(&inst.args[1..])
-                    .env("RAPTOR_LAYER_NAME", self.layer.name())
-                    .env("RAPTOR_LAYER_HASH", self.layer.hash())
-                    .env("RAPTOR_LAYER_ID", self.layer.id())
-                    .env("RAPTOR_BUILD_DIR", self.sandbox.get_root_dir())
-                    .env("RAPTOR_TEMP_DIR", self.sandbox.get_temp_dir().unwrap())
-                    .spawn()?
-                    .wait()?;
             }
 
             Instruction::Env(inst) => {
