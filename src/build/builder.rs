@@ -181,7 +181,7 @@ impl<'a> RaptorBuilder<'a> {
         match program.from() {
             Some(FromSource::Docker(src)) => {
                 let image = if src.contains('/') {
-                    src.to_string()
+                    src.clone()
                 } else {
                     format!("library/{src}")
                 };
