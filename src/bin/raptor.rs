@@ -279,12 +279,10 @@ fn raptor() -> RaptorResult<()> {
 
             builder.build(program.clone())?;
 
-            let uuid = Uuid::new_v4();
-
             let mut layers = vec![];
 
-            for layer in builder.stack(program.clone())? {
-                layers.push(layer.layer_info(&mut builder)?.done_path());
+            for target in builder.stack(program.clone())? {
+                layers.push(target.layer_info(&mut builder)?.done_path());
             }
 
             let tempdir = Builder::new().prefix("raptor-temp-").tempdir()?;
@@ -321,7 +319,7 @@ fn raptor() -> RaptorResult<()> {
             };
 
             let res = Sandbox::builder()
-                .uuid(uuid)
+                .uuid(Uuid::new_v4())
                 .console(console_mode)
                 .arg("--background=")
                 .arg("--no-pager")
