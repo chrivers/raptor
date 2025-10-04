@@ -97,11 +97,14 @@ impl BuildTarget {
         Ok(())
     }
 
-    #[allow(clippy::needless_pass_by_value)]
-    fn build(&self, loader: &Loader, layers: &[Utf8PathBuf], layer: LayerInfo) -> RaptorResult<()> {
+    fn build(
+        &self,
+        loader: &Loader,
+        layers: &[Utf8PathBuf],
+        rootdir: &Utf8Path,
+    ) -> RaptorResult<()> {
         match self {
             Self::Program(prog) => {
-                let rootdir = layer.work_path();
                 let sandbox = Sandbox::new(layers, Utf8Path::new(&rootdir))?;
 
                 let mut exec = Executor::new(sandbox);
@@ -112,9 +115,7 @@ impl BuildTarget {
             }
 
             Self::DockerSource(image) => {
-                let work_path = layer.work_path();
-
-                fs::create_dir_all(&work_path)?;
+                fs::create_dir_all(rootdir)?;
 
                 let dc = DockerDownloader::new(Utf8PathBuf::from("cache"))?;
 
@@ -128,7 +129,7 @@ impl BuildTarget {
                     Command::new("tar")
                         .arg("-x")
                         .arg("-C")
-                        .arg(&work_path)
+                        .arg(rootdir)
                         .arg("-f")
                         .arg(filename)
                         .status()?;
@@ -265,7 +266,7 @@ impl<'a> RaptorBuilder<'a> {
                 if self.dry_run {
                     prog.simulate(&self.loader)?;
                 } else {
-                    prog.build(&self.loader, &layers, layer)?;
+                    prog.build(&self.loader, &layers, &layer.work_path())?;
 
                     debug!("Layer {layer_name} finished. Moving {work_path} -> {done_path}");
                     fs::rename(&work_path, &done_path)?;
