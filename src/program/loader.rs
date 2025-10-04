@@ -48,6 +48,14 @@ impl Loader<'_> {
         Self { dump, ..self }
     }
 
+    pub fn push_origin(&mut self, origin: Origin) {
+        self.origins.push(origin);
+    }
+
+    pub fn pop_origin(&mut self) {
+        self.origins.pop();
+    }
+
     pub fn base(&self) -> &Utf8Path {
         &self.base
     }
