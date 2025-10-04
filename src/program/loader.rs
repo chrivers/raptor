@@ -121,7 +121,7 @@ impl Loader<'_> {
                         show_error_context(
                             &self.sources[last.path.as_str()],
                             last.path.as_ref(),
-                            "Error while evaluating INCLUDE",
+                            "Error while loading source file",
                             err.detail().unwrap_or("error"),
                             err.range().unwrap_or_else(|| last.span.clone()),
                         );

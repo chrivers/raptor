@@ -1,4 +1,4 @@
-error: Error while evaluating INCLUDE
+error: Error while loading source file
  --> tests/cases/error/error_missing_include.rapt:1:1
   |
 1 | INCLUDE missing_file

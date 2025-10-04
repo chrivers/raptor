@@ -5,7 +5,7 @@ error: Error while evaluating INCLUDE
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
 2 |
   |
-error: Error while evaluating INCLUDE
+error: Error while loading source file
  --> tests/cases/error/error_missing_include.rinc:1:1
   |
 1 | INCLUDE missing_file
