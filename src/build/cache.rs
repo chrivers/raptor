@@ -22,7 +22,7 @@ impl Cacher {
         if let Some((from, origin)) = program.from() {
             match from {
                 FromSource::Raptor(from) => {
-                    let filename = builder.loader().to_program_path(program, from)?;
+                    let filename = builder.loader().to_program_path(program, from, origin)?;
 
                     let prog = builder.load_with_source(filename, origin.clone())?;
                     Self::cache_key(&prog, builder)?.hash(&mut state);
@@ -66,7 +66,7 @@ impl Cacher {
                 }
 
                 Instruction::Include(inst) => {
-                    let path = loader.to_include_path(&inst.src)?;
+                    let path = loader.to_include_path(prog, &inst.src, &stmt.origin)?;
                     data.insert(prog.path_for(path)?);
                 }
 

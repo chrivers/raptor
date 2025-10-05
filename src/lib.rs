@@ -83,8 +83,8 @@ pub enum RaptorError {
     #[error("Invalid layer cache name")]
     LayerCacheParseError,
 
-    #[error("Package not found: {0}")]
-    PackageNotFound(String),
+    #[error("Package not found: ${0}")]
+    PackageNotFound(String, Origin),
 }
 
 impl RaptorError {
@@ -112,7 +112,7 @@ impl RaptorError {
             Self::SingleMountOnly(_) => "Single mount error",
             Self::ParseIntError(_) => "Parse int error",
             Self::LayerCacheParseError => "Layer cache parse error",
-            Self::PackageNotFound(_) => "Package not found",
+            Self::PackageNotFound(_, _) => "Package not found",
         }
     }
 }

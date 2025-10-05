@@ -55,10 +55,8 @@ impl Loader<'_> {
         self.packages.insert(name, path);
     }
 
-    pub fn get_package(&self, name: &str) -> RaptorResult<&Utf8PathBuf> {
-        self.packages
-            .get(name)
-            .ok_or_else(|| RaptorError::PackageNotFound(name.to_string()))
+    pub fn get_package(&self, name: &str) -> Option<&Utf8PathBuf> {
+        self.packages.get(name)
     }
 
     pub fn push_origin(&mut self, origin: Origin) {
@@ -69,17 +67,22 @@ impl Loader<'_> {
         self.origins.pop();
     }
 
-    pub fn to_program_path(
+    fn to_path(
         &self,
         program: &Program,
         name: &ModuleName,
+        origin: &Origin,
+        extension: &str,
     ) -> RaptorResult<Utf8PathBuf> {
         let mut end = Utf8PathBuf::new();
         end.extend(name.parts());
-        end.set_extension("rapt");
+        end.set_extension(extension);
 
         let res: Utf8PathBuf = if let Some(pkg) = name.root() {
-            self.get_package(pkg)?.join(end)
+            let package = self
+                .get_package(pkg)
+                .ok_or_else(|| RaptorError::PackageNotFound(pkg.to_string(), origin.clone()))?;
+            package.join(end)
         } else {
             program.path_for(end)?
         };
@@ -87,8 +90,22 @@ impl Loader<'_> {
         Ok(res)
     }
 
-    pub fn to_include_path(&self, name: &ModuleName) -> RaptorResult<Utf8PathBuf> {
-        Ok(format!("{}.rinc", name.parts().join("/")).into())
+    pub fn to_program_path(
+        &self,
+        program: &Program,
+        name: &ModuleName,
+        origin: &Origin,
+    ) -> RaptorResult<Utf8PathBuf> {
+        self.to_path(program, name, origin, "rapt")
+    }
+
+    pub fn to_include_path(
+        &self,
+        program: &Program,
+        name: &ModuleName,
+        origin: &Origin,
+    ) -> RaptorResult<Utf8PathBuf> {
+        self.to_path(program, name, origin, "rinc")
     }
 
     pub fn base(&self) -> &Utf8Path {
@@ -99,7 +116,7 @@ impl Loader<'_> {
         self.env.clear_templates();
     }
 
-    fn handle(&mut self, res: &mut Vec<Item>, stmt: Statement, ctx: &Value) -> RaptorResult<()> {
+    fn handle(&mut self, prog: &mut Program, stmt: Statement) -> RaptorResult<()> {
         let Statement { inst, origin } = stmt;
 
         if let Instruction::Include(include) = &inst {
@@ -110,17 +127,19 @@ impl Loader<'_> {
                 ));
             }
 
-            let map = ctx.resolve_args(&include.args)?;
-            let src = &origin.basedir()?.join(self.to_include_path(&include.src)?);
+            let map = prog.ctx.resolve_args(&include.args)?;
+            let src = &origin
+                .basedir()?
+                .join(self.to_include_path(prog, &include.src, &origin)?);
 
             self.origins.push(origin.clone());
-            let program = self.parse_template(src, Value::from(map))?;
+            let include = self.parse_template(src, Value::from(map))?;
             self.origins.pop();
 
-            res.push(Item::Statement(Statement { inst, origin }));
-            res.push(Item::Program(program));
+            prog.code.push(Item::Statement(Statement { inst, origin }));
+            prog.code.push(Item::Program(include));
         } else {
-            res.push(Item::Statement(Statement { inst, origin }));
+            prog.code.push(Item::Statement(Statement { inst, origin }));
         }
 
         Ok(())
@@ -175,6 +194,15 @@ impl Loader<'_> {
             }
             RaptorError::ParseError(err) => {
                 show_parse_error_context(&self.sources[err.origin.path.as_str()], err)?;
+            }
+            RaptorError::PackageNotFound(pkg, origin) => {
+                self.show_include_stack(&self.origins);
+                show_origin_error_context(
+                    &self.sources[origin.path.as_str()],
+                    origin,
+                    &format!("Package not found: ${pkg}"),
+                    &err.to_string(),
+                );
             }
             err => {
                 error!("Unexpected error: {err}");
@@ -238,12 +266,12 @@ impl Loader<'_> {
 
         let statements = parser::parse(filename, &self.sources[filename])?;
 
-        let mut res = vec![];
+        let mut program = Program::new(vec![], ctx, path.as_ref().into());
 
         for stmt in statements {
-            self.handle(&mut res, stmt, &ctx)?;
+            self.handle(&mut program, stmt)?;
         }
 
-        Ok(Program::new(res, ctx, path.as_ref().into()))
+        Ok(program)
     }
 }
