@@ -34,6 +34,29 @@ pub fn index_to_line_remainder(text: &str, idx: usize) -> Option<Range<usize>> {
     None
 }
 
+#[must_use]
+pub fn context_lines(src: &str, range: Range<usize>, lines: usize) -> Range<usize> {
+    let mut a = range.start;
+    for _ in 0..lines {
+        if let Some(m) = src[..a].rfind('\n') {
+            a = m;
+        } else {
+            break;
+        }
+    }
+
+    let mut b = range.end;
+    for _ in 0..lines {
+        if let Some(m) = src[b..].find('\n') {
+            b += m + 1;
+        } else {
+            break;
+        }
+    }
+
+    a..b
+}
+
 pub fn show_error_context(
     source: &str,
     source_path: impl AsRef<str>,
@@ -41,10 +64,13 @@ pub fn show_error_context(
     label: &str,
     err_range: Range<usize>,
 ) {
+    let visible_range = context_lines(source, err_range.clone(), 3);
+
     let message = Level::ERROR.primary_title(title).element(
         Snippet::source(source)
-            .fold(false)
+            .fold(true)
             .annotation(AnnotationKind::Primary.span(err_range).label(label))
+            .annotation(AnnotationKind::Visible.span(visible_range))
             .path(source_path.as_ref()),
     );
 

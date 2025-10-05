@@ -6,7 +6,4 @@ error: Parse error
 2 | RUN ls -l
 3 | RUN ls -l
 4 | RUN ls -l
-5 | RUN ls -l
-6 | RUN ls -l
-7 |
   |
