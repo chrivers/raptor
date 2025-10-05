@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
 use minijinja::{Environment, ErrorKind, Value, context};
+use raptor_parser::util::module_name::ModuleName;
 
 use crate::dsl::{Item, Program};
 use crate::program::{
@@ -56,6 +57,14 @@ impl Loader<'_> {
         self.origins.pop();
     }
 
+    pub fn to_program_path(&self, name: &ModuleName) -> RaptorResult<Utf8PathBuf> {
+        Ok(format!("{}.rapt", name.parts().join("/")).into())
+    }
+
+    pub fn to_include_path(&self, name: &ModuleName) -> RaptorResult<Utf8PathBuf> {
+        Ok(format!("{}.rinc", name.parts().join("/")).into())
+    }
+
     pub fn base(&self) -> &Utf8Path {
         &self.base
     }
@@ -76,7 +85,7 @@ impl Loader<'_> {
             }
 
             let map = ctx.resolve_args(&include.args)?;
-            let src = &origin.basedir()?.join(include.src.to_include_path());
+            let src = &origin.basedir()?.join(self.to_include_path(&include.src)?);
 
             self.origins.push(origin.clone());
             let program = self.parse_template(src, Value::from(map))?;
