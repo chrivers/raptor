@@ -16,7 +16,6 @@ use crate::dsl::Program;
 use crate::program::{Executor, Loader, PrintExecutor};
 use crate::sandbox::Sandbox;
 use raptor_parser::ast::{FromSource, Origin};
-use raptor_parser::util::SafeParent;
 
 pub struct RaptorBuilder<'a> {
     loader: Loader<'a>,
@@ -206,12 +205,10 @@ impl<'a> RaptorBuilder<'a> {
                 visitor(BuildTarget::DockerSource(source))?;
             }
             Some((FromSource::Raptor(from), origin)) => {
-                let filename = program
-                    .path
-                    .try_parent()?
-                    .join(self.loader.to_program_path(from)?);
-
-                let fromprog = self.load_with_source(filename, origin.clone())?;
+                let fromprog = self
+                    .loader
+                    .to_program_path(&program, from)
+                    .and_then(|path| self.load_with_source(path, origin.clone()))?;
 
                 self.recurse(fromprog, visitor)?;
             }

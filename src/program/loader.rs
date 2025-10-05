@@ -69,8 +69,22 @@ impl Loader<'_> {
         self.origins.pop();
     }
 
-    pub fn to_program_path(&self, name: &ModuleName) -> RaptorResult<Utf8PathBuf> {
-        Ok(format!("{}.rapt", name.parts().join("/")).into())
+    pub fn to_program_path(
+        &self,
+        program: &Program,
+        name: &ModuleName,
+    ) -> RaptorResult<Utf8PathBuf> {
+        let mut end = Utf8PathBuf::new();
+        end.extend(name.parts());
+        end.set_extension("rapt");
+
+        let res: Utf8PathBuf = if let Some(pkg) = name.root() {
+            self.get_package(pkg)?.join(end)
+        } else {
+            program.path_for(end)?
+        };
+
+        Ok(res)
     }
 
     pub fn to_include_path(&self, name: &ModuleName) -> RaptorResult<Utf8PathBuf> {

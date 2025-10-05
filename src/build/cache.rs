@@ -22,8 +22,7 @@ impl Cacher {
         if let Some((from, origin)) = program.from() {
             match from {
                 FromSource::Raptor(from) => {
-                    let path = builder.loader().to_program_path(from)?;
-                    let filename = program.path_for(path)?;
+                    let filename = builder.loader().to_program_path(program, from)?;
 
                     let prog = builder.load_with_source(filename, origin.clone())?;
                     Self::cache_key(&prog, builder)?.hash(&mut state);
