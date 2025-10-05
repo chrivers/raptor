@@ -43,6 +43,9 @@ pub enum Token {
     #[token("-")]
     Minus,
 
+    #[token("$")]
+    Dollar,
+
     #[regex("[a-zA-Z_][^\\]/. \n\t\",=:{}\\[-]*")]
     Bareword,
 
@@ -100,6 +103,7 @@ impl Token {
             Self::Slash => "/",
             Self::Dot => ".",
             Self::Minus => "-",
+            Self::Dollar => "$",
             Self::Bareword => "<bareword>",
             Self::Number => "<number>",
             Self::Newline => "\\n",
@@ -123,6 +127,7 @@ impl Token {
             Self::Slash => "'/' (slash)",
             Self::Dot => "'.' (dot)",
             Self::Minus => "'-' (minus)",
+            Self::Dollar => "'$' (dollar)",
             Self::Bareword => "<bareword>",
             Self::Number => "<number>",
             Self::Newline => "\\n (newline)",
