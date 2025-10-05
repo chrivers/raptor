@@ -8,9 +8,10 @@ use itertools::Itertools;
 
 use crate::build::RaptorBuilder;
 use crate::dsl::Program;
+use crate::program::Loader;
 use crate::{RaptorError, RaptorResult};
 use raptor_parser::ast::{FromSource, Instruction};
-use raptor_parser::util::{SafeParent, SafeParentError};
+use raptor_parser::util::SafeParentError;
 
 pub struct Cacher;
 
@@ -21,7 +22,8 @@ impl Cacher {
         if let Some((from, origin)) = program.from() {
             match from {
                 FromSource::Raptor(from) => {
-                    let filename = program.path.try_parent()?.join(from.to_program_path());
+                    let path = builder.loader().to_program_path(from)?;
+                    let filename = program.path_for(path)?;
 
                     let prog = builder.load_with_source(filename, origin.clone())?;
                     Self::cache_key(&prog, builder)?.hash(&mut state);
@@ -34,7 +36,7 @@ impl Cacher {
             stmt.hash(&mut state);
         }
 
-        for source in &Self::sources(program)? {
+        for source in &Self::sources(program, builder.loader())? {
             let md = source
                 .metadata()
                 .map_err(|err| RaptorError::CacheIoError(source.into(), err))?;
@@ -46,7 +48,7 @@ impl Cacher {
         Ok(state.finish())
     }
 
-    pub fn sources(prog: &Program) -> RaptorResult<Vec<Utf8PathBuf>> {
+    pub fn sources(prog: &Program, loader: &Loader) -> RaptorResult<Vec<Utf8PathBuf>> {
         let mut data = HashSet::<Utf8PathBuf>::new();
 
         prog.traverse(&mut |stmt| {
@@ -65,7 +67,8 @@ impl Cacher {
                 }
 
                 Instruction::Include(inst) => {
-                    data.insert(prog.path_for(inst.src.to_include_path())?);
+                    let path = loader.to_include_path(&inst.src)?;
+                    data.insert(prog.path_for(path)?);
                 }
 
                 Instruction::Mount(_)

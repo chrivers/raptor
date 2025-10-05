@@ -170,6 +170,10 @@ impl<'a> RaptorBuilder<'a> {
         Ok(self.programs[key].clone())
     }
 
+    pub const fn loader(&self) -> &Loader {
+        &self.loader
+    }
+
     pub fn load_with_source(
         &mut self,
         path: impl AsRef<Utf8Path>,
@@ -202,7 +206,10 @@ impl<'a> RaptorBuilder<'a> {
                 visitor(BuildTarget::DockerSource(source))?;
             }
             Some((FromSource::Raptor(from), origin)) => {
-                let filename = program.path.try_parent()?.join(from.to_program_path());
+                let filename = program
+                    .path
+                    .try_parent()?
+                    .join(self.loader.to_program_path(from)?);
 
                 let fromprog = self.load_with_source(filename, origin.clone())?;
 
