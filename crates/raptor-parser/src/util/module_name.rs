@@ -1,26 +1,66 @@
 use std::fmt::Display;
 
-use camino::Utf8PathBuf;
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum ModuleRoot {
+    Relative,
+    Absolute,
+    Package(String),
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ModuleName {
+    root: ModuleRoot,
     names: Vec<String>,
 }
 
 impl ModuleName {
     #[must_use]
-    pub const fn new(names: Vec<String>) -> Self {
-        Self { names }
+    pub fn new(mut names: Vec<String>) -> Self {
+        if names.first().is_some_and(|f| f.starts_with('$')) {
+            let mut root = names.remove(0);
+            root.remove(0);
+            if root.is_empty() {
+                Self::absolute(names)
+            } else {
+                Self::package(root, names)
+            }
+        } else {
+            Self::relative(names)
+        }
     }
 
     #[must_use]
-    pub fn to_program_path(&self) -> Utf8PathBuf {
-        format!("{}.rapt", self.names.join("/")).into()
+    pub const fn build(root: ModuleRoot, names: Vec<String>) -> Self {
+        Self { root, names }
     }
 
     #[must_use]
-    pub fn to_include_path(&self) -> Utf8PathBuf {
-        format!("{}.rinc", self.names.join("/")).into()
+    pub const fn relative(names: Vec<String>) -> Self {
+        Self {
+            root: ModuleRoot::Relative,
+            names,
+        }
+    }
+
+    #[must_use]
+    pub const fn absolute(names: Vec<String>) -> Self {
+        Self {
+            root: ModuleRoot::Absolute,
+            names,
+        }
+    }
+
+    #[must_use]
+    pub const fn package(root: String, names: Vec<String>) -> Self {
+        Self {
+            root: ModuleRoot::Package(root),
+            names,
+        }
+    }
+
+    #[must_use]
+    pub const fn root(&self) -> &ModuleRoot {
+        &self.root
     }
 
     #[must_use]
@@ -47,14 +87,26 @@ impl From<&str> for ModuleName {
 
 #[cfg(test)]
 mod tests {
-    use crate::util::module_name::ModuleName;
+    use crate::util::module_name::{ModuleName, ModuleRoot};
 
     #[test]
     fn basic() {
         let name = ModuleName::new(vec![String::from("a"), String::from("b")]);
 
-        assert_eq!(name.to_program_path(), "a/b.rapt");
-        assert_eq!(name.to_include_path(), "a/b.rinc");
+        /* assert_eq!(name.to_program_path(), "a/b.rapt"); */
+        /* assert_eq!(name.to_include_path(), "a/b.rinc"); */
+        assert_eq!(name.parts(), &["a", "b"]);
+    }
+
+    #[test]
+    fn root() {
+        let name = ModuleName::new(vec![
+            String::from("$foo"),
+            String::from("a"),
+            String::from("b"),
+        ]);
+
+        assert_eq!(name.root(), &ModuleRoot::Package("foo".into()));
         assert_eq!(name.parts(), &["a", "b"]);
     }
 

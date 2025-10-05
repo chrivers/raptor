@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
 use minijinja::{Environment, ErrorKind, Value, context};
+use raptor_parser::util::SafeParent;
+use raptor_parser::util::module_name::{ModuleName, ModuleRoot};
 
 use crate::dsl::{Item, Program};
 use crate::program::{
@@ -20,6 +22,7 @@ pub struct Loader<'source> {
     sources: HashMap<String, String>,
     base: Utf8PathBuf,
     origins: Vec<Origin>,
+    packages: HashMap<String, Utf8PathBuf>,
 }
 
 const MAX_NESTED_INCLUDE: usize = 20;
@@ -32,6 +35,7 @@ impl Loader<'_> {
             base: Utf8PathBuf::new(),
             sources: HashMap::new(),
             origins: vec![],
+            packages: HashMap::new(),
         })
     }
 
@@ -48,12 +52,63 @@ impl Loader<'_> {
         Self { dump, ..self }
     }
 
+    pub fn add_package(&mut self, name: String, path: Utf8PathBuf) {
+        self.packages.insert(name, path);
+    }
+
+    pub fn get_package(&self, name: &str) -> Option<&Utf8PathBuf> {
+        self.packages.get(name)
+    }
+
     pub fn push_origin(&mut self, origin: Origin) {
         self.origins.push(origin);
     }
 
     pub fn pop_origin(&mut self) {
         self.origins.pop();
+    }
+
+    fn to_path(
+        &self,
+        program: &Program,
+        name: &ModuleName,
+        origin: &Origin,
+        extension: &str,
+    ) -> RaptorResult<Utf8PathBuf> {
+        let mut end = Utf8PathBuf::new();
+        end.extend(name.parts());
+        end.set_extension(extension);
+
+        let res = match name.root() {
+            ModuleRoot::Relative => program.path.try_parent()?.join(end),
+            ModuleRoot::Absolute => self.base.join(end),
+            ModuleRoot::Package(pkg) => {
+                let package = self
+                    .get_package(pkg)
+                    .ok_or_else(|| RaptorError::PackageNotFound(pkg.to_string(), origin.clone()))?;
+                package.join(end)
+            }
+        };
+
+        Ok(res)
+    }
+
+    pub fn to_program_path(
+        &self,
+        program: &Program,
+        name: &ModuleName,
+        origin: &Origin,
+    ) -> RaptorResult<Utf8PathBuf> {
+        self.to_path(program, name, origin, "rapt")
+    }
+
+    pub fn to_include_path(
+        &self,
+        program: &Program,
+        name: &ModuleName,
+        origin: &Origin,
+    ) -> RaptorResult<Utf8PathBuf> {
+        self.to_path(program, name, origin, "rinc")
     }
 
     pub fn base(&self) -> &Utf8Path {
@@ -64,7 +119,7 @@ impl Loader<'_> {
         self.env.clear_templates();
     }
 
-    fn handle(&mut self, res: &mut Vec<Item>, stmt: Statement, ctx: &Value) -> RaptorResult<()> {
+    fn handle(&mut self, prog: &mut Program, stmt: Statement) -> RaptorResult<()> {
         let Statement { inst, origin } = stmt;
 
         if let Instruction::Include(include) = &inst {
@@ -75,17 +130,17 @@ impl Loader<'_> {
                 ));
             }
 
-            let map = ctx.resolve_args(&include.args)?;
-            let src = &origin.basedir()?.join(include.src.to_include_path());
+            let map = prog.ctx.resolve_args(&include.args)?;
+            let src = self.to_include_path(prog, &include.src, &origin)?;
 
             self.origins.push(origin.clone());
-            let program = self.parse_template(src, Value::from(map))?;
+            let include = self.parse_template(src, Value::from(map))?;
             self.origins.pop();
 
-            res.push(Item::Statement(Statement { inst, origin }));
-            res.push(Item::Program(program));
+            prog.code.push(Item::Statement(Statement { inst, origin }));
+            prog.code.push(Item::Program(include));
         } else {
-            res.push(Item::Statement(Statement { inst, origin }));
+            prog.code.push(Item::Statement(Statement { inst, origin }));
         }
 
         Ok(())
@@ -140,6 +195,15 @@ impl Loader<'_> {
             }
             RaptorError::ParseError(err) => {
                 show_parse_error_context(&self.sources[err.origin.path.as_str()], err)?;
+            }
+            RaptorError::PackageNotFound(pkg, origin) => {
+                self.show_include_stack(&self.origins);
+                show_origin_error_context(
+                    &self.sources[origin.path.as_str()],
+                    origin,
+                    &format!("Package not found: ${pkg}"),
+                    &err.to_string(),
+                );
             }
             err => {
                 error!("Unexpected error: {err}");
@@ -203,12 +267,12 @@ impl Loader<'_> {
 
         let statements = parser::parse(filename, &self.sources[filename])?;
 
-        let mut res = vec![];
+        let mut program = Program::new(vec![], ctx, path.as_ref().into());
 
         for stmt in statements {
-            self.handle(&mut res, stmt, &ctx)?;
+            self.handle(&mut program, stmt)?;
         }
 
-        Ok(Program::new(res, ctx, path.as_ref().into()))
+        Ok(program)
     }
 }

@@ -12,7 +12,7 @@ use crate::ast::{
 };
 use crate::lexer::Token;
 use crate::util::Location;
-use crate::util::module_name::ModuleName;
+use crate::util::module_name::{ModuleName, ModuleRoot};
 use crate::{ParseError, ParseResult};
 
 pub struct Parser<'src> {
@@ -54,7 +54,7 @@ impl<'src> Parser<'src> {
         if &next == exp {
             Ok(())
         } else {
-            Err(ParseError::Expected(exp.name()))
+            Err(ParseError::Expected(exp.description()))
         }
     }
 
@@ -91,6 +91,17 @@ impl<'src> Parser<'src> {
 
     fn token_string(&self) -> String {
         self.lexer.slice().to_string()
+    }
+
+    fn fill<T>(
+        &mut self,
+        func: impl Fn(&mut Self) -> ParseResult<Option<T>>,
+    ) -> ParseResult<Vec<T>> {
+        let mut args = vec![];
+        while let Some(arg) = func(self)? {
+            args.push(arg);
+        }
+        Ok(args)
     }
 
     fn bareword(&mut self) -> ParseResult<&'src str> {
@@ -145,24 +156,47 @@ impl<'src> Parser<'src> {
         Ok(res.into())
     }
 
-    fn module_name(&mut self) -> ParseResult<ModuleName> {
-        let mut words = vec![self.bareword()?.to_string()];
+    fn module_name_ident(&mut self) -> ParseResult<Option<String>> {
+        let mut res = String::new();
 
-        loop {
-            match self.peek()? {
-                Token::Dot => {
-                    self.next()?;
-                    words.push(self.bareword()?.to_string());
-                }
-                Token::Minus | Token::Bareword => {
-                    self.next()?;
-                    words.last_mut().unwrap().push_str(self.token());
-                }
-                _ => break,
+        while let Token::Minus | Token::Bareword = self.peek()? {
+            self.next()?;
+            res.push_str(self.token());
+        }
+
+        if res.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(res))
+        }
+    }
+
+    fn module_name(&mut self) -> ParseResult<ModuleName> {
+        let mut root = ModuleRoot::Relative;
+
+        if self.accept(&Token::Dollar)? {
+            if let Some(pkg) = self.module_name_ident()? {
+                root = ModuleRoot::Package(pkg);
+            } else {
+                root = ModuleRoot::Absolute;
+            }
+            self.expect(&Token::Dot)?;
+        }
+
+        let mut words = vec![];
+
+        while let Some(word) = self.module_name_ident()? {
+            words.push(word);
+            if !self.accept(&Token::Dot)? {
+                break;
             }
         }
 
-        Ok(ModuleName::new(words))
+        if words.is_empty() {
+            return Err(ParseError::Expected("module name"));
+        }
+
+        Ok(ModuleName::build(root, words))
     }
 
     fn end_of_line(&mut self) -> ParseResult<()> {
@@ -261,10 +295,8 @@ impl<'src> Parser<'src> {
     pub fn parse_env(&mut self) -> ParseResult<InstEnv> {
         self.trim()?;
 
-        let mut env = vec![];
-        while let Some(assign) = self.parse_env_assign()? {
-            env.push(assign);
-        }
+        let env = self.fill(Self::parse_env_assign)?;
+
         self.end_of_line()?;
 
         Ok(InstEnv { env })
@@ -319,10 +351,10 @@ impl<'src> Parser<'src> {
         self.trim()?;
 
         let state = self.lexer.clone();
-        let next = self.bareword()?;
+        let next = self.bareword();
         self.lexer = state;
 
-        let from = if next == "docker" {
+        let from = if matches!(next, Ok("docker")) {
             FromSource::Docker(self.parse_docker_from()?)
         } else {
             FromSource::Raptor(self.module_name()?)
@@ -502,10 +534,7 @@ impl<'src> Parser<'src> {
         let src = self.module_name()?;
         self.trim()?;
 
-        let mut args = vec![];
-        while let Some(arg) = self.parse_include_arg()? {
-            args.push(arg);
-        }
+        let args = self.fill(Self::parse_include_arg)?;
         self.end_of_line()?;
 
         Ok(InstInclude { src, args })
@@ -585,10 +614,7 @@ impl<'src> Parser<'src> {
         let src = self.parse_path()?;
         let dest = self.parse_path()?;
 
-        let mut args = vec![];
-        while let Some(arg) = self.parse_include_arg()? {
-            args.push(arg);
-        }
+        let args = self.fill(Self::parse_include_arg)?;
 
         self.end_of_line()?;
 
@@ -664,13 +690,7 @@ impl<'src> Parser<'src> {
     }
 
     pub fn file(&mut self) -> ParseResult<Vec<Statement>> {
-        let mut res = vec![];
-
-        while let Some(stmt) = self.statement()? {
-            res.push(stmt);
-        }
-
-        Ok(res)
+        self.fill(Self::statement)
     }
 }
 
@@ -680,7 +700,10 @@ pub fn parse(name: &str, buf: &str) -> Result<Vec<Statement>, Location<ParseErro
     let mut parser = Parser::new(lexer, path.clone());
 
     parser.file().map_err(|err| {
-        let origin = Origin::new(path.clone(), parser.lexer.span());
+        let mut origin = Origin::new(path.clone(), parser.lexer.span());
+        if buf[origin.span.clone()].ends_with('\n') {
+            origin.span.end -= 1;
+        }
         Location::make(origin, err)
     })
 }
@@ -698,6 +721,7 @@ mod tests {
     use crate::ast::Chown;
     use crate::lexer::Token;
     use crate::parser::Parser;
+    use crate::util::module_name::ModuleRoot;
 
     fn make_parser(input: &str) -> Parser {
         let lexer = Token::lexer(input);
@@ -791,6 +815,25 @@ mod tests {
                 )
             );
             assert_eq!(parent, $parent);
+        };
+    }
+
+    macro_rules! module_name_test {
+        ($src:expr, $root:expr, $tree:tt) => {
+            let mut parser = make_parser($src);
+
+            let name = parser.module_name().unwrap();
+
+            assert_eq!(name.root(), &$root);
+            assert_eq!(name.parts(), $tree);
+        };
+    }
+
+    macro_rules! module_name_test_err {
+        ($src:expr) => {
+            let mut parser = make_parser($src);
+
+            parser.module_name().unwrap_err();
         };
     }
 
@@ -893,5 +936,26 @@ mod tests {
         );
 
         Ok(())
+    }
+
+    #[test]
+    fn parse_module_name() {
+        use ModuleRoot::*;
+        use module_name_test as test;
+        use module_name_test_err as test_err;
+
+        test!("x", Relative, ["x"]);
+        test!("x.y", Relative, ["x", "y"]);
+        test!("a-b-c", Relative, ["a-b-c"]);
+        test!("a-b-c.x-y-z", Relative, ["a-b-c", "x-y-z"]);
+
+        test!("$.x", Absolute, ["x"]);
+        test!("$foo.x", Package("foo".into()), ["x"]);
+        test!("$ab-cd.x-y-z", Package("ab-cd".into()), ["x-y-z"]);
+
+        test_err!("$");
+        test_err!("$.");
+        test_err!("$foo");
+        test_err!("$foo");
     }
 }
