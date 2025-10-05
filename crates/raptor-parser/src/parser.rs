@@ -54,7 +54,7 @@ impl<'src> Parser<'src> {
         if &next == exp {
             Ok(())
         } else {
-            Err(ParseError::Expected(exp.name()))
+            Err(ParseError::Expected(exp.description()))
         }
     }
 
