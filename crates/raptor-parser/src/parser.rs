@@ -724,6 +724,7 @@ mod tests {
     use crate::ast::Chown;
     use crate::lexer::Token;
     use crate::parser::Parser;
+    use crate::util::module_name::ModuleRoot;
 
     fn make_parser(input: &str) -> Parser {
         let lexer = Token::lexer(input);
@@ -817,6 +818,25 @@ mod tests {
                 )
             );
             assert_eq!(parent, $parent);
+        };
+    }
+
+    macro_rules! module_name_test {
+        ($src:expr, $root:expr, $tree:tt) => {
+            let mut parser = make_parser($src);
+
+            let name = parser.module_name().unwrap();
+
+            assert_eq!(name.root(), &$root);
+            assert_eq!(name.parts(), $tree);
+        };
+    }
+
+    macro_rules! module_name_test_err {
+        ($src:expr) => {
+            let mut parser = make_parser($src);
+
+            parser.module_name().unwrap_err();
         };
     }
 
@@ -919,5 +939,26 @@ mod tests {
         );
 
         Ok(())
+    }
+
+    #[test]
+    fn parse_module_name() {
+        use ModuleRoot::*;
+        use module_name_test as test;
+        use module_name_test_err as test_err;
+
+        test!("x", Relative, ["x"]);
+        test!("x.y", Relative, ["x", "y"]);
+        test!("a-b-c", Relative, ["a-b-c"]);
+        test!("a-b-c.x-y-z", Relative, ["a-b-c", "x-y-z"]);
+
+        test!("$.x", Absolute, ["x"]);
+        test!("$foo.x", Package("foo".into()), ["x"]);
+        test!("$ab-cd.x-y-z", Package("ab-cd".into()), ["x-y-z"]);
+
+        test_err!("$");
+        test_err!("$.");
+        test_err!("$foo");
+        test_err!("$foo");
     }
 }
