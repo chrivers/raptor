@@ -7,6 +7,7 @@ use crate::print::Theme;
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum MountType {
+    File,
     Simple,
     Layers,
     Overlay,
@@ -42,6 +43,7 @@ impl Display for MountOptions {
 impl Display for MountType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let name = match self {
+            Self::File => "--file",
             Self::Simple => "--simple",
             Self::Layers => "--layers",
             Self::Overlay => "--overlay",

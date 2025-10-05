@@ -1,8 +1,9 @@
 use std::collections::HashMap;
-use std::fs;
+use std::fs::{self, File};
 use std::hash::BuildHasher;
 
 use camino::{Utf8Path, Utf8PathBuf};
+use serde::{Deserialize, Serialize};
 
 use crate::build::RaptorBuilder;
 use crate::dsl::Program;
@@ -10,12 +11,27 @@ use crate::sandbox::{BindMount, SpawnBuilder};
 use crate::{RaptorError, RaptorResult};
 use raptor_parser::ast::MountType;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct MountsInfo {
+    targets: Vec<String>,
+    layers: HashMap<String, Vec<String>>,
+}
+
+impl MountsInfo {
+    pub fn new() -> Self {
+        Self {
+            targets: Vec::new(),
+            layers: HashMap::new(),
+        }
+    }
+}
+
 pub trait AddMounts: Sized {
     fn add_mounts<S: BuildHasher>(
         self,
         program: &Program,
         builder: &mut RaptorBuilder,
-        mounts: &HashMap<&str, &str, S>,
+        mounts: &HashMap<&str, Vec<&str>, S>,
         tempdir: &Utf8Path,
     ) -> RaptorResult<Self>;
 }
@@ -25,41 +41,68 @@ impl AddMounts for SpawnBuilder {
         mut self,
         program: &Program,
         builder: &mut RaptorBuilder,
-        mounts: &HashMap<&str, &str, S>,
+        mounts: &HashMap<&str, Vec<&str>, S>,
         tempdir: &Utf8Path,
     ) -> RaptorResult<Self> {
         for mount in program.mounts() {
-            let src: Utf8PathBuf = mounts
+            let srcs: Vec<Utf8PathBuf> = mounts
                 .get(&mount.name.as_str())
                 .ok_or_else(|| RaptorError::MountMissing(mount.clone()))?
-                .into();
+                .iter()
+                .map(Into::into)
+                .collect();
 
             match mount.opts.mtype {
+                MountType::File => {
+                    if srcs.len() != 1 {
+                        return Err(RaptorError::SingleMountOnly(mount.opts.mtype));
+                    }
+
+                    File::options().create(true).append(true).open(&srcs[0])?;
+
+                    self = self.bind(BindMount::new(&srcs[0], Utf8Path::new(&mount.dest)));
+                }
+
                 MountType::Simple => {
-                    self = self.bind(BindMount::new(&src, Utf8Path::new(&mount.dest)));
+                    if srcs.len() != 1 {
+                        return Err(RaptorError::SingleMountOnly(mount.opts.mtype));
+                    }
+
+                    self = self.bind(BindMount::new(&srcs[0], Utf8Path::new(&mount.dest)));
                 }
 
                 MountType::Layers => {
-                    let program = builder.load(src)?;
-                    let layers = builder.build(program)?;
+                    let mut info = MountsInfo::new();
 
-                    let mut names = vec![];
+                    for src in srcs {
+                        let program = builder.load(&src)?;
+                        let name = program.path.with_extension("").as_str().replace('/', ".");
 
-                    for layer in &layers {
-                        let filename = layer.file_name().unwrap();
-                        names.push(filename);
-                        self = self.bind_ro(BindMount::new(layer, mount.dest.join(filename)));
+                        let layers = builder.build(program)?;
+
+                        info.targets.push(name.clone());
+
+                        let layer_info = info.layers.entry(name).or_default();
+
+                        for layer in &layers {
+                            let filename = layer.file_name().unwrap();
+                            layer_info.push(filename.to_string());
+                            self = self.bind_ro(BindMount::new(layer, mount.dest.join(filename)));
+                        }
                     }
-                    names.push("");
 
                     let listfile = tempdir.join(format!("mounts-{}", mount.name));
-                    fs::write(&listfile, names.join("\n"))?;
+                    fs::write(&listfile, serde_json::to_string_pretty(&info)? + "\n")?;
 
-                    self = self.bind_ro(BindMount::new(&listfile, mount.dest.join("ORDER")));
+                    self = self.bind_ro(BindMount::new(&listfile, mount.dest.join("raptor.json")));
                 }
 
                 MountType::Overlay => {
-                    let program = builder.load(src)?;
+                    if srcs.len() != 1 {
+                        return Err(RaptorError::SingleMountOnly(mount.opts.mtype));
+                    }
+
+                    let program = builder.load(&srcs[0])?;
                     let layers = builder.build(program)?;
                     self = self.overlay_ro(&layers, &mount.dest);
                 }

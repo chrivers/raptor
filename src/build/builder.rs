@@ -236,7 +236,12 @@ impl<'a> RaptorBuilder<'a> {
             let done_path = layer.done_path();
 
             if fs::exists(layer.done_path())? {
-                info!("{} {}", "Completed".bright_white(), layer_name.yellow());
+                info!(
+                    "{} [{}] {}",
+                    "Completed".bright_white(),
+                    layer.hash().dimmed(),
+                    layer_name.yellow()
+                );
             } else {
                 info!(
                     "{} {}: {}",

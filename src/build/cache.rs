@@ -10,7 +10,7 @@ use crate::build::RaptorBuilder;
 use crate::dsl::Program;
 use crate::{RaptorError, RaptorResult};
 use raptor_parser::ast::{FromSource, Instruction};
-use raptor_parser::util::SafeParent;
+use raptor_parser::util::{SafeParent, SafeParentError};
 
 pub struct Cacher;
 
@@ -55,8 +55,8 @@ impl Cacher {
                     data.extend(
                         inst.srcs
                             .iter()
-                            .map(|file| prog.path_for(file))
-                            .collect::<Result<Vec<_>, _>>()?,
+                            .map(|file| Ok(stmt.origin.basedir()?.join(file)))
+                            .collect::<Result<Vec<_>, SafeParentError>>()?,
                     );
                 }
 
@@ -87,12 +87,15 @@ impl Cacher {
     }
 }
 
+#[derive(Debug)]
 pub struct LayerInfo {
     name: String,
     hash: u64,
 }
 
 impl LayerInfo {
+    pub const HASH_WIDTH: usize = 16;
+
     #[must_use]
     pub const fn new(name: String, hash: u64) -> Self {
         Self { name, hash }
@@ -105,12 +108,17 @@ impl LayerInfo {
 
     #[must_use]
     pub fn hash(&self) -> String {
-        format!("{:016X}", self.hash)
+        format!("{:0width$X}", self.hash, width = Self::HASH_WIDTH)
     }
 
     #[must_use]
     pub fn id(&self) -> String {
-        format!("{}-{:016X}", self.name, self.hash)
+        format!(
+            "{}-{:0width$X}",
+            self.name,
+            self.hash,
+            width = Self::HASH_WIDTH
+        )
     }
 
     #[must_use]
@@ -121,5 +129,47 @@ impl LayerInfo {
     #[must_use]
     pub fn done_path(&self) -> Utf8PathBuf {
         Utf8Path::new("layers").join(self.id())
+    }
+}
+
+impl TryFrom<&str> for LayerInfo {
+    type Error = RaptorError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let Some((head, tail)) = value.rsplit_once('-') else {
+            return Err(RaptorError::LayerCacheParseError);
+        };
+
+        if tail.len() != Self::HASH_WIDTH {
+            return Err(RaptorError::LayerCacheParseError);
+        }
+
+        let name = head.to_string();
+        let hash = u64::from_str_radix(tail, 16)?;
+
+        Ok(Self::new(name, hash))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::build::LayerInfo;
+
+    #[test]
+    fn layerinfo_format() {
+        let info = LayerInfo::new("name".to_string(), 0x01234567_89ABCDEF);
+        assert_eq!(info.name(), "name");
+        assert_eq!(info.hash(), "0123456789ABCDEF");
+        assert_eq!(info.id(), "name-0123456789ABCDEF");
+    }
+
+    #[test]
+    fn layerinfo_parse() {
+        let res = LayerInfo::try_from("name-0123456789ABCDEF").unwrap();
+        assert_eq!(res.name, "name");
+        assert_eq!(res.hash, 0x0123456789ABCDEF);
+
+        LayerInfo::try_from("name-123456789ABCDEF").unwrap_err();
+        LayerInfo::try_from("name-0123456789ABCDEF0").unwrap_err();
     }
 }

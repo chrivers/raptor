@@ -79,6 +79,11 @@ struct RunCmd {
     #[arg(value_name = "state-dir")]
     state: Option<Utf8PathBuf>,
 
+    /// Environment variables
+    #[arg(short = 'e', long)]
+    #[arg(value_name = "env")]
+    env: Vec<String>,
+
     /// Specify mounts
     #[arg(short = 'M', long, value_names = ["name", "mount"], num_args = 2, action = clap::ArgAction::Append)]
     mount: Vec<String>,
@@ -89,7 +94,7 @@ struct RunCmd {
         value_name = "mount",
         help = "Specify cache mount. Shorthand for -M cache <mount>"
     )]
-    cache: Option<String>,
+    cache: Vec<String>,
 
     #[arg(
         short = 'I',
@@ -97,7 +102,7 @@ struct RunCmd {
         value_name = "mount",
         help = "Specify input mount. Shorthand for -M input <mount>"
     )]
-    input: Option<String>,
+    input: Vec<String>,
 
     #[arg(
         short = 'O',
@@ -136,23 +141,23 @@ impl Mode {
 }
 
 impl RunCmd {
-    fn mounts(&self) -> HashMap<&str, &str> {
-        let mut res: HashMap<&str, &str> = HashMap::new();
+    fn mounts(&self) -> HashMap<&str, Vec<&str>> {
+        let mut res: HashMap<&str, Vec<&str>> = HashMap::new();
 
         for kv in self.mount.chunks_exact(2) {
-            res.insert(&kv[0], &kv[1]);
+            res.entry(&kv[0]).or_default().push(&kv[1]);
         }
 
-        if let Some(cache) = &self.cache {
-            res.insert("cache", cache);
+        for cache in &self.cache {
+            res.entry("cache").or_default().push(cache);
         }
 
-        if let Some(input) = &self.input {
-            res.insert("input", input);
+        for input in &self.input {
+            res.entry("input").or_default().push(input);
         }
 
         if let Some(output) = &self.output {
-            res.insert("output", output);
+            res.entry("output").or_default().push(output);
         }
 
         res
@@ -271,7 +276,7 @@ fn raptor() -> RaptorResult<()> {
                 ConsoleMode::Pipe
             };
 
-            Sandbox::builder()
+            let mut sandbox = Sandbox::builder()
                 .uuid(uuid)
                 .console(console_mode)
                 .arg("--background=")
@@ -281,10 +286,21 @@ fn raptor() -> RaptorResult<()> {
                 .directory(&root)
                 .bind(BindMount::new("/dev/kvm", "/dev/kvm"))
                 .args(&command)
-                .add_mounts(&program, &mut builder, &run.mounts(), tempdir.path())?
-                .command()
-                .spawn()?
-                .wait()?;
+                .add_mounts(&program, &mut builder, &run.mounts(), tempdir.path())?;
+
+            for env in &run.env {
+                if let Some((key, value)) = env.split_once('=') {
+                    sandbox = sandbox.setenv(key, value);
+                } else {
+                    sandbox = sandbox.setenv(env, "");
+                }
+            }
+
+            let res = sandbox.command().spawn()?.wait()?;
+
+            if !res.success() {
+                error!("Run failed with status {}", res.code().unwrap_or_default());
+            }
         }
 
         Mode::Show { dirs } => {
