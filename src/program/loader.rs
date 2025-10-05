@@ -21,6 +21,7 @@ pub struct Loader<'source> {
     sources: HashMap<String, String>,
     base: Utf8PathBuf,
     origins: Vec<Origin>,
+    packages: HashMap<String, Utf8PathBuf>,
 }
 
 const MAX_NESTED_INCLUDE: usize = 20;
@@ -33,6 +34,7 @@ impl Loader<'_> {
             base: Utf8PathBuf::new(),
             sources: HashMap::new(),
             origins: vec![],
+            packages: HashMap::new(),
         })
     }
 
@@ -47,6 +49,16 @@ impl Loader<'_> {
     #[must_use]
     pub fn with_dump(self, dump: bool) -> Self {
         Self { dump, ..self }
+    }
+
+    pub fn add_package(&mut self, name: String, path: Utf8PathBuf) {
+        self.packages.insert(name, path);
+    }
+
+    pub fn get_package(&self, name: &str) -> RaptorResult<&Utf8PathBuf> {
+        self.packages
+            .get(name)
+            .ok_or_else(|| RaptorError::PackageNotFound(name.to_string()))
     }
 
     pub fn push_origin(&mut self, origin: Origin) {
