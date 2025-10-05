@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use itertools::Itertools;
+use raptor_parser::util::module_name::ModuleRoot;
 
 use crate::build::RaptorBuilder;
 use crate::dsl::Program;
@@ -21,7 +22,7 @@ impl Cacher {
         if let Some((from, origin)) = program.from() {
             match from {
                 FromSource::Raptor(from) => {
-                    let filename = builder.loader().to_program_path(program, from, origin)?;
+                    let filename = builder.loader().to_program_path(from, origin)?;
 
                     let prog = builder.load_with_source(filename, origin.clone())?;
                     Self::cache_key(&prog, builder)?.hash(&mut state);
@@ -35,6 +36,7 @@ impl Cacher {
         }
 
         for source in &Self::sources(program, builder.loader())? {
+            trace!("Checking source [{source}]");
             let md = source
                 .metadata()
                 .map_err(|err| RaptorError::CacheIoError(source.into(), err))?;
@@ -55,7 +57,7 @@ impl Cacher {
                     data.extend(
                         inst.srcs
                             .iter()
-                            .map(|file| prog.path_for(file))
+                            .map(|file| loader.to_path(&ModuleRoot::Relative, &stmt.origin, file))
                             .collect::<Result<Vec<_>, _>>()?,
                     );
                 }
@@ -65,7 +67,7 @@ impl Cacher {
                 }
 
                 Instruction::Include(inst) => {
-                    let path = loader.to_include_path(prog, &inst.src, &stmt.origin)?;
+                    let path = loader.to_include_path(&inst.src, &stmt.origin)?;
                     data.insert(path);
                 }
 

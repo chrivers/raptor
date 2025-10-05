@@ -68,19 +68,14 @@ impl Loader<'_> {
         self.origins.pop();
     }
 
-    fn to_path(
+    pub fn to_path(
         &self,
-        program: &Program,
-        name: &ModuleName,
+        root: &ModuleRoot,
         origin: &Origin,
-        extension: &str,
+        end: &Utf8Path,
     ) -> RaptorResult<Utf8PathBuf> {
-        let mut end = Utf8PathBuf::new();
-        end.extend(name.parts());
-        end.set_extension(extension);
-
-        let res = match name.root() {
-            ModuleRoot::Relative => program.path.try_parent()?.join(end),
+        let res = match root {
+            ModuleRoot::Relative => origin.path.try_parent()?.join(end),
             ModuleRoot::Absolute => self.base.join(end),
             ModuleRoot::Package(pkg) => {
                 let package = self
@@ -93,22 +88,18 @@ impl Loader<'_> {
         Ok(res)
     }
 
-    pub fn to_program_path(
-        &self,
-        program: &Program,
-        name: &ModuleName,
-        origin: &Origin,
-    ) -> RaptorResult<Utf8PathBuf> {
-        self.to_path(program, name, origin, "rapt")
+    pub fn to_program_path(&self, name: &ModuleName, origin: &Origin) -> RaptorResult<Utf8PathBuf> {
+        let mut end = Utf8PathBuf::new();
+        end.extend(name.parts());
+        end.set_extension("rapt");
+        self.to_path(name.root(), origin, &end)
     }
 
-    pub fn to_include_path(
-        &self,
-        program: &Program,
-        name: &ModuleName,
-        origin: &Origin,
-    ) -> RaptorResult<Utf8PathBuf> {
-        self.to_path(program, name, origin, "rinc")
+    pub fn to_include_path(&self, name: &ModuleName, origin: &Origin) -> RaptorResult<Utf8PathBuf> {
+        let mut end = Utf8PathBuf::new();
+        end.extend(name.parts());
+        end.set_extension("rinc");
+        self.to_path(name.root(), origin, &end)
     }
 
     pub fn base(&self) -> &Utf8Path {
@@ -131,7 +122,7 @@ impl Loader<'_> {
             }
 
             let map = prog.ctx.resolve_args(&include.args)?;
-            let src = self.to_include_path(prog, &include.src, &origin)?;
+            let src = self.to_include_path(&include.src, &origin)?;
 
             self.origins.push(origin.clone());
             let include = self.parse_template(src, Value::from(map))?;

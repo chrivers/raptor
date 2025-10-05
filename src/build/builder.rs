@@ -207,7 +207,7 @@ impl<'a> RaptorBuilder<'a> {
             Some((FromSource::Raptor(from), origin)) => {
                 let fromprog = self
                     .loader
-                    .to_program_path(&program, from, origin)
+                    .to_program_path(from, origin)
                     .and_then(|path| self.load_with_source(path, origin.clone()))?;
 
                 self.recurse(fromprog, visitor)?;
