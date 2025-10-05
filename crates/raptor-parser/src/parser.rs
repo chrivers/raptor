@@ -691,7 +691,10 @@ pub fn parse(name: &str, buf: &str) -> Result<Vec<Statement>, Location<ParseErro
     let mut parser = Parser::new(lexer, path.clone());
 
     parser.file().map_err(|err| {
-        let origin = Origin::new(path.clone(), parser.lexer.span());
+        let mut origin = Origin::new(path.clone(), parser.lexer.span());
+        if buf[origin.span.clone()].ends_with('\n') {
+            origin.span.end -= 1;
+        }
         Location::make(origin, err)
     })
 }
