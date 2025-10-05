@@ -49,7 +49,7 @@ pub fn show_error_context(
     );
 
     let renderer = Renderer::styled();
-    anstream::println!("{}", renderer.render(&[message]));
+    anstream::eprintln!("{}", renderer.render(&[message]));
 }
 
 pub fn show_origin_error_context(source: &str, origin: &Origin, title: &str, label: &str) {

@@ -1,0 +1,7 @@
+error: Error while executing instruction
+ --> tests/cases/error/error_failing_instruction.rapt:1:1
+  |
+1 | RUN /missing
+  | ^^^^^^^^^^^^ Sandbox request error: Sandbox error: ENOENT: No such file or directory
+2 |
+  |

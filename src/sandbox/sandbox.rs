@@ -2,6 +2,7 @@ use std::os::unix::net::UnixListener;
 use std::process::Stdio;
 use std::thread;
 
+use anstream::stream::IsTerminal;
 use camino::{Utf8Path, Utf8PathBuf};
 use camino_tempfile::{Builder, Utf8TempDir};
 use uuid::Uuid;
@@ -33,7 +34,7 @@ impl Sandbox {
             .resolv_conf(ResolvConf::Off)
             .timezone(Timezone::Off)
             .settings(Settings::False)
-            .console(ConsoleMode::ReadOnly)
+            .console(ConsoleMode::Pipe)
     }
 
     pub fn new(layers: &[impl AsRef<Utf8Path>], rootdir: &Utf8Path) -> RaptorResult<Self> {
@@ -125,7 +126,12 @@ impl Sandbox {
             .bind_ro(BindMount::new(ext_root, &int_root))
             .directory(&root)
             .setenv("FALCON_SOCKET", int_socket_path.as_str())
+            .setenv("FALCON_LOG_LEVEL", log::max_level().as_str())
             .arg(int_client_path.as_str());
+
+        if std::io::stderr().is_terminal() {
+            spawn = spawn.setenv("CLICOLOR_FORCE", "1");
+        }
 
         debug!(
             "Starting sandbox: {}",

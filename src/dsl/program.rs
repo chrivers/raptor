@@ -4,7 +4,9 @@ use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
 use minijinja::Value;
 
-use raptor_parser::ast::{FromSource, InstCmd, InstEntrypoint, InstMount, Instruction, Statement};
+use raptor_parser::ast::{
+    FromSource, InstCmd, InstEntrypoint, InstMount, Instruction, Origin, Statement,
+};
 use raptor_parser::util::SafeParent;
 
 use crate::RaptorResult;
@@ -39,14 +41,14 @@ impl Program {
     }
 
     #[must_use]
-    pub fn from(&self) -> Option<&FromSource> {
+    pub fn from(&self) -> Option<(&FromSource, &Origin)> {
         for item in &self.code {
             if let Item::Statement(Statement {
                 inst: Instruction::From(inst),
-                ..
+                origin,
             }) = item
             {
-                return Some(&inst.from);
+                return Some((&inst.from, origin));
             }
         }
 

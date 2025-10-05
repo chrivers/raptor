@@ -1,19 +1,19 @@
 use std::collections::HashMap;
-use std::io::{IsTerminal, stdout};
+use std::env;
+use std::io::stdout;
 
 use camino::Utf8PathBuf;
-use camino_tempfile::Builder;
-use clap::Parser as _;
+use clap::{ArgAction, CommandFactory, Parser as _};
+use clap_complete::Shell;
 use colored::Colorize;
-use log::{debug, error, info};
-
+use log::{LevelFilter, debug, error, info};
 use nix::unistd::Uid;
+
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
 use raptor::program::Loader;
-use raptor::runner::AddMounts;
-use raptor::sandbox::{BindMount, ConsoleMode, Sandbox};
+use raptor::runner::Runner;
+use raptor::sandbox::Sandbox;
 use raptor::{RaptorError, RaptorResult};
-use uuid::Uuid;
 
 #[derive(clap::Parser, Debug)]
 #[command(about, long_about = None, styles=raptor::util::clapcolor::style())]
@@ -22,8 +22,31 @@ struct Cli {
     #[arg(short = 'n', long, global = true)]
     no_act: bool,
 
+    /// Increase verbosity (can be repeated)
+    #[arg(short = 'v', long, action = ArgAction::Count, global = true, help_heading="Verbosity")]
+    verbose: u8,
+
+    /// Decrease verbosity (can be repeated)
+    #[arg(short = 'q', long, action = ArgAction::Count, global = true, help_heading="Verbosity")]
+    quiet: u8,
+
     #[command(subcommand)]
     mode: Mode,
+}
+
+impl Cli {
+    #[must_use]
+    const fn log_level(&self) -> LevelFilter {
+        let verbosity = self.verbose as i32 - self.quiet as i32;
+        match verbosity {
+            ..=-3 => LevelFilter::Off,
+            -2 => LevelFilter::Error,
+            -1 => LevelFilter::Warn,
+            0 => LevelFilter::Info,
+            1 => LevelFilter::Debug,
+            2.. => LevelFilter::Trace,
+        }
+    }
 }
 
 #[derive(clap::Subcommand, Clone, Debug)]
@@ -56,16 +79,17 @@ enum Mode {
 
     /// Run mode: run a shell or command inside the layer
     #[command(alias = "r")]
-    #[command(after_help = [
-        "  If <state-dir> is specified, any changes made in the session will be saved there.",
-        "",
-        "  If <state-dir> is not specified, all changes will be lost."
-    ].join("\n"))]
     Run(RunCmd),
 
     /// Show mode: print list of build targets
     #[command(alias = "s")]
     Show { dirs: Vec<Utf8PathBuf> },
+
+    /// Completions mode: generate shell completion scripts
+    Completion {
+        #[arg(value_name = "shell")]
+        shell: Shell,
+    },
 }
 
 #[derive(clap::Args, Clone, Debug)]
@@ -77,6 +101,12 @@ struct RunCmd {
     /// State directory for changes (ephemeral if unset)
     #[arg(short = 's', long)]
     #[arg(value_name = "state-dir")]
+    #[arg(help = "The state directory will save the changes made during run")]
+    #[arg(long_help = [
+        "If <state-dir> is specified, any changes made in the session will be saved there.",
+        "",
+        "If <state-dir> is not specified, all changes will be lost."
+    ].join("\n"))]
     state: Option<Utf8PathBuf>,
 
     /// Environment variables
@@ -85,14 +115,22 @@ struct RunCmd {
     env: Vec<String>,
 
     /// Specify mounts
-    #[arg(short = 'M', long, value_names = ["name", "mount"], num_args = 2, action = clap::ArgAction::Append)]
+    #[arg(
+        short = 'M',
+        long,
+        value_names = ["name", "mount"],
+        num_args = 2,
+        action = ArgAction::Append,
+        help_heading="Mount options",
+    )]
     mount: Vec<String>,
 
     #[arg(
         short = 'C',
         long,
         value_name = "mount",
-        help = "Specify cache mount. Shorthand for -M cache <mount>"
+        help = "Specify cache mount. Shorthand for -M cache <mount>",
+        help_heading = "Mount options"
     )]
     cache: Vec<String>,
 
@@ -100,7 +138,8 @@ struct RunCmd {
         short = 'I',
         long,
         value_name = "mount",
-        help = "Specify input mount. Shorthand for -M input <mount>"
+        help = "Specify input mount. Shorthand for -M input <mount>",
+        help_heading = "Mount options"
     )]
     input: Vec<String>,
 
@@ -108,7 +147,8 @@ struct RunCmd {
         short = 'O',
         long,
         value_name = "mount",
-        help = "Specify output mount. Shorthand for -M output <mount>"
+        help = "Specify output mount. Shorthand for -M output <mount>",
+        help_heading = "Mount options"
     )]
     output: Option<String>,
 
@@ -204,6 +244,8 @@ fn check_for_falcon_binary() -> RaptorResult<()> {
 fn raptor() -> RaptorResult<()> {
     let args = Cli::parse();
 
+    log::set_max_level(args.log_level());
+
     check_for_falcon_binary()?;
 
     let loader = Loader::new()?.with_dump(args.mode.dump());
@@ -235,68 +277,24 @@ fn raptor() -> RaptorResult<()> {
 
             builder.build(program.clone())?;
 
-            let uuid = Uuid::new_v4();
-
             let mut layers = vec![];
 
-            for layer in builder.stack(program.clone())? {
-                layers.push(layer.layer_info(&mut builder)?.done_path());
+            for target in builder.stack(program.clone())? {
+                layers.push(target.layer_info(&mut builder)?.done_path());
             }
 
-            let tempdir = Builder::new().prefix("raptor-temp-").tempdir()?;
+            let mut runner = Runner::new()?;
 
-            /* the ephemeral root directory needs to have /usr for systemd-nspawn to accept it */
-            let root = tempdir.path().join("root");
-            std::fs::create_dir_all(root.join("usr"))?;
+            runner
+                .with_args(&run.args)
+                .with_env(&run.env)
+                .with_mounts(run.mounts());
 
-            let work = run
-                .state
-                .clone()
-                .unwrap_or_else(|| tempdir.path().join("work"));
-
-            std::fs::create_dir_all(&work)?;
-
-            let mut command = vec![];
-
-            if let Some(entr) = program.entrypoint() {
-                command.extend(entr.entrypoint.iter().map(String::as_str));
-            } else {
-                command.push("/bin/sh");
+            if let Some(state_dir) = &run.state {
+                runner.with_state_dir(state_dir.clone());
             }
 
-            if !run.args.is_empty() {
-                command.extend(run.args.iter().map(String::as_str));
-            } else if let Some(cmd) = program.cmd() {
-                command.extend(cmd.cmd.iter().map(String::as_str));
-            }
-
-            let console_mode = if stdout().is_terminal() {
-                ConsoleMode::Interactive
-            } else {
-                ConsoleMode::Pipe
-            };
-
-            let mut sandbox = Sandbox::builder()
-                .uuid(uuid)
-                .console(console_mode)
-                .arg("--background=")
-                .arg("--no-pager")
-                .root_overlays(&layers)
-                .root_overlay(work)
-                .directory(&root)
-                .bind(BindMount::new("/dev/kvm", "/dev/kvm"))
-                .args(&command)
-                .add_mounts(&program, &mut builder, &run.mounts(), tempdir.path())?;
-
-            for env in &run.env {
-                if let Some((key, value)) = env.split_once('=') {
-                    sandbox = sandbox.setenv(key, value);
-                } else {
-                    sandbox = sandbox.setenv(env, "");
-                }
-            }
-
-            let res = sandbox.command().spawn()?.wait()?;
+            let res = runner.spawn(&program, &mut builder, &layers)?;
 
             if !res.success() {
                 error!("Run failed with status {}", res.code().unwrap_or_default());
@@ -314,13 +312,24 @@ fn raptor() -> RaptorResult<()> {
 
             Presenter::new(&stats).present()?;
         }
+
+        Mode::Completion { shell } => {
+            clap_complete::generate(*shell, &mut Cli::command(), "raptor", &mut stdout());
+        }
     }
 
     Ok(())
 }
 
 fn main() {
-    colog::init();
+    let mut builder = colog::default_builder();
+
+    builder.filter(None, LevelFilter::Trace);
+
+    if let Ok(rust_log) = env::var("RUST_LOG") {
+        builder.parse_filters(&rust_log);
+    }
+    builder.init();
 
     match raptor() {
         Ok(()) => {
@@ -328,7 +337,7 @@ fn main() {
         }
 
         Err(err) => {
-            debug!("Raptor failed: {err}");
+            error!("Raptor failed: {err}");
             std::process::exit(1);
         }
     }

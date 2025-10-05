@@ -15,7 +15,7 @@ use crate::build::{Cacher, LayerInfo};
 use crate::dsl::Program;
 use crate::program::{Executor, Loader, PrintExecutor};
 use crate::sandbox::Sandbox;
-use raptor_parser::ast::FromSource;
+use raptor_parser::ast::{FromSource, Origin};
 use raptor_parser::util::SafeParent;
 
 pub struct RaptorBuilder<'a> {
@@ -168,6 +168,17 @@ impl<'a> RaptorBuilder<'a> {
         Ok(self.programs[key].clone())
     }
 
+    pub fn load_with_source(
+        &mut self,
+        path: impl AsRef<Utf8Path>,
+        source: Origin,
+    ) -> RaptorResult<Arc<Program>> {
+        self.loader.push_origin(source);
+        let res = self.load(path);
+        self.loader.pop_origin();
+        res
+    }
+
     pub fn clear_cache(&mut self) {
         self.loader.clear_cache();
         self.programs.clear();
@@ -179,19 +190,19 @@ impl<'a> RaptorBuilder<'a> {
         visitor: &mut impl FnMut(BuildTarget) -> RaptorResult<()>,
     ) -> RaptorResult<()> {
         match program.from() {
-            Some(FromSource::Docker(src)) => {
+            Some((FromSource::Docker(src), _origin)) => {
                 let image = if src.contains('/') {
-                    src.to_string()
+                    src.clone()
                 } else {
                     format!("library/{src}")
                 };
                 let source = dregistry::reference::parse(&image)?;
                 visitor(BuildTarget::DockerSource(source))?;
             }
-            Some(FromSource::Raptor(from)) => {
+            Some((FromSource::Raptor(from), origin)) => {
                 let filename = program.path.try_parent()?.join(from.to_program_path());
 
-                let fromprog = self.load(filename)?;
+                let fromprog = self.load_with_source(filename, origin.clone())?;
 
                 self.recurse(fromprog, visitor)?;
             }

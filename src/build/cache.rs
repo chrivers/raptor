@@ -18,12 +18,12 @@ impl Cacher {
     pub fn cache_key(program: &Arc<Program>, builder: &mut RaptorBuilder<'_>) -> RaptorResult<u64> {
         let mut state = DefaultHasher::new();
 
-        if let Some(from) = program.from() {
+        if let Some((from, origin)) = program.from() {
             match from {
                 FromSource::Raptor(from) => {
                     let filename = program.path.try_parent()?.join(from.to_program_path());
 
-                    let prog = builder.load(filename)?;
+                    let prog = builder.load_with_source(filename, origin.clone())?;
                     Self::cache_key(&prog, builder)?.hash(&mut state);
                 }
                 FromSource::Docker(src) => src.hash(&mut state),
@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn layerinfo_format() {
-        let info = LayerInfo::new("name".to_string(), 0x01234567_89ABCDEF);
+        let info = LayerInfo::new("name".to_string(), 0x0123_4567_89AB_CDEF);
         assert_eq!(info.name(), "name");
         assert_eq!(info.hash(), "0123456789ABCDEF");
         assert_eq!(info.id(), "name-0123456789ABCDEF");
@@ -167,7 +167,7 @@ mod tests {
     fn layerinfo_parse() {
         let res = LayerInfo::try_from("name-0123456789ABCDEF").unwrap();
         assert_eq!(res.name, "name");
-        assert_eq!(res.hash, 0x0123456789ABCDEF);
+        assert_eq!(res.hash, 0x0123_4567_89AB_CDEF);
 
         LayerInfo::try_from("name-123456789ABCDEF").unwrap_err();
         LayerInfo::try_from("name-0123456789ABCDEF0").unwrap_err();

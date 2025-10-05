@@ -25,15 +25,32 @@ pub fn cargo_dir() -> PathBuf {
 }
 
 fn run_raptor(filename: &Utf8Path) -> RaptorResult<String> {
-    let mut proc = Command::new(cargo_dir().join("raptor"))
-        .arg("build")
+    const SHOULD_BUILD: &[&str] = &["error_failing_instruction.rapt"];
+
+    let should_build = SHOULD_BUILD.contains(&filename.file_name().unwrap_or_default());
+
+    let raptor = cargo_dir().join("raptor");
+
+    let mut cmd = if should_build {
+        let mut cmd = Command::new("sudo");
+        cmd.arg(raptor).arg("build");
+        cmd
+    } else {
+        let mut cmd = Command::new(raptor);
+        cmd.arg("build").arg("-n");
+        cmd
+    };
+
+    cmd.arg("-qqq")
         .arg(filename)
         .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .spawn()?;
-    let mut stdout = proc.stdout.take().unwrap();
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped());
+
+    let mut proc = cmd.spawn()?;
+    let mut stderr = proc.stderr.take().unwrap();
     let mut message = String::new();
-    stdout.read_to_string(&mut message)?;
+    stderr.read_to_string(&mut message)?;
 
     Ok(message)
 }

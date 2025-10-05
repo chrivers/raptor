@@ -34,7 +34,7 @@ impl BuildTargetStats {
                 BuildTarget::Program(ref program) => {
                     let name = program.path.file_stem().unwrap().to_string();
 
-                    if let Some(from) = program.from() {
+                    if let Some((from, _origin)) = program.from() {
                         let key = match &from {
                             FromSource::Raptor(from) => from.to_string(),
                             FromSource::Docker(image) => {

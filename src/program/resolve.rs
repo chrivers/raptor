@@ -21,7 +21,7 @@ impl ResolveArg for Value {
                 let mut val = self.get_attr(&lookup.path.parts()[0])?;
                 if val.is_undefined() {
                     return Err(RaptorError::UndefinedVarError(
-                        lookup.path.parts()[0].to_string(),
+                        lookup.path.parts()[0].clone(),
                         lookup.origin.clone(),
                     ));
                 }

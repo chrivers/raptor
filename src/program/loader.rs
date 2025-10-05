@@ -48,6 +48,14 @@ impl Loader<'_> {
         Self { dump, ..self }
     }
 
+    pub fn push_origin(&mut self, origin: Origin) {
+        self.origins.push(origin);
+    }
+
+    pub fn pop_origin(&mut self) {
+        self.origins.pop();
+    }
+
     pub fn base(&self) -> &Utf8Path {
         &self.base
     }
@@ -113,7 +121,7 @@ impl Loader<'_> {
                         show_error_context(
                             &self.sources[last.path.as_str()],
                             last.path.as_ref(),
-                            "Error while evaluating INCLUDE",
+                            "Error while loading source file",
                             err.detail().unwrap_or("error"),
                             err.range().unwrap_or_else(|| last.span.clone()),
                         );
