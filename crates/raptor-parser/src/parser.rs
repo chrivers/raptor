@@ -145,32 +145,44 @@ impl<'src> Parser<'src> {
         Ok(res.into())
     }
 
+    fn module_name_ident(&mut self) -> ParseResult<Option<String>> {
+        let mut res = String::new();
+
+        while let Token::Minus | Token::Bareword = self.peek()? {
+            self.next()?;
+            res.push_str(self.token());
+        }
+
+        if res.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(res))
+        }
+    }
+
     fn module_name(&mut self) -> ParseResult<ModuleName> {
         let mut root = ModuleRoot::Relative;
 
         if self.accept(&Token::Dollar)? {
-            if self.accept(&Token::Bareword)? {
-                root = ModuleRoot::Package(self.token_string());
+            if let Some(pkg) = self.module_name_ident()? {
+                root = ModuleRoot::Package(pkg);
             } else {
                 root = ModuleRoot::Absolute;
             }
             self.expect(&Token::Dot)?;
         }
 
-        let mut words = vec![self.bareword()?.to_string()];
+        let mut words = vec![];
 
-        loop {
-            match self.peek()? {
-                Token::Dot => {
-                    self.next()?;
-                    words.push(self.bareword()?.to_string());
-                }
-                Token::Minus | Token::Bareword => {
-                    self.next()?;
-                    words.last_mut().unwrap().push_str(self.token());
-                }
-                _ => break,
+        while let Some(word) = self.module_name_ident()? {
+            words.push(word);
+            if !self.accept(&Token::Dot)? {
+                break;
             }
+        }
+
+        if words.is_empty() {
+            return Err(ParseError::Expected("module name"));
         }
 
         Ok(ModuleName::build(root, words))
