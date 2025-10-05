@@ -32,6 +32,18 @@ struct Cli {
 
     #[command(subcommand)]
     mode: Mode,
+
+    /// Link raptor packages by path and name
+    #[arg(
+        short = 'L',
+        long,
+        value_names = ["name", "path"],
+        num_args = 2,
+        action = ArgAction::Append,
+        global = true,
+        help_heading="Link packages",
+    )]
+    link: Vec<String>,
 }
 
 impl Cli {
@@ -248,7 +260,11 @@ fn raptor() -> RaptorResult<()> {
 
     check_for_falcon_binary()?;
 
-    let loader = Loader::new()?.with_dump(args.mode.dump());
+    let mut loader = Loader::new()?.with_dump(args.mode.dump());
+
+    for [name, path] in args.link.as_chunks().0 {
+        loader.add_package(name.into(), path.into());
+    }
 
     let mut builder = RaptorBuilder::new(loader, args.no_act);
 
