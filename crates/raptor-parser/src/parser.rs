@@ -93,6 +93,17 @@ impl<'src> Parser<'src> {
         self.lexer.slice().to_string()
     }
 
+    fn fill<T>(
+        &mut self,
+        func: impl Fn(&mut Self) -> ParseResult<Option<T>>,
+    ) -> ParseResult<Vec<T>> {
+        let mut args = vec![];
+        while let Some(arg) = func(self)? {
+            args.push(arg);
+        }
+        Ok(args)
+    }
+
     fn bareword(&mut self) -> ParseResult<&'src str> {
         self.expect(&Token::Bareword)?;
 
@@ -284,10 +295,8 @@ impl<'src> Parser<'src> {
     pub fn parse_env(&mut self) -> ParseResult<InstEnv> {
         self.trim()?;
 
-        let mut env = vec![];
-        while let Some(assign) = self.parse_env_assign()? {
-            env.push(assign);
-        }
+        let env = self.fill(Self::parse_env_assign)?;
+
         self.end_of_line()?;
 
         Ok(InstEnv { env })
@@ -525,10 +534,7 @@ impl<'src> Parser<'src> {
         let src = self.module_name()?;
         self.trim()?;
 
-        let mut args = vec![];
-        while let Some(arg) = self.parse_include_arg()? {
-            args.push(arg);
-        }
+        let args = self.fill(Self::parse_include_arg)?;
         self.end_of_line()?;
 
         Ok(InstInclude { src, args })
@@ -608,10 +614,7 @@ impl<'src> Parser<'src> {
         let src = self.parse_path()?;
         let dest = self.parse_path()?;
 
-        let mut args = vec![];
-        while let Some(arg) = self.parse_include_arg()? {
-            args.push(arg);
-        }
+        let args = self.fill(Self::parse_include_arg)?;
 
         self.end_of_line()?;
 
@@ -687,13 +690,7 @@ impl<'src> Parser<'src> {
     }
 
     pub fn file(&mut self) -> ParseResult<Vec<Statement>> {
-        let mut res = vec![];
-
-        while let Some(stmt) = self.statement()? {
-            res.push(stmt);
-        }
-
-        Ok(res)
+        self.fill(Self::statement)
     }
 }
 
