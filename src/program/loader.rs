@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
 use minijinja::{Environment, ErrorKind, Value, context};
-use raptor_parser::util::module_name::ModuleName;
+use raptor_parser::util::SafeParent;
+use raptor_parser::util::module_name::{ModuleName, ModuleRoot};
 
 use crate::dsl::{Item, Program};
 use crate::program::{
@@ -78,13 +79,15 @@ impl Loader<'_> {
         end.extend(name.parts());
         end.set_extension(extension);
 
-        let res: Utf8PathBuf = if let Some(pkg) = name.root() {
-            let package = self
-                .get_package(pkg)
-                .ok_or_else(|| RaptorError::PackageNotFound(pkg.to_string(), origin.clone()))?;
-            package.join(end)
-        } else {
-            program.path_for(end)?
+        let res = match name.root() {
+            ModuleRoot::Relative => program.path.try_parent()?.join(end),
+            ModuleRoot::Absolute => self.base.join(end),
+            ModuleRoot::Package(pkg) => {
+                let package = self
+                    .get_package(pkg)
+                    .ok_or_else(|| RaptorError::PackageNotFound(pkg.to_string(), origin.clone()))?;
+                package.join(end)
+            }
         };
 
         Ok(res)
@@ -128,9 +131,7 @@ impl Loader<'_> {
             }
 
             let map = prog.ctx.resolve_args(&include.args)?;
-            let src = &origin
-                .basedir()?
-                .join(self.to_include_path(prog, &include.src, &origin)?);
+            let src = self.to_include_path(prog, &include.src, &origin)?;
 
             self.origins.push(origin.clone());
             let include = self.parse_template(src, Value::from(map))?;

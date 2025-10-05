@@ -59,11 +59,8 @@ impl ModuleName {
     }
 
     #[must_use]
-    pub fn root(&self) -> Option<&str> {
-        match &self.root {
-            ModuleRoot::Relative | ModuleRoot::Absolute => None,
-            ModuleRoot::Package(pkg) => Some(pkg),
-        }
+    pub const fn root(&self) -> &ModuleRoot {
+        &self.root
     }
 
     #[must_use]
@@ -90,7 +87,7 @@ impl From<&str> for ModuleName {
 
 #[cfg(test)]
 mod tests {
-    use crate::util::module_name::ModuleName;
+    use crate::util::module_name::{ModuleName, ModuleRoot};
 
     #[test]
     fn basic() {
@@ -109,7 +106,7 @@ mod tests {
             String::from("b"),
         ]);
 
-        assert_eq!(name.root(), Some("foo"));
+        assert_eq!(name.root(), &ModuleRoot::Package("foo".into()));
         assert_eq!(name.parts(), &["a", "b"]);
     }
 

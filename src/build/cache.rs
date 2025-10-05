@@ -11,7 +11,6 @@ use crate::dsl::Program;
 use crate::program::Loader;
 use crate::{RaptorError, RaptorResult};
 use raptor_parser::ast::{FromSource, Instruction};
-use raptor_parser::util::SafeParentError;
 
 pub struct Cacher;
 
@@ -56,8 +55,8 @@ impl Cacher {
                     data.extend(
                         inst.srcs
                             .iter()
-                            .map(|file| Ok(stmt.origin.basedir()?.join(file)))
-                            .collect::<Result<Vec<_>, SafeParentError>>()?,
+                            .map(|file| prog.path_for(file))
+                            .collect::<Result<Vec<_>, _>>()?,
                     );
                 }
 
@@ -67,7 +66,7 @@ impl Cacher {
 
                 Instruction::Include(inst) => {
                     let path = loader.to_include_path(prog, &inst.src, &stmt.origin)?;
-                    data.insert(prog.path_for(path)?);
+                    data.insert(path);
                 }
 
                 Instruction::Mount(_)
