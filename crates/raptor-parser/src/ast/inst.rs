@@ -4,7 +4,7 @@ use camino::Utf8Path;
 
 use crate::ast::{
     Chown, IncludeArg, InstCmd, InstCopy, InstEntrypoint, InstEnv, InstEnvAssign, InstFrom,
-    InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun, InstWorkdir, InstWrite,
+    InstInclude, InstMkdir, InstMount, InstRender, InstRun, InstWorkdir, InstWrite,
 };
 use crate::util::module_name::ModuleName;
 
@@ -17,7 +17,6 @@ pub enum Instruction {
     Write(InstWrite),
     Mkdir(InstMkdir),
     Include(InstInclude),
-    Invoke(InstInvoke),
     Run(InstRun),
     Env(InstEnv),
     Workdir(InstWorkdir),
@@ -36,7 +35,6 @@ impl Instruction {
             Self::Write(_) => "WRITE",
             Self::Mkdir(_) => "MKDIR",
             Self::Include(_) => "INCLUDE",
-            Self::Invoke(_) => "INVOKE",
             Self::Run(_) => "RUN",
             Self::Env(_) => "ENV",
             Self::Workdir(_) => "WORKDIR",
@@ -143,13 +141,6 @@ impl Instruction {
             _ => self,
         }
     }
-
-    #[must_use]
-    pub fn invoke(args: &[impl AsRef<str>]) -> Self {
-        Self::Invoke(InstInvoke {
-            args: args.iter().map(|s| s.as_ref().to_string()).collect(),
-        })
-    }
 }
 
 impl Display for Instruction {
@@ -162,7 +153,6 @@ impl Display for Instruction {
             Self::Write(inst) => Display::fmt(inst, f),
             Self::Mkdir(inst) => Display::fmt(inst, f),
             Self::Include(inst) => Display::fmt(inst, f),
-            Self::Invoke(inst) => Display::fmt(inst, f),
             Self::Run(inst) => Display::fmt(inst, f),
             Self::Env(inst) => Display::fmt(inst, f),
             Self::Workdir(inst) => Display::fmt(inst, f),
@@ -182,7 +172,6 @@ impl Debug for Instruction {
             Self::Write(inst) => Debug::fmt(inst, f),
             Self::Mkdir(inst) => Debug::fmt(inst, f),
             Self::Include(inst) => Debug::fmt(inst, f),
-            Self::Invoke(inst) => Debug::fmt(inst, f),
             Self::Run(inst) => Debug::fmt(inst, f),
             Self::Env(inst) => Debug::fmt(inst, f),
             Self::Workdir(inst) => Debug::fmt(inst, f),

@@ -146,10 +146,6 @@ INCLUDE "setup-thing.rinc" username password
 
 In other words, include parameter `name=name` can always be shortened to `name`.
 
-### INVOKE
-
-T.B.D.
-
 ### RENDER
 
 ```nginx

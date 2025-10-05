@@ -7,8 +7,8 @@ use minijinja::Value;
 
 use crate::ast::{
     Chown, Expression, FromSource, IncludeArg, InstCmd, InstCopy, InstEntrypoint, InstEnv,
-    InstEnvAssign, InstFrom, InstInclude, InstInvoke, InstMkdir, InstMount, InstRender, InstRun,
-    InstWorkdir, InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
+    InstEnvAssign, InstFrom, InstInclude, InstMkdir, InstMount, InstRender, InstRun, InstWorkdir,
+    InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
 use crate::lexer::Token;
 use crate::util::Location;
@@ -214,12 +214,6 @@ impl<'src> Parser<'src> {
         let run = self.consume_line()?;
 
         Ok(InstRun { run })
-    }
-
-    pub fn parse_invoke(&mut self) -> ParseResult<InstInvoke> {
-        let args = self.consume_line()?;
-
-        Ok(InstInvoke { args })
     }
 
     pub fn parse_entrypoint(&mut self) -> ParseResult<InstEntrypoint> {
@@ -654,7 +648,6 @@ impl<'src> Parser<'src> {
             "MKDIR" => Instruction::Mkdir(self.parse_mkdir()?),
             "COPY" => Instruction::Copy(self.parse_copy()?),
             "INCLUDE" => Instruction::Include(self.parse_include()?),
-            "INVOKE" => Instruction::Invoke(self.parse_invoke()?),
             "RUN" => Instruction::Run(self.parse_run()?),
             "ENV" => Instruction::Env(self.parse_env()?),
             "WORKDIR" => Instruction::Workdir(self.parse_workdir()?),
