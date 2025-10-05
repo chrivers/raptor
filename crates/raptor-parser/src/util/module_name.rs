@@ -1,8 +1,15 @@
 use std::fmt::Display;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum ModuleRoot {
+    Relative,
+    Absolute,
+    Package(String),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ModuleName {
-    root: Option<String>,
+    root: ModuleRoot,
     names: Vec<String>,
 }
 
@@ -12,28 +19,51 @@ impl ModuleName {
         if names.first().is_some_and(|f| f.starts_with('$')) {
             let mut root = names.remove(0);
             root.remove(0);
-            Self::external(root, names)
+            if root.is_empty() {
+                Self::absolute(names)
+            } else {
+                Self::package(root, names)
+            }
         } else {
-            Self::internal(names)
+            Self::relative(names)
         }
     }
 
     #[must_use]
-    pub const fn internal(names: Vec<String>) -> Self {
-        Self { root: None, names }
+    pub const fn build(root: ModuleRoot, names: Vec<String>) -> Self {
+        Self { root, names }
     }
 
     #[must_use]
-    pub const fn external(root: String, names: Vec<String>) -> Self {
+    pub const fn relative(names: Vec<String>) -> Self {
         Self {
-            root: Some(root),
+            root: ModuleRoot::Relative,
+            names,
+        }
+    }
+
+    #[must_use]
+    pub const fn absolute(names: Vec<String>) -> Self {
+        Self {
+            root: ModuleRoot::Absolute,
+            names,
+        }
+    }
+
+    #[must_use]
+    pub const fn package(root: String, names: Vec<String>) -> Self {
+        Self {
+            root: ModuleRoot::Package(root),
             names,
         }
     }
 
     #[must_use]
     pub fn root(&self) -> Option<&str> {
-        self.root.as_deref()
+        match &self.root {
+            ModuleRoot::Relative | ModuleRoot::Absolute => None,
+            ModuleRoot::Package(pkg) => Some(pkg),
+        }
     }
 
     #[must_use]

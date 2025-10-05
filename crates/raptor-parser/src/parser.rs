@@ -12,7 +12,7 @@ use crate::ast::{
 };
 use crate::lexer::Token;
 use crate::util::Location;
-use crate::util::module_name::ModuleName;
+use crate::util::module_name::{ModuleName, ModuleRoot};
 use crate::{ParseError, ParseResult};
 
 pub struct Parser<'src> {
@@ -146,6 +146,17 @@ impl<'src> Parser<'src> {
     }
 
     fn module_name(&mut self) -> ParseResult<ModuleName> {
+        let mut root = ModuleRoot::Relative;
+
+        if self.accept(&Token::Dollar)? {
+            if self.accept(&Token::Bareword)? {
+                root = ModuleRoot::Package(self.token_string());
+            } else {
+                root = ModuleRoot::Absolute;
+            }
+            self.expect(&Token::Dot)?;
+        }
+
         let mut words = vec![self.bareword()?.to_string()];
 
         loop {
@@ -162,7 +173,7 @@ impl<'src> Parser<'src> {
             }
         }
 
-        Ok(ModuleName::new(words))
+        Ok(ModuleName::build(root, words))
     }
 
     fn end_of_line(&mut self) -> ParseResult<()> {
@@ -319,10 +330,10 @@ impl<'src> Parser<'src> {
         self.trim()?;
 
         let state = self.lexer.clone();
-        let next = self.bareword()?;
+        let next = self.bareword();
         self.lexer = state;
 
-        let from = if next == "docker" {
+        let from = if matches!(next, Ok("docker")) {
             FromSource::Docker(self.parse_docker_from()?)
         } else {
             FromSource::Raptor(self.module_name()?)
