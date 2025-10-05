@@ -1,26 +1,39 @@
 use std::fmt::Display;
 
-use camino::Utf8PathBuf;
-
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ModuleName {
+    root: Option<String>,
     names: Vec<String>,
 }
 
 impl ModuleName {
     #[must_use]
-    pub const fn new(names: Vec<String>) -> Self {
-        Self { names }
+    pub fn new(mut names: Vec<String>) -> Self {
+        if names.first().is_some_and(|f| f.starts_with('$')) {
+            let mut root = names.remove(0);
+            root.remove(0);
+            Self::external(root, names)
+        } else {
+            Self::internal(names)
+        }
     }
 
     #[must_use]
-    pub fn to_program_path(&self) -> Utf8PathBuf {
-        format!("{}.rapt", self.names.join("/")).into()
+    pub const fn internal(names: Vec<String>) -> Self {
+        Self { root: None, names }
     }
 
     #[must_use]
-    pub fn to_include_path(&self) -> Utf8PathBuf {
-        format!("{}.rinc", self.names.join("/")).into()
+    pub const fn external(root: String, names: Vec<String>) -> Self {
+        Self {
+            root: Some(root),
+            names,
+        }
+    }
+
+    #[must_use]
+    pub fn root(&self) -> Option<&str> {
+        self.root.as_deref()
     }
 
     #[must_use]
@@ -53,8 +66,20 @@ mod tests {
     fn basic() {
         let name = ModuleName::new(vec![String::from("a"), String::from("b")]);
 
-        assert_eq!(name.to_program_path(), "a/b.rapt");
-        assert_eq!(name.to_include_path(), "a/b.rinc");
+        /* assert_eq!(name.to_program_path(), "a/b.rapt"); */
+        /* assert_eq!(name.to_include_path(), "a/b.rinc"); */
+        assert_eq!(name.parts(), &["a", "b"]);
+    }
+
+    #[test]
+    fn root() {
+        let name = ModuleName::new(vec![
+            String::from("$foo"),
+            String::from("a"),
+            String::from("b"),
+        ]);
+
+        assert_eq!(name.root(), Some("foo"));
         assert_eq!(name.parts(), &["a", "b"]);
     }
 
