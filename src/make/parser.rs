@@ -68,6 +68,27 @@ impl FromStr for Link {
     }
 }
 
+#[derive(Debug, Clone)]
+pub enum MakeTarget {
+    Job(String),
+    Group(String),
+}
+
+impl FromStr for MakeTarget {
+    type Err = &'static str;
+
+    #[allow(clippy::option_if_let_else)]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let res = if let Some(group) = s.strip_prefix('%') {
+            Self::Group(group.to_string())
+        } else {
+            Self::Job(s.to_string())
+        };
+
+        Ok(res)
+    }
+}
+
 pub mod module_name {
     use raptor_parser::util::module_name::ModuleName;
     use serde::{Deserialize, Deserializer, Serializer};
