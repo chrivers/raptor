@@ -54,32 +54,6 @@ impl DockerSourceExt for DockerSource {
 }
 
 impl BuildTarget {
-    pub fn layer_info(&self, builder: &mut RaptorBuilder) -> RaptorResult<LayerInfo> {
-        let name;
-        let hash;
-
-        match self {
-            Self::Program(prog) => {
-                debug!("Calculating hash for layer {}", prog.path);
-
-                name = prog.path.file_stem().unwrap().into();
-                hash = Cacher::cache_key(prog, builder)?;
-            }
-
-            Self::DockerSource(image) => {
-                debug!("Calculating hash for image {image}");
-
-                name = image.safe_file_name()?;
-
-                let mut state = DefaultHasher::new();
-                image.hash(&mut state);
-                hash = state.finish();
-            }
-        }
-
-        Ok(LayerInfo::new(name.to_string(), hash))
-    }
-
     fn simulate(&self, loader: &Loader) -> RaptorResult<()> {
         match self {
             Self::Program(prog) => {
@@ -184,6 +158,32 @@ impl<'a> RaptorBuilder<'a> {
         res
     }
 
+    pub fn layer_info(&mut self, target: &BuildTarget) -> RaptorResult<LayerInfo> {
+        let name;
+        let hash;
+
+        match target {
+            BuildTarget::Program(prog) => {
+                debug!("Calculating hash for layer {}", prog.path);
+
+                name = prog.path.file_stem().unwrap().into();
+                hash = Cacher::cache_key(prog, self)?;
+            }
+
+            BuildTarget::DockerSource(image) => {
+                debug!("Calculating hash for image {image}");
+
+                name = image.safe_file_name()?;
+
+                let mut state = DefaultHasher::new();
+                image.hash(&mut state);
+                hash = state.finish();
+            }
+        }
+
+        Ok(LayerInfo::new(name.to_string(), hash))
+    }
+
     pub fn clear_cache(&mut self) {
         self.loader.clear_cache();
         self.programs.clear();
@@ -284,7 +284,7 @@ impl<'a> RaptorBuilder<'a> {
         let mut layers: Vec<Utf8PathBuf> = vec![];
 
         for prog in programs {
-            let layer_info = prog.layer_info(self)?;
+            let layer_info = self.layer_info(&prog)?;
             let done_path = self.build_layer(&layers, &prog, &layer_info)?;
             layers.push(done_path);
         }

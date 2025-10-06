@@ -312,7 +312,7 @@ fn raptor() -> RaptorResult<()> {
             let mut layers = vec![];
 
             for target in builder.stack(program.clone())? {
-                layers.push(target.layer_info(&mut builder)?.done_path());
+                layers.push(builder.layer_info(&target)?.done_path());
             }
 
             let mut runner = Runner::new()?;

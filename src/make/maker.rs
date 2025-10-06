@@ -97,7 +97,7 @@ impl Maker {
         let mut layers = vec![];
 
         for target in builder.stack(program.clone())? {
-            layers.push(target.layer_info(builder)?.done_path());
+            layers.push(builder.layer_info(&target)?.done_path());
         }
 
         let mut mounts = HashMap::<&str, Vec<&str>>::new();
