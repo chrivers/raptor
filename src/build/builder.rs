@@ -54,22 +54,6 @@ impl DockerSourceExt for DockerSource {
 }
 
 impl BuildTarget {
-    fn simulate(&self, loader: &Loader) -> RaptorResult<()> {
-        match self {
-            Self::Program(prog) => {
-                let mut exec = PrintExecutor::new();
-
-                exec.run(loader, prog)?;
-            }
-
-            Self::DockerSource(image) => {
-                info!("Would download docker image [{image}]");
-            }
-        }
-
-        Ok(())
-    }
-
     fn build(
         &self,
         loader: &Loader,
@@ -240,6 +224,22 @@ impl<'a> RaptorBuilder<'a> {
         }
     }
 
+    fn simulate(&self, target: &BuildTarget) -> RaptorResult<()> {
+        match target {
+            BuildTarget::Program(prog) => {
+                let mut exec = PrintExecutor::new();
+
+                exec.run(&self.loader, prog)?;
+            }
+
+            BuildTarget::DockerSource(image) => {
+                info!("Would download docker image [{image}]");
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn build_layer(
         &self,
         layers: &[Utf8PathBuf],
@@ -266,7 +266,7 @@ impl<'a> RaptorBuilder<'a> {
             );
 
             if self.dry_run {
-                prog.simulate(&self.loader)?;
+                self.simulate(prog)?;
             } else {
                 prog.build(&self.loader, layers, &layer.work_path())?;
 
