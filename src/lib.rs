@@ -3,6 +3,7 @@ extern crate log;
 
 pub mod build;
 pub mod dsl;
+pub mod make;
 pub mod program;
 pub mod runner;
 pub mod sandbox;
