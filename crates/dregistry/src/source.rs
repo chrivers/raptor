@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::digest::Digest;
 
-#[derive(Debug, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct DockerSource {
     pub host: Option<String>,
     pub port: Option<u16>,
