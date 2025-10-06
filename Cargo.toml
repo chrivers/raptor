@@ -120,6 +120,7 @@ serde_json.workspace = true
 serde_variant = { workspace = true }
 serde_yml = { workspace = true }
 thiserror = { workspace = true }
+toml = "0.9.7"
 uuid = { workspace = true, features = ["v4"] }
 
 [dev-dependencies]
