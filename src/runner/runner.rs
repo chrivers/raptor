@@ -208,7 +208,7 @@ impl<'a> Runner<'a> {
         } else if let Some(entr) = program.entrypoint() {
             command.extend(entr.entrypoint.iter().map(String::as_str));
         } else {
-            command.push("/bin/sh");
+            command.extend(["/bin/sh", "-c"]);
         }
 
         if !self.args.is_empty() {
