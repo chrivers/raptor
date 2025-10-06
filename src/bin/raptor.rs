@@ -10,6 +10,7 @@ use log::{LevelFilter, debug, error, info};
 use nix::unistd::Uid;
 
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
+use raptor::make::maker::Maker;
 use raptor::program::Loader;
 use raptor::runner::Runner;
 use raptor::sandbox::Sandbox;
@@ -96,6 +97,19 @@ enum Mode {
     /// Show mode: print list of build targets
     #[command(alias = "s")]
     Show { dirs: Vec<Utf8PathBuf> },
+
+    /// Make mode: run build operations from makefile (Raptor.toml)
+    Make {
+        #[arg(
+            short = 'f',
+            long,
+            help = "File",
+            default_value_t = Utf8PathBuf::from("Raptor.toml")
+        )]
+        file: Utf8PathBuf,
+
+        targets: Vec<String>,
+    },
 
     /// Completions mode: generate shell completion scripts
     Completion {
@@ -327,6 +341,20 @@ fn raptor() -> RaptorResult<()> {
             }
 
             Presenter::new(&stats).present()?;
+        }
+
+        Mode::Make { file, targets } => {
+            let maker = Maker::load(file)?;
+
+            maker.add_links(builder.loader());
+
+            for target in targets {
+                if let Some(job) = target.strip_prefix('%') {
+                    maker.run_group(&mut builder, job)?;
+                } else {
+                    maker.run_job(&mut builder, target)?;
+                }
+            }
         }
 
         Mode::Completion { shell } => {
