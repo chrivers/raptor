@@ -129,43 +129,35 @@ impl<'a> RaptorBuilder<'a> {
         self.programs.clear();
     }
 
-    pub fn recurse(
-        &mut self,
-        program: Arc<Program>,
-        visitor: &mut impl FnMut(BuildTarget) -> RaptorResult<()>,
-    ) -> RaptorResult<()> {
-        match program.from() {
-            Some((FromSource::Docker(src), _origin)) => {
-                let image = if src.contains('/') {
-                    src.clone()
-                } else {
-                    format!("library/{src}")
-                };
-                let source = dregistry::reference::parse(&image)?;
-                visitor(BuildTarget::DockerSource(source))?;
-            }
-            Some((FromSource::Raptor(from), origin)) => {
-                let fromprog = self
-                    .loader
-                    .to_program_path(from, origin)
-                    .and_then(|path| self.load_with_source(path, origin.clone()))?;
-
-                self.recurse(fromprog, visitor)?;
-            }
-            None => {}
-        }
-
-        visitor(BuildTarget::Program(program))
-    }
-
     pub fn stack(&mut self, program: Arc<Program>) -> RaptorResult<Vec<BuildTarget>> {
         let mut data: Vec<BuildTarget> = vec![];
-        let table = &mut data;
 
-        self.recurse(program, &mut |prog| {
-            table.push(prog);
-            Ok(())
-        })?;
+        let mut next = Some(program);
+
+        while let Some(prog) = next.take() {
+            data.push(BuildTarget::Program(prog.clone()));
+
+            match prog.from() {
+                Some((FromSource::Docker(src), _origin)) => {
+                    let image = if src.contains('/') {
+                        src.clone()
+                    } else {
+                        format!("library/{src}")
+                    };
+                    let source = dregistry::reference::parse(&image)?;
+                    data.push(BuildTarget::DockerSource(source));
+                }
+                Some((FromSource::Raptor(from), origin)) => {
+                    let fromprog = self
+                        .loader
+                        .to_program_path(from, origin)
+                        .and_then(|path| self.load_with_source(path, origin.clone()))?;
+
+                    next = Some(fromprog);
+                }
+                None => {}
+            }
+        }
 
         Ok(data)
     }
