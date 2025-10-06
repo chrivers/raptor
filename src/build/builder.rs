@@ -23,7 +23,7 @@ pub struct RaptorBuilder<'a> {
     programs: HashMap<Utf8PathBuf, Arc<Program>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BuildTarget {
     Program(Arc<Program>),
     DockerSource(DockerSource),
