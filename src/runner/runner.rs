@@ -216,6 +216,7 @@ impl<'a> Runner<'a> {
         } else if let Some(cmd) = program.cmd() {
             command.extend(cmd.cmd.iter().map(String::as_str));
         }
+        trace!("Command {command:?}");
 
         let console_mode = if stdout().is_terminal() {
             ConsoleMode::Interactive
