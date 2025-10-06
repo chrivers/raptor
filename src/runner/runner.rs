@@ -82,7 +82,7 @@ impl AddMounts for SpawnBuilder {
                         let program = builder.load(&src)?;
                         let name = program.path.with_extension("").as_str().replace('/', ".");
 
-                        let layers = builder.build(program)?;
+                        let layers = builder.build_program(program)?;
 
                         info.targets.push(name.clone());
 
@@ -107,7 +107,7 @@ impl AddMounts for SpawnBuilder {
                     }
 
                     let program = builder.load(&srcs[0])?;
-                    let layers = builder.build(program)?;
+                    let layers = builder.build_program(program)?;
                     self = self.overlay_ro(&layers, &mount.dest);
                 }
             }

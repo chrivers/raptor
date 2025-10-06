@@ -87,7 +87,7 @@ impl Maker {
             return Ok(ExitStatus::default());
         }
 
-        builder.build(program.clone())?;
+        builder.build_program(program.clone())?;
 
         let mut layers = vec![];
 

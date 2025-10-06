@@ -291,7 +291,7 @@ fn raptor() -> RaptorResult<()> {
                     if !args.no_act {
                         check_for_root()?;
                     }
-                    builder.build(program)?;
+                    builder.build_program(program)?;
                 }
             }
 
@@ -305,7 +305,7 @@ fn raptor() -> RaptorResult<()> {
 
             let program = builder.load(&run.target)?;
 
-            builder.build(program.clone())?;
+            builder.build_program(program.clone())?;
 
             let mut layers = vec![];
 

@@ -230,7 +230,7 @@ impl<'a> RaptorBuilder<'a> {
         Ok(data)
     }
 
-    pub fn build(&mut self, program: Arc<Program>) -> RaptorResult<Vec<Utf8PathBuf>> {
+    pub fn build_program(&mut self, program: Arc<Program>) -> RaptorResult<Vec<Utf8PathBuf>> {
         match self.run_build(program) {
             Ok(res) => Ok(res),
             Err(err) => {
