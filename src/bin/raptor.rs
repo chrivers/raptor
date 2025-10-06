@@ -11,6 +11,8 @@ use nix::unistd::Uid;
 
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
 use raptor::make::maker::Maker;
+use raptor::make::parser::MakeTarget;
+use raptor::make::planner::Planner;
 use raptor::program::Loader;
 use raptor::runner::Runner;
 use raptor::sandbox::Sandbox;
@@ -108,7 +110,7 @@ enum Mode {
         )]
         file: Utf8PathBuf,
 
-        targets: Vec<String>,
+        targets: Vec<MakeTarget>,
     },
 
     /// Completions mode: generate shell completion scripts
@@ -348,12 +350,23 @@ fn raptor() -> RaptorResult<()> {
 
             maker.add_links(builder.loader());
 
+            let mut plan = Planner::new(&maker);
+
             for target in targets {
-                if let Some(job) = target.strip_prefix('%') {
-                    maker.run_group(&mut builder, job)?;
-                } else {
-                    maker.run_job(&mut builder, target)?;
-                }
+                plan.add(&mut builder, target)?;
+            }
+
+            let (plan, targetlist) = plan.into_plan();
+
+            plan.into_iter().try_for_each(|id| {
+                let work = &targetlist[&id];
+                builder.build_layer(&work.layers, &work.target, &work.layerinfo)?;
+
+                Ok::<(), RaptorError>(())
+            })?;
+
+            for target in targets {
+                maker.run(&mut builder, target)?;
             }
         }
 

@@ -8,7 +8,7 @@ use raptor_parser::ast::Origin;
 
 use crate::build::{BuildTarget, Cacher, RaptorBuilder};
 use crate::dsl::Program;
-use crate::make::parser::Make;
+use crate::make::parser::{Make, MakeTarget};
 use crate::program::Loader;
 use crate::runner::Runner;
 use crate::{RaptorError, RaptorResult};
@@ -153,5 +153,12 @@ impl Maker {
         }
 
         Ok(())
+    }
+
+    pub fn run(&self, builder: &mut RaptorBuilder, target: &MakeTarget) -> RaptorResult<()> {
+        match target {
+            MakeTarget::Job(job) => self.run_job(builder, job).map(|_| ()),
+            MakeTarget::Group(grp) => self.run_group(builder, grp),
+        }
     }
 }

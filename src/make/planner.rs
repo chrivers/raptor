@@ -7,7 +7,8 @@ use raptor_parser::ast::Origin;
 
 use crate::RaptorResult;
 use crate::build::{BuildTarget, LayerInfo, RaptorBuilder};
-use crate::make::parser::RunTarget;
+use crate::make::maker::Maker;
+use crate::make::parser::{MakeTarget, RunTarget};
 
 #[derive(Debug)]
 pub struct Work {
@@ -27,18 +28,19 @@ impl Work {
     }
 }
 
-#[derive(Default)]
-pub struct Planner {
+pub struct Planner<'a> {
     pub nodes: HashMap<u64, Node<u64>>,
     pub targets: HashMap<u64, Work>,
+    maker: &'a Maker,
 }
 
-impl Planner {
+impl<'a> Planner<'a> {
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(maker: &'a Maker) -> Self {
         Self {
             nodes: HashMap::new(),
             targets: HashMap::new(),
+            maker,
         }
     }
 
@@ -93,6 +95,23 @@ impl Planner {
                 self.nodes
                     .entry(job_hash)
                     .and_modify(|node| node.add_dep(input_hash));
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn add(&mut self, builder: &mut RaptorBuilder, target: &MakeTarget) -> RaptorResult<()> {
+        match target {
+            MakeTarget::Group(grp) => {
+                for run in &self.maker.rules().group[grp].run {
+                    let job = &self.maker.rules().run[run];
+                    self.add_job(builder, job)?;
+                }
+            }
+            MakeTarget::Job(job) => {
+                let job = &self.maker.rules().run[job];
+                self.add_job(builder, job)?;
             }
         }
 
