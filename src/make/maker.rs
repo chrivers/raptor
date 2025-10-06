@@ -24,6 +24,11 @@ impl Maker {
         Ok(Self { make })
     }
 
+    #[must_use]
+    pub const fn rules(&self) -> &Make {
+        &self.make
+    }
+
     pub fn add_links(&self, loader: &mut Loader) {
         for (name, link) in &self.make.raptor.link {
             loader.add_package(name.to_string(), Utf8PathBuf::from(&link.source));
