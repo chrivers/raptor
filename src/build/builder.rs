@@ -53,51 +53,6 @@ impl DockerSourceExt for DockerSource {
     }
 }
 
-impl BuildTarget {
-    fn build(
-        &self,
-        loader: &Loader,
-        layers: &[Utf8PathBuf],
-        rootdir: &Utf8Path,
-    ) -> RaptorResult<()> {
-        match self {
-            Self::Program(prog) => {
-                let sandbox = Sandbox::new(layers, Utf8Path::new(&rootdir))?;
-
-                let mut exec = Executor::new(sandbox);
-
-                exec.run(loader, prog)?;
-
-                exec.finish()?;
-            }
-
-            Self::DockerSource(image) => {
-                fs::create_dir_all(rootdir)?;
-
-                let dc = DockerDownloader::new(Utf8PathBuf::from("cache"))?;
-
-                let layers = dc.pull(image, "linux", "amd64")?;
-
-                for layer in layers.layers {
-                    info!("Extracting layer [{}]", layer.digest);
-
-                    let filename = dc.layer_file_name(&layer.digest);
-
-                    Command::new("tar")
-                        .arg("-x")
-                        .arg("-C")
-                        .arg(rootdir)
-                        .arg("-f")
-                        .arg(filename)
-                        .status()?;
-                }
-            }
-        }
-
-        Ok(())
-    }
-}
-
 impl<'a> RaptorBuilder<'a> {
     pub fn new(loader: Loader<'a>, dry_run: bool) -> Self {
         Self {
@@ -240,6 +195,49 @@ impl<'a> RaptorBuilder<'a> {
         Ok(())
     }
 
+    fn build(
+        &self,
+        target: &BuildTarget,
+        layers: &[Utf8PathBuf],
+        rootdir: &Utf8Path,
+    ) -> RaptorResult<()> {
+        match target {
+            BuildTarget::Program(prog) => {
+                let sandbox = Sandbox::new(layers, Utf8Path::new(&rootdir))?;
+
+                let mut exec = Executor::new(sandbox);
+
+                exec.run(&self.loader, prog)?;
+
+                exec.finish()?;
+            }
+
+            BuildTarget::DockerSource(image) => {
+                fs::create_dir_all(rootdir)?;
+
+                let dc = DockerDownloader::new(Utf8PathBuf::from("cache"))?;
+
+                let layers = dc.pull(image, "linux", "amd64")?;
+
+                for layer in layers.layers {
+                    info!("Extracting layer [{}]", layer.digest);
+
+                    let filename = dc.layer_file_name(&layer.digest);
+
+                    Command::new("tar")
+                        .arg("-x")
+                        .arg("-C")
+                        .arg(rootdir)
+                        .arg("-f")
+                        .arg(filename)
+                        .status()?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn build_layer(
         &self,
         layers: &[Utf8PathBuf],
@@ -268,7 +266,7 @@ impl<'a> RaptorBuilder<'a> {
             if self.dry_run {
                 self.simulate(prog)?;
             } else {
-                prog.build(&self.loader, layers, &layer.work_path())?;
+                self.build(prog, layers, &layer.work_path())?;
 
                 debug!("Layer {layer_name} finished. Moving {work_path} -> {done_path}");
                 fs::rename(&work_path, &done_path)?;
