@@ -142,6 +142,7 @@ pub struct Runner<'a> {
     tempdir: Utf8TempDir,
     env: &'a [String],
     args: &'a [String],
+    entrypoint: &'a [String],
     state_dir: Option<Utf8PathBuf>,
     mounts: HashMap<&'a str, Vec<&'a str>>,
 }
@@ -153,6 +154,7 @@ impl<'a> Runner<'a> {
             tempdir,
             env: EMPTY,
             args: EMPTY,
+            entrypoint: EMPTY,
             state_dir: None,
             mounts: HashMap::new(),
         })
@@ -170,6 +172,11 @@ impl<'a> Runner<'a> {
 
     pub fn with_mounts(&mut self, mounts: HashMap<&'a str, Vec<&'a str>>) -> &mut Self {
         self.mounts = mounts;
+        self
+    }
+
+    pub const fn with_entrypoint(&mut self, entrypoint: &'a [String]) -> &mut Self {
+        self.entrypoint = entrypoint;
         self
     }
 
@@ -196,7 +203,9 @@ impl<'a> Runner<'a> {
 
         let mut command = vec![];
 
-        if let Some(entr) = program.entrypoint() {
+        if !self.entrypoint.is_empty() {
+            command.extend(self.entrypoint.iter().map(String::as_str));
+        } else if let Some(entr) = program.entrypoint() {
             command.extend(entr.entrypoint.iter().map(String::as_str));
         } else {
             command.push("/bin/sh");
