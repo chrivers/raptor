@@ -137,8 +137,12 @@ impl<'a> RaptorBuilder<'a> {
         while let Some(prog) = next.take() {
             data.push(BuildTarget::Program(prog.clone()));
 
-            match prog.from() {
-                Some((FromSource::Docker(src), _origin)) => {
+            let Some((source, origin)) = prog.from() else {
+                continue;
+            };
+
+            match source {
+                FromSource::Docker(src) => {
                     let image = if src.contains('/') {
                         src.clone()
                     } else {
@@ -147,7 +151,8 @@ impl<'a> RaptorBuilder<'a> {
                     let source = dregistry::reference::parse(&image)?;
                     data.push(BuildTarget::DockerSource(source));
                 }
-                Some((FromSource::Raptor(from), origin)) => {
+
+                FromSource::Raptor(from) => {
                     let fromprog = self
                         .loader
                         .to_program_path(from, origin)
@@ -155,7 +160,6 @@ impl<'a> RaptorBuilder<'a> {
 
                     next = Some(fromprog);
                 }
-                None => {}
             }
         }
 
