@@ -169,8 +169,8 @@ impl<'a> RaptorBuilder<'a> {
         Ok(self.programs[key].clone())
     }
 
-    pub const fn loader(&self) -> &Loader {
-        &self.loader
+    pub const fn loader<'b>(&'b mut self) -> &'b mut Loader<'a> {
+        &mut self.loader
     }
 
     pub fn load_with_source(
