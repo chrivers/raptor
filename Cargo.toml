@@ -99,6 +99,7 @@ clap_complete = "4.5.58"
 toml = "0.9.7"
 dep-graph = { version = "0.2.0", default-features = false }
 siphasher = "1.0.1"
+dashmap = "6.1.0"
 
 [dependencies]
 annotate-snippets = { workspace = true }
@@ -110,6 +111,7 @@ clap = { workspace = true, features = ["cargo", "derive", "string"] }
 clap_complete = { workspace = true }
 colog = { workspace = true }
 colored = { workspace = true }
+dashmap = { workspace = true }
 dep-graph = { workspace = true }
 dregistry = { workspace = true }
 falcon = { workspace = true }
