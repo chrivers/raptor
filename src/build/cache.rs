@@ -1,11 +1,12 @@
 use std::collections::HashSet;
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::hash::{Hash, Hasher};
 use std::os::unix::fs::MetadataExt;
 use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use itertools::Itertools;
 use raptor_parser::util::module_name::ModuleRoot;
+use siphasher::sip::SipHasher13;
 
 use crate::build::RaptorBuilder;
 use crate::dsl::Program;
@@ -17,7 +18,7 @@ pub struct Cacher;
 
 impl Cacher {
     pub fn cache_key(program: &Arc<Program>, builder: &mut RaptorBuilder<'_>) -> RaptorResult<u64> {
-        let mut state = DefaultHasher::new();
+        let mut state = SipHasher13::new();
 
         if let Some((from, origin)) = program.from() {
             match from {
