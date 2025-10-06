@@ -240,43 +240,52 @@ impl<'a> RaptorBuilder<'a> {
         }
     }
 
+    pub fn build_layer(
+        &self,
+        layers: &[Utf8PathBuf],
+        prog: &BuildTarget,
+        layer: &LayerInfo,
+    ) -> RaptorResult<Utf8PathBuf> {
+        let layer_name = layer.name().to_string();
+        let work_path = layer.work_path();
+        let done_path = layer.done_path();
+
+        if fs::exists(layer.done_path())? {
+            info!(
+                "{} [{}] {}",
+                "Completed".bright_white(),
+                layer.hash().dimmed(),
+                layer_name.yellow()
+            );
+        } else {
+            info!(
+                "{} {}: {}",
+                "Building".bright_white(),
+                layer_name.yellow(),
+                layer.work_path().as_str().green()
+            );
+
+            if self.dry_run {
+                prog.simulate(&self.loader)?;
+            } else {
+                prog.build(&self.loader, layers, &layer.work_path())?;
+
+                debug!("Layer {layer_name} finished. Moving {work_path} -> {done_path}");
+                fs::rename(&work_path, &done_path)?;
+            }
+        }
+
+        Ok(done_path)
+    }
+
     fn run_build(&mut self, program: Arc<Program>) -> RaptorResult<Vec<Utf8PathBuf>> {
         let programs = self.stack(program)?;
 
         let mut layers: Vec<Utf8PathBuf> = vec![];
 
         for prog in programs {
-            let layer = prog.layer_info(self)?;
-
-            let layer_name = layer.name().to_string();
-            let work_path = layer.work_path();
-            let done_path = layer.done_path();
-
-            if fs::exists(layer.done_path())? {
-                info!(
-                    "{} [{}] {}",
-                    "Completed".bright_white(),
-                    layer.hash().dimmed(),
-                    layer_name.yellow()
-                );
-            } else {
-                info!(
-                    "{} {}: {}",
-                    "Building".bright_white(),
-                    layer_name.yellow(),
-                    layer.work_path().as_str().green()
-                );
-
-                if self.dry_run {
-                    prog.simulate(&self.loader)?;
-                } else {
-                    prog.build(&self.loader, &layers, &layer.work_path())?;
-
-                    debug!("Layer {layer_name} finished. Moving {work_path} -> {done_path}");
-                    fs::rename(&work_path, &done_path)?;
-                }
-            }
-
+            let layer_info = prog.layer_info(self)?;
+            let done_path = self.build_layer(&layers, &prog, &layer_info)?;
             layers.push(done_path);
         }
 
