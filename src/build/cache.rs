@@ -89,7 +89,7 @@ impl Cacher {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LayerInfo {
     name: String,
     hash: u64,
@@ -106,6 +106,11 @@ impl LayerInfo {
     #[must_use]
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    #[must_use]
+    pub const fn hash_value(&self) -> u64 {
+        self.hash
     }
 
     #[must_use]
