@@ -88,6 +88,9 @@ pub enum RaptorError {
 
     #[error("Package not found: ${0}")]
     PackageNotFound(String, Origin),
+
+    #[error("Unknown job: {0}")]
+    UnknownJob(String),
 }
 
 impl RaptorError {
@@ -117,6 +120,7 @@ impl RaptorError {
             Self::ParseTomlError(_) => "Parse toml error",
             Self::LayerCacheParseError => "Layer cache parse error",
             Self::PackageNotFound(_, _) => "Package not found",
+            Self::UnknownJob(_) => "Unknown job",
         }
     }
 }
