@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::hash::{Hash, Hasher};
 use std::process::Command;
 use std::sync::Arc;
 
@@ -9,6 +9,7 @@ use colored::Colorize;
 use dregistry::downloader::DockerDownloader;
 use dregistry::source::DockerSource;
 use minijinja::context;
+use siphasher::sip::SipHasher13;
 
 use crate::RaptorResult;
 use crate::build::{Cacher, LayerInfo};
@@ -114,7 +115,7 @@ impl<'a> RaptorBuilder<'a> {
 
                 name = image.safe_file_name()?;
 
-                let mut state = DefaultHasher::new();
+                let mut state = SipHasher13::new();
                 image.hash(&mut state);
                 hash = state.finish();
             }
