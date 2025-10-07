@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt::{self, Display};
 use std::marker::PhantomData;
 use std::str::FromStr;
@@ -30,7 +30,7 @@ pub struct GroupTarget {
     pub run: BTreeSet<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, Hash)]
 #[serde(rename_all = "kebab-case")]
 pub struct RunTarget {
     #[serde(with = "module_name")]
@@ -55,7 +55,7 @@ pub struct RunTarget {
     pub args: Vec<String>,
 
     #[serde(default)]
-    pub env: HashMap<String, String>,
+    pub env: BTreeMap<String, String>,
 }
 
 impl FromStr for Link {
