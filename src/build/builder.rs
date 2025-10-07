@@ -178,15 +178,8 @@ impl<'a> RaptorBuilder<'a> {
 
     fn simulate(&self, target: &BuildTarget) -> RaptorResult<()> {
         match target {
-            BuildTarget::Program(prog) => {
-                let mut exec = PrintExecutor::new();
-
-                exec.run(&self.loader, prog)?;
-            }
-
-            BuildTarget::DockerSource(image) => {
-                info!("Would download docker image [{image}]");
-            }
+            BuildTarget::Program(prog) => PrintExecutor::new().run(prog)?,
+            BuildTarget::DockerSource(image) => info!("Would download docker image [{image}]"),
         }
 
         Ok(())
