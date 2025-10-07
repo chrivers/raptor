@@ -12,7 +12,7 @@ use nix::unistd::Uid;
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
 use raptor::make::maker::Maker;
 use raptor::make::parser::MakeTarget;
-use raptor::make::planner::Planner;
+use raptor::make::planner::{Job, Planner};
 use raptor::program::Loader;
 use raptor::runner::Runner;
 use raptor::sandbox::Sandbox;
@@ -360,14 +360,17 @@ fn raptor() -> RaptorResult<()> {
 
             plan.into_iter().try_for_each(|id| {
                 let work = &targetlist[&id];
-                builder.build_layer(&work.layers, &work.target, &work.layerinfo)?;
+                match work {
+                    Job::Build(build) => {
+                        builder.build_layer(&build.layers, &build.target, &build.layerinfo)?;
+                    }
+                    Job::Run(run_target) => {
+                        maker.run_job(&builder, run_target)?;
+                    }
+                }
 
                 Ok::<(), RaptorError>(())
             })?;
-
-            for target in targets {
-                maker.run(&builder, target)?;
-            }
         }
 
         Mode::Completion { shell } => {
