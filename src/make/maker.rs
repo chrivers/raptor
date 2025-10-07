@@ -8,7 +8,7 @@ use raptor_parser::ast::Origin;
 
 use crate::build::{BuildTarget, Cacher, RaptorBuilder};
 use crate::dsl::Program;
-use crate::make::parser::{Make, MakeTarget};
+use crate::make::parser::{Make, MakeTarget, RunTarget};
 use crate::program::Loader;
 use crate::runner::Runner;
 use crate::{RaptorError, RaptorResult};
@@ -54,13 +54,17 @@ impl Maker {
         Ok(res)
     }
 
-    pub fn run_job(&self, builder: &RaptorBuilder, name: &str) -> RaptorResult<ExitStatus> {
+    pub fn run_named_job(&self, builder: &RaptorBuilder, name: &str) -> RaptorResult<ExitStatus> {
         let job = self
             .make
             .run
             .get(name)
             .ok_or_else(|| RaptorError::UnknownJob(name.to_string()))?;
 
+        self.run_job(builder, job)
+    }
+
+    pub fn run_job(&self, builder: &RaptorBuilder, job: &RunTarget) -> RaptorResult<ExitStatus> {
         let origin = Origin::make("<command-line>", 0..0);
         let filename = builder.loader().to_program_path(&job.target, &origin)?;
 
@@ -88,7 +92,7 @@ impl Maker {
                 .unwrap_or(SystemTime::UNIX_EPOCH)
                 >= newest
         {
-            info!("Target [{name}] up to date");
+            info!("Output file [{output}] is up to date");
             return Ok(ExitStatus::default());
         }
 
@@ -149,7 +153,7 @@ impl Maker {
             .ok_or_else(|| RaptorError::UnknownJob(name.to_string()))?;
 
         for run in &group.run {
-            self.run_job(builder, run)?;
+            self.run_named_job(builder, run)?;
         }
 
         Ok(())
@@ -157,7 +161,7 @@ impl Maker {
 
     pub fn run(&self, builder: &RaptorBuilder, target: &MakeTarget) -> RaptorResult<()> {
         match target {
-            MakeTarget::Job(job) => self.run_job(builder, job).map(|_| ()),
+            MakeTarget::Job(job) => self.run_named_job(builder, job).map(|_| ()),
             MakeTarget::Group(grp) => self.run_group(builder, grp),
         }
     }
