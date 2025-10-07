@@ -29,7 +29,7 @@ impl Maker {
         &self.make
     }
 
-    pub fn add_links(&self, loader: &mut Loader) {
+    pub fn add_links(&self, loader: &Loader) {
         for (name, link) in &self.make.raptor.link {
             loader.add_package(name.to_string(), Utf8PathBuf::from(&link.source));
         }
@@ -54,7 +54,7 @@ impl Maker {
         Ok(res)
     }
 
-    pub fn run_job(&self, builder: &mut RaptorBuilder, name: &str) -> RaptorResult<ExitStatus> {
+    pub fn run_job(&self, builder: &RaptorBuilder, name: &str) -> RaptorResult<ExitStatus> {
         let job = self
             .make
             .run
@@ -141,7 +141,7 @@ impl Maker {
         Ok(res)
     }
 
-    pub fn run_group(&self, builder: &mut RaptorBuilder, name: &str) -> RaptorResult<()> {
+    pub fn run_group(&self, builder: &RaptorBuilder, name: &str) -> RaptorResult<()> {
         let group = self
             .make
             .group
@@ -155,7 +155,7 @@ impl Maker {
         Ok(())
     }
 
-    pub fn run(&self, builder: &mut RaptorBuilder, target: &MakeTarget) -> RaptorResult<()> {
+    pub fn run(&self, builder: &RaptorBuilder, target: &MakeTarget) -> RaptorResult<()> {
         match target {
             MakeTarget::Job(job) => self.run_job(builder, job).map(|_| ()),
             MakeTarget::Group(grp) => self.run_group(builder, grp),

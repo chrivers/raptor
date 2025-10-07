@@ -246,7 +246,7 @@ impl<'a> RaptorBuilder<'a> {
         Ok(done_path)
     }
 
-    pub fn build_program(&mut self, program: Arc<Program>) -> RaptorResult<Vec<Utf8PathBuf>> {
+    pub fn build_program(&self, program: Arc<Program>) -> RaptorResult<Vec<Utf8PathBuf>> {
         let programs = self.stack(program)?;
 
         let mut layers: Vec<Utf8PathBuf> = vec![];

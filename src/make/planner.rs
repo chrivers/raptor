@@ -46,7 +46,7 @@ impl<'a> Planner<'a> {
 
     pub fn add_target(
         &mut self,
-        builder: &mut RaptorBuilder,
+        builder: &RaptorBuilder,
         targets: &[BuildTarget],
     ) -> RaptorResult<Option<u64>> {
         let mut last = None;
@@ -76,7 +76,7 @@ impl<'a> Planner<'a> {
         Ok(last)
     }
 
-    pub fn add_job(&mut self, builder: &mut RaptorBuilder, job: &RunTarget) -> RaptorResult<()> {
+    pub fn add_job(&mut self, builder: &RaptorBuilder, job: &RunTarget) -> RaptorResult<()> {
         let origin = Origin::make("<command-line>", 0..0);
 
         let name = &job.target;
@@ -101,7 +101,7 @@ impl<'a> Planner<'a> {
         Ok(())
     }
 
-    pub fn add(&mut self, builder: &mut RaptorBuilder, target: &MakeTarget) -> RaptorResult<()> {
+    pub fn add(&mut self, builder: &RaptorBuilder, target: &MakeTarget) -> RaptorResult<()> {
         match target {
             MakeTarget::Group(grp) => {
                 for run in &self.maker.rules().group[grp].run {

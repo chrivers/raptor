@@ -34,7 +34,7 @@ pub trait AddMounts: Sized {
     fn add_mounts<S: BuildHasher>(
         self,
         program: &Program,
-        builder: &mut RaptorBuilder,
+        builder: &RaptorBuilder,
         mounts: &HashMap<&str, Vec<&str>, S>,
         tempdir: &Utf8Path,
     ) -> RaptorResult<Self>;
@@ -44,7 +44,7 @@ impl AddMounts for SpawnBuilder {
     fn add_mounts<S: BuildHasher>(
         mut self,
         program: &Program,
-        builder: &mut RaptorBuilder,
+        builder: &RaptorBuilder,
         mounts: &HashMap<&str, Vec<&str>, S>,
         tempdir: &Utf8Path,
     ) -> RaptorResult<Self> {
@@ -188,7 +188,7 @@ impl<'a> Runner<'a> {
     pub fn spawn(
         self,
         program: &Program,
-        builder: &mut RaptorBuilder,
+        builder: &RaptorBuilder,
         layers: &[Utf8PathBuf],
     ) -> RaptorResult<ExitStatus> {
         /* the ephemeral root directory needs to have /usr for systemd-nspawn to accept it */

@@ -326,7 +326,7 @@ fn raptor() -> RaptorResult<()> {
                 runner.with_state_dir(state_dir.clone());
             }
 
-            let res = runner.spawn(&program, &mut builder, &layers)?;
+            let res = runner.spawn(&program, &builder, &layers)?;
 
             if !res.success() {
                 error!("Run failed with status {}", res.code().unwrap_or_default());
@@ -353,7 +353,7 @@ fn raptor() -> RaptorResult<()> {
             let mut plan = Planner::new(&maker);
 
             for target in targets {
-                plan.add(&mut builder, target)?;
+                plan.add(&builder, target)?;
             }
 
             let (plan, targetlist) = plan.into_plan();
@@ -366,7 +366,7 @@ fn raptor() -> RaptorResult<()> {
             })?;
 
             for target in targets {
-                maker.run(&mut builder, target)?;
+                maker.run(&builder, target)?;
             }
         }
 
