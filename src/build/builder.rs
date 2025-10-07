@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs;
 use std::hash::{Hash, Hasher};
 use std::process::Command;
@@ -21,7 +20,6 @@ use raptor_parser::ast::{FromSource, Origin};
 pub struct RaptorBuilder<'a> {
     loader: Loader<'a>,
     dry_run: bool,
-    programs: HashMap<Utf8PathBuf, Arc<Program>>,
 }
 
 #[derive(Debug, Clone)]
@@ -55,32 +53,18 @@ impl DockerSourceExt for DockerSource {
 }
 
 impl<'a> RaptorBuilder<'a> {
-    pub fn new(loader: Loader<'a>, dry_run: bool) -> Self {
-        Self {
-            loader,
-            dry_run,
-            programs: HashMap::new(),
-        }
+    pub const fn new(loader: Loader<'a>, dry_run: bool) -> Self {
+        Self { loader, dry_run }
     }
 
-    pub fn load(&mut self, path: impl AsRef<Utf8Path>) -> RaptorResult<Arc<Program>> {
-        let key = path.as_ref();
-
-        if let Some(program) = self.programs.get(key) {
-            return Ok(program.clone());
-        }
-
-        let program = match self.loader.parse_template(&path, context! {}) {
-            Ok(res) => res,
-            Err(err) => {
-                self.loader.explain_error(&err)?;
-                return Err(err);
-            }
-        };
-
-        self.programs.insert(key.into(), Arc::new(program));
-
-        Ok(self.programs[key].clone())
+    pub fn load(&self, path: impl AsRef<Utf8Path>) -> RaptorResult<Arc<Program>> {
+        let mut origins = vec![];
+        self.loader
+            .parse_template(path.as_ref(), &mut origins, context! {})
+            .or_else(|err| {
+                self.loader.explain_error(&err, &origins)?;
+                Err(err)
+            })
     }
 
     pub const fn loader<'b>(&'b self) -> &'b Loader<'a> {
@@ -92,17 +76,20 @@ impl<'a> RaptorBuilder<'a> {
     }
 
     pub fn load_with_source(
-        &mut self,
+        &self,
         path: impl AsRef<Utf8Path>,
         source: Origin,
     ) -> RaptorResult<Arc<Program>> {
-        self.loader.push_origin(source);
-        let res = self.load(path);
-        self.loader.pop_origin();
-        res
+        let origins = vec![source];
+        self.loader
+            .load_template(&path, context! {})
+            .or_else(|err| {
+                self.loader.explain_error(&err, &origins)?;
+                Err(err)
+            })
     }
 
-    pub fn layer_info(&mut self, target: &BuildTarget) -> RaptorResult<LayerInfo> {
+    pub fn layer_info(&self, target: &BuildTarget) -> RaptorResult<LayerInfo> {
         let name;
         let hash;
 
@@ -130,10 +117,9 @@ impl<'a> RaptorBuilder<'a> {
 
     pub fn clear_cache(&mut self) {
         self.loader.clear_cache();
-        self.programs.clear();
     }
 
-    pub fn stack(&mut self, program: Arc<Program>) -> RaptorResult<Vec<BuildTarget>> {
+    pub fn stack(&self, program: Arc<Program>) -> RaptorResult<Vec<BuildTarget>> {
         let mut data: Vec<BuildTarget> = vec![];
 
         let mut next = Some(program);
@@ -170,17 +156,7 @@ impl<'a> RaptorBuilder<'a> {
         Ok(data)
     }
 
-    pub fn build_program(&mut self, program: Arc<Program>) -> RaptorResult<Vec<Utf8PathBuf>> {
-        match self.run_build(program) {
-            Ok(res) => Ok(res),
-            Err(err) => {
-                self.loader.explain_error(&err)?;
-                Err(err)
-            }
-        }
-    }
-
-    fn simulate(&self, target: &BuildTarget) -> RaptorResult<()> {
+    fn simulate(target: &BuildTarget) -> RaptorResult<()> {
         match target {
             BuildTarget::Program(prog) => PrintExecutor::new().run(prog)?,
             BuildTarget::DockerSource(image) => info!("Would download docker image [{image}]"),
@@ -258,7 +234,7 @@ impl<'a> RaptorBuilder<'a> {
             );
 
             if self.dry_run {
-                self.simulate(prog)?;
+                Self::simulate(prog)?;
             } else {
                 self.build(prog, layers, &layer.work_path())?;
 
@@ -270,7 +246,7 @@ impl<'a> RaptorBuilder<'a> {
         Ok(done_path)
     }
 
-    fn run_build(&mut self, program: Arc<Program>) -> RaptorResult<Vec<Utf8PathBuf>> {
+    pub fn build_program(&mut self, program: Arc<Program>) -> RaptorResult<Vec<Utf8PathBuf>> {
         let programs = self.stack(program)?;
 
         let mut layers: Vec<Utf8PathBuf> = vec![];

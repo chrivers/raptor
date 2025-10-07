@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::sync::Arc;
 
 use camino::Utf8Path;
 use minijinja::Value;
@@ -9,7 +10,7 @@ use raptor_parser::ast::{Instruction, Origin, Statement};
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub enum Item {
     Statement(Statement),
-    Program(Program),
+    Program(Arc<Program>),
 }
 
 impl Item {
@@ -19,11 +20,11 @@ impl Item {
         ctx: Value,
         path: impl AsRef<Utf8Path>,
     ) -> Self {
-        Self::Program(Program {
+        Self::Program(Arc::new(Program {
             code: code.into_iter().collect(),
             ctx,
             path: path.as_ref().into(),
-        })
+        }))
     }
 
     #[must_use]

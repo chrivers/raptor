@@ -108,7 +108,7 @@ impl Executor {
         program.traverse(&mut |stmt| {
             info!("{}", stmt.inst);
             if let Err(err) = self.handle(stmt, &program.ctx) {
-                loader.explain_exec_error(stmt, &err)?;
+                loader.explain_exec_error(stmt, &err, &[])?;
                 return Err(err);
             }
             Ok(())

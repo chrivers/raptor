@@ -17,7 +17,7 @@ use raptor_parser::ast::{FromSource, Instruction};
 pub struct Cacher;
 
 impl Cacher {
-    pub fn cache_key(program: &Arc<Program>, builder: &mut RaptorBuilder<'_>) -> RaptorResult<u64> {
+    pub fn cache_key(program: &Arc<Program>, builder: &RaptorBuilder<'_>) -> RaptorResult<u64> {
         let mut state = SipHasher13::new();
 
         if let Some((from, origin)) = program.from() {

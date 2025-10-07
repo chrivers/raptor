@@ -276,7 +276,7 @@ fn raptor() -> RaptorResult<()> {
 
     check_for_falcon_binary()?;
 
-    let mut loader = Loader::new()?.with_dump(args.mode.dump());
+    let loader = Loader::new()?.with_dump(args.mode.dump());
 
     for [name, path] in args.link.as_chunks().0 {
         loader.add_package(name.into(), path.into());
