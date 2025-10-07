@@ -348,7 +348,7 @@ fn raptor() -> RaptorResult<()> {
         Mode::Make { file, targets } => {
             let maker = Maker::load(file)?;
 
-            maker.add_links(builder.loader());
+            maker.add_links(builder.loader_mut());
 
             let mut plan = Planner::new(&maker);
 
