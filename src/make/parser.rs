@@ -1,11 +1,14 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::{self, Display};
+use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::str::FromStr;
 
 use raptor_parser::util::module_name::ModuleName;
 use serde::de::{DeserializeOwned, MapAccess, Unexpected, Visitor};
 use serde::{Deserialize, Deserializer};
+use siphasher::sip::SipHasher13;
+use tap::Tap;
 
 #[derive(Deserialize, Debug)]
 pub struct Make {
@@ -56,6 +59,15 @@ pub struct RunTarget {
 
     #[serde(default)]
     pub env: BTreeMap<String, String>,
+}
+
+impl RunTarget {
+    #[must_use]
+    pub fn hash_value(&self) -> u64 {
+        SipHasher13::new()
+            .tap_mut(|hasher| self.hash(hasher))
+            .finish()
+    }
 }
 
 impl FromStr for Link {
