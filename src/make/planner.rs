@@ -5,10 +5,10 @@ use dep_graph::{DepGraph, Node};
 use itertools::Itertools;
 use raptor_parser::ast::Origin;
 
-use crate::RaptorResult;
 use crate::build::{BuildTarget, LayerInfo, RaptorBuilder};
 use crate::make::maker::Maker;
 use crate::make::parser::{MakeTarget, RunTarget};
+use crate::{RaptorError, RaptorResult};
 
 #[derive(Debug)]
 pub struct BuildLayer {
@@ -84,6 +84,14 @@ impl<'a> Planner<'a> {
         Ok(last)
     }
 
+    pub fn add_named_run_job(&mut self, name: &str) -> RaptorResult<()> {
+        let run_rules = &self.maker.rules().run;
+        let job = run_rules
+            .get(name)
+            .ok_or_else(|| RaptorError::UnknownJob(name.to_string()))?;
+        self.add_run_job(job)
+    }
+
     pub fn add_run_job(&mut self, job: &RunTarget) -> RaptorResult<()> {
         let origin = Origin::make("<command-line>", 0..0);
 
@@ -116,14 +124,12 @@ impl<'a> Planner<'a> {
     pub fn add(&mut self, target: &MakeTarget) -> RaptorResult<()> {
         match target {
             MakeTarget::Group(grp) => {
-                for run in &self.maker.rules().group[grp].run {
-                    let job = &self.maker.rules().run[run];
-                    self.add_run_job(job)?;
+                for name in &self.maker.rules().group[grp].run {
+                    self.add_named_run_job(name)?;
                 }
             }
-            MakeTarget::Job(job) => {
-                let job = &self.maker.rules().run[job];
-                self.add_run_job(job)?;
+            MakeTarget::Job(name) => {
+                self.add_named_run_job(name)?;
             }
         }
 
