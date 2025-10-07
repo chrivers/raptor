@@ -52,8 +52,11 @@ impl<'a> Planner<'a> {
     pub fn add_build_job(
         &mut self,
         builder: &RaptorBuilder,
-        targets: &[BuildTarget],
+        input: &str,
     ) -> RaptorResult<Option<u64>> {
+        let prog = builder.load(input)?;
+        let targets = builder.stack(prog)?;
+
         let mut last = None;
         let mut layers = vec![];
 
@@ -86,11 +89,8 @@ impl<'a> Planner<'a> {
     pub fn add_run_job(&mut self, builder: &RaptorBuilder, job: &RunTarget) -> RaptorResult<()> {
         let origin = Origin::make("<command-line>", 0..0);
 
-        let name = &job.target;
-        let filename = builder.loader().to_program_path(name, &origin)?;
-        let prog = builder.load(&filename)?;
-        let stack = builder.stack(prog)?;
-        let job_hash = self.add_build_job(builder, &stack)?;
+        let filename = builder.loader().to_program_path(&job.target, &origin)?;
+        let job_hash = self.add_build_job(builder, filename.as_str())?;
 
         let run_hash = job.hash_value();
 
@@ -100,10 +100,7 @@ impl<'a> Planner<'a> {
         self.jobs.insert(run_hash, Job::Run(job.clone()));
 
         for input in &job.input {
-            let prog = builder.load(input)?;
-            let stack = builder.stack(prog)?;
-
-            let input_hash = self.add_build_job(builder, &stack)?;
+            let input_hash = self.add_build_job(builder, input)?;
 
             if let Some(input_hash) = input_hash {
                 self.nodes
