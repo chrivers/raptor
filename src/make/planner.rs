@@ -44,7 +44,7 @@ impl<'a> Planner<'a> {
         }
     }
 
-    pub fn add_target(
+    pub fn add_build_job(
         &mut self,
         builder: &RaptorBuilder,
         targets: &[BuildTarget],
@@ -76,20 +76,20 @@ impl<'a> Planner<'a> {
         Ok(last)
     }
 
-    pub fn add_job(&mut self, builder: &RaptorBuilder, job: &RunTarget) -> RaptorResult<()> {
+    pub fn add_run_job(&mut self, builder: &RaptorBuilder, job: &RunTarget) -> RaptorResult<()> {
         let origin = Origin::make("<command-line>", 0..0);
 
         let name = &job.target;
         let filename = builder.loader().to_program_path(name, &origin)?;
         let prog = builder.load(&filename)?;
         let stack = builder.stack(prog)?;
-        let job_hash = self.add_target(builder, &stack)?;
+        let job_hash = self.add_build_job(builder, &stack)?;
 
         for input in &job.input {
             let prog = builder.load(input)?;
             let stack = builder.stack(prog)?;
 
-            let input_hash = self.add_target(builder, &stack)?;
+            let input_hash = self.add_build_job(builder, &stack)?;
 
             if let Some((input_hash, job_hash)) = input_hash.zip(job_hash) {
                 self.nodes
@@ -106,12 +106,12 @@ impl<'a> Planner<'a> {
             MakeTarget::Group(grp) => {
                 for run in &self.maker.rules().group[grp].run {
                     let job = &self.maker.rules().run[run];
-                    self.add_job(builder, job)?;
+                    self.add_run_job(builder, job)?;
                 }
             }
             MakeTarget::Job(job) => {
                 let job = &self.maker.rules().run[job];
-                self.add_job(builder, job)?;
+                self.add_run_job(builder, job)?;
             }
         }
 
