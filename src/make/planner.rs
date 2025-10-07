@@ -28,9 +28,14 @@ impl BuildLayer {
     }
 }
 
+pub enum Job {
+    Build(BuildLayer),
+    Run(RunTarget),
+}
+
 pub struct Planner<'a> {
     pub nodes: HashMap<u64, Node<u64>>,
-    pub targets: HashMap<u64, BuildLayer>,
+    pub jobs: HashMap<u64, Job>,
     maker: &'a Maker,
 }
 
@@ -39,7 +44,7 @@ impl<'a> Planner<'a> {
     pub fn new(maker: &'a Maker) -> Self {
         Self {
             nodes: HashMap::new(),
-            targets: HashMap::new(),
+            jobs: HashMap::new(),
             maker,
         }
     }
@@ -57,9 +62,10 @@ impl<'a> Planner<'a> {
             let hash = li.hash_value();
             let done_path = li.done_path();
 
-            if !self.targets.contains_key(&hash) {
+            if !self.jobs.contains_key(&hash) {
                 self.nodes.insert(hash, Node::new(hash));
-                self.targets.insert(hash, BuildLayer::new(st, &layers, li));
+                let job = Job::Build(BuildLayer::new(st, &layers, li));
+                self.jobs.insert(hash, job);
             }
             let work = self.nodes.get_mut(&hash).unwrap();
 
@@ -86,15 +92,22 @@ impl<'a> Planner<'a> {
         let stack = builder.stack(prog)?;
         let job_hash = self.add_build_job(builder, &stack)?;
 
+        let run_hash = job.hash_value();
+
+        let mut node = Node::new(run_hash);
+        job_hash.inspect(|job_hash| node.add_dep(*job_hash));
+        self.nodes.insert(run_hash, node);
+        self.jobs.insert(run_hash, Job::Run(job.clone()));
+
         for input in &job.input {
             let prog = builder.load(input)?;
             let stack = builder.stack(prog)?;
 
             let input_hash = self.add_build_job(builder, &stack)?;
 
-            if let Some((input_hash, job_hash)) = input_hash.zip(job_hash) {
+            if let Some(input_hash) = input_hash {
                 self.nodes
-                    .entry(job_hash)
+                    .entry(run_hash)
                     .and_modify(|node| node.add_dep(input_hash));
             }
         }
@@ -120,10 +133,10 @@ impl<'a> Planner<'a> {
     }
 
     #[must_use]
-    pub fn into_plan(self) -> (DepGraph<u64>, HashMap<u64, BuildLayer>) {
+    pub fn into_plan(self) -> (DepGraph<u64>, HashMap<u64, Job>) {
         (
             DepGraph::new(&self.nodes.into_values().collect_vec()),
-            self.targets,
+            self.jobs,
         )
     }
 }
