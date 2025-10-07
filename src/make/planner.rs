@@ -36,32 +36,30 @@ pub enum Job {
 pub struct Planner<'a> {
     pub nodes: HashMap<u64, Node<u64>>,
     pub jobs: HashMap<u64, Job>,
+    builder: &'a RaptorBuilder<'a>,
     maker: &'a Maker,
 }
 
 impl<'a> Planner<'a> {
     #[must_use]
-    pub fn new(maker: &'a Maker) -> Self {
+    pub fn new(maker: &'a Maker, builder: &'a RaptorBuilder<'a>) -> Self {
         Self {
             nodes: HashMap::new(),
             jobs: HashMap::new(),
+            builder,
             maker,
         }
     }
 
-    pub fn add_build_job(
-        &mut self,
-        builder: &RaptorBuilder,
-        input: &str,
-    ) -> RaptorResult<Option<u64>> {
-        let prog = builder.load(input)?;
-        let targets = builder.stack(prog)?;
+    pub fn add_build_job(&mut self, input: &str) -> RaptorResult<Option<u64>> {
+        let prog = self.builder.load(input)?;
+        let targets = self.builder.stack(prog)?;
 
         let mut last = None;
         let mut layers = vec![];
 
         for st in targets.iter().rev() {
-            let li = builder.layer_info(st)?;
+            let li = self.builder.layer_info(st)?;
             let hash = li.hash_value();
             let done_path = li.done_path();
 
@@ -86,11 +84,14 @@ impl<'a> Planner<'a> {
         Ok(last)
     }
 
-    pub fn add_run_job(&mut self, builder: &RaptorBuilder, job: &RunTarget) -> RaptorResult<()> {
+    pub fn add_run_job(&mut self, job: &RunTarget) -> RaptorResult<()> {
         let origin = Origin::make("<command-line>", 0..0);
 
-        let filename = builder.loader().to_program_path(&job.target, &origin)?;
-        let job_hash = self.add_build_job(builder, filename.as_str())?;
+        let filename = self
+            .builder
+            .loader()
+            .to_program_path(&job.target, &origin)?;
+        let job_hash = self.add_build_job(filename.as_str())?;
 
         let run_hash = job.hash_value();
 
@@ -100,7 +101,7 @@ impl<'a> Planner<'a> {
         self.jobs.insert(run_hash, Job::Run(job.clone()));
 
         for input in &job.input {
-            let input_hash = self.add_build_job(builder, input)?;
+            let input_hash = self.add_build_job(input)?;
 
             if let Some(input_hash) = input_hash {
                 self.nodes
@@ -112,17 +113,17 @@ impl<'a> Planner<'a> {
         Ok(())
     }
 
-    pub fn add(&mut self, builder: &RaptorBuilder, target: &MakeTarget) -> RaptorResult<()> {
+    pub fn add(&mut self, target: &MakeTarget) -> RaptorResult<()> {
         match target {
             MakeTarget::Group(grp) => {
                 for run in &self.maker.rules().group[grp].run {
                     let job = &self.maker.rules().run[run];
-                    self.add_run_job(builder, job)?;
+                    self.add_run_job(job)?;
                 }
             }
             MakeTarget::Job(job) => {
                 let job = &self.maker.rules().run[job];
-                self.add_run_job(builder, job)?;
+                self.add_run_job(job)?;
             }
         }
 

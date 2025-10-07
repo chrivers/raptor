@@ -350,10 +350,10 @@ fn raptor() -> RaptorResult<()> {
 
             maker.add_links(builder.loader());
 
-            let mut plan = Planner::new(&maker);
+            let mut plan = Planner::new(&maker, &builder);
 
             for target in targets {
-                plan.add(&builder, target)?;
+                plan.add(target)?;
             }
 
             let (plan, targetlist) = plan.into_plan();
