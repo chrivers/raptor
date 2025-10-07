@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::{self, Display};
 use std::marker::PhantomData;
 use std::str::FromStr;
@@ -10,14 +10,14 @@ use serde::{Deserialize, Deserializer};
 #[derive(Deserialize, Debug)]
 pub struct Make {
     pub raptor: Raptor,
-    pub run: HashMap<String, RunTarget>,
-    pub group: HashMap<String, GroupTarget>,
+    pub run: BTreeMap<String, RunTarget>,
+    pub group: BTreeMap<String, GroupTarget>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct Raptor {
     #[serde(deserialize_with = "de_map_string_or_struct")]
-    pub link: HashMap<String, Link>,
+    pub link: BTreeMap<String, Link>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -186,7 +186,7 @@ where
     deserializer.deserialize_any(StringOrStruct(PhantomData))
 }
 
-pub fn de_map_string_or_struct<'de, D, T>(deserializer: D) -> Result<HashMap<String, T>, D::Error>
+pub fn de_map_string_or_struct<'de, D, T>(deserializer: D) -> Result<BTreeMap<String, T>, D::Error>
 where
     D: Deserializer<'de>,
     T: for<'x> Deserialize<'x> + FromStr,
@@ -198,6 +198,6 @@ where
         T: DeserializeOwned + FromStr,
         T::Err: Display;
 
-    let v = HashMap::<String, Wrapper<T>>::deserialize(deserializer)?;
+    let v = BTreeMap::<String, Wrapper<T>>::deserialize(deserializer)?;
     Ok(v.into_iter().map(|(k, Wrapper(v))| (k, v)).collect())
 }
