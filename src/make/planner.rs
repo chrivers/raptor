@@ -34,8 +34,8 @@ pub enum Job {
 }
 
 pub struct Planner<'a> {
-    pub nodes: HashMap<u64, Node<u64>>,
-    pub jobs: HashMap<u64, Job>,
+    nodes: HashMap<u64, Node<u64>>,
+    jobs: HashMap<u64, Job>,
     builder: &'a RaptorBuilder<'a>,
     maker: &'a Maker,
 }
