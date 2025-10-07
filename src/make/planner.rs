@@ -11,13 +11,13 @@ use crate::make::maker::Maker;
 use crate::make::parser::{MakeTarget, RunTarget};
 
 #[derive(Debug)]
-pub struct Work {
+pub struct BuildLayer {
     pub layers: Vec<Utf8PathBuf>,
     pub target: BuildTarget,
     pub layerinfo: LayerInfo,
 }
 
-impl Work {
+impl BuildLayer {
     #[must_use]
     pub fn new(target: &BuildTarget, layers: &[Utf8PathBuf], layerinfo: LayerInfo) -> Self {
         Self {
@@ -30,7 +30,7 @@ impl Work {
 
 pub struct Planner<'a> {
     pub nodes: HashMap<u64, Node<u64>>,
-    pub targets: HashMap<u64, Work>,
+    pub targets: HashMap<u64, BuildLayer>,
     maker: &'a Maker,
 }
 
@@ -58,7 +58,7 @@ impl<'a> Planner<'a> {
 
             if !self.targets.contains_key(&hash) {
                 self.nodes.insert(hash, Node::new(hash));
-                self.targets.insert(hash, Work::new(st, &layers, li));
+                self.targets.insert(hash, BuildLayer::new(st, &layers, li));
             }
             let work = self.nodes.get_mut(&hash).unwrap();
 
@@ -119,7 +119,7 @@ impl<'a> Planner<'a> {
     }
 
     #[must_use]
-    pub fn into_plan(self) -> (DepGraph<u64>, HashMap<u64, Work>) {
+    pub fn into_plan(self) -> (DepGraph<u64>, HashMap<u64, BuildLayer>) {
         (
             DepGraph::new(&self.nodes.into_values().collect_vec()),
             self.targets,
