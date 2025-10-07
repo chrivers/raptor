@@ -51,7 +51,8 @@ impl<'a> Planner<'a> {
     ) -> RaptorResult<Option<u64>> {
         let mut last = None;
         let mut layers = vec![];
-        for st in targets {
+
+        for st in targets.iter().rev() {
             let li = builder.layer_info(st)?;
             let hash = li.hash_value();
             let done_path = li.done_path();
