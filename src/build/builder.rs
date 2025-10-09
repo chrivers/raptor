@@ -253,9 +253,9 @@ impl<'a> RaptorBuilder<'a> {
 
         let mut layers: Vec<Utf8PathBuf> = vec![];
 
-        for prog in programs {
-            let layer_info = self.layer_info(&prog)?;
-            let done_path = self.build_layer(&layers, &prog, &layer_info)?;
+        for prog in &programs {
+            let layer_info = self.layer_info(prog)?;
+            let done_path = self.build_layer(&layers, prog, &layer_info)?;
             layers.push(done_path);
         }
 
