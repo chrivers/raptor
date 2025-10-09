@@ -153,6 +153,8 @@ impl<'a> RaptorBuilder<'a> {
             }
         }
 
+        data.reverse();
+
         Ok(data)
     }
 

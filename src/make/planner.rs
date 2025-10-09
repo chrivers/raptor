@@ -58,7 +58,7 @@ impl<'a> Planner<'a> {
         let mut last = None;
         let mut layers = vec![];
 
-        for st in targets.iter().rev() {
+        for st in &targets {
             let li = self.builder.layer_info(st)?;
             let hash = li.hash_value();
             let done_path = li.done_path();
