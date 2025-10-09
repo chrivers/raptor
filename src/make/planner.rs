@@ -10,7 +10,7 @@ use crate::make::maker::Maker;
 use crate::make::parser::{MakeTarget, RunTarget};
 use crate::{RaptorError, RaptorResult};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BuildLayer {
     pub layers: Vec<Utf8PathBuf>,
     pub target: BuildTarget,
@@ -28,6 +28,7 @@ impl BuildLayer {
     }
 }
 
+#[derive(Clone)]
 pub enum Job {
     Build(BuildLayer),
     Run(RunTarget),
