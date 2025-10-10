@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::env;
 use std::fs::File;
 use std::io::{Read, stdout};
-use std::os::fd::{AsFd, AsRawFd, BorrowedFd, OwnedFd, RawFd};
+use std::os::fd::{AsFd, AsRawFd, OwnedFd, RawFd};
 use std::time::Duration;
 
 use camino::Utf8PathBuf;
@@ -10,6 +10,7 @@ use clap::{ArgAction, CommandFactory, Parser as _};
 use clap_complete::Shell;
 use colored::Colorize;
 use crossbeam::channel::TryRecvError;
+use itertools::Itertools;
 use log::{LevelFilter, debug, error, info};
 use nix::libc;
 use nix::poll::{PollFd, PollFlags};
@@ -389,7 +390,7 @@ fn raptor(terminal: &mut DefaultTerminal) -> RaptorResult<()> {
                     let mut need_resize = false;
 
                     loop {
-                        terminal.try_draw(|f| {
+                        terminal.try_draw(|f| -> Result<(), std::io::Error> {
                             let chunks = Layout::default()
                                 .direction(Direction::Vertical)
                                 .margin(1)
@@ -443,27 +444,28 @@ fn raptor(terminal: &mut DefaultTerminal) -> RaptorResult<()> {
                                 .alignment(Alignment::Center);
                             f.render_widget(explanation, chunks[1]);
 
-                            Ok::<(), std::io::Error>(())
+                            Ok(())
                         })?;
 
-                        let mut pollfds = vec![];
-                        for fd in panes.keys() {
-                            pollfds.push(PollFd::new(
-                                unsafe { BorrowedFd::borrow_raw(fd.as_raw_fd()) },
-                                PollFlags::POLLIN,
-                            ));
-                        }
+                        let fds = {
+                            let mut pollfds = vec![];
+                            for pane in panes.values() {
+                                pollfds.push(PollFd::new(pane.file.as_fd(), PollFlags::POLLIN));
+                            }
 
-                        nix::poll::poll(&mut pollfds, 100u16)?;
+                            nix::poll::poll(&mut pollfds, 100u16)?;
+
+                            pollfds
+                                .iter()
+                                .filter(|fd| fd.any().unwrap_or(false))
+                                .map(AsFd::as_fd)
+                                .map(|fd| fd.as_raw_fd())
+                                .collect_vec()
+                        };
 
                         let mut buf = [0u8; 1024 * 8];
 
-                        for fd in pollfds
-                            .iter()
-                            .filter(|fd| fd.any().unwrap_or(false))
-                            .map(AsFd::as_fd)
-                            .map(|fd| fd.as_raw_fd())
-                        {
+                        for fd in fds {
                             let sz = panes.get_mut(&fd).unwrap().file.read(&mut buf);
                             match sz {
                                 Ok(0) | Err(_) => {
