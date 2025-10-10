@@ -80,6 +80,24 @@ impl<'a> TerminalParallelRunner<'a> {
         }
     }
 
+    fn poll_fds<'b>(panes: impl Iterator<Item = &'b Pane>) -> RaptorResult<Vec<RawFd>> {
+        let mut pollfds = vec![];
+        for pane in panes {
+            pollfds.push(PollFd::new(pane.file.as_fd(), PollFlags::POLLIN));
+        }
+
+        nix::poll::poll(&mut pollfds, 100u16)?;
+
+        let res = pollfds
+            .iter()
+            .filter(|fd| fd.any().unwrap_or(false))
+            .map(AsFd::as_fd)
+            .map(|fd| fd.as_raw_fd())
+            .collect_vec();
+
+        Ok(res)
+    }
+
     #[allow(clippy::cast_possible_truncation)]
     fn run_terminal_display(
         rx: &Receiver<(OwnedFd, Job)>,
@@ -142,21 +160,7 @@ impl<'a> TerminalParallelRunner<'a> {
                 Ok(())
             })?;
 
-            let fds = {
-                let mut pollfds = vec![];
-                for pane in panes.values() {
-                    pollfds.push(PollFd::new(pane.file.as_fd(), PollFlags::POLLIN));
-                }
-
-                nix::poll::poll(&mut pollfds, 100u16)?;
-
-                pollfds
-                    .iter()
-                    .filter(|fd| fd.any().unwrap_or(false))
-                    .map(AsFd::as_fd)
-                    .map(|fd| fd.as_raw_fd())
-                    .collect_vec()
-            };
+            let fds = Self::poll_fds(panes.values())?;
 
             let mut buf = [0u8; 1024 * 8];
 
