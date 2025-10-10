@@ -101,6 +101,10 @@ dep-graph = { version = "0.2.0", default-features = false }
 siphasher = "1.0.1"
 dashmap = "6.1.0"
 tap = "1.0.1"
+crossbeam = "0.8.4"
+ratatui = "0.29.0"
+rayon = "1.11.0"
+tui-term = "0.2.0"
 
 [dependencies]
 annotate-snippets = { workspace = true }
@@ -112,16 +116,19 @@ clap = { workspace = true, features = ["cargo", "derive", "string"] }
 clap_complete = { workspace = true }
 colog = { workspace = true }
 colored = { workspace = true }
+crossbeam = { workspace = true }
 dashmap = { workspace = true }
-dep-graph = { workspace = true }
+dep-graph = { workspace = true, features = ["parallel"] }
 dregistry = { workspace = true }
 falcon = { workspace = true }
 indicatif = { workspace = true, features = ["improved_unicode"] }
 itertools = { workspace = true }
 log = { workspace = true }
 minijinja = { workspace = true, features = ["custom_syntax", "debug", "deserialization", "loader", "loop_controls", "macros", "multi_template", "serde", "std_collections"] }
-nix = { workspace = true, features = ["fs", "user"] }
+nix = { workspace = true, features = ["fs", "poll", "process", "term", "user"] }
 raptor-parser = { workspace = true }
+ratatui = { workspace = true }
+rayon = { workspace = true }
 serde = { workspace = true, features = ["serde_derive"] }
 serde_json.workspace = true
 serde_variant = { workspace = true }
@@ -130,6 +137,7 @@ siphasher = { workspace = true }
 tap = { workspace = true }
 thiserror = { workspace = true }
 toml = { workspace = true }
+tui-term = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 
 [dev-dependencies]
