@@ -357,7 +357,7 @@ fn raptor(terminal: &mut DefaultTerminal) -> RaptorResult<()> {
                 planner.add(target)?;
             }
 
-            let trunner = TerminalParallelRunner::new(&builder, &maker, terminal);
+            let mut trunner = TerminalParallelRunner::new(&builder, &maker, terminal);
 
             trunner.execute(planner)?;
         }

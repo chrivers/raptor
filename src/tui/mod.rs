@@ -4,7 +4,7 @@ use std::io::Read;
 use std::os::fd::{AsFd, AsRawFd, OwnedFd, RawFd};
 use std::time::Duration;
 
-use crossbeam::channel::{Sender, TryRecvError};
+use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use itertools::Itertools;
 use nix::poll::{PollFd, PollFlags};
 use nix::pty::ForkptyResult;
@@ -67,6 +67,7 @@ impl<'a> TerminalParallelRunner<'a> {
                     Job::Build(build) => {
                         builder.build_layer(&build.layers, &build.target, &build.layerinfo)?;
                     }
+
                     Job::Run(run_target) => {
                         maker.run_job(builder, run_target)?;
                     }
@@ -79,138 +80,131 @@ impl<'a> TerminalParallelRunner<'a> {
         }
     }
 
-    #[allow(clippy::too_many_lines)]
     #[allow(clippy::cast_possible_truncation)]
-    pub fn execute(self, planner: Planner) -> RaptorResult<()> {
+    fn run_terminal_display(
+        rx: &Receiver<(OwnedFd, Job)>,
+        terminal: &'a mut DefaultTerminal,
+    ) -> RaptorResult<()> {
+        let mut panes: HashMap<RawFd, Pane> = HashMap::new();
+        let mut need_resize = false;
+
+        loop {
+            terminal.try_draw(|f| -> Result<(), std::io::Error> {
+                let chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(1)
+                    .constraints([Constraint::Percentage(100), Constraint::Min(4)].as_ref())
+                    .split(f.area());
+
+                let pane_width = if panes.is_empty() {
+                    chunks[0].width
+                } else {
+                    (chunks[0].width.saturating_sub(1)) / panes.len() as u16
+                };
+
+                if need_resize {
+                    for pane in panes.values_mut() {
+                        let rows = chunks[0].height;
+                        let cols = pane_width;
+                        pane.parser.set_size(rows, cols);
+                        pane.file.tty_set_size(rows, cols)?;
+                    }
+
+                    need_resize = false;
+                }
+
+                for (index, pane) in panes.values_mut().enumerate() {
+                    let block = Block::default()
+                        .borders(Borders::ALL)
+                        .title(format!("{:?}", &pane.job))
+                        .title_alignment(Alignment::Center)
+                        .style(Style::new().add_modifier(Modifier::BOLD).bg(Color::Blue));
+
+                    let screen = pane.parser.screen();
+                    let pseudo_term = PseudoTerminal::new(screen).block(block);
+
+                    let pane_chunk = Rect {
+                        x: chunks[0].x + (index as u16 * pane_width),
+                        y: chunks[0].y,
+                        width: pane_width,
+                        height: chunks[0].height,
+                    };
+
+                    f.render_widget(pseudo_term, pane_chunk);
+                }
+
+                let explanation = "Ctrl+q to quit";
+                let explanation = Paragraph::new(explanation)
+                    .style(Style::default().add_modifier(Modifier::BOLD))
+                    .alignment(Alignment::Center);
+                f.render_widget(explanation, chunks[1]);
+
+                Ok(())
+            })?;
+
+            let fds = {
+                let mut pollfds = vec![];
+                for pane in panes.values() {
+                    pollfds.push(PollFd::new(pane.file.as_fd(), PollFlags::POLLIN));
+                }
+
+                nix::poll::poll(&mut pollfds, 100u16)?;
+
+                pollfds
+                    .iter()
+                    .filter(|fd| fd.any().unwrap_or(false))
+                    .map(AsFd::as_fd)
+                    .map(|fd| fd.as_raw_fd())
+                    .collect_vec()
+            };
+
+            let mut buf = [0u8; 1024 * 8];
+
+            for fd in fds {
+                let sz = panes.get_mut(&fd).unwrap().file.read(&mut buf);
+                match sz {
+                    Ok(0) | Err(_) => {
+                        panes.remove(&fd);
+                        need_resize = true;
+                    }
+                    Ok(sz) => {
+                        panes.get_mut(&fd).unwrap().parser.process(&buf[..sz]);
+                    }
+                }
+            }
+
+            match rx.try_recv() {
+                Ok((fd, job)) => {
+                    let raw_fd = fd.as_raw_fd();
+
+                    let pane = Pane {
+                        file: fd.into(),
+                        job,
+                        parser: vt100::Parser::new(25, 80, 0),
+                    };
+                    panes.insert(raw_fd, pane);
+                    need_resize = true;
+                }
+                Err(TryRecvError::Empty) => {}
+                Err(TryRecvError::Disconnected) => {
+                    if panes.is_empty() {
+                        return Ok(());
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn execute<'b: 'a>(&'b mut self, planner: Planner) -> RaptorResult<()> {
         let (tx, rx) = crossbeam::channel::unbounded::<(OwnedFd, Job)>();
         let (plan, targetlist) = planner.into_plan();
 
-        let Self {
-            builder,
-            maker,
-            terminal,
-        } = self;
+        std::thread::scope(|s| {
+            s.spawn(|| Self::run_terminal_display(&rx, self.terminal));
 
-        std::thread::scope(move |s| {
-            s.spawn(move || -> RaptorResult<()> {
-                let mut panes: HashMap<RawFd, Pane> = HashMap::new();
-                let mut need_resize = false;
-
-                loop {
-                    terminal.try_draw(|f| -> Result<(), std::io::Error> {
-                        let chunks = Layout::default()
-                            .direction(Direction::Vertical)
-                            .margin(1)
-                            .constraints([Constraint::Percentage(100), Constraint::Min(4)].as_ref())
-                            .split(f.area());
-
-                        let pane_width = if panes.is_empty() {
-                            chunks[0].width
-                        } else {
-                            (chunks[0].width.saturating_sub(1)) / panes.len() as u16
-                        };
-
-                        if need_resize {
-                            for pane in panes.values_mut() {
-                                let rows = chunks[0].height;
-                                let cols = pane_width;
-                                pane.parser.set_size(rows, cols);
-                                pane.file.tty_set_size(rows, cols)?;
-                            }
-
-                            need_resize = false;
-                        }
-
-                        for (index, pane) in panes.values_mut().enumerate() {
-                            let block = Block::default()
-                                .borders(Borders::ALL)
-                                .title(format!("{:?}", &pane.job))
-                                .title_alignment(Alignment::Center)
-                                .style(Style::new().add_modifier(Modifier::BOLD).bg(Color::Blue));
-
-                            let screen = pane.parser.screen();
-                            let pseudo_term = PseudoTerminal::new(screen).block(block);
-
-                            let pane_chunk = Rect {
-                                x: chunks[0].x + (index as u16 * pane_width),
-                                y: chunks[0].y,
-                                width: pane_width,
-                                height: chunks[0].height,
-                            };
-
-                            f.render_widget(pseudo_term, pane_chunk);
-                        }
-
-                        let explanation = "Ctrl+q to quit";
-                        let explanation = Paragraph::new(explanation)
-                            .style(Style::default().add_modifier(Modifier::BOLD))
-                            .alignment(Alignment::Center);
-                        f.render_widget(explanation, chunks[1]);
-
-                        Ok(())
-                    })?;
-
-                    let fds = {
-                        let mut pollfds = vec![];
-                        for pane in panes.values() {
-                            pollfds.push(PollFd::new(pane.file.as_fd(), PollFlags::POLLIN));
-                        }
-
-                        nix::poll::poll(&mut pollfds, 100u16)?;
-
-                        pollfds
-                            .iter()
-                            .filter(|fd| fd.any().unwrap_or(false))
-                            .map(AsFd::as_fd)
-                            .map(|fd| fd.as_raw_fd())
-                            .collect_vec()
-                    };
-
-                    let mut buf = [0u8; 1024 * 8];
-
-                    for fd in fds {
-                        let sz = panes.get_mut(&fd).unwrap().file.read(&mut buf);
-                        match sz {
-                            Ok(0) | Err(_) => {
-                                panes.remove(&fd);
-                                need_resize = true;
-                            }
-                            Ok(sz) => {
-                                panes.get_mut(&fd).unwrap().parser.process(&buf[..sz]);
-                            }
-                        }
-                    }
-
-                    match rx.try_recv() {
-                        Ok((fd, job)) => {
-                            let raw_fd = fd.as_raw_fd();
-
-                            let pane = Pane {
-                                file: fd.into(),
-                                job,
-                                parser: vt100::Parser::new(25, 80, 0),
-                            };
-                            panes.insert(raw_fd, pane);
-                            need_resize = true;
-                        }
-                        Err(TryRecvError::Empty) => {}
-                        Err(TryRecvError::Disconnected) => {
-                            if panes.is_empty() {
-                                return Ok(());
-                            }
-                        }
-                    }
-                }
-            });
-
-            s.spawn(move || {
-                plan.into_par_iter().try_for_each_with(tx, |tx, id| {
-                    let target = &targetlist[&id];
-                    Self::run_job_in_pty(builder, maker, tx, target)
-                })
-            });
-
-            Ok(())
+            plan.into_par_iter().try_for_each_with(tx, |tx, id| {
+                Self::run_job_in_pty(self.builder, self.maker, tx, &targetlist[&id])
+            })
         })
     }
 }
