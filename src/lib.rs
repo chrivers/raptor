@@ -10,12 +10,6 @@ pub mod sandbox;
 pub mod template;
 pub mod util;
 
-use std::os::unix::net::UnixStream;
-use std::process::ExitStatus;
-use std::sync::mpsc;
-
-use camino::Utf8PathBuf;
-
 use raptor_parser::ast::{InstMount, MountType, Origin};
 use raptor_parser::util::Location;
 
@@ -37,10 +31,10 @@ pub enum RaptorError {
     Errno(#[from] nix::Error),
 
     #[error(transparent)]
-    MpscTimeout(#[from] mpsc::RecvTimeoutError),
+    MpscTimeout(#[from] std::sync::mpsc::RecvTimeoutError),
 
     #[error(transparent)]
-    SendError(#[from] mpsc::SendError<UnixStream>),
+    SendError(#[from] std::sync::mpsc::SendError<std::os::unix::net::UnixStream>),
 
     #[error(transparent)]
     DockerError(#[from] dregistry::error::DockerError),
@@ -64,7 +58,7 @@ pub enum RaptorError {
     UndefinedVarError(String, Origin),
 
     #[error("Error while checking cache status of {0:?}: {1}")]
-    CacheIoError(Utf8PathBuf, std::io::Error),
+    CacheIoError(camino::Utf8PathBuf, std::io::Error),
 
     #[error("Script error: {0}")]
     ScriptError(String, Origin),
@@ -73,7 +67,7 @@ pub enum RaptorError {
     SandboxRequestError(nix::errno::Errno),
 
     #[error("process exit status {0}")]
-    SandboxRunError(ExitStatus),
+    SandboxRunError(std::process::ExitStatus),
 
     #[error("Required mount [{}] not specified", .0.name)]
     MountMissing(InstMount),
