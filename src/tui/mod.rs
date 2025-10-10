@@ -117,19 +117,18 @@ impl<'a> TerminalParallelRunner<'a> {
                 let chunks = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(1)
-                    .constraints([Constraint::Percentage(100), Constraint::Min(4)].as_ref())
+                    .constraints([Constraint::Percentage(100), Constraint::Min(4)])
                     .split(f.area());
 
                 let pane_width = if panes.is_empty() {
                     chunks[0].width
                 } else {
-                    (chunks[0].width.saturating_sub(1)) / panes.len() as u16
+                    chunks[0].width.saturating_sub(1) / panes.len() as u16
                 };
 
                 if need_resize {
                     for pane in panes.values_mut() {
-                        let rows = chunks[0].height;
-                        let cols = pane_width;
+                        let [rows, cols] = [chunks[0].height, pane_width];
                         pane.parser.set_size(rows, cols);
                         pane.file.tty_set_size(rows, cols)?;
                     }
