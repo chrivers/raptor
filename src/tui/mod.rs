@@ -17,11 +17,11 @@ use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use tui_term::vt100;
 use tui_term::widget::PseudoTerminal;
 
+use crate::RaptorResult;
 use crate::build::RaptorBuilder;
 use crate::make::maker::Maker;
 use crate::make::planner::{Job, Planner};
 use crate::util::tty::TtyIoctl;
-use crate::{RaptorError, RaptorResult};
 
 struct Pane {
     file: File,
@@ -166,44 +166,41 @@ impl<'a> TerminalParallelRunner<'a> {
                 }
             });
 
-            s.spawn(|| -> RaptorResult<()> {
-                plan.into_par_iter().try_for_each(|id| {
-                    let target = &targetlist[&id];
+            s.spawn(|| {
+                plan.into_par_iter()
+                    .try_for_each_with(tx, |tx, id| -> RaptorResult<()> {
+                        let target = &targetlist[&id];
 
-                    match unsafe { nix::pty::forkpty(None, None)? } {
-                        ForkptyResult::Parent { child, master } => {
-                            tx.send((master, target.clone())).expect("tx");
-                            waitpid(child, None)?;
-                        }
-                        ForkptyResult::Child => {
-                            match target {
-                                Job::Build(build) => {
-                                    self.builder.build_layer(
-                                        &build.layers,
-                                        &build.target,
-                                        &build.layerinfo,
-                                    )?;
-                                }
-                                Job::Run(run_target) => {
-                                    self.maker.run_job(self.builder, run_target)?;
-                                }
+                        match unsafe { nix::pty::forkpty(None, None)? } {
+                            ForkptyResult::Parent { child, master } => {
+                                tx.send((master, target.clone())).expect("tx");
+                                waitpid(child, None)?;
                             }
+                            ForkptyResult::Child => {
+                                match target {
+                                    Job::Build(build) => {
+                                        self.builder.build_layer(
+                                            &build.layers,
+                                            &build.target,
+                                            &build.layerinfo,
+                                        )?;
+                                    }
+                                    Job::Run(run_target) => {
+                                        self.maker.run_job(self.builder, run_target)?;
+                                    }
+                                }
 
-                            std::thread::sleep(Duration::from_millis(100));
+                                std::thread::sleep(Duration::from_millis(100));
 
-                            std::process::exit(0);
+                                std::process::exit(0);
+                            }
                         }
-                    }
 
-                    Ok::<(), RaptorError>(())
-                })?;
-
-                drop(tx);
-
-                Ok(())
+                        Ok(())
+                    })
             });
-        });
 
-        Ok(())
+            Ok(())
+        })
     }
 }
