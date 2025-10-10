@@ -10,7 +10,7 @@ use nix::poll::{PollFd, PollFlags};
 use nix::pty::ForkptyResult;
 use nix::sys::wait::waitpid;
 use ratatui::DefaultTerminal;
-use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use ratatui::layout::{Alignment, Constraint, Layout};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -27,6 +27,56 @@ struct Pane {
     file: File,
     job: Job,
     parser: vt100::Parser,
+}
+
+struct PaneController {
+    panes: HashMap<RawFd, Pane>,
+    resize: bool,
+}
+
+impl PaneController {
+    fn new() -> Self {
+        Self {
+            panes: HashMap::new(),
+            resize: false,
+        }
+    }
+
+    fn poll_fds(&self) -> RaptorResult<Vec<RawFd>> {
+        let mut pollfds = vec![];
+        for pane in self.panes.values() {
+            pollfds.push(PollFd::new(pane.file.as_fd(), PollFlags::POLLIN));
+        }
+
+        nix::poll::poll(&mut pollfds, 100u16)?;
+
+        let res = pollfds
+            .iter()
+            .filter(|fd| fd.any().unwrap_or(false))
+            .map(AsFd::as_fd)
+            .map(|fd| fd.as_raw_fd())
+            .collect_vec();
+
+        Ok(res)
+    }
+
+    fn process_fds(&mut self, fds: &[RawFd]) {
+        let mut buf = [0u8; 1024 * 8];
+
+        for fd in fds {
+            let pane = self.panes.get_mut(fd).unwrap();
+            let sz = pane.file.read(&mut buf);
+            match sz {
+                Ok(0) | Err(_) => {
+                    self.panes.remove(fd);
+                    self.resize = true;
+                }
+                Ok(sz) => {
+                    pane.parser.process(&buf[..sz]);
+                }
+            }
+        }
+    }
 }
 
 pub struct TerminalParallelRunner<'a> {
@@ -86,57 +136,32 @@ impl<'a> TerminalParallelRunner<'a> {
         }
     }
 
-    fn poll_fds<'b>(panes: impl Iterator<Item = &'b Pane>) -> RaptorResult<Vec<RawFd>> {
-        let mut pollfds = vec![];
-        for pane in panes {
-            pollfds.push(PollFd::new(pane.file.as_fd(), PollFlags::POLLIN));
-        }
-
-        nix::poll::poll(&mut pollfds, 100u16)?;
-
-        let res = pollfds
-            .iter()
-            .filter(|fd| fd.any().unwrap_or(false))
-            .map(AsFd::as_fd)
-            .map(|fd| fd.as_raw_fd())
-            .collect_vec();
-
-        Ok(res)
-    }
-
     #[allow(clippy::cast_possible_truncation)]
     fn run_terminal_display(
         rx: &Receiver<Pane>,
         terminal: &'a mut DefaultTerminal,
     ) -> RaptorResult<()> {
-        let mut panes: HashMap<RawFd, Pane> = HashMap::new();
-        let mut need_resize = false;
+        let mut panec = PaneController::new();
 
         loop {
             terminal.try_draw(|f| -> Result<(), std::io::Error> {
-                let chunks = Layout::default()
-                    .direction(Direction::Vertical)
+                let chunks = Layout::vertical([Constraint::Percentage(100), Constraint::Min(1)])
                     .margin(1)
-                    .constraints([Constraint::Percentage(100), Constraint::Min(4)])
                     .split(f.area());
 
-                let pane_width = if panes.is_empty() {
-                    chunks[0].width
-                } else {
-                    chunks[0].width.saturating_sub(1) / panes.len() as u16
-                };
+                let boxes = Layout::horizontal(panec.panes.iter().map(|_| Constraint::Fill(1)))
+                    .split(chunks[0]);
 
-                if need_resize {
-                    for pane in panes.values_mut() {
-                        let [rows, cols] = [chunks[0].height, pane_width];
-                        pane.parser.set_size(rows, cols);
-                        pane.file.tty_set_size(rows, cols)?;
+                if panec.resize {
+                    for (pane, tbox) in panec.panes.values_mut().zip(boxes.iter()) {
+                        pane.parser.set_size(tbox.height, tbox.width);
+                        pane.file.tty_set_size(tbox.height, tbox.width)?;
                     }
 
-                    need_resize = false;
+                    panec.resize = false;
                 }
 
-                for (index, pane) in panes.values_mut().enumerate() {
+                for (index, pane) in panec.panes.values_mut().enumerate() {
                     let block = Block::default()
                         .borders(Borders::ALL)
                         .title(format!("{:?}", &pane.job))
@@ -146,14 +171,7 @@ impl<'a> TerminalParallelRunner<'a> {
                     let screen = pane.parser.screen();
                     let pseudo_term = PseudoTerminal::new(screen).block(block);
 
-                    let pane_chunk = Rect {
-                        x: chunks[0].x + (index as u16 * pane_width),
-                        y: chunks[0].y,
-                        width: pane_width,
-                        height: chunks[0].height,
-                    };
-
-                    f.render_widget(pseudo_term, pane_chunk);
+                    f.render_widget(pseudo_term, boxes[index]);
                 }
 
                 let explanation = "Ctrl+q to quit";
@@ -165,34 +183,20 @@ impl<'a> TerminalParallelRunner<'a> {
                 Ok(())
             })?;
 
-            let fds = Self::poll_fds(panes.values())?;
+            let fds = panec.poll_fds()?;
 
-            let mut buf = [0u8; 1024 * 8];
-
-            for fd in fds {
-                let pane = panes.get_mut(&fd).unwrap();
-                let sz = pane.file.read(&mut buf);
-                match sz {
-                    Ok(0) | Err(_) => {
-                        panes.remove(&fd);
-                        need_resize = true;
-                    }
-                    Ok(sz) => {
-                        pane.parser.process(&buf[..sz]);
-                    }
-                }
-            }
+            panec.process_fds(&fds);
 
             match rx.try_recv() {
                 Ok(pane) => {
-                    panes.insert(pane.file.as_raw_fd(), pane);
-                    need_resize = true;
+                    panec.panes.insert(pane.file.as_raw_fd(), pane);
+                    panec.resize = true;
                 }
 
                 Err(TryRecvError::Empty) => {}
 
                 Err(TryRecvError::Disconnected) => {
-                    if panes.is_empty() {
+                    if panec.panes.is_empty() {
                         return Ok(());
                     }
                 }
