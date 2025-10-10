@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::Debug;
 
 use camino::Utf8PathBuf;
 use dep_graph::{DepGraph, Node};
@@ -32,6 +33,19 @@ impl BuildLayer {
 pub enum Job {
     Build(BuildLayer),
     Run(RunTarget),
+}
+
+impl Debug for Job {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Build(layer) => {
+                write!(f, "build: {}", layer.layerinfo.name())
+            }
+            Self::Run(run) => {
+                write!(f, "run: {} {:?}", run.target, run.input)
+            }
+        }
+    }
 }
 
 pub struct Planner<'a> {
