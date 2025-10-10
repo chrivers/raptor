@@ -8,6 +8,7 @@ pub mod program;
 pub mod runner;
 pub mod sandbox;
 pub mod template;
+pub mod tui;
 pub mod util;
 
 use raptor_parser::ast::{InstMount, MountType, Origin};
