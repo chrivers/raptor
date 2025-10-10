@@ -32,10 +32,7 @@ pub enum RaptorError {
     Errno(#[from] nix::Error),
 
     #[error(transparent)]
-    MpscTimeout(#[from] std::sync::mpsc::RecvTimeoutError),
-
-    #[error(transparent)]
-    SendError(#[from] std::sync::mpsc::SendError<std::os::unix::net::UnixStream>),
+    MpscTimeout(#[from] crossbeam::channel::RecvTimeoutError),
 
     #[error(transparent)]
     DockerError(#[from] dregistry::error::DockerError),
@@ -51,6 +48,9 @@ pub enum RaptorError {
 
     #[error(transparent)]
     ParseTomlError(#[from] toml::de::Error),
+
+    #[error("Crossbeam channel send error")]
+    SendError,
 
     #[error("Parse error: {0:?}")]
     ParseError(Location<raptor_parser::ParseError>),
@@ -104,7 +104,7 @@ impl RaptorError {
             Self::SandboxRequestError(_) => "Sandbox request error",
             Self::SandboxRunError(_) => "Sandbox run error",
             Self::MpscTimeout(_) => "Channel error",
-            Self::SendError(_) => "Send error",
+            Self::SendError => "Send error",
             Self::DockerError(_) => "Docker error",
             Self::FalconError(_) => "Falcon error",
             Self::MountMissing(_) => "Missing mount error",
@@ -124,6 +124,12 @@ impl RaptorError {
 impl From<Location<raptor_parser::ParseError>> for RaptorError {
     fn from(value: Location<raptor_parser::ParseError>) -> Self {
         Self::ParseError(value)
+    }
+}
+
+impl<T> From<crossbeam::channel::SendError<T>> for RaptorError {
+    fn from(_: crossbeam::channel::SendError<T>) -> Self {
+        Self::SendError
     }
 }
 
