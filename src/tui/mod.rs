@@ -6,7 +6,6 @@ use std::time::Duration;
 
 use crossbeam::channel::TryRecvError;
 use itertools::Itertools;
-use nix::libc;
 use nix::poll::{PollFd, PollFlags};
 use nix::pty::ForkptyResult;
 use nix::sys::wait::waitpid;
@@ -192,7 +191,7 @@ impl<'a> TerminalParallelRunner<'a> {
 
                             std::thread::sleep(Duration::from_millis(100));
 
-                            unsafe { libc::_exit(0) };
+                            std::process::exit(0);
                         }
                     }
 
