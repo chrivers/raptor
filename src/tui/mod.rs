@@ -152,7 +152,6 @@ impl<'a> TerminalParallelRunner<'a> {
         }
     }
 
-    #[allow(clippy::cast_possible_truncation)]
     fn run_terminal_display(
         rx: &Receiver<Pane>,
         terminal: &'a mut DefaultTerminal,
