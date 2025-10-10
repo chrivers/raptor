@@ -181,16 +181,16 @@ impl<'a> TerminalParallelRunner<'a> {
             match rx.try_recv() {
                 Ok((fd, job)) => {
                     let raw_fd = fd.as_raw_fd();
+                    let file = fd.into();
+                    let parser = vt100::Parser::new(25, 80, 0);
 
-                    let pane = Pane {
-                        file: fd.into(),
-                        job,
-                        parser: vt100::Parser::new(25, 80, 0),
-                    };
+                    let pane = Pane { job, file, parser };
                     panes.insert(raw_fd, pane);
                     need_resize = true;
                 }
+
                 Err(TryRecvError::Empty) => {}
+
                 Err(TryRecvError::Disconnected) => {
                     if panes.is_empty() {
                         return Ok(());
