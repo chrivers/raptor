@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::os::fd::{AsFd, AsRawFd, RawFd};
+use std::rc::Rc;
 use std::time::Duration;
 
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
@@ -10,7 +11,7 @@ use nix::poll::{PollFd, PollFlags};
 use nix::pty::ForkptyResult;
 use nix::sys::wait::waitpid;
 use ratatui::DefaultTerminal;
-use ratatui::layout::{Alignment, Constraint, Layout};
+use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -76,6 +77,21 @@ impl PaneController {
                 }
             }
         }
+    }
+
+    fn make_layout(&mut self, area: Rect) -> Result<Rc<[Rect]>, std::io::Error> {
+        let boxes = Layout::horizontal(self.panes.iter().map(|_| Constraint::Fill(1))).split(area);
+
+        if self.resize {
+            for (pane, tbox) in self.panes.values_mut().zip(boxes.iter()) {
+                pane.parser.set_size(tbox.height, tbox.width);
+                pane.file.tty_set_size(tbox.height, tbox.width)?;
+            }
+
+            self.resize = false;
+        }
+
+        Ok(boxes)
     }
 }
 
@@ -149,17 +165,7 @@ impl<'a> TerminalParallelRunner<'a> {
                     .margin(1)
                     .split(f.area());
 
-                let boxes = Layout::horizontal(panec.panes.iter().map(|_| Constraint::Fill(1)))
-                    .split(chunks[0]);
-
-                if panec.resize {
-                    for (pane, tbox) in panec.panes.values_mut().zip(boxes.iter()) {
-                        pane.parser.set_size(tbox.height, tbox.width);
-                        pane.file.tty_set_size(tbox.height, tbox.width)?;
-                    }
-
-                    panec.resize = false;
-                }
+                let boxes = panec.make_layout(chunks[0])?;
 
                 for (index, pane) in panec.panes.values_mut().enumerate() {
                     let block = Block::default()
