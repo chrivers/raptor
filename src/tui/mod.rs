@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
-use std::os::fd::{AsFd, AsRawFd, OwnedFd, RawFd};
+use std::os::fd::{AsFd, AsRawFd, RawFd};
 use std::time::Duration;
 
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
@@ -51,12 +51,18 @@ impl<'a> TerminalParallelRunner<'a> {
     fn run_job_in_pty(
         builder: &'a RaptorBuilder,
         maker: &Maker,
-        tx: &Sender<(OwnedFd, Job)>,
+        tx: &Sender<Pane>,
         target: &Job,
     ) -> RaptorResult<()> {
         match unsafe { nix::pty::forkpty(None, None)? } {
             ForkptyResult::Parent { child, master } => {
-                tx.send((master, target.clone())).expect("tx");
+                let pane = Pane {
+                    file: master.into(),
+                    job: target.clone(),
+                    parser: vt100::Parser::default(),
+                };
+
+                tx.send(pane)?;
                 waitpid(child, None)?;
 
                 Ok(())
@@ -100,7 +106,7 @@ impl<'a> TerminalParallelRunner<'a> {
 
     #[allow(clippy::cast_possible_truncation)]
     fn run_terminal_display(
-        rx: &Receiver<(OwnedFd, Job)>,
+        rx: &Receiver<Pane>,
         terminal: &'a mut DefaultTerminal,
     ) -> RaptorResult<()> {
         let mut panes: HashMap<RawFd, Pane> = HashMap::new();
@@ -179,13 +185,8 @@ impl<'a> TerminalParallelRunner<'a> {
             }
 
             match rx.try_recv() {
-                Ok((fd, job)) => {
-                    let raw_fd = fd.as_raw_fd();
-                    let file = fd.into();
-                    let parser = vt100::Parser::new(25, 80, 0);
-
-                    let pane = Pane { job, file, parser };
-                    panes.insert(raw_fd, pane);
+                Ok(pane) => {
+                    panes.insert(pane.file.as_raw_fd(), pane);
                     need_resize = true;
                 }
 
@@ -201,7 +202,7 @@ impl<'a> TerminalParallelRunner<'a> {
     }
 
     pub fn execute<'b: 'a>(&'b mut self, planner: Planner) -> RaptorResult<()> {
-        let (tx, rx) = crossbeam::channel::unbounded::<(OwnedFd, Job)>();
+        let (tx, rx) = crossbeam::channel::unbounded::<Pane>();
         let (plan, targetlist) = planner.into_plan();
 
         std::thread::scope(|s| {
