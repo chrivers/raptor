@@ -165,14 +165,15 @@ impl<'a> TerminalParallelRunner<'a> {
             let mut buf = [0u8; 1024 * 8];
 
             for fd in fds {
-                let sz = panes.get_mut(&fd).unwrap().file.read(&mut buf);
+                let pane = panes.get_mut(&fd).unwrap();
+                let sz = pane.file.read(&mut buf);
                 match sz {
                     Ok(0) | Err(_) => {
                         panes.remove(&fd);
                         need_resize = true;
                     }
                     Ok(sz) => {
-                        panes.get_mut(&fd).unwrap().parser.process(&buf[..sz]);
+                        pane.parser.process(&buf[..sz]);
                     }
                 }
             }
