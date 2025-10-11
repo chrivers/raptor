@@ -52,7 +52,7 @@ pub struct Planner<'a> {
     nodes: HashMap<u64, Node<u64>>,
     jobs: HashMap<u64, Job>,
     builder: &'a RaptorBuilder<'a>,
-    maker: &'a Maker,
+    maker: &'a Maker<'a>,
 }
 
 impl<'a> Planner<'a> {

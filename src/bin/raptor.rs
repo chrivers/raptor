@@ -346,7 +346,7 @@ fn raptor() -> RaptorResult<()> {
         }
 
         Mode::Make { file, targets } => {
-            let maker = Maker::load(file)?;
+            let maker = Maker::load(&builder, file)?;
 
             maker.add_links(builder.loader());
 

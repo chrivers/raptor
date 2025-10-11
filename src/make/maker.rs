@@ -13,15 +13,21 @@ use crate::program::Loader;
 use crate::runner::Runner;
 use crate::{RaptorError, RaptorResult};
 
-pub struct Maker {
+pub struct Maker<'a> {
     make: Make,
+    builder: &'a RaptorBuilder<'a>,
 }
 
-impl Maker {
-    pub fn load(path: &Utf8Path) -> RaptorResult<Self> {
+impl<'a> Maker<'a> {
+    pub fn load(builder: &'a RaptorBuilder, path: &Utf8Path) -> RaptorResult<Self> {
         let text = std::fs::read_to_string(path)?;
         let make: Make = toml::from_str(&text)?;
-        Ok(Self { make })
+        Ok(Self { make, builder })
+    }
+
+    #[must_use]
+    pub const fn builder(&self) -> &RaptorBuilder {
+        self.builder
     }
 
     #[must_use]
@@ -54,18 +60,19 @@ impl Maker {
         Ok(res)
     }
 
-    pub fn run_named_job(&self, builder: &RaptorBuilder, name: &str) -> RaptorResult<ExitStatus> {
+    pub fn run_named_job(&self, name: &str) -> RaptorResult<ExitStatus> {
         let job = self
             .make
             .run
             .get(name)
             .ok_or_else(|| RaptorError::UnknownJob(name.to_string()))?;
 
-        self.run_job(builder, job)
+        self.run_job(job)
     }
 
-    pub fn run_job(&self, builder: &RaptorBuilder, job: &RunTarget) -> RaptorResult<ExitStatus> {
+    pub fn run_job(&self, job: &RunTarget) -> RaptorResult<ExitStatus> {
         let origin = Origin::make("<command-line>", 0..0);
+        let builder = self.builder;
         let filename = builder.loader().to_program_path(&job.target, &origin)?;
 
         let program = builder.load(filename)?;
@@ -145,7 +152,7 @@ impl Maker {
         Ok(res)
     }
 
-    pub fn run_group(&self, builder: &RaptorBuilder, name: &str) -> RaptorResult<()> {
+    pub fn run_group(&self, name: &str) -> RaptorResult<()> {
         let group = self
             .make
             .group
@@ -153,16 +160,16 @@ impl Maker {
             .ok_or_else(|| RaptorError::UnknownJob(name.to_string()))?;
 
         for run in &group.run {
-            self.run_named_job(builder, run)?;
+            self.run_named_job(run)?;
         }
 
         Ok(())
     }
 
-    pub fn run(&self, builder: &RaptorBuilder, target: &MakeTarget) -> RaptorResult<()> {
+    pub fn run(&self, target: &MakeTarget) -> RaptorResult<()> {
         match target {
-            MakeTarget::Job(job) => self.run_named_job(builder, job).map(|_| ()),
-            MakeTarget::Group(grp) => self.run_group(builder, grp),
+            MakeTarget::Job(job) => self.run_named_job(job).map(|_| ()),
+            MakeTarget::Group(grp) => self.run_group(grp),
         }
     }
 }
