@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
+use std::io::Result as IoResult;
 use std::os::fd::{AsFd, AsRawFd, RawFd};
 use std::rc::Rc;
 use std::time::Duration;
@@ -79,11 +80,9 @@ impl PaneController {
         }
     }
 
-    fn make_layout(&mut self, area: Rect) -> Result<Rc<[Rect]>, std::io::Error> {
-        let boxes = Layout::horizontal(self.panes.iter().map(|_| Constraint::Fill(1))).split(area);
-
+    fn check_resize(&mut self, layout: &Rc<[Rect]>) -> IoResult<()> {
         if self.resize {
-            for (pane, tbox) in self.panes.values_mut().zip(boxes.iter()) {
+            for (pane, tbox) in self.panes.values_mut().zip(layout.iter()) {
                 pane.parser.set_size(tbox.height, tbox.width);
                 pane.file.tty_set_size(tbox.height, tbox.width)?;
             }
@@ -91,7 +90,20 @@ impl PaneController {
             self.resize = false;
         }
 
+        Ok(())
+    }
+
+    fn make_layout(&mut self, area: Rect) -> IoResult<Rc<[Rect]>> {
+        let boxes = Layout::horizontal(self.panes.iter().map(|_| Constraint::Fill(1))).split(area);
+
+        self.check_resize(&boxes)?;
+
         Ok(boxes)
+    }
+
+    fn add_pane(&mut self, pane: Pane) {
+        self.panes.insert(pane.file.as_raw_fd(), pane);
+        self.resize = true;
     }
 }
 
@@ -114,7 +126,7 @@ impl<'a> TerminalParallelRunner<'a> {
         }
     }
 
-    fn run_job_in_pty(
+    fn spawn_pty_job(
         builder: &'a RaptorBuilder,
         maker: &Maker,
         tx: &Sender<Pane>,
@@ -152,21 +164,18 @@ impl<'a> TerminalParallelRunner<'a> {
         }
     }
 
-    fn run_terminal_display(
-        rx: &Receiver<Pane>,
-        terminal: &'a mut DefaultTerminal,
-    ) -> RaptorResult<()> {
-        let mut panec = PaneController::new();
+    fn render_terminal(rx: &Receiver<Pane>, terminal: &'a mut DefaultTerminal) -> RaptorResult<()> {
+        let mut panectrl = PaneController::new();
 
         loop {
-            terminal.try_draw(|f| -> Result<(), std::io::Error> {
+            terminal.try_draw(|f| -> IoResult<()> {
                 let chunks = Layout::vertical([Constraint::Percentage(100), Constraint::Min(1)])
                     .margin(1)
                     .split(f.area());
 
-                let boxes = panec.make_layout(chunks[0])?;
+                let boxes = panectrl.make_layout(chunks[0])?;
 
-                for (index, pane) in panec.panes.values_mut().enumerate() {
+                for (index, pane) in panectrl.panes.values_mut().enumerate() {
                     let block = Block::default()
                         .borders(Borders::ALL)
                         .title(format!("{:?}", &pane.job))
@@ -188,20 +197,17 @@ impl<'a> TerminalParallelRunner<'a> {
                 Ok(())
             })?;
 
-            let fds = panec.poll_fds()?;
+            let fds = panectrl.poll_fds()?;
 
-            panec.process_fds(&fds);
+            panectrl.process_fds(&fds);
 
             match rx.try_recv() {
-                Ok(pane) => {
-                    panec.panes.insert(pane.file.as_raw_fd(), pane);
-                    panec.resize = true;
-                }
+                Ok(pane) => panectrl.add_pane(pane),
 
                 Err(TryRecvError::Empty) => {}
 
                 Err(TryRecvError::Disconnected) => {
-                    if panec.panes.is_empty() {
+                    if panectrl.panes.is_empty() {
                         return Ok(());
                     }
                 }
@@ -214,10 +220,10 @@ impl<'a> TerminalParallelRunner<'a> {
         let (plan, targetlist) = planner.into_plan();
 
         std::thread::scope(|s| {
-            s.spawn(|| Self::run_terminal_display(&rx, self.terminal));
+            s.spawn(|| Self::render_terminal(&rx, self.terminal));
 
             plan.into_par_iter().try_for_each_with(tx, |tx, id| {
-                Self::run_job_in_pty(self.builder, self.maker, tx, &targetlist[&id])
+                Self::spawn_pty_job(self.builder, self.maker, tx, &targetlist[&id])
             })
         })
     }
