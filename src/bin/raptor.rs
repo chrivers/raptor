@@ -9,7 +9,6 @@ use colored::Colorize;
 use log::{LevelFilter, debug, error, info};
 use nix::unistd::Uid;
 use raptor::tui::TerminalParallelRunner;
-use ratatui::{DefaultTerminal, restore};
 
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
 use raptor::make::maker::Maker;
@@ -270,7 +269,7 @@ fn check_for_falcon_binary() -> RaptorResult<()> {
     Ok(())
 }
 
-fn raptor(terminal: &mut DefaultTerminal) -> RaptorResult<()> {
+fn raptor() -> RaptorResult<()> {
     let args = Cli::parse();
 
     log::set_max_level(args.log_level());
@@ -357,9 +356,15 @@ fn raptor(terminal: &mut DefaultTerminal) -> RaptorResult<()> {
                 planner.add(target)?;
             }
 
-            let mut trunner = TerminalParallelRunner::new(&builder, &maker, terminal);
+            let mut terminal = ratatui::init();
 
-            trunner.execute(planner)?;
+            let mut trunner = TerminalParallelRunner::new(&builder, &maker, &mut terminal);
+
+            let res = trunner.execute(planner);
+
+            ratatui::restore();
+
+            res?;
         }
 
         Mode::Completion { shell } => {
@@ -380,11 +385,7 @@ fn main() {
     }
     builder.init();
 
-    let mut terminal = ratatui::init();
-    let res = raptor(&mut terminal);
-    restore();
-
-    match res {
+    match raptor() {
         Ok(()) => {
             debug!("Raptor completed successfully");
         }
