@@ -48,6 +48,7 @@ impl Debug for Job {
     }
 }
 
+#[derive(Clone)]
 pub struct Planner<'a> {
     nodes: HashMap<u64, Node<u64>>,
     jobs: HashMap<u64, Job>,
@@ -64,6 +65,16 @@ impl<'a> Planner<'a> {
             builder,
             maker,
         }
+    }
+
+    #[must_use]
+    pub const fn edges(&self) -> &HashMap<u64, Node<u64>> {
+        &self.nodes
+    }
+
+    #[must_use]
+    pub const fn nodes(&self) -> &HashMap<u64, Job> {
+        &self.jobs
     }
 
     pub fn add_build_job(&mut self, input: &str) -> RaptorResult<Option<u64>> {
