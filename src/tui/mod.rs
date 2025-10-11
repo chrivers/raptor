@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::io::Result as IoResult;
+use std::ops::ControlFlow;
 use std::os::fd::{AsFd, AsRawFd, RawFd};
 use std::rc::Rc;
 use std::time::Duration;
@@ -31,16 +32,18 @@ struct Pane {
     parser: vt100::Parser,
 }
 
-struct PaneController {
+struct PaneController<'a> {
     panes: HashMap<RawFd, Pane>,
     resize: bool,
+    rx: &'a Receiver<Pane>,
 }
 
-impl PaneController {
-    fn new() -> Self {
+impl<'a> PaneController<'a> {
+    fn new(rx: &'a Receiver<Pane>) -> Self {
         Self {
             panes: HashMap::new(),
             resize: false,
+            rx,
         }
     }
 
@@ -105,6 +108,30 @@ impl PaneController {
         self.panes.insert(pane.file.as_raw_fd(), pane);
         self.resize = true;
     }
+
+    fn try_recv(&mut self) -> ControlFlow<()> {
+        match self.rx.try_recv() {
+            Ok(pane) => self.add_pane(pane),
+
+            Err(TryRecvError::Empty) => {}
+
+            Err(TryRecvError::Disconnected) => {
+                if self.panes.is_empty() {
+                    return ControlFlow::Break(());
+                }
+            }
+        }
+
+        ControlFlow::Continue(())
+    }
+
+    fn event(&mut self) -> RaptorResult<ControlFlow<()>> {
+        let fds = self.poll_fds()?;
+
+        self.process_fds(&fds);
+
+        Ok(self.try_recv())
+    }
 }
 
 pub struct TerminalParallelRunner<'a> {
@@ -165,9 +192,9 @@ impl<'a> TerminalParallelRunner<'a> {
     }
 
     fn render_terminal(rx: &Receiver<Pane>, terminal: &'a mut DefaultTerminal) -> RaptorResult<()> {
-        let mut panectrl = PaneController::new();
+        let mut panectrl = PaneController::new(rx);
 
-        loop {
+        while panectrl.event()?.is_continue() {
             terminal.try_draw(|f| -> IoResult<()> {
                 let chunks = Layout::vertical([Constraint::Percentage(100), Constraint::Min(1)])
                     .margin(1)
@@ -196,23 +223,9 @@ impl<'a> TerminalParallelRunner<'a> {
 
                 Ok(())
             })?;
-
-            let fds = panectrl.poll_fds()?;
-
-            panectrl.process_fds(&fds);
-
-            match rx.try_recv() {
-                Ok(pane) => panectrl.add_pane(pane),
-
-                Err(TryRecvError::Empty) => {}
-
-                Err(TryRecvError::Disconnected) => {
-                    if panectrl.panes.is_empty() {
-                        return Ok(());
-                    }
-                }
-            }
         }
+
+        Ok(())
     }
 
     pub fn execute<'b: 'a>(&'b mut self, planner: Planner) -> RaptorResult<()> {
