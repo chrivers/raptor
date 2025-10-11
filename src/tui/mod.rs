@@ -16,7 +16,7 @@ use ratatui::DefaultTerminal;
 use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
-use ratatui::widgets::{Block, Borders, Paragraph};
+use ratatui::widgets::{Block, Borders};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use tui_term::vt100;
 use tui_term::widget::PseudoTerminal;
@@ -206,20 +206,9 @@ impl<'a> TerminalParallelRunner<'a> {
 
         while panectrl.event()?.is_continue() {
             terminal.try_draw(|f| -> IoResult<()> {
-                let chunks = Layout::vertical([Constraint::Percentage(100), Constraint::Min(1)])
-                    .margin(1)
-                    .split(f.area());
-
                 let paneview = PaneView::new(&mut panectrl);
-                paneview.render(f, chunks[0])?;
 
-                let explanation = "Ctrl+q to quit";
-                let explanation = Paragraph::new(explanation)
-                    .style(Style::default().add_modifier(Modifier::BOLD))
-                    .alignment(Alignment::Center);
-                f.render_widget(explanation, chunks[1]);
-
-                Ok(())
+                paneview.render(f, f.area())
             })?;
         }
 
