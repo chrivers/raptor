@@ -31,14 +31,14 @@ struct Pane {
     parser: vt100::Parser,
 }
 
-struct PaneController<'a> {
+struct PaneController {
     panes: HashMap<RawFd, Pane>,
     resize: bool,
-    rx: &'a Receiver<Pane>,
+    rx: Receiver<Pane>,
 }
 
-impl<'a> PaneController<'a> {
-    fn new(rx: &'a Receiver<Pane>) -> Self {
+impl PaneController {
+    fn new(rx: Receiver<Pane>) -> Self {
         Self {
             panes: HashMap::new(),
             resize: false,
@@ -180,7 +180,7 @@ impl<'a> TerminalParallelRunner<'a> {
         }
     }
 
-    fn render_terminal(rx: &Receiver<Pane>, terminal: &'a mut DefaultTerminal) -> RaptorResult<()> {
+    fn render_terminal(rx: Receiver<Pane>, terminal: &'a mut DefaultTerminal) -> RaptorResult<()> {
         let mut panectrl = PaneController::new(rx);
 
         while panectrl.event()?.is_continue() {
@@ -222,7 +222,7 @@ impl<'a> TerminalParallelRunner<'a> {
         let (plan, targetlist) = planner.into_plan();
 
         std::thread::scope(|s| {
-            s.spawn(|| Self::render_terminal(&rx, self.terminal));
+            s.spawn(|| Self::render_terminal(rx, self.terminal));
 
             plan.into_par_iter().try_for_each_with(tx, |tx, id| {
                 Self::spawn_pty_job(self.maker, tx, &targetlist[&id])
