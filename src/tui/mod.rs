@@ -13,6 +13,7 @@ use nix::poll::{PollFd, PollFlags};
 use nix::pty::ForkptyResult;
 use nix::sys::wait::waitpid;
 use ratatui::DefaultTerminal;
+use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
@@ -35,6 +36,7 @@ struct PaneController {
     panes: HashMap<RawFd, Pane>,
     resize: bool,
     rx: Receiver<Pane>,
+    boxes: Rc<[Rect]>,
 }
 
 impl PaneController {
@@ -43,6 +45,7 @@ impl PaneController {
             panes: HashMap::new(),
             resize: false,
             rx,
+            boxes: Rc::new([]),
         }
     }
 
@@ -82,9 +85,12 @@ impl PaneController {
         }
     }
 
-    fn check_resize(&mut self, layout: &Rc<[Rect]>) -> IoResult<()> {
+    fn make_layout(&mut self, area: Rect) -> IoResult<Rc<[Rect]>> {
         if self.resize {
-            for (pane, tbox) in self.panes.values_mut().zip(layout.iter()) {
+            self.boxes =
+                Layout::horizontal(self.panes.iter().map(|_| Constraint::Fill(1))).split(area);
+
+            for (pane, tbox) in self.panes.values_mut().zip(self.boxes.iter()) {
                 pane.parser.set_size(tbox.height, tbox.width);
                 pane.file.tty_set_size(tbox.height, tbox.width)?;
             }
@@ -92,36 +98,21 @@ impl PaneController {
             self.resize = false;
         }
 
-        Ok(())
+        Ok(self.boxes.clone())
     }
 
-    fn make_layout(&mut self, area: Rect) -> IoResult<Rc<[Rect]>> {
-        let boxes = Layout::horizontal(self.panes.iter().map(|_| Constraint::Fill(1))).split(area);
-
-        self.check_resize(&boxes)?;
-
-        Ok(boxes)
-    }
-
-    fn add_pane(&mut self, pane: Pane) {
-        self.panes.insert(pane.file.as_raw_fd(), pane);
-        self.resize = true;
-    }
-
-    fn try_recv(&mut self) -> ControlFlow<()> {
-        match self.rx.try_recv() {
-            Ok(pane) => self.add_pane(pane),
-
-            Err(TryRecvError::Empty) => {}
-
-            Err(TryRecvError::Disconnected) => {
-                if self.panes.is_empty() {
-                    return ControlFlow::Break(());
+    fn process_queue(&mut self) -> ControlFlow<()> {
+        loop {
+            match self.rx.try_recv() {
+                Ok(pane) => {
+                    self.panes.insert(pane.file.as_raw_fd(), pane);
+                    self.resize = true;
                 }
+
+                Err(TryRecvError::Empty) => return ControlFlow::Continue(()),
+                Err(TryRecvError::Disconnected) => return ControlFlow::Break(()),
             }
         }
-
-        ControlFlow::Continue(())
     }
 
     fn event(&mut self) -> RaptorResult<ControlFlow<()>> {
@@ -129,7 +120,37 @@ impl PaneController {
 
         self.process_fds(&fds);
 
-        Ok(self.try_recv())
+        Ok(self.process_queue())
+    }
+}
+
+struct PaneView<'a> {
+    ctrl: &'a mut PaneController,
+}
+
+impl<'a> PaneView<'a> {
+    #[must_use]
+    const fn new(ctrl: &'a mut PaneController) -> Self {
+        Self { ctrl }
+    }
+
+    fn render(self, frame: &mut Frame, area: Rect) -> IoResult<()> {
+        let boxes = self.ctrl.make_layout(area)?;
+
+        for (index, pane) in self.ctrl.panes.values_mut().enumerate() {
+            let block = Block::default()
+                .borders(Borders::ALL)
+                .title(format!("{:?}", &pane.job))
+                .title_alignment(Alignment::Center)
+                .style(Style::new().add_modifier(Modifier::BOLD).bg(Color::Blue));
+
+            let screen = pane.parser.screen();
+            let pseudo_term = PseudoTerminal::new(screen).block(block);
+
+            frame.render_widget(pseudo_term, boxes[index]);
+        }
+
+        Ok(())
     }
 }
 
@@ -189,20 +210,8 @@ impl<'a> TerminalParallelRunner<'a> {
                     .margin(1)
                     .split(f.area());
 
-                let boxes = panectrl.make_layout(chunks[0])?;
-
-                for (index, pane) in panectrl.panes.values_mut().enumerate() {
-                    let block = Block::default()
-                        .borders(Borders::ALL)
-                        .title(format!("{:?}", &pane.job))
-                        .title_alignment(Alignment::Center)
-                        .style(Style::new().add_modifier(Modifier::BOLD).bg(Color::Blue));
-
-                    let screen = pane.parser.screen();
-                    let pseudo_term = PseudoTerminal::new(screen).block(block);
-
-                    f.render_widget(pseudo_term, boxes[index]);
-                }
+                let paneview = PaneView::new(&mut panectrl);
+                paneview.render(f, chunks[0])?;
 
                 let explanation = "Ctrl+q to quit";
                 let explanation = Paragraph::new(explanation)
