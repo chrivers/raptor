@@ -21,7 +21,6 @@ use tui_term::vt100;
 use tui_term::widget::PseudoTerminal;
 
 use crate::RaptorResult;
-use crate::build::RaptorBuilder;
 use crate::make::maker::Maker;
 use crate::make::planner::{Job, Planner};
 use crate::util::tty::TtyIoctl;
@@ -135,30 +134,16 @@ impl<'a> PaneController<'a> {
 }
 
 pub struct TerminalParallelRunner<'a> {
-    builder: &'a RaptorBuilder<'a>,
-    maker: &'a Maker,
+    maker: &'a Maker<'a>,
     terminal: &'a mut DefaultTerminal,
 }
 
 impl<'a> TerminalParallelRunner<'a> {
-    pub const fn new(
-        builder: &'a RaptorBuilder,
-        maker: &'a Maker,
-        terminal: &'a mut DefaultTerminal,
-    ) -> Self {
-        Self {
-            builder,
-            maker,
-            terminal,
-        }
+    pub const fn new(maker: &'a Maker, terminal: &'a mut DefaultTerminal) -> Self {
+        Self { maker, terminal }
     }
 
-    fn spawn_pty_job(
-        builder: &'a RaptorBuilder,
-        maker: &Maker,
-        tx: &Sender<Pane>,
-        target: &Job,
-    ) -> RaptorResult<()> {
+    fn spawn_pty_job(maker: &Maker, tx: &Sender<Pane>, target: &Job) -> RaptorResult<()> {
         match unsafe { nix::pty::forkpty(None, None)? } {
             ForkptyResult::Parent { child, master } => {
                 let pane = Pane {
@@ -176,11 +161,15 @@ impl<'a> TerminalParallelRunner<'a> {
             ForkptyResult::Child => {
                 match target {
                     Job::Build(build) => {
-                        builder.build_layer(&build.layers, &build.target, &build.layerinfo)?;
+                        maker.builder().build_layer(
+                            &build.layers,
+                            &build.target,
+                            &build.layerinfo,
+                        )?;
                     }
 
                     Job::Run(run_target) => {
-                        maker.run_job(builder, run_target)?;
+                        maker.run_job(run_target)?;
                     }
                 }
 
@@ -236,7 +225,7 @@ impl<'a> TerminalParallelRunner<'a> {
             s.spawn(|| Self::render_terminal(&rx, self.terminal));
 
             plan.into_par_iter().try_for_each_with(tx, |tx, id| {
-                Self::spawn_pty_job(self.builder, self.maker, tx, &targetlist[&id])
+                Self::spawn_pty_job(self.maker, tx, &targetlist[&id])
             })
         })
     }

@@ -358,7 +358,7 @@ fn raptor() -> RaptorResult<()> {
 
             let mut terminal = ratatui::init();
 
-            let mut trunner = TerminalParallelRunner::new(&builder, &maker, &mut terminal);
+            let mut trunner = TerminalParallelRunner::new(&maker, &mut terminal);
 
             let res = trunner.execute(planner);
 
