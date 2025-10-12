@@ -8,7 +8,7 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Padding, Paragraph, StatefulWidget, Widget};
 
 use crate::make::planner::{Job, Planner};
-use crate::tui::{JobState, PaneController};
+use crate::tui::ptyctrl::PaneController;
 
 pub struct JobList {
     jobs: Vec<(usize, u64)>,
@@ -69,7 +69,7 @@ impl StatefulWidget for JobView<'_> {
     fn render(self, area: Rect, buf: &mut Buffer, index: &mut Self::State) {
         let mut lines = vec![];
         for (indent, id) in &self.list.jobs {
-            let state = self.ctrl.states.get(id).unwrap_or(&JobState::Planned);
+            let state = self.ctrl.job_state(*id);
             let mut line = Line::raw("  ".repeat(*indent));
             line.push_span(Span::styled(state.symbol(*index), state.color()));
             line.push_span(format!(" {:?}", &self.list.targetlist[id]));
