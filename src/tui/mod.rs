@@ -26,6 +26,8 @@ use crate::make::maker::Maker;
 use crate::make::planner::{Job, Planner};
 use crate::util::tty::TtyIoctl;
 
+pub mod jobstate;
+
 struct Pane {
     file: File,
     job: Job,
