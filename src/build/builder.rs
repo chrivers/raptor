@@ -1,6 +1,5 @@
-use std::collections::HashMap;
 use std::fs;
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::hash::{Hash, Hasher};
 use std::process::Command;
 use std::sync::Arc;
 
@@ -9,6 +8,7 @@ use colored::Colorize;
 use dregistry::downloader::DockerDownloader;
 use dregistry::source::DockerSource;
 use minijinja::context;
+use siphasher::sip::SipHasher13;
 
 use crate::RaptorResult;
 use crate::build::{Cacher, LayerInfo};
@@ -20,10 +20,9 @@ use raptor_parser::ast::{FromSource, Origin};
 pub struct RaptorBuilder<'a> {
     loader: Loader<'a>,
     dry_run: bool,
-    programs: HashMap<Utf8PathBuf, Arc<Program>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BuildTarget {
     Program(Arc<Program>),
     DockerSource(DockerSource),
@@ -53,25 +52,61 @@ impl DockerSourceExt for DockerSource {
     }
 }
 
-impl BuildTarget {
-    pub fn layer_info(&self, builder: &mut RaptorBuilder) -> RaptorResult<LayerInfo> {
+impl<'a> RaptorBuilder<'a> {
+    pub const fn new(loader: Loader<'a>, dry_run: bool) -> Self {
+        Self { loader, dry_run }
+    }
+
+    pub fn load(&self, path: impl AsRef<Utf8Path>) -> RaptorResult<Arc<Program>> {
+        let mut origins = vec![];
+        self.loader
+            .parse_template(path.as_ref(), &mut origins, context! {})
+            .or_else(|err| {
+                self.loader.explain_error(&err, &origins)?;
+                Err(err)
+            })
+    }
+
+    pub const fn loader<'b>(&'b self) -> &'b Loader<'a> {
+        &self.loader
+    }
+
+    pub const fn loader_mut<'b>(&'b mut self) -> &'b mut Loader<'a> {
+        &mut self.loader
+    }
+
+    pub fn load_with_source(
+        &self,
+        path: impl AsRef<Utf8Path>,
+        source: Origin,
+    ) -> RaptorResult<Arc<Program>> {
+        let origins = vec![source];
+        self.loader
+            .load_template(&path, context! {})
+            .or_else(|err| {
+                self.loader.explain_error(&err, &origins)?;
+                Err(err)
+            })
+    }
+
+    pub fn layer_info(&self, target: &BuildTarget) -> RaptorResult<LayerInfo> {
         let name;
         let hash;
 
-        match self {
-            Self::Program(prog) => {
+        match target {
+            BuildTarget::Program(prog) => {
                 debug!("Calculating hash for layer {}", prog.path);
 
                 name = prog.path.file_stem().unwrap().into();
-                hash = Cacher::cache_key(prog, builder)?;
+                hash = Cacher::cache_key(prog, self)?;
             }
 
-            Self::DockerSource(image) => {
+            BuildTarget::DockerSource(image) => {
                 debug!("Calculating hash for image {image}");
 
                 name = image.safe_file_name()?;
 
-                let mut state = DefaultHasher::new();
+                let mut state = SipHasher13::new();
                 image.hash(&mut state);
                 hash = state.finish();
             }
@@ -80,17 +115,53 @@ impl BuildTarget {
         Ok(LayerInfo::new(name.to_string(), hash))
     }
 
-    fn simulate(&self, loader: &Loader) -> RaptorResult<()> {
-        match self {
-            Self::Program(prog) => {
-                let mut exec = PrintExecutor::new();
+    pub fn clear_cache(&mut self) {
+        self.loader.clear_cache();
+    }
 
-                exec.run(loader, prog)?;
-            }
+    pub fn stack(&self, program: Arc<Program>) -> RaptorResult<Vec<BuildTarget>> {
+        let mut data: Vec<BuildTarget> = vec![];
 
-            Self::DockerSource(image) => {
-                info!("Would download docker image [{image}]");
+        let mut next = Some(program);
+
+        while let Some(prog) = next.take() {
+            data.push(BuildTarget::Program(prog.clone()));
+
+            let Some((source, origin)) = prog.from() else {
+                continue;
+            };
+
+            match source {
+                FromSource::Docker(src) => {
+                    let image = if src.contains('/') {
+                        src.clone()
+                    } else {
+                        format!("library/{src}")
+                    };
+                    let source = dregistry::reference::parse(&image)?;
+                    data.push(BuildTarget::DockerSource(source));
+                }
+
+                FromSource::Raptor(from) => {
+                    let fromprog = self
+                        .loader
+                        .to_program_path(from, origin)
+                        .and_then(|path| self.load_with_source(path, origin.clone()))?;
+
+                    next = Some(fromprog);
+                }
             }
+        }
+
+        data.reverse();
+
+        Ok(data)
+    }
+
+    fn simulate(target: &BuildTarget) -> RaptorResult<()> {
+        match target {
+            BuildTarget::Program(prog) => PrintExecutor::new().run(prog)?,
+            BuildTarget::DockerSource(image) => info!("Would download docker image [{image}]"),
         }
 
         Ok(())
@@ -98,22 +169,22 @@ impl BuildTarget {
 
     fn build(
         &self,
-        loader: &Loader,
+        target: &BuildTarget,
         layers: &[Utf8PathBuf],
         rootdir: &Utf8Path,
     ) -> RaptorResult<()> {
-        match self {
-            Self::Program(prog) => {
+        match target {
+            BuildTarget::Program(prog) => {
                 let sandbox = Sandbox::new(layers, Utf8Path::new(&rootdir))?;
 
                 let mut exec = Executor::new(sandbox);
 
-                exec.run(loader, prog)?;
+                exec.run(&self.loader, prog)?;
 
                 exec.finish()?;
             }
 
-            Self::DockerSource(image) => {
+            BuildTarget::DockerSource(image) => {
                 fs::create_dir_all(rootdir)?;
 
                 let dc = DockerDownloader::new(Utf8PathBuf::from("cache"))?;
@@ -138,145 +209,53 @@ impl BuildTarget {
 
         Ok(())
     }
-}
 
-impl<'a> RaptorBuilder<'a> {
-    pub fn new(loader: Loader<'a>, dry_run: bool) -> Self {
-        Self {
-            loader,
-            dry_run,
-            programs: HashMap::new(),
-        }
-    }
+    pub fn build_layer(
+        &self,
+        layers: &[Utf8PathBuf],
+        prog: &BuildTarget,
+        layer: &LayerInfo,
+    ) -> RaptorResult<Utf8PathBuf> {
+        let layer_name = layer.name().to_string();
+        let work_path = layer.work_path();
+        let done_path = layer.done_path();
 
-    pub fn load(&mut self, path: impl AsRef<Utf8Path>) -> RaptorResult<Arc<Program>> {
-        let key = path.as_ref();
+        if fs::exists(layer.done_path())? {
+            info!(
+                "{} [{}] {}",
+                "Completed".bright_white(),
+                layer.hash().dimmed(),
+                layer_name.yellow()
+            );
+        } else {
+            info!(
+                "{} {}: {}",
+                "Building".bright_white(),
+                layer_name.yellow(),
+                layer.work_path().as_str().green()
+            );
 
-        if let Some(program) = self.programs.get(key) {
-            return Ok(program.clone());
-        }
+            if self.dry_run {
+                Self::simulate(prog)?;
+            } else {
+                self.build(prog, layers, &layer.work_path())?;
 
-        let program = match self.loader.parse_template(&path, context! {}) {
-            Ok(res) => res,
-            Err(err) => {
-                self.loader.explain_error(&err)?;
-                return Err(err);
-            }
-        };
-
-        self.programs.insert(key.into(), Arc::new(program));
-
-        Ok(self.programs[key].clone())
-    }
-
-    pub const fn loader(&self) -> &Loader {
-        &self.loader
-    }
-
-    pub fn load_with_source(
-        &mut self,
-        path: impl AsRef<Utf8Path>,
-        source: Origin,
-    ) -> RaptorResult<Arc<Program>> {
-        self.loader.push_origin(source);
-        let res = self.load(path);
-        self.loader.pop_origin();
-        res
-    }
-
-    pub fn clear_cache(&mut self) {
-        self.loader.clear_cache();
-        self.programs.clear();
-    }
-
-    pub fn recurse(
-        &mut self,
-        program: Arc<Program>,
-        visitor: &mut impl FnMut(BuildTarget) -> RaptorResult<()>,
-    ) -> RaptorResult<()> {
-        match program.from() {
-            Some((FromSource::Docker(src), _origin)) => {
-                let image = if src.contains('/') {
-                    src.clone()
-                } else {
-                    format!("library/{src}")
-                };
-                let source = dregistry::reference::parse(&image)?;
-                visitor(BuildTarget::DockerSource(source))?;
-            }
-            Some((FromSource::Raptor(from), origin)) => {
-                let fromprog = self
-                    .loader
-                    .to_program_path(&program, from, origin)
-                    .and_then(|path| self.load_with_source(path, origin.clone()))?;
-
-                self.recurse(fromprog, visitor)?;
-            }
-            None => {}
-        }
-
-        visitor(BuildTarget::Program(program))
-    }
-
-    pub fn stack(&mut self, program: Arc<Program>) -> RaptorResult<Vec<BuildTarget>> {
-        let mut data: Vec<BuildTarget> = vec![];
-        let table = &mut data;
-
-        self.recurse(program, &mut |prog| {
-            table.push(prog);
-            Ok(())
-        })?;
-
-        Ok(data)
-    }
-
-    pub fn build(&mut self, program: Arc<Program>) -> RaptorResult<Vec<Utf8PathBuf>> {
-        match self.run_build(program) {
-            Ok(res) => Ok(res),
-            Err(err) => {
-                self.loader.explain_error(&err)?;
-                Err(err)
+                debug!("Layer {layer_name} finished. Moving {work_path} -> {done_path}");
+                fs::rename(&work_path, &done_path)?;
             }
         }
+
+        Ok(done_path)
     }
 
-    fn run_build(&mut self, program: Arc<Program>) -> RaptorResult<Vec<Utf8PathBuf>> {
+    pub fn build_program(&self, program: Arc<Program>) -> RaptorResult<Vec<Utf8PathBuf>> {
         let programs = self.stack(program)?;
 
         let mut layers: Vec<Utf8PathBuf> = vec![];
 
-        for prog in programs {
-            let layer = prog.layer_info(self)?;
-
-            let layer_name = layer.name().to_string();
-            let work_path = layer.work_path();
-            let done_path = layer.done_path();
-
-            if fs::exists(layer.done_path())? {
-                info!(
-                    "{} [{}] {}",
-                    "Completed".bright_white(),
-                    layer.hash().dimmed(),
-                    layer_name.yellow()
-                );
-            } else {
-                info!(
-                    "{} {}: {}",
-                    "Building".bright_white(),
-                    layer_name.yellow(),
-                    layer.work_path().as_str().green()
-                );
-
-                if self.dry_run {
-                    prog.simulate(&self.loader)?;
-                } else {
-                    prog.build(&self.loader, &layers, &layer.work_path())?;
-
-                    debug!("Layer {layer_name} finished. Moving {work_path} -> {done_path}");
-                    fs::rename(&work_path, &done_path)?;
-                }
-            }
-
+        for prog in &programs {
+            let layer_info = self.layer_info(prog)?;
+            let done_path = self.build_layer(&layers, prog, &layer_info)?;
             layers.push(done_path);
         }
 

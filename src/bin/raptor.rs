@@ -10,6 +10,9 @@ use log::{LevelFilter, debug, error, info};
 use nix::unistd::Uid;
 
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
+use raptor::make::maker::Maker;
+use raptor::make::parser::MakeTarget;
+use raptor::make::planner::{Job, Planner};
 use raptor::program::Loader;
 use raptor::runner::Runner;
 use raptor::sandbox::Sandbox;
@@ -96,6 +99,19 @@ enum Mode {
     /// Show mode: print list of build targets
     #[command(alias = "s")]
     Show { dirs: Vec<Utf8PathBuf> },
+
+    /// Make mode: run build operations from makefile (Raptor.toml)
+    Make {
+        #[arg(
+            short = 'f',
+            long,
+            help = "File",
+            default_value_t = Utf8PathBuf::from("Raptor.toml")
+        )]
+        file: Utf8PathBuf,
+
+        targets: Vec<MakeTarget>,
+    },
 
     /// Completions mode: generate shell completion scripts
     Completion {
@@ -260,13 +276,13 @@ fn raptor() -> RaptorResult<()> {
 
     check_for_falcon_binary()?;
 
-    let mut loader = Loader::new()?.with_dump(args.mode.dump());
+    let loader = Loader::new()?.with_dump(args.mode.dump());
 
     for [name, path] in args.link.as_chunks().0 {
         loader.add_package(name.into(), path.into());
     }
 
-    let mut builder = RaptorBuilder::new(loader, args.no_act);
+    let builder = RaptorBuilder::new(loader, args.no_act);
 
     match &args.mode {
         Mode::Dump { targets } | Mode::Check { targets } | Mode::Build { targets } => {
@@ -277,7 +293,7 @@ fn raptor() -> RaptorResult<()> {
                     if !args.no_act {
                         check_for_root()?;
                     }
-                    builder.build(program)?;
+                    builder.build_program(program)?;
                 }
             }
 
@@ -291,12 +307,12 @@ fn raptor() -> RaptorResult<()> {
 
             let program = builder.load(&run.target)?;
 
-            builder.build(program.clone())?;
+            builder.build_program(program.clone())?;
 
             let mut layers = vec![];
 
             for target in builder.stack(program.clone())? {
-                layers.push(target.layer_info(&mut builder)?.done_path());
+                layers.push(builder.layer_info(&target)?.done_path());
             }
 
             let mut runner = Runner::new()?;
@@ -310,7 +326,7 @@ fn raptor() -> RaptorResult<()> {
                 runner.with_state_dir(state_dir.clone());
             }
 
-            let res = runner.spawn(&program, &mut builder, &layers)?;
+            let res = runner.spawn(&program, &builder, &layers)?;
 
             if !res.success() {
                 error!("Run failed with status {}", res.code().unwrap_or_default());
@@ -327,6 +343,34 @@ fn raptor() -> RaptorResult<()> {
             }
 
             Presenter::new(&stats).present()?;
+        }
+
+        Mode::Make { file, targets } => {
+            let maker = Maker::load(file)?;
+
+            maker.add_links(builder.loader());
+
+            let mut plan = Planner::new(&maker, &builder);
+
+            for target in targets {
+                plan.add(target)?;
+            }
+
+            let (plan, targetlist) = plan.into_plan();
+
+            plan.into_iter().try_for_each(|id| {
+                let work = &targetlist[&id];
+                match work {
+                    Job::Build(build) => {
+                        builder.build_layer(&build.layers, &build.target, &build.layerinfo)?;
+                    }
+                    Job::Run(run_target) => {
+                        maker.run_job(&builder, run_target)?;
+                    }
+                }
+
+                Ok::<(), RaptorError>(())
+            })?;
         }
 
         Mode::Completion { shell } => {

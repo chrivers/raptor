@@ -120,7 +120,7 @@ impl Tester {
         Ok(fs::write(self.program_path(), value.into_string())?)
     }
 
-    fn program_hash(&mut self) -> RaptorResult<u64> {
+    fn program_hash(&self) -> RaptorResult<u64> {
         self.hash(self.program_path().as_str())
     }
 
@@ -152,13 +152,13 @@ impl Tester {
         Ok(())
     }
 
-    fn load(&mut self, name: &str) -> RaptorResult<Arc<Program>> {
+    fn load(&self, name: &str) -> RaptorResult<Arc<Program>> {
         self.builder.load(self.path(name))
     }
 
-    fn hash(&mut self, name: &str) -> RaptorResult<u64> {
+    fn hash(&self, name: &str) -> RaptorResult<u64> {
         let prog = self.load(name)?;
-        Cacher::cache_key(&prog, &mut self.builder)
+        Cacher::cache_key(&prog, &self.builder)
     }
 }
 

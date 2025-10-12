@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::os::unix::fs::MetadataExt;
+use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::{Value, context};
@@ -17,10 +18,10 @@ fn base_path() -> Utf8PathBuf {
     Utf8Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/cases/inst")
 }
 
-fn load_file(path: impl AsRef<Utf8Path>) -> RaptorResult<Program> {
-    let mut loader = Loader::new()?.with_base(base_path());
+fn load_file(path: impl AsRef<Utf8Path>) -> RaptorResult<Arc<Program>> {
+    let loader = Loader::new()?.with_base(base_path());
 
-    loader.parse_template(path, context! {})
+    loader.load_template(path, context! {})
 }
 
 fn assert_single_inst_eq(path: &Utf8Path, size: usize, res: &Program, inst: Instruction) {

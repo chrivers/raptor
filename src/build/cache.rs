@@ -1,10 +1,12 @@
 use std::collections::HashSet;
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::hash::{Hash, Hasher};
 use std::os::unix::fs::MetadataExt;
 use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use itertools::Itertools;
+use raptor_parser::util::module_name::ModuleRoot;
+use siphasher::sip::SipHasher13;
 
 use crate::build::RaptorBuilder;
 use crate::dsl::Program;
@@ -15,13 +17,13 @@ use raptor_parser::ast::{FromSource, Instruction};
 pub struct Cacher;
 
 impl Cacher {
-    pub fn cache_key(program: &Arc<Program>, builder: &mut RaptorBuilder<'_>) -> RaptorResult<u64> {
-        let mut state = DefaultHasher::new();
+    pub fn cache_key(program: &Arc<Program>, builder: &RaptorBuilder<'_>) -> RaptorResult<u64> {
+        let mut state = SipHasher13::new();
 
         if let Some((from, origin)) = program.from() {
             match from {
                 FromSource::Raptor(from) => {
-                    let filename = builder.loader().to_program_path(program, from, origin)?;
+                    let filename = builder.loader().to_program_path(from, origin)?;
 
                     let prog = builder.load_with_source(filename, origin.clone())?;
                     Self::cache_key(&prog, builder)?.hash(&mut state);
@@ -35,6 +37,7 @@ impl Cacher {
         }
 
         for source in &Self::sources(program, builder.loader())? {
+            trace!("Checking source [{source}]");
             let md = source
                 .metadata()
                 .map_err(|err| RaptorError::CacheIoError(source.into(), err))?;
@@ -55,7 +58,7 @@ impl Cacher {
                     data.extend(
                         inst.srcs
                             .iter()
-                            .map(|file| prog.path_for(file))
+                            .map(|file| loader.to_path(&ModuleRoot::Relative, &stmt.origin, file))
                             .collect::<Result<Vec<_>, _>>()?,
                     );
                 }
@@ -65,7 +68,7 @@ impl Cacher {
                 }
 
                 Instruction::Include(inst) => {
-                    let path = loader.to_include_path(prog, &inst.src, &stmt.origin)?;
+                    let path = loader.to_include_path(&inst.src, &stmt.origin)?;
                     data.insert(path);
                 }
 
@@ -87,7 +90,7 @@ impl Cacher {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LayerInfo {
     name: String,
     hash: u64,
@@ -104,6 +107,11 @@ impl LayerInfo {
     #[must_use]
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    #[must_use]
+    pub const fn hash_value(&self) -> u64 {
+        self.hash
     }
 
     #[must_use]

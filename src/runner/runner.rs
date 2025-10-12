@@ -34,7 +34,7 @@ pub trait AddMounts: Sized {
     fn add_mounts<S: BuildHasher>(
         self,
         program: &Program,
-        builder: &mut RaptorBuilder,
+        builder: &RaptorBuilder,
         mounts: &HashMap<&str, Vec<&str>, S>,
         tempdir: &Utf8Path,
     ) -> RaptorResult<Self>;
@@ -44,7 +44,7 @@ impl AddMounts for SpawnBuilder {
     fn add_mounts<S: BuildHasher>(
         mut self,
         program: &Program,
-        builder: &mut RaptorBuilder,
+        builder: &RaptorBuilder,
         mounts: &HashMap<&str, Vec<&str>, S>,
         tempdir: &Utf8Path,
     ) -> RaptorResult<Self> {
@@ -82,7 +82,7 @@ impl AddMounts for SpawnBuilder {
                         let program = builder.load(&src)?;
                         let name = program.path.with_extension("").as_str().replace('/', ".");
 
-                        let layers = builder.build(program)?;
+                        let layers = builder.build_program(program)?;
 
                         info.targets.push(name.clone());
 
@@ -107,7 +107,7 @@ impl AddMounts for SpawnBuilder {
                     }
 
                     let program = builder.load(&srcs[0])?;
-                    let layers = builder.build(program)?;
+                    let layers = builder.build_program(program)?;
                     self = self.overlay_ro(&layers, &mount.dest);
                 }
             }
@@ -142,6 +142,7 @@ pub struct Runner<'a> {
     tempdir: Utf8TempDir,
     env: &'a [String],
     args: &'a [String],
+    entrypoint: &'a [String],
     state_dir: Option<Utf8PathBuf>,
     mounts: HashMap<&'a str, Vec<&'a str>>,
 }
@@ -153,6 +154,7 @@ impl<'a> Runner<'a> {
             tempdir,
             env: EMPTY,
             args: EMPTY,
+            entrypoint: EMPTY,
             state_dir: None,
             mounts: HashMap::new(),
         })
@@ -173,6 +175,11 @@ impl<'a> Runner<'a> {
         self
     }
 
+    pub const fn with_entrypoint(&mut self, entrypoint: &'a [String]) -> &mut Self {
+        self.entrypoint = entrypoint;
+        self
+    }
+
     pub const fn with_env(&mut self, env: &'a [String]) -> &mut Self {
         self.env = env;
         self
@@ -181,7 +188,7 @@ impl<'a> Runner<'a> {
     pub fn spawn(
         self,
         program: &Program,
-        builder: &mut RaptorBuilder,
+        builder: &RaptorBuilder,
         layers: &[Utf8PathBuf],
     ) -> RaptorResult<ExitStatus> {
         /* the ephemeral root directory needs to have /usr for systemd-nspawn to accept it */
@@ -196,10 +203,12 @@ impl<'a> Runner<'a> {
 
         let mut command = vec![];
 
-        if let Some(entr) = program.entrypoint() {
+        if !self.entrypoint.is_empty() {
+            command.extend(self.entrypoint.iter().map(String::as_str));
+        } else if let Some(entr) = program.entrypoint() {
             command.extend(entr.entrypoint.iter().map(String::as_str));
         } else {
-            command.push("/bin/sh");
+            command.extend(["/bin/sh", "-c"]);
         }
 
         if !self.args.is_empty() {
@@ -207,6 +216,7 @@ impl<'a> Runner<'a> {
         } else if let Some(cmd) = program.cmd() {
             command.extend(cmd.cmd.iter().map(String::as_str));
         }
+        trace!("Command {command:?}");
 
         let console_mode = if stdout().is_terminal() {
             ConsoleMode::Interactive

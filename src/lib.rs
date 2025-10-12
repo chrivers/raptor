@@ -3,6 +3,7 @@ extern crate log;
 
 pub mod build;
 pub mod dsl;
+pub mod make;
 pub mod program;
 pub mod runner;
 pub mod sandbox;
@@ -53,6 +54,9 @@ pub enum RaptorError {
     #[error(transparent)]
     ParseIntError(#[from] std::num::ParseIntError),
 
+    #[error(transparent)]
+    ParseTomlError(#[from] toml::de::Error),
+
     #[error("Parse error: {0:?}")]
     ParseError(Location<raptor_parser::ParseError>),
 
@@ -85,6 +89,9 @@ pub enum RaptorError {
 
     #[error("Package not found: ${0}")]
     PackageNotFound(String, Origin),
+
+    #[error("Unknown job: {0}")]
+    UnknownJob(String),
 }
 
 impl RaptorError {
@@ -111,8 +118,10 @@ impl RaptorError {
             Self::UndefinedVarError(_, _) => "Undefined var error",
             Self::SingleMountOnly(_) => "Single mount error",
             Self::ParseIntError(_) => "Parse int error",
+            Self::ParseTomlError(_) => "Parse toml error",
             Self::LayerCacheParseError => "Layer cache parse error",
             Self::PackageNotFound(_, _) => "Package not found",
+            Self::UnknownJob(_) => "Unknown job",
         }
     }
 }

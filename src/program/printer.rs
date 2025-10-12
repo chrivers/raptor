@@ -1,6 +1,5 @@
 use crate::RaptorResult;
 use crate::dsl::Program;
-use crate::program::Loader;
 
 #[derive(Default)]
 pub struct PrintExecutor {}
@@ -11,7 +10,7 @@ impl PrintExecutor {
         Self {}
     }
 
-    pub fn run(&mut self, _loader: &Loader, program: &Program) -> RaptorResult<()> {
+    pub fn run(&self, program: &Program) -> RaptorResult<()> {
         program.traverse(&mut |stmt| {
             info!("{}", stmt.inst);
             Ok(())
