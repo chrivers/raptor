@@ -1,4 +1,5 @@
 use ratatui::style::{Color, Style};
+use throbber_widgets_tui::QUADRANT_BLOCK_CRACK;
 
 #[derive(Debug, Clone, Copy)]
 pub enum JobState {
@@ -10,11 +11,10 @@ pub enum JobState {
 impl JobState {
     #[must_use]
     pub const fn symbol(self, index: usize) -> &'static str {
-        const P1: &[&str] = &["⬖", "⬗", "⬘", "⬙"];
-        /* const P2: &[&str] = &["⤴", "⤵", "⤶", "⤷"]; */
+        let table = QUADRANT_BLOCK_CRACK;
         match self {
             Self::Planned => "✚",
-            Self::Running => P1[index % 4],
+            Self::Running => table.symbols[index % table.symbols.len()],
             Self::Completed => "🗹",
         }
     }
