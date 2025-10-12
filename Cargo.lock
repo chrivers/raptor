@@ -1675,6 +1675,7 @@ dependencies = [
  "siphasher",
  "tap",
  "thiserror",
+ "throbber-widgets-tui",
  "toml",
  "tui-term",
  "uuid",
@@ -2229,6 +2230,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.106",
+]
+
+[[package]]
+name = "throbber-widgets-tui"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "45e58887883fb0a259717b16d68d251983e40850b4b2f45c2da410f46d4333dc"
+dependencies = [
+ "ratatui",
 ]
 
 [[package]]

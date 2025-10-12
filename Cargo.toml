@@ -105,6 +105,7 @@ crossbeam = "0.8.4"
 ratatui = "0.29.0"
 rayon = "1.11.0"
 tui-term = "0.2.0"
+throbber-widgets-tui = "0.9.0"
 
 [dependencies]
 annotate-snippets = { workspace = true }
@@ -136,6 +137,7 @@ serde_yml = { workspace = true }
 siphasher = { workspace = true }
 tap = { workspace = true }
 thiserror = { workspace = true }
+throbber-widgets-tui = { workspace = true }
 toml = { workspace = true }
 tui-term = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
