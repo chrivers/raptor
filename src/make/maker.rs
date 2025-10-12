@@ -9,6 +9,7 @@ use raptor_parser::ast::Origin;
 use crate::build::{BuildTarget, Cacher, RaptorBuilder};
 use crate::dsl::Program;
 use crate::make::parser::{Make, MakeTarget, RunTarget};
+use crate::make::planner::BuildLayer;
 use crate::program::Loader;
 use crate::runner::Runner;
 use crate::{RaptorError, RaptorResult};
@@ -171,5 +172,10 @@ impl<'a> Maker<'a> {
             MakeTarget::Job(job) => self.run_named_job(job).map(|_| ()),
             MakeTarget::Group(grp) => self.run_group(grp),
         }
+    }
+
+    pub fn build(&self, build: &BuildLayer) -> RaptorResult<Utf8PathBuf> {
+        self.builder()
+            .build_layer(&build.layers, &build.target, &build.layerinfo)
     }
 }
