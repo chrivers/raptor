@@ -1,0 +1,89 @@
+use std::collections::HashMap;
+
+use dep_graph::DepGraph;
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, Borders, Padding, Paragraph, StatefulWidget, Widget};
+
+use crate::make::planner::{Job, Planner};
+use crate::tui::{JobState, PaneController};
+
+pub struct JobList {
+    jobs: Vec<(usize, u64)>,
+    targetlist: HashMap<u64, Job>,
+}
+
+impl JobList {
+    #[must_use]
+    pub fn new(planner: Planner) -> Self {
+        let (plan, targetlist) = planner.into_plan();
+
+        let mut jobs = vec![];
+        for node in &plan.ready_nodes {
+            Self::generate_sublist(&plan, *node, 1, &mut jobs);
+        }
+
+        Self { jobs, targetlist }
+    }
+
+    #[must_use]
+    pub const fn lines(&self) -> usize {
+        self.jobs.len()
+    }
+
+    fn generate_sublist(
+        plan: &DepGraph<u64>,
+        node: u64,
+        indent: usize,
+        list: &mut Vec<(usize, u64)>,
+    ) {
+        list.push((indent, node));
+
+        let Ok(read) = plan.rdeps.read() else {
+            return;
+        };
+
+        for node in read.get(&node).into_iter().flatten() {
+            Self::generate_sublist(plan, *node, indent + 1, list);
+        }
+    }
+}
+
+pub struct JobView<'a> {
+    pub list: &'a JobList,
+    pub ctrl: &'a PaneController,
+}
+
+impl<'a> JobView<'a> {
+    #[must_use]
+    pub const fn new(list: &'a JobList, ctrl: &'a PaneController) -> Self {
+        Self { list, ctrl }
+    }
+}
+
+impl StatefulWidget for JobView<'_> {
+    type State = usize;
+
+    fn render(self, area: Rect, buf: &mut Buffer, index: &mut Self::State) {
+        let mut lines = vec![];
+        for (indent, id) in &self.list.jobs {
+            let state = self.ctrl.states.get(id).unwrap_or(&JobState::Planned);
+            let mut line = Line::raw("  ".repeat(*indent));
+            line.push_span(Span::styled(state.symbol(*index), state.color()));
+            line.push_span(format!(" {:?}", &self.list.targetlist[id]));
+            lines.push(line);
+        }
+
+        let block = Block::default()
+            .padding(Padding::proportional(1))
+            .borders(Borders::ALL)
+            .style(Style::new().add_modifier(Modifier::BOLD).bg(Color::Black));
+        let p = Paragraph::new(lines).block(block);
+
+        p.render(area, buf);
+
+        *index += 1;
+    }
+}
