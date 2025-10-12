@@ -1,10 +1,10 @@
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::os::unix::process::ExitStatusExt;
 use std::process::{Child, ExitStatus};
-use std::sync::mpsc::{self, RecvTimeoutError};
 use std::time::Duration;
 
 use camino::Utf8Path;
+use crossbeam::channel::RecvTimeoutError;
 use nix::errno::Errno;
 
 use crate::sandbox::SandboxFile;
@@ -31,7 +31,7 @@ impl FalconClient {
     }
 
     pub fn wait_for_startup(listen: UnixListener, proc: &mut Child) -> RaptorResult<UnixStream> {
-        let (tx, rx) = mpsc::channel();
+        let (tx, rx) = crossbeam::channel::bounded(1);
 
         /* Spawn a thread that waits for the sandbox to start up, and falcon to
          * connect from inside the namespace */

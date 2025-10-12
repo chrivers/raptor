@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::Debug;
 
 use camino::Utf8PathBuf;
 use dep_graph::{DepGraph, Node};
@@ -34,11 +35,25 @@ pub enum Job {
     Run(RunTarget),
 }
 
+impl Debug for Job {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Build(layer) => {
+                write!(f, "build: {}", layer.layerinfo.name())
+            }
+            Self::Run(run) => {
+                write!(f, "run: {} {:?}", run.target, run.input)
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct Planner<'a> {
     nodes: HashMap<u64, Node<u64>>,
     jobs: HashMap<u64, Job>,
     builder: &'a RaptorBuilder<'a>,
-    maker: &'a Maker,
+    maker: &'a Maker<'a>,
 }
 
 impl<'a> Planner<'a> {
@@ -50,6 +65,16 @@ impl<'a> Planner<'a> {
             builder,
             maker,
         }
+    }
+
+    #[must_use]
+    pub const fn edges(&self) -> &HashMap<u64, Node<u64>> {
+        &self.nodes
+    }
+
+    #[must_use]
+    pub const fn nodes(&self) -> &HashMap<u64, Job> {
+        &self.jobs
     }
 
     pub fn add_build_job(&mut self, input: &str) -> RaptorResult<Option<u64>> {

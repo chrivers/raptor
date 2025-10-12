@@ -8,11 +8,12 @@ use clap_complete::Shell;
 use colored::Colorize;
 use log::{LevelFilter, debug, error, info};
 use nix::unistd::Uid;
+use raptor::tui::TerminalParallelRunner;
 
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
 use raptor::make::maker::Maker;
 use raptor::make::parser::MakeTarget;
-use raptor::make::planner::{Job, Planner};
+use raptor::make::planner::Planner;
 use raptor::program::Loader;
 use raptor::runner::Runner;
 use raptor::sandbox::Sandbox;
@@ -268,7 +269,6 @@ fn check_for_falcon_binary() -> RaptorResult<()> {
     Ok(())
 }
 
-#[allow(clippy::case_sensitive_file_extension_comparisons)]
 fn raptor() -> RaptorResult<()> {
     let args = Cli::parse();
 
@@ -346,31 +346,25 @@ fn raptor() -> RaptorResult<()> {
         }
 
         Mode::Make { file, targets } => {
-            let maker = Maker::load(file)?;
+            let maker = Maker::load(&builder, file)?;
 
             maker.add_links(builder.loader());
 
-            let mut plan = Planner::new(&maker, &builder);
+            let mut planner = Planner::new(&maker, &builder);
 
             for target in targets {
-                plan.add(target)?;
+                planner.add(target)?;
             }
 
-            let (plan, targetlist) = plan.into_plan();
+            let mut terminal = ratatui::init();
 
-            plan.into_iter().try_for_each(|id| {
-                let work = &targetlist[&id];
-                match work {
-                    Job::Build(build) => {
-                        builder.build_layer(&build.layers, &build.target, &build.layerinfo)?;
-                    }
-                    Job::Run(run_target) => {
-                        maker.run_job(&builder, run_target)?;
-                    }
-                }
+            let mut trunner = TerminalParallelRunner::new(&maker, &mut terminal);
 
-                Ok::<(), RaptorError>(())
-            })?;
+            let res = trunner.execute(planner);
+
+            ratatui::restore();
+
+            res?;
         }
 
         Mode::Completion { shell } => {
