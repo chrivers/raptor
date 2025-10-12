@@ -12,7 +12,7 @@ use crate::RaptorResult;
 use crate::make::maker::Maker;
 use crate::make::planner::{Job, Planner};
 use crate::tui::joblist::{JobList, JobView};
-use crate::tui::ptyctrl::{PaneView, PtyJob, PtyJobController};
+use crate::tui::ptyctrl::{PtyJob, PtyJobController, PtyJobView};
 
 pub mod joblist;
 pub mod jobstate;
@@ -89,7 +89,7 @@ impl<'a> TerminalParallelRunner<'a> {
                 let view = JobView::new(&joblist, &panectrl);
                 f.render_stateful_widget(view, layout[0], &mut index);
 
-                let paneview = PaneView::new(&mut panectrl);
+                let paneview = PtyJobView::new(&mut panectrl);
                 paneview.render(f, layout[1])
             })?;
         }

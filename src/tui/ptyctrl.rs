@@ -146,11 +146,11 @@ impl PtyJobController {
     }
 }
 
-pub struct PaneView<'a> {
+pub struct PtyJobView<'a> {
     ctrl: &'a mut PtyJobController,
 }
 
-impl<'a> PaneView<'a> {
+impl<'a> PtyJobView<'a> {
     #[must_use]
     pub const fn new(ctrl: &'a mut PtyJobController) -> Self {
         Self { ctrl }
