@@ -20,14 +20,14 @@ use crate::make::planner::Job;
 use crate::tui::jobstate::JobState;
 use crate::util::tty::TtyIoctl;
 
-pub struct Pane {
+pub struct PtyJob {
     file: File,
     job: Job,
     parser: vt100::Parser,
     id: u64,
 }
 
-impl Pane {
+impl PtyJob {
     #[must_use]
     pub fn new(file: File, job: Job, id: u64) -> Self {
         Self::custom(file, job, vt100::Parser::default(), id)
@@ -44,17 +44,17 @@ impl Pane {
     }
 }
 
-pub struct PaneController {
-    panes: HashMap<RawFd, Pane>,
+pub struct PtyJobController {
+    panes: HashMap<RawFd, PtyJob>,
     resize: bool,
-    rx: Receiver<Pane>,
+    rx: Receiver<PtyJob>,
     boxes: Rc<[Rect]>,
     states: HashMap<u64, JobState>,
 }
 
-impl PaneController {
+impl PtyJobController {
     #[must_use]
-    pub fn new(rx: Receiver<Pane>) -> Self {
+    pub fn new(rx: Receiver<PtyJob>) -> Self {
         Self {
             panes: HashMap::new(),
             resize: false,
@@ -147,12 +147,12 @@ impl PaneController {
 }
 
 pub struct PaneView<'a> {
-    ctrl: &'a mut PaneController,
+    ctrl: &'a mut PtyJobController,
 }
 
 impl<'a> PaneView<'a> {
     #[must_use]
-    pub const fn new(ctrl: &'a mut PaneController) -> Self {
+    pub const fn new(ctrl: &'a mut PtyJobController) -> Self {
         Self { ctrl }
     }
 

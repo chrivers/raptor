@@ -12,7 +12,7 @@ use crate::RaptorResult;
 use crate::make::maker::Maker;
 use crate::make::planner::{Job, Planner};
 use crate::tui::joblist::{JobList, JobView};
-use crate::tui::ptyctrl::{Pane, PaneController, PaneView};
+use crate::tui::ptyctrl::{PaneView, PtyJob, PtyJobController};
 
 pub mod joblist;
 pub mod jobstate;
@@ -29,10 +29,15 @@ impl<'a> TerminalParallelRunner<'a> {
     }
 
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    fn spawn_pty_job(maker: &Maker, tx: &Sender<Pane>, id: u64, target: &Job) -> RaptorResult<()> {
+    fn spawn_pty_job(
+        maker: &Maker,
+        tx: &Sender<PtyJob>,
+        id: u64,
+        target: &Job,
+    ) -> RaptorResult<()> {
         match unsafe { nix::pty::forkpty(None, None)? } {
             ForkptyResult::Parent { child, master } => {
-                let pane = Pane::new(master.into(), target.clone(), id);
+                let pane = PtyJob::new(master.into(), target.clone(), id);
 
                 tx.send(pane)?;
                 waitpid(child, None)?;
@@ -68,11 +73,11 @@ impl<'a> TerminalParallelRunner<'a> {
 
     #[allow(clippy::cast_possible_truncation)]
     fn render_terminal(
-        rx: Receiver<Pane>,
+        rx: Receiver<PtyJob>,
         planner: Planner,
         terminal: &'a mut DefaultTerminal,
     ) -> RaptorResult<()> {
-        let mut panectrl = PaneController::new(rx);
+        let mut panectrl = PtyJobController::new(rx);
         let joblist = JobList::new(planner);
 
         let mut index = 0;
@@ -102,7 +107,7 @@ impl<'a> TerminalParallelRunner<'a> {
     }
 
     pub fn execute<'b: 'a>(&'b mut self, planner: Planner) -> RaptorResult<()> {
-        let (tx, rx) = crossbeam::channel::unbounded::<Pane>();
+        let (tx, rx) = crossbeam::channel::unbounded::<PtyJob>();
         let (plan, targetlist) = planner.clone().into_plan();
 
         std::thread::scope(|s| {

@@ -8,7 +8,7 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Padding, Paragraph, StatefulWidget, Widget};
 
 use crate::make::planner::{Job, Planner};
-use crate::tui::ptyctrl::PaneController;
+use crate::tui::ptyctrl::PtyJobController;
 
 pub struct JobList {
     jobs: Vec<(usize, u64)>,
@@ -53,12 +53,12 @@ impl JobList {
 
 pub struct JobView<'a> {
     pub list: &'a JobList,
-    pub ctrl: &'a PaneController,
+    pub ctrl: &'a PtyJobController,
 }
 
 impl<'a> JobView<'a> {
     #[must_use]
-    pub const fn new(list: &'a JobList, ctrl: &'a PaneController) -> Self {
+    pub const fn new(list: &'a JobList, ctrl: &'a PtyJobController) -> Self {
         Self { list, ctrl }
     }
 }
