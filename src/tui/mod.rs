@@ -47,17 +47,8 @@ impl<'a> TerminalParallelRunner<'a> {
 
             ForkptyResult::Child => {
                 match target {
-                    Job::Build(build) => {
-                        maker.builder().build_layer(
-                            &build.layers,
-                            &build.target,
-                            &build.layerinfo,
-                        )?;
-                    }
-
-                    Job::Run(run_target) => {
-                        maker.run_job(run_target)?;
-                    }
+                    Job::Build(build) => maker.build(build).map(drop)?,
+                    Job::Run(run_target) => maker.run_job(run_target).map(drop)?,
                 }
 
                 let delay = unsafe {
