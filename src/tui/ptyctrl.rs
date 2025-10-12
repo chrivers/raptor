@@ -45,7 +45,7 @@ impl PtyJob {
 }
 
 pub struct PtyJobController {
-    panes: HashMap<RawFd, PtyJob>,
+    jobs: HashMap<RawFd, PtyJob>,
     resize: bool,
     rx: Receiver<PtyJob>,
     boxes: Rc<[Rect]>,
@@ -56,7 +56,7 @@ impl PtyJobController {
     #[must_use]
     pub fn new(rx: Receiver<PtyJob>) -> Self {
         Self {
-            panes: HashMap::new(),
+            jobs: HashMap::new(),
             resize: false,
             rx,
             boxes: Rc::new([]),
@@ -71,8 +71,8 @@ impl PtyJobController {
 
     fn poll_fds(&self) -> RaptorResult<Vec<RawFd>> {
         let mut pollfds = vec![];
-        for pane in self.panes.values() {
-            pollfds.push(PollFd::new(pane.file.as_fd(), PollFlags::POLLIN));
+        for job in self.jobs.values() {
+            pollfds.push(PollFd::new(job.file.as_fd(), PollFlags::POLLIN));
         }
 
         nix::poll::poll(&mut pollfds, 100u16)?;
@@ -91,16 +91,16 @@ impl PtyJobController {
         let mut buf = [0u8; 1024 * 8];
 
         for fd in fds {
-            let pane = self.panes.get_mut(fd).unwrap();
-            let sz = pane.file.read(&mut buf);
+            let job = self.jobs.get_mut(fd).unwrap();
+            let sz = job.file.read(&mut buf);
             match sz {
                 Ok(0) | Err(_) => {
-                    self.states.insert(pane.id, JobState::Completed);
-                    self.panes.remove(fd);
+                    self.states.insert(job.id, JobState::Completed);
+                    self.jobs.remove(fd);
                     self.resize = true;
                 }
                 Ok(sz) => {
-                    pane.parser.process(&buf[..sz]);
+                    job.parser.process(&buf[..sz]);
                 }
             }
         }
@@ -109,11 +109,11 @@ impl PtyJobController {
     fn make_layout(&mut self, area: Rect) -> IoResult<Rc<[Rect]>> {
         if self.resize {
             self.boxes =
-                Layout::horizontal(self.panes.iter().map(|_| Constraint::Fill(1))).split(area);
+                Layout::horizontal(self.jobs.iter().map(|_| Constraint::Fill(1))).split(area);
 
-            for (pane, tbox) in self.panes.values_mut().zip(self.boxes.iter()) {
-                pane.parser.set_size(tbox.height, tbox.width);
-                pane.file.tty_set_size(tbox.height, tbox.width)?;
+            for (job, tbox) in self.jobs.values_mut().zip(self.boxes.iter()) {
+                job.parser.set_size(tbox.height, tbox.width);
+                job.file.tty_set_size(tbox.height, tbox.width)?;
             }
 
             self.resize = false;
@@ -125,9 +125,9 @@ impl PtyJobController {
     fn process_queue(&mut self) -> ControlFlow<()> {
         loop {
             match self.rx.try_recv() {
-                Ok(pane) => {
-                    self.states.insert(pane.id, JobState::Running);
-                    self.panes.insert(pane.file.as_raw_fd(), pane);
+                Ok(job) => {
+                    self.states.insert(job.id, JobState::Running);
+                    self.jobs.insert(job.file.as_raw_fd(), job);
                     self.resize = true;
                 }
 
@@ -159,14 +159,14 @@ impl<'a> PtyJobView<'a> {
     pub fn render(self, frame: &mut Frame, area: Rect) -> IoResult<()> {
         let boxes = self.ctrl.make_layout(area)?;
 
-        for (index, pane) in self.ctrl.panes.values().enumerate() {
+        for (index, job) in self.ctrl.jobs.values().enumerate() {
             let block = Block::default()
                 .borders(Borders::ALL)
-                .title(format!("{:?}", &pane.job))
+                .title(format!("{:?}", &job.job))
                 .title_alignment(Alignment::Center)
                 .style(Style::new().add_modifier(Modifier::BOLD).bg(Color::Blue));
 
-            let screen = pane.parser.screen();
+            let screen = job.parser.screen();
             let pseudo_term = PseudoTerminal::new(screen).block(block);
 
             frame.render_widget(pseudo_term, boxes[index]);

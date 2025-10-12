@@ -37,9 +37,9 @@ impl<'a> TerminalParallelRunner<'a> {
     ) -> RaptorResult<()> {
         match unsafe { nix::pty::forkpty(None, None)? } {
             ForkptyResult::Parent { child, master } => {
-                let pane = PtyJob::new(master.into(), target.clone(), id);
+                let job = PtyJob::new(master.into(), target.clone(), id);
 
-                tx.send(pane)?;
+                tx.send(job)?;
                 waitpid(child, None)?;
 
                 Ok(())
@@ -68,14 +68,14 @@ impl<'a> TerminalParallelRunner<'a> {
         planner: Planner,
         terminal: &'a mut DefaultTerminal,
     ) -> RaptorResult<()> {
-        let mut panectrl = PtyJobController::new(rx);
+        let mut jobctrl = PtyJobController::new(rx);
         let joblist = JobList::new(planner);
 
         let mut index = 0;
         let mut alive = true;
 
         while alive {
-            if panectrl.event()?.is_break() {
+            if jobctrl.event()?.is_break() {
                 alive = false;
             }
 
@@ -86,11 +86,11 @@ impl<'a> TerminalParallelRunner<'a> {
                 ])
                 .split(f.area());
 
-                let view = JobView::new(&joblist, &panectrl);
-                f.render_stateful_widget(view, layout[0], &mut index);
+                let job_view = JobView::new(&joblist, &jobctrl);
+                f.render_stateful_widget(job_view, layout[0], &mut index);
 
-                let paneview = PtyJobView::new(&mut panectrl);
-                paneview.render(f, layout[1])
+                let pty_view = PtyJobView::new(&mut jobctrl);
+                pty_view.render(f, layout[1])
             })?;
         }
 
