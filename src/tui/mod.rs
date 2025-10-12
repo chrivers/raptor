@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::Read;
-use std::io::Result as IoResult;
+use std::io::{Read, Result as IoResult};
 use std::ops::ControlFlow;
 use std::os::fd::{AsFd, AsRawFd, RawFd};
 use std::rc::Rc;
@@ -24,6 +23,8 @@ use tui_term::widget::PseudoTerminal;
 use crate::RaptorResult;
 use crate::make::maker::Maker;
 use crate::make::planner::{Job, Planner};
+use crate::tui::joblist::{JobList, JobView};
+use crate::tui::jobstate::JobState;
 use crate::util::tty::TtyIoctl;
 
 pub mod joblist;
@@ -33,13 +34,15 @@ struct Pane {
     file: File,
     job: Job,
     parser: vt100::Parser,
+    id: u64,
 }
 
-struct PaneController {
+pub struct PaneController {
     panes: HashMap<RawFd, Pane>,
     resize: bool,
     rx: Receiver<Pane>,
     boxes: Rc<[Rect]>,
+    states: HashMap<u64, JobState>,
 }
 
 impl PaneController {
@@ -49,6 +52,7 @@ impl PaneController {
             resize: false,
             rx,
             boxes: Rc::new([]),
+            states: HashMap::new(),
         }
     }
 
@@ -78,6 +82,7 @@ impl PaneController {
             let sz = pane.file.read(&mut buf);
             match sz {
                 Ok(0) | Err(_) => {
+                    self.states.insert(pane.id, JobState::Completed);
                     self.panes.remove(fd);
                     self.resize = true;
                 }
@@ -108,6 +113,7 @@ impl PaneController {
         loop {
             match self.rx.try_recv() {
                 Ok(pane) => {
+                    self.states.insert(pane.id, JobState::Running);
                     self.panes.insert(pane.file.as_raw_fd(), pane);
                     self.resize = true;
                 }
@@ -140,7 +146,7 @@ impl<'a> PaneView<'a> {
     fn render(self, frame: &mut Frame, area: Rect) -> IoResult<()> {
         let boxes = self.ctrl.make_layout(area)?;
 
-        for (index, pane) in self.ctrl.panes.values_mut().enumerate() {
+        for (index, pane) in self.ctrl.panes.values().enumerate() {
             let block = Block::default()
                 .borders(Borders::ALL)
                 .title(format!("{:?}", &pane.job))
@@ -167,13 +173,15 @@ impl<'a> TerminalParallelRunner<'a> {
         Self { maker, terminal }
     }
 
-    fn spawn_pty_job(maker: &Maker, tx: &Sender<Pane>, target: &Job) -> RaptorResult<()> {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    fn spawn_pty_job(maker: &Maker, tx: &Sender<Pane>, id: u64, target: &Job) -> RaptorResult<()> {
         match unsafe { nix::pty::forkpty(None, None)? } {
             ForkptyResult::Parent { child, master } => {
                 let pane = Pane {
                     file: master.into(),
                     job: target.clone(),
                     parser: vt100::Parser::default(),
+                    id,
                 };
 
                 tx.send(pane)?;
@@ -197,21 +205,46 @@ impl<'a> TerminalParallelRunner<'a> {
                     }
                 }
 
-                std::thread::sleep(Duration::from_millis(250));
+                let delay = unsafe {
+                    nix::libc::srand(nix::libc::getpid() as u32);
+                    nix::libc::rand() % 500
+                } + 300;
+                std::thread::sleep(Duration::from_millis(delay as u64));
 
                 std::process::exit(0);
             }
         }
     }
 
-    fn render_terminal(rx: Receiver<Pane>, terminal: &'a mut DefaultTerminal) -> RaptorResult<()> {
+    #[allow(clippy::cast_possible_truncation)]
+    fn render_terminal(
+        rx: Receiver<Pane>,
+        planner: Planner,
+        terminal: &'a mut DefaultTerminal,
+    ) -> RaptorResult<()> {
         let mut panectrl = PaneController::new(rx);
+        let joblist = JobList::new(planner);
 
-        while panectrl.event()?.is_continue() {
+        let mut index = 0;
+        let mut alive = true;
+
+        while alive {
+            if panectrl.event()?.is_break() {
+                alive = false;
+            }
+
             terminal.try_draw(|f| -> IoResult<()> {
-                let paneview = PaneView::new(&mut panectrl);
+                let layout = Layout::vertical([
+                    Constraint::Max(joblist.lines() as u16),
+                    Constraint::Fill(1),
+                ])
+                .split(f.area());
 
-                paneview.render(f, f.area())
+                let view = JobView::new(&joblist, &panectrl);
+                f.render_stateful_widget(view, layout[0], &mut index);
+
+                let paneview = PaneView::new(&mut panectrl);
+                paneview.render(f, layout[1])
             })?;
         }
 
@@ -220,13 +253,13 @@ impl<'a> TerminalParallelRunner<'a> {
 
     pub fn execute<'b: 'a>(&'b mut self, planner: Planner) -> RaptorResult<()> {
         let (tx, rx) = crossbeam::channel::unbounded::<Pane>();
-        let (plan, targetlist) = planner.into_plan();
+        let (plan, targetlist) = planner.clone().into_plan();
 
         std::thread::scope(|s| {
-            s.spawn(|| Self::render_terminal(rx, self.terminal));
+            s.spawn(|| Self::render_terminal(rx, planner, self.terminal));
 
             plan.into_par_iter().try_for_each_with(tx, |tx, id| {
-                Self::spawn_pty_job(self.maker, tx, &targetlist[&id])
+                Self::spawn_pty_job(self.maker, tx, *id, &targetlist[&id])
             })
         })
     }
