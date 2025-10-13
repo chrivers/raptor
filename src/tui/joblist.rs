@@ -72,7 +72,7 @@ impl StatefulWidget for JobView<'_> {
             let state = self.ctrl.job_state(*id);
             let mut line = Line::raw("  ".repeat(*indent));
             line.push_span(Span::styled(state.symbol(*index), state.color()));
-            line.push_span(format!(" {:?}", &self.list.targetlist[id]));
+            line.push_span(format!(" {}", &self.list.targetlist[id]));
             lines.push(line);
         }
 
