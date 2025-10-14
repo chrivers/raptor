@@ -11,6 +11,7 @@ use raptor::RaptorResult;
 use raptor::build::{Cacher, RaptorBuilder};
 use raptor::dsl::Program;
 use raptor::program::Loader;
+use raptor_parser::util::module_name::ModuleName;
 
 trait Writable {
     fn into_string(self) -> String;
@@ -43,6 +44,7 @@ struct Tester {
 }
 
 impl Tester {
+    const PROGRAM_MODULE: &str = "program";
     const PROGRAM_NAME: &str = "program.rapt";
 
     fn setup(
@@ -114,6 +116,10 @@ impl Tester {
 
     fn program_path(&self) -> Utf8PathBuf {
         self.path(Self::PROGRAM_NAME)
+    }
+
+    fn program_module() -> ModuleName {
+        ModuleName::absolute(vec![Self::PROGRAM_MODULE.to_string()], None)
     }
 
     fn program_write(&self, value: impl Writable) -> RaptorResult<()> {
