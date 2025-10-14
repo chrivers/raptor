@@ -25,7 +25,7 @@ pub fn cargo_dir() -> PathBuf {
 }
 
 fn run_raptor(filename: &Utf8Path) -> RaptorResult<String> {
-    const SHOULD_BUILD: &[&str] = &["error_failing_instruction.rapt"];
+    const SHOULD_BUILD: &[&str] = &["error_failing_instruction"];
 
     let should_build = SHOULD_BUILD.contains(&filename.file_name().unwrap_or_default());
 
@@ -70,11 +70,11 @@ fn main() -> RaptorResult<()> {
             continue;
         }
         let refpath = dent.path().with_extension("out");
+        let srcpath = dent.path().with_extension("");
 
-        let path = dent.path().to_owned();
         let test = Trial::test(dent.file_name(), move || {
             let refdata = std::fs::read_to_string(refpath)?;
-            let newdata = run_raptor(&path)?;
+            let newdata = run_raptor(&srcpath)?;
 
             assert_eq!(refdata, newdata);
             Ok(())

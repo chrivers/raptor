@@ -18,6 +18,7 @@ use raptor::program::Loader;
 use raptor::runner::Runner;
 use raptor::sandbox::Sandbox;
 use raptor::{RaptorError, RaptorResult};
+use raptor_parser::util::module_name::ModuleName;
 
 #[derive(clap::Parser, Debug)]
 #[command(about, long_about = None, styles=raptor::util::clapcolor::style())]
@@ -72,25 +73,25 @@ enum Mode {
     /// Build mode: generate output from raptor files
     #[command(alias = "b")]
     Build {
-        /// Targets to build <target1.rapt target2.rapt ...>
+        /// Targets to build <target1 target2 ...>
         #[arg(value_name = "targets")]
-        targets: Vec<Utf8PathBuf>,
+        targets: Vec<ModuleName>,
     },
 
     /// Dump mode: show output from templating pass
     #[command(alias = "d")]
     Dump {
-        /// Targets to dump <target1.rapt target2.rapt ...>
+        /// Targets to dump <target1 target2 ...>
         #[arg(value_name = "targets")]
-        targets: Vec<Utf8PathBuf>,
+        targets: Vec<ModuleName>,
     },
 
     /// Check mode: check validity of input files only
     #[command(alias = "c")]
     Check {
-        /// Targets to check <target1.rapt target2.rapt ...>
+        /// Targets to check <target1 target2 ...>
         #[arg(value_name = "targets")]
-        targets: Vec<Utf8PathBuf>,
+        targets: Vec<ModuleName>,
     },
 
     /// Run mode: run a shell or command inside the layer
@@ -99,7 +100,7 @@ enum Mode {
 
     /// Show mode: print list of build targets
     #[command(alias = "s")]
-    Show { dirs: Vec<Utf8PathBuf> },
+    Show { dirs: Vec<ModuleName> },
 
     /// Make mode: run build operations from makefile (Raptor.toml)
     Make {
@@ -125,7 +126,7 @@ enum Mode {
 struct RunCmd {
     /// Target to run
     #[arg(value_name = "target")]
-    target: Utf8PathBuf,
+    target: ModuleName,
 
     /// State directory for changes (ephemeral if unset)
     #[arg(short = 's', long)]

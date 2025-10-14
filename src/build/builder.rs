@@ -16,6 +16,7 @@ use crate::dsl::Program;
 use crate::program::{Executor, Loader, PrintExecutor};
 use crate::sandbox::Sandbox;
 use raptor_parser::ast::{FromSource, Origin};
+use raptor_parser::util::module_name::ModuleName;
 
 pub struct RaptorBuilder<'a> {
     loader: Loader<'a>,
@@ -57,10 +58,13 @@ impl<'a> RaptorBuilder<'a> {
         Self { loader, dry_run }
     }
 
-    pub fn load(&self, path: impl AsRef<Utf8Path>) -> RaptorResult<Arc<Program>> {
+    pub fn load(&self, name: &ModuleName) -> RaptorResult<Arc<Program>> {
         let mut origins = vec![];
+        let origin = Origin::make("<inline>", 0..0);
+        let path = self.loader.to_program_path(name, &origin)?;
+
         self.loader
-            .parse_template(path.as_ref(), &mut origins, context! {})
+            .parse_template(path, &mut origins, context! {})
             .or_else(|err| {
                 self.loader.explain_error(&err, &origins)?;
                 Err(err)

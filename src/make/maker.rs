@@ -4,7 +4,7 @@ use std::time::SystemTime;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use itertools::Itertools;
-use raptor_parser::ast::Origin;
+use raptor_parser::util::module_name::ModuleName;
 
 use crate::build::{BuildTarget, Cacher, RaptorBuilder};
 use crate::dsl::Program;
@@ -72,16 +72,14 @@ impl<'a> Maker<'a> {
     }
 
     pub fn run_job(&self, job: &RunTarget) -> RaptorResult<ExitStatus> {
-        let origin = Origin::make("<command-line>", 0..0);
         let builder = self.builder;
-        let filename = builder.loader().to_program_path(&job.target, &origin)?;
 
-        let program = builder.load(filename)?;
+        let program = builder.load(&job.target)?;
 
         let mut newest = Self::program_mtime(&program, builder.loader())?;
 
         for input in &job.input {
-            let prog = builder.load(input)?;
+            let prog = builder.load(&ModuleName::from(input))?;
             let stack = builder.stack(prog)?;
             for st in stack {
                 match st {

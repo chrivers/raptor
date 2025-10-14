@@ -4,7 +4,7 @@ use std::fmt::Display;
 use camino::Utf8PathBuf;
 use dep_graph::{DepGraph, Node};
 use itertools::Itertools;
-use raptor_parser::ast::Origin;
+use raptor_parser::util::module_name::ModuleName;
 
 use crate::build::{BuildTarget, LayerInfo, RaptorBuilder};
 use crate::make::maker::Maker;
@@ -77,7 +77,7 @@ impl<'a> Planner<'a> {
         &self.jobs
     }
 
-    pub fn add_build_job(&mut self, input: &str) -> RaptorResult<Option<u64>> {
+    pub fn add_build_job(&mut self, input: &ModuleName) -> RaptorResult<Option<u64>> {
         let prog = self.builder.load(input)?;
         let targets = self.builder.stack(prog)?;
 
@@ -119,13 +119,7 @@ impl<'a> Planner<'a> {
     }
 
     pub fn add_run_job(&mut self, job: &RunTarget) -> RaptorResult<()> {
-        let origin = Origin::make("<command-line>", 0..0);
-
-        let filename = self
-            .builder
-            .loader()
-            .to_program_path(&job.target, &origin)?;
-        let job_hash = self.add_build_job(filename.as_str())?;
+        let job_hash = self.add_build_job(&job.target)?;
 
         let run_hash = job.hash_value();
 
@@ -135,7 +129,7 @@ impl<'a> Planner<'a> {
         self.jobs.insert(run_hash, Job::Run(job.clone()));
 
         for input in &job.input {
-            let input_hash = self.add_build_job(input)?;
+            let input_hash = self.add_build_job(&ModuleName::from(input))?;
 
             if let Some(input_hash) = input_hash {
                 self.nodes
