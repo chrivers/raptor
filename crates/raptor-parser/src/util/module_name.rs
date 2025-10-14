@@ -11,56 +11,79 @@ pub enum ModuleRoot {
 pub struct ModuleName {
     root: ModuleRoot,
     names: Vec<String>,
+    instance: Option<String>,
 }
 
 impl ModuleName {
+    #[allow(clippy::collapsible_if)]
     #[must_use]
     pub fn new(mut names: Vec<String>) -> Self {
+        let mut instance = None;
+
+        if let Some(last) = names.last_mut() {
+            if let Some(index) = last.rfind('@') {
+                instance = Some(last[index + 1..].to_string());
+                last.truncate(index + 1);
+            }
+        }
+
         if names.first().is_some_and(|f| f.starts_with('$')) {
             let mut root = names.remove(0);
             root.remove(0);
             if root.is_empty() {
-                Self::absolute(names)
+                Self::absolute(names, instance)
             } else {
-                Self::package(root, names)
+                Self::package(root, names, instance)
             }
         } else {
-            Self::relative(names)
+            Self::relative(names, instance)
         }
     }
 
     #[must_use]
-    pub const fn build(root: ModuleRoot, names: Vec<String>) -> Self {
-        Self { root, names }
+    pub const fn build(root: ModuleRoot, names: Vec<String>, instance: Option<String>) -> Self {
+        Self {
+            root,
+            names,
+            instance,
+        }
     }
 
     #[must_use]
-    pub const fn relative(names: Vec<String>) -> Self {
+    pub const fn relative(names: Vec<String>, instance: Option<String>) -> Self {
         Self {
             root: ModuleRoot::Relative,
             names,
+            instance,
         }
     }
 
     #[must_use]
-    pub const fn absolute(names: Vec<String>) -> Self {
+    pub const fn absolute(names: Vec<String>, instance: Option<String>) -> Self {
         Self {
             root: ModuleRoot::Absolute,
             names,
+            instance,
         }
     }
 
     #[must_use]
-    pub const fn package(root: String, names: Vec<String>) -> Self {
+    pub const fn package(root: String, names: Vec<String>, instance: Option<String>) -> Self {
         Self {
             root: ModuleRoot::Package(root),
             names,
+            instance,
         }
     }
 
     #[must_use]
     pub const fn root(&self) -> &ModuleRoot {
         &self.root
+    }
+
+    #[must_use]
+    pub const fn instance(&self) -> &Option<String> {
+        &self.instance
     }
 
     #[must_use]
