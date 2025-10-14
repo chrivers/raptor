@@ -46,6 +46,9 @@ pub enum Token {
     #[token("$")]
     Dollar,
 
+    #[token("@")]
+    At,
+
     #[regex("[a-zA-Z_][^\\]/. \n\t\",=:{}\\[-]*")]
     Bareword,
 
@@ -58,6 +61,9 @@ pub enum Token {
     #[regex(r"#.+\n")]
     Comment,
 
+    #[token("%", escape_callback)]
+    Escape(Escape),
+
     #[token("\"", string_callback)]
     String(String),
 
@@ -65,6 +71,16 @@ pub enum Token {
     Whitespace,
 
     Eof,
+}
+
+#[derive(Logos, Debug, PartialEq, Eq, Clone)]
+#[logos(error = LexerError)]
+pub enum Escape {
+    #[token("%")]
+    Percent,
+
+    #[token("i")]
+    Instance,
 }
 
 #[derive(Logos, Debug, PartialEq, Eq, Clone)]
@@ -104,11 +120,13 @@ impl Token {
             Self::Dot => ".",
             Self::Minus => "-",
             Self::Dollar => "$",
+            Self::At => "@",
             Self::Bareword => "<bareword>",
             Self::Number => "<number>",
             Self::Newline => "\\n",
             Self::Comment => "<comment>",
             Self::String(_) => "<string>",
+            Self::Escape(_) => "<escape>",
             Self::Whitespace => "<whitespace>",
             Self::Eof => "<end of file>",
         }
@@ -128,11 +146,13 @@ impl Token {
             Self::Dot => "'.' (dot)",
             Self::Minus => "'-' (minus)",
             Self::Dollar => "'$' (dollar)",
+            Self::At => "'@' (at)",
             Self::Bareword => "<bareword>",
             Self::Number => "<number>",
             Self::Newline => "\\n (newline)",
             Self::Comment => "<comment>",
             Self::String(_) => "<string>",
+            Self::Escape(_) => "<escape>",
             Self::Whitespace => "<whitespace>",
             Self::Eof => "<end of file>",
         }
@@ -161,4 +181,14 @@ fn string_callback(lex: &mut Lexer<Token>) -> Result<String, LexerError> {
     *lex = string_lexer.morph();
 
     Ok(res)
+}
+
+fn escape_callback(lex: &mut Lexer<Token>) -> Result<Escape, LexerError> {
+    let mut lexer = lex.clone().morph();
+
+    let res = lexer.next().ok_or(LexerError::LexerError)?;
+
+    *lex = lexer.morph();
+
+    res
 }
