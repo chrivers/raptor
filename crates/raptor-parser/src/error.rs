@@ -13,6 +13,9 @@ pub enum ParseError {
     )]
     InvalidPermissionMask,
 
+    #[error("Tried to resolve instance in non-instanced unit")]
+    NoInstance,
+
     #[error("Expected {0}")]
     Expected(&'static str),
 
