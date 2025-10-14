@@ -4,6 +4,7 @@ use std::time::Duration;
 use crossbeam::channel::{Receiver, Sender};
 use nix::pty::ForkptyResult;
 use nix::sys::wait::waitpid;
+use rand::Rng;
 use ratatui::DefaultTerminal;
 use ratatui::layout::{Constraint, Layout};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -28,7 +29,6 @@ impl<'a> TerminalParallelRunner<'a> {
         Self { maker, terminal }
     }
 
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     fn spawn_pty_job(
         maker: &Maker,
         tx: &Sender<PtyJob>,
@@ -51,11 +51,11 @@ impl<'a> TerminalParallelRunner<'a> {
                     Job::Run(run_target) => maker.run_job(run_target).map(drop)?,
                 }
 
-                let delay = unsafe {
-                    nix::libc::srand(nix::libc::getpid() as u32);
-                    nix::libc::rand() % 500
-                } + 300;
-                std::thread::sleep(Duration::from_millis(delay as u64));
+                // random delay to debug timing issues and timing-related
+                // presentation quirks
+                let amount = rand::rng().random_range(300..800);
+                let duration = Duration::from_millis(amount);
+                std::thread::sleep(duration);
 
                 std::process::exit(0);
             }
