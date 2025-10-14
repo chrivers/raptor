@@ -144,7 +144,13 @@ impl PtyJobController {
                 }
 
                 Err(TryRecvError::Empty) => return ControlFlow::Continue(()),
-                Err(TryRecvError::Disconnected) => return ControlFlow::Break(()),
+                Err(TryRecvError::Disconnected) => {
+                    return if self.jobs.is_empty() {
+                        ControlFlow::Break(())
+                    } else {
+                        ControlFlow::Continue(())
+                    };
+                }
             }
         }
     }
