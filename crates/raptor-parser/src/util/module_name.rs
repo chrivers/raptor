@@ -96,6 +96,12 @@ impl From<&str> for ModuleName {
     }
 }
 
+impl From<&String> for ModuleName {
+    fn from(value: &String) -> Self {
+        Self::from(value.as_str())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::util::module_name::{ModuleName, ModuleRoot};
