@@ -157,4 +157,24 @@ mod tests {
 
         assert_eq!(name.parts(), expected);
     }
+
+    #[test]
+    fn roundtrip() {
+        const TESTS: &[&str] = &[
+            "a",       // relative paths
+            "a.b",     //
+            "a.b.c",   //
+            "$.a",     // absolute paths
+            "$.a.b",   //
+            "$.a.b.c", //
+            "$a.b",    // package paths
+            "$a.b.c",  //
+        ];
+
+        for test in TESTS {
+            let name = ModuleName::from(*test);
+            let text = name.to_string();
+            assert_eq!(*test, text);
+        }
+    }
 }
