@@ -87,7 +87,7 @@ impl PtyJobController {
             pollfds.push(PollFd::new(job.file.as_fd(), PollFlags::POLLIN));
         }
 
-        nix::poll::poll(&mut pollfds, 100u16)?;
+        nix::poll::poll(&mut pollfds, 10u16)?;
 
         let res = pollfds
             .iter()
