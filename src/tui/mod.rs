@@ -101,6 +101,10 @@ impl<'a> TerminalParallelRunner<'a> {
         let (tx, rx) = crossbeam::channel::unbounded::<PtyJob>();
         let (plan, targetlist) = planner.clone().into_plan();
 
+        if targetlist.is_empty() {
+            return Ok(());
+        }
+
         std::thread::scope(|s| {
             s.spawn(|| Self::render_terminal(rx, planner, self.terminal));
 
