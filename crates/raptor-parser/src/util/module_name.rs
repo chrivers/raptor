@@ -71,7 +71,18 @@ impl ModuleName {
 
 impl Display for ModuleName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.names.join("."))
+        match &self.root {
+            ModuleRoot::Relative => {}
+            ModuleRoot::Absolute => write!(f, "$.")?,
+            ModuleRoot::Package(pkg) => write!(f, "${pkg}.")?,
+        }
+
+        write!(f, "{}", self.names.join("."))?;
+
+        if let Some(instance) = &self.instance {
+            write!(f, "@{instance}")?;
+        }
+        Ok(())
     }
 }
 
