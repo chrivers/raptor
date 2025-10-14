@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fmt::Debug;
+use std::fmt::Display;
 
 use camino::Utf8PathBuf;
 use dep_graph::{DepGraph, Node};
@@ -29,13 +29,13 @@ impl BuildLayer {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Job {
     Build(BuildLayer),
     Run(RunTarget),
 }
 
-impl Debug for Job {
+impl Display for Job {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Build(layer) => {

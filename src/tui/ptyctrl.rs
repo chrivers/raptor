@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::{Read, Result as IoResult};
 use std::ops::ControlFlow;
@@ -25,6 +26,17 @@ pub struct PtyJob {
     job: Job,
     parser: vt100::Parser,
     id: u64,
+}
+
+impl Debug for PtyJob {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PtyJob")
+            .field("file", &self.file)
+            .field("job", &self.job)
+            .field("parser", &"<parser>")
+            .field("id", &self.id)
+            .finish()
+    }
 }
 
 impl PtyJob {
@@ -75,7 +87,7 @@ impl PtyJobController {
             pollfds.push(PollFd::new(job.file.as_fd(), PollFlags::POLLIN));
         }
 
-        nix::poll::poll(&mut pollfds, 100u16)?;
+        nix::poll::poll(&mut pollfds, 10u16)?;
 
         let res = pollfds
             .iter()
@@ -132,7 +144,13 @@ impl PtyJobController {
                 }
 
                 Err(TryRecvError::Empty) => return ControlFlow::Continue(()),
-                Err(TryRecvError::Disconnected) => return ControlFlow::Break(()),
+                Err(TryRecvError::Disconnected) => {
+                    return if self.jobs.is_empty() {
+                        ControlFlow::Break(())
+                    } else {
+                        ControlFlow::Continue(())
+                    };
+                }
             }
         }
     }
@@ -162,7 +180,7 @@ impl<'a> PtyJobView<'a> {
         for (index, job) in self.ctrl.jobs.values().enumerate() {
             let block = Block::default()
                 .borders(Borders::ALL)
-                .title(format!("{:?}", &job.job))
+                .title(format!("{}", &job.job))
                 .title_alignment(Alignment::Center)
                 .style(Style::new().add_modifier(Modifier::BOLD).bg(Color::Blue));
 

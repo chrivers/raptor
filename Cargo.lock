@@ -1665,6 +1665,7 @@ dependencies = [
  "minijinja",
  "nix",
  "pretty_assertions",
+ "rand",
  "raptor-parser",
  "ratatui",
  "rayon",
