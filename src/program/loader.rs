@@ -125,7 +125,7 @@ impl Loader<'_> {
             let src = self.to_include_path(&include.src, &origin)?;
 
             origins.push(origin.clone());
-            let include = self.parse_template(&src, origins, Value::from(map))?;
+            let include = self.parse_template(&src, origins, Value::from(map), None)?;
             origins.pop();
 
             prog.code.push(Item::Statement(Statement { inst, origin }));
@@ -235,6 +235,7 @@ impl Loader<'_> {
         path: impl AsRef<Utf8Path>,
         origins: &mut Vec<Origin>,
         ctx: Value,
+        instance: Option<String>,
     ) -> RaptorResult<Arc<Program>> {
         let tmpl = self.env.get_template(self.base.join(&path).as_str())?;
         let (source, state) = tmpl
@@ -261,7 +262,7 @@ impl Loader<'_> {
 
         self.sources.insert(filename.into(), source);
 
-        let statements = parser::parse(filename, &self.sources.get(filename).unwrap())?;
+        let statements = parser::parse(filename, &self.sources.get(filename).unwrap(), instance)?;
 
         let mut program = Program::new(vec![], ctx, path.as_ref().into());
 
@@ -276,6 +277,7 @@ impl Loader<'_> {
         &self,
         path: impl AsRef<Utf8Path>,
         ctx: Value,
+        instance: Option<String>,
     ) -> RaptorResult<Arc<Program>> {
         let path = path.as_ref();
 
@@ -285,7 +287,7 @@ impl Loader<'_> {
 
         let mut origins = Vec::new();
 
-        let program = self.parse_template(path, &mut origins, ctx)?;
+        let program = self.parse_template(path, &mut origins, ctx, instance)?;
 
         self.programs.insert(path.into(), program);
 

@@ -10,7 +10,7 @@ use crate::ast::{
     InstEnvAssign, InstFrom, InstInclude, InstMkdir, InstMount, InstRender, InstRun, InstWorkdir,
     InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
-use crate::lexer::Token;
+use crate::lexer::{Escape, Token};
 use crate::util::Location;
 use crate::util::module_name::{ModuleName, ModuleRoot};
 use crate::{ParseError, ParseResult};
@@ -18,6 +18,7 @@ use crate::{ParseError, ParseResult};
 pub struct Parser<'src> {
     lexer: Lexer<'src, Token>,
     filename: Arc<Utf8PathBuf>,
+    instance: Option<String>,
 }
 
 fn parse_chmod_permission(string: &str) -> ParseResult<u32> {
@@ -29,8 +30,16 @@ fn parse_chmod_permission(string: &str) -> ParseResult<u32> {
 
 impl<'src> Parser<'src> {
     #[must_use]
-    pub const fn new(lexer: Lexer<'src, Token>, filename: Arc<Utf8PathBuf>) -> Self {
-        Self { lexer, filename }
+    pub const fn new(
+        lexer: Lexer<'src, Token>,
+        filename: Arc<Utf8PathBuf>,
+        instance: Option<String>,
+    ) -> Self {
+        Self {
+            lexer,
+            filename,
+            instance,
+        }
     }
 
     fn next(&mut self) -> ParseResult<Token> {
@@ -196,7 +205,14 @@ impl<'src> Parser<'src> {
             return Err(ParseError::Expected("module name"));
         }
 
-        Ok(ModuleName::build(root, words))
+        let instance = if self.accept(&Token::At)? {
+            self.expect(&Token::Number)?;
+            Some(self.token_string())
+        } else {
+            None
+        };
+
+        Ok(ModuleName::build(root, words, instance))
     }
 
     fn end_of_line(&mut self) -> ParseResult<()> {
@@ -225,6 +241,7 @@ impl<'src> Parser<'src> {
         loop {
             match self.next()? {
                 Token::String(word) => args.push(word),
+
                 Token::Whitespace => {
                     if !value.is_empty() {
                         let mut val = String::new();
@@ -232,7 +249,20 @@ impl<'src> Parser<'src> {
                         args.push(val);
                     }
                 }
+
+                Token::Escape(esc) => match esc {
+                    Escape::Percent => args.push("%".to_string()),
+                    Escape::Instance => {
+                        if let Some(instance) = &self.instance {
+                            args.push(instance.clone());
+                        } else {
+                            return Err(ParseError::NoInstance);
+                        }
+                    }
+                },
+
                 Token::Newline | Token::Comment | Token::Eof => break,
+
                 _ => value.push_str(self.token()),
             }
         }
@@ -694,10 +724,14 @@ impl<'src> Parser<'src> {
     }
 }
 
-pub fn parse(name: &str, buf: &str) -> Result<Vec<Statement>, Location<ParseError>> {
+pub fn parse(
+    name: &str,
+    buf: &str,
+    instance: Option<String>,
+) -> Result<Vec<Statement>, Location<ParseError>> {
     let lexer = Token::lexer(buf);
     let path = Arc::new(Utf8PathBuf::from(name));
-    let mut parser = Parser::new(lexer, path.clone());
+    let mut parser = Parser::new(lexer, path.clone(), instance);
 
     parser.file().map_err(|err| {
         let mut origin = Origin::new(path.clone(), parser.lexer.span());
@@ -726,7 +760,7 @@ mod tests {
     fn make_parser(input: &str) -> Parser {
         let lexer = Token::lexer(input);
 
-        Parser::new(lexer, Arc::new("<inline>".into()))
+        Parser::new(lexer, Arc::new("<inline>".into()), None)
     }
 
     macro_rules! parse_test {

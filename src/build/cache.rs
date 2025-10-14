@@ -25,7 +25,11 @@ impl Cacher {
                 FromSource::Raptor(from) => {
                     let filename = builder.loader().to_program_path(from, origin)?;
 
-                    let prog = builder.load_with_source(filename, origin.clone())?;
+                    let prog = builder.load_with_source(
+                        filename,
+                        origin.clone(),
+                        from.instance().clone(),
+                    )?;
                     Self::cache_key(&prog, builder)?.hash(&mut state);
                 }
                 FromSource::Docker(src) => src.hash(&mut state),

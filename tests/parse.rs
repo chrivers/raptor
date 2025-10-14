@@ -21,7 +21,7 @@ fn base_path() -> Utf8PathBuf {
 fn load_file(path: impl AsRef<Utf8Path>) -> RaptorResult<Arc<Program>> {
     let loader = Loader::new()?.with_base(base_path());
 
-    loader.load_template(path, context! {})
+    loader.load_template(path, context! {}, None)
 }
 
 fn assert_single_inst_eq(path: &Utf8Path, size: usize, res: &Program, inst: Instruction) {

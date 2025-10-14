@@ -64,7 +64,7 @@ impl<'a> RaptorBuilder<'a> {
         let path = self.loader.to_program_path(name, &origin)?;
 
         self.loader
-            .parse_template(path, &mut origins, context! {})
+            .parse_template(path, &mut origins, context! {}, name.instance().clone())
             .or_else(|err| {
                 self.loader.explain_error(&err, &origins)?;
                 Err(err)
@@ -83,10 +83,11 @@ impl<'a> RaptorBuilder<'a> {
         &self,
         path: impl AsRef<Utf8Path>,
         source: Origin,
+        instance: Option<String>,
     ) -> RaptorResult<Arc<Program>> {
         let origins = vec![source];
         self.loader
-            .load_template(&path, context! {})
+            .load_template(&path, context! {}, instance)
             .or_else(|err| {
                 self.loader.explain_error(&err, &origins)?;
                 Err(err)
@@ -147,10 +148,9 @@ impl<'a> RaptorBuilder<'a> {
                 }
 
                 FromSource::Raptor(from) => {
-                    let fromprog = self
-                        .loader
-                        .to_program_path(from, origin)
-                        .and_then(|path| self.load_with_source(path, origin.clone()))?;
+                    let fromprog = self.loader.to_program_path(from, origin).and_then(|path| {
+                        self.load_with_source(path, origin.clone(), from.instance().clone())
+                    })?;
 
                     next = Some(fromprog);
                 }

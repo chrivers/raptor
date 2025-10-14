@@ -20,7 +20,7 @@ type Result<T> = std::result::Result<T, Error>;
 
 fn parse(buf: &str) -> Result<()> {
     let lexer = Token::lexer(buf);
-    let mut parser = Parser::new(lexer, Arc::new("<inline>".into()));
+    let mut parser = Parser::new(lexer, Arc::new("<inline>".into()), None);
 
     for stmt in parser.file()? {
         println!("{}", stmt.inst);
