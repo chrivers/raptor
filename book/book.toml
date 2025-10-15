@@ -1,0 +1,5 @@
+[book]
+authors = ["Christian Iversen"]
+language = "en"
+src = "src"
+title = "Raptor Manual"
