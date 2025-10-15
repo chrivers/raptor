@@ -1,0 +1,31 @@
+name: mdbook-deploy
+
+on:
+  push:
+    branches: [ main, chrivers/mdbook ]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install mdBook
+        run: |
+          export MDBOOK_URL=https://github.com/rust-lang/mdBook/releases/download/v0.4.52/mdbook-v0.4.52-x86_64-unknown-linux-gnu.tar.gz
+          curl -L ${MDBOOK_URL} | sudo tar -C /usr/local/bin -xz
+
+      - name: Build the book
+        run: mdbook build book
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./book/book
