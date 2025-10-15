@@ -10,7 +10,7 @@ use crate::ast::{
     InstEnvAssign, InstFrom, InstInclude, InstMkdir, InstMount, InstRender, InstRun, InstWorkdir,
     InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
-use crate::lexer::{Escape, Token};
+use crate::lexer::{Escape, LexerError, Token};
 use crate::util::Location;
 use crate::util::module_name::{ModuleName, ModuleRoot};
 use crate::{ParseError, ParseResult};
@@ -256,7 +256,7 @@ impl<'src> Parser<'src> {
                         if let Some(instance) = &self.instance {
                             args.push(instance.clone());
                         } else {
-                            return Err(ParseError::NoInstance);
+                            return Err(ParseError::LexerError(LexerError::NoInstance));
                         }
                     }
                 },
@@ -729,7 +729,7 @@ pub fn parse(
     buf: &str,
     instance: Option<String>,
 ) -> Result<Vec<Statement>, Location<ParseError>> {
-    let lexer = Token::lexer(buf);
+    let lexer = Token::lexer_with_extras(buf, instance.clone());
     let path = Arc::new(Utf8PathBuf::from(name));
     let mut parser = Parser::new(lexer, path.clone(), instance);
 
