@@ -11,7 +11,7 @@ The `RUN` instruction executes the given command inside the build namespace.
 RUN systemctl enable foo.service
 ```
 
-~~~admonish failure title="Important"
+~~~admonish warning title="Important"
 Arguments are executed as-is, i.e. without shell expansion, redirection,
 piping, etc.
 
