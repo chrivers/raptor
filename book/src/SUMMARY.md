@@ -8,8 +8,8 @@
 - [Reference manual](reference-manual.md)
 ---
 - [Concepts]()
-  - [Module names](module_name.md)
-  - [String escape](string_escape.md)
+  - [Module names](module-name.md)
+  - [String escape](string-escape.md)
   - [Expressions](expressions.md)
 - [Instructions](syntax.md)
   - [FROM](inst/from.md)
