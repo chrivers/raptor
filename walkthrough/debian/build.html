@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Expressions - Raptor Manual</title>
+        <title>Build filesystem - Raptor Manual</title>
 
 
         <!-- Custom HTML head -->
@@ -12,35 +12,35 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="./mdbook-admonish.css">
+        <link rel="stylesheet" href="../.././mdbook-admonish.css">
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "";
+            const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "searchindex.js";
+            window.path_to_searchindex_js = "../../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="../../toc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -107,7 +107,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
             </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -142,7 +142,7 @@
                     <h1 class="menu-title">Raptor Manual</h1>
 
                     <div class="right-buttons">
-                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
 
@@ -176,89 +176,83 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="expressions"><a class="header" href="#expressions">Expressions</a></h1>
-<p>Raptor supports a limited form of inline literal expressions (i.e. “values”),
-that can be specified when using the <code>INCLUDE</code> and <code>RENDER</code> instructions.</p>
-<h2 id="booleans"><a class="header" href="#booleans">Booleans</a></h2>
-<p>Boolean values work identically to json (and many other languages):</p>
-<div class="table-wrapper"><table><thead><tr><th>Literal</th><th>Value</th></tr></thead><tbody>
-<tr><td><code>true</code></td><td>true</td></tr>
-<tr><td><code>false</code></td><td>false</td></tr>
-</tbody></table>
-</div>
-<h2 id="integers"><a class="header" href="#integers">Integers</a></h2>
-<p>Integer values are supported.</p>
-<p>Be aware that raptor always uses <code>i64</code> (signed 64-bit) integers.</p>
-<p>This is <em>unlike</em> the typical json implementations, that uses <code>f64</code> (64-bit
-floating-point) numbers, in two important ways:</p>
-<p><strong>A)</strong> The valid range for i64 integers is <code>-9223372036854775808</code> to
-<code>9223372036854775807</code>, inclusive. This should be sufficient for most
-applications. Any integer in this range will be represented exactly.</p>
-<p><strong>B)</strong> Floating-point (i.e. fractional) numbers are not supported. For example,
-<code>3.14</code> is <em>not</em> valid in raptor. Instead, consider passing such a value as a
-string.</p>
-<p>Currently, alternate integer bases (i.e. hexadecimal or octal) are <em>not</em> supported.</p>
-<h2 id="strings"><a class="header" href="#strings">Strings</a></h2>
-<p>String are supported, and work much like they do in json, or other common notations.</p>
-<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+                        <h1 id="building-a-bootable-target"><a class="header" href="#building-a-bootable-target">Building a bootable target</a></h1>
+<p>In order to build a raptor target that can be turned into a bootable iso, there
+are a few requirements we need to consider:</p>
+<ul>
+<li>The distribution must be Debian-based (or, preferably, Debian)</li>
+<li>The package <code>live-boot</code> must be installed, since it contains the necessary
+tools and scripts</li>
+<li>A linux kernel package must be installed (e.g. <code>linux-image-amd64</code>).</li>
+</ul>
+<p>Here is an example of a fairly minimal base layer, which can be turned into an iso:</p>
+<div id="admonition-baserapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-baserapt-title">
 <div class="admonition-title">
-<div id="admonition-tip-title">
-<p>Tip</p>
+<div id="admonition-baserapt-title">
+<p>base.rapt</p>
 </div>
-<a class="admonition-anchor-link" href="#admonition-tip"></a>
+<a class="admonition-anchor-link" href="#admonition-baserapt"></a>
 </div>
 <div>
-<p>See the section on <a href="/string-escape.html">string escapes</a> for more details.</p>
+<pre><code class="language-raptor"># Start from a docker iso
+FROM docker://debian:trixie
+
+# Update package sources, and install packages
+RUN apt-get update
+RUN apt-get install -qy live-boot linux-image-amd64
+</code></pre>
 </div>
 </div>
-<h2 id="lists"><a class="header" href="#lists">Lists</a></h2>
-<p>Lists are supported, with a syntax very similar to json. The only difference is
-that raptor allows an optional trailing comma after the last list element, while
-json does not.</p>
-<div id="admonition-examples-of-lists" class="admonition admonish-example" role="note" aria-labelledby="admonition-examples-of-lists-title">
+<p>The kernel package can take a bit of time to install, so let’s start a new layer
+for further customization. This way, we don’t need to rebuild the base layer
+with every change we make to the upper layer:</p>
+<div id="admonition-sshrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-sshrapt-title">
 <div class="admonition-title">
-<div id="admonition-examples-of-lists-title">
-<p>Examples of lists</p>
+<div id="admonition-sshrapt-title">
+<p>ssh.rapt</p>
 </div>
-<a class="admonition-anchor-link" href="#admonition-examples-of-lists"></a>
+<a class="admonition-anchor-link" href="#admonition-sshrapt"></a>
 </div>
 <div>
-<pre><code class="language-json">[1, 2, 3]
-</code></pre>
-<pre><code class="language-json">[true, false]
-</code></pre>
-<pre><code class="language-json">[["a", "b"], 123]
-</code></pre>
-</div>
-</div>
-<h2 id="maps"><a class="header" href="#maps">Maps</a></h2>
-<p>Maps (also typically known as <em>dicts</em> or <em>hashmaps</em>) contain a set of (key, value) pairs.</p>
-<p>The syntax is similar to json. Like lists, raptor allows an optional trailing
-comma after the last key-value pair.</p>
-<div id="admonition-examples-of-maps" class="admonition admonish-example" role="note" aria-labelledby="admonition-examples-of-maps-title">
-<div class="admonition-title">
-<div id="admonition-examples-of-maps-title">
-<p>Examples of maps</p>
-</div>
-<a class="admonition-anchor-link" href="#admonition-examples-of-maps"></a>
-</div>
-<div>
-<pre><code class="language-json">{"answer": 42}
-</code></pre>
-<pre><code class="language-json">{"name": "Heart of Gold", "engine": "Improbability drive"}
+<pre><code class="language-raptor"># Start from previous layer
+FROM base
+
+# Update package sources, and install ssh server
+RUN apt-get update
+RUN apt-get install -qy openssh-server
 </code></pre>
 </div>
 </div>
+<p>Of course, these layers could easily be combined, but it is good to get in a
+habit of separating things into reasonable layers. This improves caching and
+makes builds faster, since more can be reused between builds.</p>
+<p>Now we are ready to build the layers. Since <code>ssh</code> derives from <code>base</code> (which
+derives from a docker layer), we just have to request raptor to build
+<code>ssh</code>. Raptor automatically determines dependencies, and builds them as needed.</p>
+<pre><code class="language-sh">sudo raptor build ssh
+</code></pre>
+<p>You should now see raptor build the <code>ssh</code> layer, with all command output from
+the <code>apt-get</code> commands being shown in the terminal.</p>
+<p>Once complete, you can quickly verify that the layer is complete, by running the
+same command again. This time it should very quickly display a message,
+indicating that each layer is complete:</p>
+<pre><code class="language-sh">$ sudo raptor build ssh
+[*] Completed [675DE2C3A4D8CD82] index.docker.io-library-debian-trixie
+[*] Completed [AB1DD71BFD07718B] base
+[*] Completed [80E4F4E5B0E2F6BA] ssh
+</code></pre>
+<p>In the <a href="iso.html">next chapter</a> we will see how we can turn these layers into a
+bootable iso file.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="string-escape.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../walkthrough/debian/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="file-options.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../walkthrough/debian/iso.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -268,11 +262,11 @@ comma after the last key-value pair.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="string-escape.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../walkthrough/debian/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="file-options.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../walkthrough/debian/iso.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -287,13 +281,13 @@ comma after the last key-value pair.</p>
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
 
         <!-- Custom JS scripts -->
 

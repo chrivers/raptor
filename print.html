@@ -37,7 +37,7 @@
         <script>
             const path_to_root = "";
             const default_light_theme = "light";
-            const default_dark_theme = "navy";
+            const default_dark_theme = "ayu";
             window.path_to_searchindex_js = "searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
@@ -178,6 +178,231 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="raptor-user-guide"><a class="header" href="#raptor-user-guide">Raptor User guide</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="making-a-debian-liveboot-iso-with-raptor"><a class="header" href="#making-a-debian-liveboot-iso-with-raptor">Making a Debian liveboot iso with Raptor</a></h1>
+<p>In this walkthrough, we will take a look at all the steps needed to make a
+customized Debian liveboot <code>.iso</code> image.</p>
+<p>By putting the image on a USB stick or external hard drive, any computer can be
+booted from this external device, without affecting existing data on the
+computer.</p>
+<p>Using this technique, you will be able to create custom images, containing the
+tools, programs and settings that you like, and build them consistently and
+easily with raptor.</p>
+<p>This guide is presented as a three-step process:</p>
+<ul>
+<li>
+<p><a href="walkthrough/debian/build.html">Build</a>: Build raptor layers suitable for live booting.</p>
+</li>
+<li>
+<p><a href="walkthrough/debian/iso.html">Generate</a>: Generate a live boot iso from the layers</p>
+</li>
+<li>
+<p><a href="walkthrough/debian/make.html">Make</a>: Use raptor-make to simplify the build process <strong>[optional]</strong></p>
+</li>
+</ul>
+<div id="admonition-tldr" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-tldr-title">
+<div class="admonition-title">
+<div id="admonition-tldr-title">
+<p>TL;DR</p>
+</div>
+<a class="admonition-anchor-link" href="walkthrough/debian/index.html#admonition-tldr"></a>
+</div>
+<div>
+<p>Below is an absolutely minimal example of generating a liveboot iso, for the impatient.</p>
+</div>
+</div>
+<hr />
+<p>Create a raptor file:</p>
+<div id="admonition-baserapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-baserapt-title">
+<div class="admonition-title">
+<div id="admonition-baserapt-title">
+<p>base.rapt</p>
+</div>
+<a class="admonition-anchor-link" href="walkthrough/debian/index.html#admonition-baserapt"></a>
+</div>
+<div>
+<pre><code class="language-raptor"># Start from a docker iso
+FROM docker://debian:trixie
+
+# Update package sources, and install packages
+RUN apt-get update
+RUN apt-get install -qy live-boot linux-image-amd64
+</code></pre>
+</div>
+</div>
+<p>Git clone (or otherwise download) the necessary build container recipes:</p>
+<pre><code class="language-sh">git clone https://github.com/chrivers/raptor-build.git
+</code></pre>
+<p>Then use these to build <code>liveboot.iso</code>:</p>
+<pre><code class="language-sh">sudo raptor build -I base -O liveboot.iso -L rbuild raptor-build '$rbuild.deblive'
+</code></pre>
+<hr />
+<p>After this command has run, you should have the file <code>liveboot.iso</code> available. Enjoy!</p>
+<p>To learn how (and why) this works, read the next chapters of this guide.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="building-a-bootable-target"><a class="header" href="#building-a-bootable-target">Building a bootable target</a></h1>
+<p>In order to build a raptor target that can be turned into a bootable iso, there
+are a few requirements we need to consider:</p>
+<ul>
+<li>The distribution must be Debian-based (or, preferably, Debian)</li>
+<li>The package <code>live-boot</code> must be installed, since it contains the necessary
+tools and scripts</li>
+<li>A linux kernel package must be installed (e.g. <code>linux-image-amd64</code>).</li>
+</ul>
+<p>Here is an example of a fairly minimal base layer, which can be turned into an iso:</p>
+<div id="admonition-baserapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-baserapt-title">
+<div class="admonition-title">
+<div id="admonition-baserapt-title">
+<p>base.rapt</p>
+</div>
+<a class="admonition-anchor-link" href="walkthrough/debian/build.html#admonition-baserapt"></a>
+</div>
+<div>
+<pre><code class="language-raptor"># Start from a docker iso
+FROM docker://debian:trixie
+
+# Update package sources, and install packages
+RUN apt-get update
+RUN apt-get install -qy live-boot linux-image-amd64
+</code></pre>
+</div>
+</div>
+<p>The kernel package can take a bit of time to install, so let’s start a new layer
+for further customization. This way, we don’t need to rebuild the base layer
+with every change we make to the upper layer:</p>
+<div id="admonition-sshrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-sshrapt-title">
+<div class="admonition-title">
+<div id="admonition-sshrapt-title">
+<p>ssh.rapt</p>
+</div>
+<a class="admonition-anchor-link" href="walkthrough/debian/build.html#admonition-sshrapt"></a>
+</div>
+<div>
+<pre><code class="language-raptor"># Start from previous layer
+FROM base
+
+# Update package sources, and install ssh server
+RUN apt-get update
+RUN apt-get install -qy openssh-server
+</code></pre>
+</div>
+</div>
+<p>Of course, these layers could easily be combined, but it is good to get in a
+habit of separating things into reasonable layers. This improves caching and
+makes builds faster, since more can be reused between builds.</p>
+<p>Now we are ready to build the layers. Since <code>ssh</code> derives from <code>base</code> (which
+derives from a docker layer), we just have to request raptor to build
+<code>ssh</code>. Raptor automatically determines dependencies, and builds them as needed.</p>
+<pre><code class="language-sh">sudo raptor build ssh
+</code></pre>
+<p>You should now see raptor build the <code>ssh</code> layer, with all command output from
+the <code>apt-get</code> commands being shown in the terminal.</p>
+<p>Once complete, you can quickly verify that the layer is complete, by running the
+same command again. This time it should very quickly display a message,
+indicating that each layer is complete:</p>
+<pre><code class="language-sh">$ sudo raptor build ssh
+[*] Completed [675DE2C3A4D8CD82] index.docker.io-library-debian-trixie
+[*] Completed [AB1DD71BFD07718B] base
+[*] Completed [80E4F4E5B0E2F6BA] ssh
+</code></pre>
+<p>In the <a href="walkthrough/debian/iso.html">next chapter</a> we will see how we can turn these layers into a
+bootable iso file.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="generating-an-iso-file"><a class="header" href="#generating-an-iso-file">Generating an iso file</a></h1>
+<p>In the <a href="walkthrough/debian/build.html">last chapter</a> we built some raptor layers that serve as the file
+content for the bootable iso we want to build.</p>
+<p>These layers are very similar to layers in a docker file<sup class="footnote-reference" id="fr-layers-1"><a href="#footnote-layers">1</a></sup>.</p>
+<p>After building <code>ssh</code> (which implies the <code>base</code> target), their respective
+contents can be found in <code>layers/...</code>.</p>
+<p>Once built like this, it’s possible to “run” the container, like so:</p>
+<pre><code class="language-sh">$ sudo raptor run ssh id
+[*] Completed [675DE2C3A4D8CD82] index.docker.io-library-debian-trixie
+[*] Completed [AB1DD71BFD07718B] base
+[*] Completed [80E4F4E5B0E2F6BA] ssh
+uid=0(root) gid=0(root) groups=0(root)
+</code></pre>
+<p>Instead of <code>id</code>, an interactive command like <code>sh</code> or <code>bash</code> could be
+specified. This is very similar to how <code>docker run</code> works, except raptor
+containers are ephemeral by default. If no further options are specified, any
+changes made to the container will only be saved while the container is running.</p>
+<p>This is all well and good, but we are interested in building a bootable iso from
+the layers, not just running them as a container.</p>
+<p>It turns out that having a stack of layers available, is quite a powerful
+primitive. With the right commands, we could build all kinds of output from
+them; a <code>.tar.gz</code> file with a release archive, a bootable iso, or even a disk
+image for a machine.</p>
+<p>In other words, the same input layers can be post-processed into a wide
+variety of output layers, depending on what you need.</p>
+<p>To help get started with this, Raptor provides a standard set of build
+containers, in the companion project
+<a href="https://github.com/chrivers/raptor-build">raptor-build</a>:</p>
+<ul>
+<li>[<code>deblive</code>] Builds Debian liveboot isos from Raptor layers.</li>
+<li>[<code>disk-image</code>] Builds disk images (for virtual or physical machines) from Raptor layers.</li>
+</ul>
+<div id="admonition-build-containers" class="admonition admonish-note" role="note" aria-labelledby="admonition-build-containers-title">
+<div class="admonition-title">
+<div id="admonition-build-containers-title">
+<p>Build containers</p>
+</div>
+<a class="admonition-anchor-link" href="walkthrough/debian/iso.html#admonition-build-containers"></a>
+</div>
+<div>
+<p>Raptor build containers are just regular Raptor containers, that are
+configured to expect an input, and produce an output.</p>
+<p>The containers from the <code>raptor-build</code> project are available to anyone,
+but are not “built in” to Raptor - they don’t use any special features
+or private APIs. Anyone can make build containers that are similar (or
+even identical to) <code>raptor-build</code>.</p>
+</div>
+</div>
+<p>Since this walkthrough is focused on making a liveboot iso, we’ll use the
+<code>deblive</code> builder to convert layers to an iso file.</p>
+<p>First, we need to clone (or otherwise download) the <code>raptor-build</code> project:</p>
+<pre><code class="language-sh">git clone https://github.com/chrivers/raptor-build
+</code></pre>
+<p>This builder uses mounts to access input, output and cache from outside the
+container (see <a href="walkthrough/debian//inst/mount.html"><code>MOUNT</code></a>).</p>
+<p>To build the layers from the last step into a debian liveboot iso, use the
+following command (assuming <code>raptor-build</code> is checked out next to the directory
+containing <code>ssh.rapt</code>):</p>
+<pre><code class="language-sh">sudo raptor run             \
+  -L book   book/example    \
+  -L rbuild ../raptor-build \
+  -C liveboot-cache         \
+  -I '$book.ssh'            \
+  -O custom-liveboot.iso    \
+  '$rbuild.deblive'
+</code></pre>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="walkthrough/debian/iso.html#admonition-tip"></a>
+</div>
+<div>
+<p>The command above uses the short-form command line options typically used
+interactively. Long-form options are also available, if greater clarity is
+desired (e.g. for scripting purposes).</p>
+<pre><code class="language-sh">sudo raptor run                 \
+  --link book   book/example    \
+  --link rbuild ../raptor-build \
+  --cache liveboot-cache        \
+  --input '$book.ssh'           \
+  --output custom-liveboot.iso  \
+  '$rbuild.deblive'
+</code></pre>
+</div>
+</div>
+<p>This build process works, but the required command is fairly long and
+complicated.</p>
+<p>In the <a href="walkthrough/debian/make.html">next chapter</a>, we’ll take a look at raptor-make, and how it can
+simplify the process.</p>
+<hr>
+<ol class="footnote-definition"><li id="footnote-layers">
+<p>There’s a key difference between how Raptor and Docker handles
+layers. In Docker, each <em>command</em> (<code>RUN</code>, <code>COPY</code>, etc) creates a new
+layer. In Raptor, each <code>.rapt</code> file forms a new layer. <a href="#fr-layers-1">↩</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><h1 id="make"><a class="header" href="#make">Make</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="chapter-2"><a class="header" href="#chapter-2">Chapter 2</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="module-names"><a class="header" href="#module-names">Module names</a></h1>
 <div class="table-wrapper"><table><thead><tr><th>Type</th><th>Description</th><th>Example</th></tr></thead><tbody>
@@ -247,7 +472,7 @@ literal backslashes <em>must</em> themselves be escaped, by adding another backs
 </div>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="expressions"><a class="header" href="#expressions">Expressions</a></h1>
 <p>Raptor supports a limited form of inline literal expressions (i.e. “values”),
-that can be specified when using the <code>INCLUDE</code> instruction.</p>
+that can be specified when using the <code>INCLUDE</code> and <code>RENDER</code> instructions.</p>
 <h2 id="booleans"><a class="header" href="#booleans">Booleans</a></h2>
 <p>Boolean values work identically to json (and many other languages):</p>
 <div class="table-wrapper"><table><thead><tr><th>Literal</th><th>Value</th></tr></thead><tbody>
@@ -474,7 +699,7 @@ surprisingly intricate syntax.</p>
 <pre><code class="language-raptor"># enable the foo service
 RUN systemctl enable foo.service
 </code></pre>
-<div id="admonition-important" class="admonition admonish-failure" role="note" aria-labelledby="admonition-important-title">
+<div id="admonition-important" class="admonition admonish-warning" role="note" aria-labelledby="admonition-important-title">
 <div class="admonition-title">
 <div id="admonition-important-title">
 <p>Important</p>
