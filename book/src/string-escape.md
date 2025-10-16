@@ -27,15 +27,15 @@ RUN touch "filename with spaces"
 RUN touch filename with spaces
 ```
 
-> [!TIP]
->
-> Think of barewords as a convenience, to avoid needing to quote everything all
-> the time.
->
-> It is *always* valid and safe to use quoted strings to clearly convey the
-> intended meaning.
->
-> When in doubt, use quotes.
+```admonish tip
+Think of barewords as a convenience, to avoid needing to quote everything all
+the time.
+
+It is **always** valid and safe to use quoted strings to clearly convey the
+intended meaning.
+
+When in doubt, use quotes.
+```
 
 # String escaping
 
@@ -54,8 +54,8 @@ replaced in the string:
 
 A backslash followed by any other character will result in a parse error.
 
-> [!IMPORTANT]
->
-> Because backslash (`\`) is used as the escape character in quoted strings, any
-> literal backslashes *must* themselves be escaped, by adding another backslash
-> (`\\`).
+```admonish warning title="Important"
+Because backslash (`\`) is used as the escape character in quoted strings, any
+literal backslashes *must* themselves be escaped, by adding another backslash
+(`\\`).
+```

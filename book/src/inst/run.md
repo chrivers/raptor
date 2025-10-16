@@ -11,21 +11,21 @@ The `RUN` instruction executes the given command inside the build namespace.
 RUN systemctl enable foo.service
 ```
 
-> [!IMPORTANT]
->
-> Arguments are executed as-is, i.e. without shell expansion, redirection,
-> piping, etc.  This ensures full control over the parsing of commands, but it
-> also means normal shell syntax is not available
+~~~admonish failure title="Important"
+Arguments are executed as-is, i.e. without shell expansion, redirection,
+piping, etc.
+
+This ensures full control over the parsing of commands, but it
+also means normal shell syntax is not available:
 
 ```raptor
 # BROKEN: This will call "cat" with 3 arguments
 RUN cat /etc/hostname "|" md5sum
 #   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this will not work
 ```
+~~~
 
-> [!TIP]
->
-> Instead, `/bin/sh` can be called explicitly:
+Instead, `/bin/sh` can be called explicitly:
 
 ```raptor
 # This will produce the md5sum of /etc/hostname

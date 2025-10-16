@@ -26,20 +26,16 @@ INCLUDE lib.set-hostname hostname="server1"
 In the above example, we set the hostname of a server using an included
 component.
 
-> [!TIP]
->
-> Since all values have to be specified as `key=value`, we might end up passing
-> variables through several raptor files. This often ends up looking like this in
-> the middle:
->
-> ```raptor
-> INCLUDE setup-thing username=username password=password
-> ```
->
-> This is of course valid, but a shorter syntax exists for this case:
->
-> ```raptor
-> INCLUDE setup-thing username password
-> ```
->
-> In other words, include parameter `name=name` can always be shortened to `name`.
+~~~admonish tip
+Since all values have to be specified as `key=value`, we might end up passing
+variables through several raptor files. This often ends up looking like this in
+the middle:
+```raptor
+INCLUDE setup-thing username=username password=password
+```
+This is of course valid, but a shorter syntax exists for this case:
+```raptor
+INCLUDE setup-thing username password
+```
+In other words, an include parameter `name=name` can always be shortened to `name`.
+~~~

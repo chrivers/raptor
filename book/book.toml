@@ -7,8 +7,6 @@ title = "Raptor Manual"
 [build]
 create-missing = false
 
-[preprocessor.alerts]
-
 [preprocessor.pikchr]
 
 [preprocessor.mermaid]

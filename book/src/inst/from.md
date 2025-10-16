@@ -18,14 +18,14 @@ Unlike Docker, multiple types of `from-source` are supported:
 When no schema is specified, the `from-source` is assumed to be the [module
 name](/module-name.md) of another raptor layer.
 
-> [!TIP]
-> This will be familiar to docker users. For example..
->
-> ```docker
-> # Dockerfile
-> FROM base
-> ```
-> ..will depend on the docker image `base`
+~~~admonish tip
+This will be familiar to docker users. For example..
+```docker
+# Dockerfile
+FROM base
+```
+..will depend on the docker image `base`
+~~~
 
 However, unlike docker files, raptor can point to raptor files in other
 directories, or even other packages. See [module names](/module-name.md) for an
@@ -52,6 +52,12 @@ docker image, prefixed with `docker://`, e.g:
 FROM docker://debian:trixie
 ```
 
-> [!TIP]
->
-> In general, `docker pull <NAME>` becomes `FROM docker://<NAME>`
+~~~admonish tip
+In general, `docker pull <NAME>` becomes `FROM docker://<NAME>`
+~~~
+
+There are multiple (optional) parts in a *docker reference*, which has a
+surprisingly intricate syntax.
+
+Raptor supports the entire grammar for docker references, so anything that
+`docker pull` will accept, should work with `FROM docker://` in raptor.

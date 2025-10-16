@@ -7,13 +7,23 @@ WRITE [<file-options>] <value> <path>
 The `WRITE` instruction writes a fixed string to the given path.
 
 A file can be added to the build output with `COPY`, but sometimes we just need
-to write a short value, and `COPY` might like overkill.
+to write a short value, and `COPY` might feel like overkill.
 
-Using `WRITE`, we can put values into files:
+Using `WRITE`, we can put values directly into files:
 
 ```raptor
 WRITE "hello world" hello.txt
 ```
+
+~~~admonish tip
+Be aware that `WRITE` does not add a newline at the end of your input.
+
+To end the file in a line break, add `\n` at the end of the quoted string:
+
+```raptor
+WRITE "hostname\n" /etc/hostname
+```
+~~~
 
 The same file options as `COPY` and `RENDER` are accepted:
 

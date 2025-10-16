@@ -6,11 +6,10 @@ ENV <key>=<value> [...<key=value>]
 
 The `ENV` instruction sets one or more environment variables inside the build namespace.
 
-
-> [!IMPORTANT]
->
-> The `ENV` instructions only affects *building* a container, not *running* a
-> container.
+```admonish important
+The `ENV` instructions only affects *building* a container, not *running* a
+container.
+```
 
 Example:
 

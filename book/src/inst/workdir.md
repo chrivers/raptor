@@ -7,10 +7,10 @@ WORKDIR <path>
 The `WORKDIR` instruction changes the current working directory inside the build
 namespace. This affects all relative destination paths, as well as `RUN`:
 
-> [!IMPORTANT]
->
-> The `WORKDIR` instructions only affects *building* a container, not *running*
-> a container.
+```admonish important
+The `WORKDIR` instructions only affects *building* a container, not *running*
+a container.
+```
 
 ```raptor
 # This will copy "program" to "/bin/program" (initial directory is "/")
