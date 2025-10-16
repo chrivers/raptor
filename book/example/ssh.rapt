@@ -1,0 +1,6 @@
+# Start from previous layer
+FROM base
+
+# Update package sources, and install ssh server
+RUN apt-get update
+RUN apt-get install -qy openssh-server

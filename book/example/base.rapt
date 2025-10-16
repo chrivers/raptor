@@ -1,0 +1,6 @@
+# Start from a docker iso
+FROM docker://debian:trixie
+
+# Update package sources, and install packages
+RUN apt-get update
+RUN apt-get install -qy live-boot linux-image-amd64
