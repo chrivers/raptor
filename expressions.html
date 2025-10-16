@@ -200,36 +200,55 @@ string.</p>
 <p>Currently, alternate integer bases (i.e. hexadecimal or octal) are <em>not</em> supported.</p>
 <h2 id="strings"><a class="header" href="#strings">Strings</a></h2>
 <p>String are supported, and work much like they do in json, or other common notations.</p>
-<pre><code class="language-admonish tip">See the section on [string escapes](/string-escape.md) for more details.
-</code></pre>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip"></a>
+</div>
+<div>
+<p>See the section on <a href="/string-escape.html">string escapes</a> for more details.</p>
+</div>
+</div>
 <h2 id="lists"><a class="header" href="#lists">Lists</a></h2>
 <p>Lists are supported, with a syntax very similar to json. The only difference is
 that raptor allows an optional trailing comma after the last list element, while
 json does not.</p>
-<pre><code class="language-admonish example title=&quot;Examples of lists&quot;">```json
-[1, 2, 3]
-```
-
-```json
-[true, false]
-```
-
-```json
-[["a", "b"], 123]
-```
+<div id="admonition-examples-of-lists" class="admonition admonish-example" role="note" aria-labelledby="admonition-examples-of-lists-title">
+<div class="admonition-title">
+<div id="admonition-examples-of-lists-title">
+<p>Examples of lists</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-examples-of-lists"></a>
+</div>
+<div>
+<pre><code class="language-json">[1, 2, 3]
 </code></pre>
+<pre><code class="language-json">[true, false]
+</code></pre>
+<pre><code class="language-json">[["a", "b"], 123]
+</code></pre>
+</div>
+</div>
 <h2 id="maps"><a class="header" href="#maps">Maps</a></h2>
 <p>Maps (also typically known as <em>dicts</em> or <em>hashmaps</em>) contain a set of (key, value) pairs.</p>
 <p>The syntax is similar to json. Like lists, raptor allows an optional trailing
 comma after the last key-value pair.</p>
-<pre><code class="language-admonish example title=&quot;Examples of maps&quot;">```json
-{"answer": 42}
-```
-
-```json
-{"name": "Heart of Gold", "engine": "Improbability drive"}
-```
+<div id="admonition-examples-of-maps" class="admonition admonish-example" role="note" aria-labelledby="admonition-examples-of-maps-title">
+<div class="admonition-title">
+<div id="admonition-examples-of-maps-title">
+<p>Examples of maps</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-examples-of-maps"></a>
+</div>
+<div>
+<pre><code class="language-json">{"answer": 42}
 </code></pre>
+<pre><code class="language-json">{"name": "Heart of Gold", "engine": "Improbability drive"}
+</code></pre>
+</div>
+</div>
 
                     </main>
 

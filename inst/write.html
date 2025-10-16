@@ -185,14 +185,20 @@ to write a short value, and <code>COPY</code> might feel like overkill.</p>
 <p>Using <code>WRITE</code>, we can put values directly into files:</p>
 <pre><code class="language-raptor">WRITE "hello world" hello.txt
 </code></pre>
-<pre><code class="language-admonish tip">Be aware that `WRITE` does not add a newline at the end of your input.
-
-To end the file in a line break, add `\n` at the end of the quoted string:
-
-```raptor
-WRITE "hostname\n" /etc/hostname
-```
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip"></a>
+</div>
+<div>
+<p>Be aware that <code>WRITE</code> does not add a newline at the end of your input.</p>
+<p>To end the file in a line break, add <code>\n</code> at the end of the quoted string:</p>
+<pre><code class="language-raptor">WRITE "hostname\n" /etc/hostname
 </code></pre>
+</div>
+</div>
 <p>The same file options as <code>COPY</code> and <code>RENDER</code> are accepted:</p>
 <pre><code class="language-raptor">WRITE --chmod 0600 --chown service:root "API-TOKEN" /etc/service/token.conf
 </code></pre>

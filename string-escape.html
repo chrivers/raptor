@@ -195,14 +195,21 @@ RUN touch "filename with spaces"
 # This creates *3 files* called "filename", "with", and "spaces", respectively
 RUN touch filename with spaces
 </code></pre>
-<pre><code class="language-admonish tip">Think of barewords as a convenience, to avoid needing to quote everything all
-the time.
-
-It is **always** valid and safe to use quoted strings to clearly convey the
-intended meaning.
-
-When in doubt, use quotes.
-</code></pre>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip"></a>
+</div>
+<div>
+<p>Think of barewords as a convenience, to avoid needing to quote everything all
+the time.</p>
+<p>It is <strong>always</strong> valid and safe to use quoted strings to clearly convey the
+intended meaning.</p>
+<p>When in doubt, use quotes.</p>
+</div>
+</div>
 <h1 id="string-escaping"><a class="header" href="#string-escaping">String escaping</a></h1>
 <p>When using a quoted string, the backslash character (<code>\</code>) gains special meaning,
 and is known as the <em>escape character</em>.</p>
@@ -216,10 +223,19 @@ replaced in the string:</p>
 </tbody></table>
 </div>
 <p>A backslash followed by any other character will result in a parse error.</p>
-<pre><code class="language-admonish warning title=&quot;Important&quot;">Because backslash (`\`) is used as the escape character in quoted strings, any
-literal backslashes *must* themselves be escaped, by adding another backslash
-(`\\`).
-</code></pre>
+<div id="admonition-important" class="admonition admonish-warning" role="note" aria-labelledby="admonition-important-title">
+<div class="admonition-title">
+<div id="admonition-important-title">
+<p>Important</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-important"></a>
+</div>
+<div>
+<p>Because backslash (<code>\</code>) is used as the escape character in quoted strings, any
+literal backslashes <em>must</em> themselves be escaped, by adding another backslash
+(<code>\\</code>).</p>
+</div>
+</div>
 
                     </main>
 

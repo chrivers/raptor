@@ -181,9 +181,18 @@
 </code></pre>
 <p>The <code>WORKDIR</code> instruction changes the current working directory inside the build
 namespace. This affects all relative destination paths, as well as <code>RUN</code>:</p>
-<pre><code class="language-admonish important">The `WORKDIR` instructions only affects *building* a container, not *running*
-a container.
-</code></pre>
+<div id="admonition-important" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-title">
+<div class="admonition-title">
+<div id="admonition-important-title">
+<p>Important</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-important"></a>
+</div>
+<div>
+<p>The <code>WORKDIR</code> instructions only affects <em>building</em> a container, not <em>running</em>
+a container.</p>
+</div>
+</div>
 <pre><code class="language-raptor"># This will copy "program" to "/bin/program" (initial directory is "/")
 COPY program bin/program
 

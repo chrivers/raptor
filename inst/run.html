@@ -183,18 +183,24 @@
 <pre><code class="language-raptor"># enable the foo service
 RUN systemctl enable foo.service
 </code></pre>
-<pre><code class="language-admonish failure title=&quot;Important&quot;">Arguments are executed as-is, i.e. without shell expansion, redirection,
-piping, etc.
-
-This ensures full control over the parsing of commands, but it
-also means normal shell syntax is not available:
-
-```raptor
-# BROKEN: This will call "cat" with 3 arguments
+<div id="admonition-important" class="admonition admonish-failure" role="note" aria-labelledby="admonition-important-title">
+<div class="admonition-title">
+<div id="admonition-important-title">
+<p>Important</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-important"></a>
+</div>
+<div>
+<p>Arguments are executed as-is, i.e. without shell expansion, redirection,
+piping, etc.</p>
+<p>This ensures full control over the parsing of commands, but it
+also means normal shell syntax is not available:</p>
+<pre><code class="language-raptor"># BROKEN: This will call "cat" with 3 arguments
 RUN cat /etc/hostname "|" md5sum
 #   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this will not work
-```
 </code></pre>
+</div>
+</div>
 <p>Instead, <code>/bin/sh</code> can be called explicitly:</p>
 <pre><code class="language-raptor"># This will produce the md5sum of /etc/hostname
 RUN /bin/sh -c "cat /etc/hostname | md5sum"

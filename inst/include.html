@@ -193,18 +193,25 @@ INCLUDE lib.set-hostname hostname="server1"
 </code></pre>
 <p>In the above example, we set the hostname of a server using an included
 component.</p>
-<pre><code class="language-admonish tip">Since all values have to be specified as `key=value`, we might end up passing
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip"></a>
+</div>
+<div>
+<p>Since all values have to be specified as <code>key=value</code>, we might end up passing
 variables through several raptor files. This often ends up looking like this in
-the middle:
-```raptor
-INCLUDE setup-thing username=username password=password
-```
-This is of course valid, but a shorter syntax exists for this case:
-```raptor
-INCLUDE setup-thing username password
-```
-In other words, an include parameter `name=name` can always be shortened to `name`.
+the middle:</p>
+<pre><code class="language-raptor">INCLUDE setup-thing username=username password=password
 </code></pre>
+<p>This is of course valid, but a shorter syntax exists for this case:</p>
+<pre><code class="language-raptor">INCLUDE setup-thing username password
+</code></pre>
+<p>In other words, an include parameter <code>name=name</code> can always be shortened to <code>name</code>.</p>
+</div>
+</div>
 
                     </main>
 

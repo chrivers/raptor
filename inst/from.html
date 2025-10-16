@@ -189,13 +189,21 @@
 <h2 id="raptor-sources"><a class="header" href="#raptor-sources">Raptor sources</a></h2>
 <p>When no schema is specified, the <code>from-source</code> is assumed to be the <a href="/module-name.html">module
 name</a> of another raptor layer.</p>
-<pre><code class="language-admonish tip">This will be familiar to docker users. For example..
-```docker
-# Dockerfile
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip"></a>
+</div>
+<div>
+<p>This will be familiar to docker users. For example..</p>
+<pre><code class="language-docker"># Dockerfile
 FROM base
-```
-..will depend on the docker image `base`
 </code></pre>
+<p>..will depend on the docker image <code>base</code></p>
+</div>
+</div>
 <p>However, unlike docker files, raptor can point to raptor files in other
 directories, or even other packages. See <a href="/module-name.html">module names</a> for an
 overview.</p>
@@ -211,8 +219,17 @@ FROM library.debian
 docker image, prefixed with <code>docker://</code>, e.g:</p>
 <pre><code class="language-raptor">FROM docker://debian:trixie
 </code></pre>
-<pre><code class="language-admonish tip">In general, `docker pull &lt;NAME&gt;` becomes `FROM docker://&lt;NAME&gt;`
-</code></pre>
+<div id="admonition-tip-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-1-title">
+<div class="admonition-title">
+<div id="admonition-tip-1-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip-1"></a>
+</div>
+<div>
+<p>In general, <code>docker pull &lt;NAME&gt;</code> becomes <code>FROM docker://&lt;NAME&gt;</code></p>
+</div>
+</div>
 <p>There are multiple (optional) parts in a <em>docker reference</em>, which has a
 surprisingly intricate syntax.</p>
 <p>Raptor supports the entire grammar for docker references, so anything that

@@ -179,9 +179,18 @@
                         <h1 id="file-options"><a class="header" href="#file-options">File options</a></h1>
 <p>Several instructions (<code>COPY</code>, <code>WRITE</code>, <code>RENDER</code>) write files into the build
 target. They all supports common options that affect how the files are written.</p>
-<pre><code class="language-admonish important">These file options must immediately follow the instruction (i.e. before the
-source or destination path)
-</code></pre>
+<div id="admonition-important" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-title">
+<div class="admonition-title">
+<div id="admonition-important-title">
+<p>Important</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-important"></a>
+</div>
+<div>
+<p>These file options must immediately follow the instruction (i.e. before the
+source or destination path)</p>
+</div>
+</div>
 <h2 id="change-mode---chmod-mode"><a class="header" href="#change-mode---chmod-mode">Change mode: <code>--chmod &lt;mode&gt;</code></a></h2>
 <p>The <code>--chmod</code> option specifies the mode bits (e.g. permissions) associated with
 the file. The <code>mode</code> is specified as 3 or 4 octal digits.</p>
@@ -196,10 +205,19 @@ COPY --chmod 4755 sudo /usr/bin/sudo
 # user access only, read-only:
 WRITE --chmod 0400 "secret" /etc/service/token
 </code></pre>
-<pre><code class="language-admonish tip">The 3-digit version is identical to the 4-digit version, where the first digit
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip"></a>
+</div>
+<div>
+<p>The 3-digit version is identical to the 4-digit version, where the first digit
 is zero (which is a common case).
-For example, `755` and `0755` represent the same permissions.
-</code></pre>
+For example, <code>755</code> and <code>0755</code> represent the same permissions.</p>
+</div>
+</div>
 <h2 id="change-owner---chown-owner"><a class="header" href="#change-owner---chown-owner">Change owner: <code>--chown &lt;owner&gt;</code></a></h2>
 <p>The <code>--chown</code> option specifies the user and/or group to own the file.</p>
 <div class="table-wrapper"><table><thead><tr><th>Input</th><th>User</th><th>Group</th></tr></thead><tbody>
@@ -209,14 +227,30 @@ For example, `755` and `0755` represent the same permissions.
 <tr><td><code>user:group</code></td><td><code>user</code></td><td><code>group</code></td></tr>
 <tr><td><code>user:</code></td><td><code>user</code></td><td><code>user</code> (!)</td></tr>
 </tbody></table>
+</div><div id="admonition-important-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-1-title">
+<div class="admonition-title">
+<div id="admonition-important-1-title">
+<p>Important</p>
 </div>
-<pre><code class="language-admonish important">Notice the last form, where `user:` is shorthand for `user:user`.
-
-This is the same convention used by GNU coreutils, and several other programs.
-</code></pre>
+<a class="admonition-anchor-link" href="#admonition-important-1"></a>
+</div>
+<div>
+<p>Notice the last form, where <code>user:</code> is shorthand for <code>user:user</code>.</p>
+<p>This is the same convention used by GNU coreutils, and several other programs.</p>
+</div>
+</div>
 <h2 id="create-parent-directories--p"><a class="header" href="#create-parent-directories--p">Create parent directories: <code>-p</code></a></h2>
-<pre><code class="language-admonish note">This file option is only valid for the `MKDIR` instruction.
-</code></pre>
+<div id="admonition-note" class="admonition admonish-note" role="note" aria-labelledby="admonition-note-title">
+<div class="admonition-title">
+<div id="admonition-note-title">
+<p>Note</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-note"></a>
+</div>
+<div>
+<p>This file option is only valid for the <code>MKDIR</code> instruction.</p>
+</div>
+</div>
 <p>The <code>-p</code> option instructs <code>MKDIR</code> to create parent directories as needed.</p>
 <p>Importantly, it also makes <code>MKDIR</code> accept existing directories, <em>including</em> the
 last directory.</p>

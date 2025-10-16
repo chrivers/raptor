@@ -204,14 +204,21 @@ RUN touch "filename with spaces"
 # This creates *3 files* called "filename", "with", and "spaces", respectively
 RUN touch filename with spaces
 </code></pre>
-<pre><code class="language-admonish tip">Think of barewords as a convenience, to avoid needing to quote everything all
-the time.
-
-It is **always** valid and safe to use quoted strings to clearly convey the
-intended meaning.
-
-When in doubt, use quotes.
-</code></pre>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="string-escape.html#admonition-tip"></a>
+</div>
+<div>
+<p>Think of barewords as a convenience, to avoid needing to quote everything all
+the time.</p>
+<p>It is <strong>always</strong> valid and safe to use quoted strings to clearly convey the
+intended meaning.</p>
+<p>When in doubt, use quotes.</p>
+</div>
+</div>
 <h1 id="string-escaping"><a class="header" href="#string-escaping">String escaping</a></h1>
 <p>When using a quoted string, the backslash character (<code>\</code>) gains special meaning,
 and is known as the <em>escape character</em>.</p>
@@ -225,10 +232,19 @@ replaced in the string:</p>
 </tbody></table>
 </div>
 <p>A backslash followed by any other character will result in a parse error.</p>
-<pre><code class="language-admonish warning title=&quot;Important&quot;">Because backslash (`\`) is used as the escape character in quoted strings, any
-literal backslashes *must* themselves be escaped, by adding another backslash
-(`\\`).
-</code></pre>
+<div id="admonition-important" class="admonition admonish-warning" role="note" aria-labelledby="admonition-important-title">
+<div class="admonition-title">
+<div id="admonition-important-title">
+<p>Important</p>
+</div>
+<a class="admonition-anchor-link" href="string-escape.html#admonition-important"></a>
+</div>
+<div>
+<p>Because backslash (<code>\</code>) is used as the escape character in quoted strings, any
+literal backslashes <em>must</em> themselves be escaped, by adding another backslash
+(<code>\\</code>).</p>
+</div>
+</div>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="expressions"><a class="header" href="#expressions">Expressions</a></h1>
 <p>Raptor supports a limited form of inline literal expressions (i.e. “values”),
 that can be specified when using the <code>INCLUDE</code> instruction.</p>
@@ -253,42 +269,70 @@ string.</p>
 <p>Currently, alternate integer bases (i.e. hexadecimal or octal) are <em>not</em> supported.</p>
 <h2 id="strings-1"><a class="header" href="#strings-1">Strings</a></h2>
 <p>String are supported, and work much like they do in json, or other common notations.</p>
-<pre><code class="language-admonish tip">See the section on [string escapes](/string-escape.md) for more details.
-</code></pre>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="expressions.html#admonition-tip"></a>
+</div>
+<div>
+<p>See the section on <a href="/string-escape.html">string escapes</a> for more details.</p>
+</div>
+</div>
 <h2 id="lists"><a class="header" href="#lists">Lists</a></h2>
 <p>Lists are supported, with a syntax very similar to json. The only difference is
 that raptor allows an optional trailing comma after the last list element, while
 json does not.</p>
-<pre><code class="language-admonish example title=&quot;Examples of lists&quot;">```json
-[1, 2, 3]
-```
-
-```json
-[true, false]
-```
-
-```json
-[["a", "b"], 123]
-```
+<div id="admonition-examples-of-lists" class="admonition admonish-example" role="note" aria-labelledby="admonition-examples-of-lists-title">
+<div class="admonition-title">
+<div id="admonition-examples-of-lists-title">
+<p>Examples of lists</p>
+</div>
+<a class="admonition-anchor-link" href="expressions.html#admonition-examples-of-lists"></a>
+</div>
+<div>
+<pre><code class="language-json">[1, 2, 3]
 </code></pre>
+<pre><code class="language-json">[true, false]
+</code></pre>
+<pre><code class="language-json">[["a", "b"], 123]
+</code></pre>
+</div>
+</div>
 <h2 id="maps"><a class="header" href="#maps">Maps</a></h2>
 <p>Maps (also typically known as <em>dicts</em> or <em>hashmaps</em>) contain a set of (key, value) pairs.</p>
 <p>The syntax is similar to json. Like lists, raptor allows an optional trailing
 comma after the last key-value pair.</p>
-<pre><code class="language-admonish example title=&quot;Examples of maps&quot;">```json
-{"answer": 42}
-```
-
-```json
-{"name": "Heart of Gold", "engine": "Improbability drive"}
-```
+<div id="admonition-examples-of-maps" class="admonition admonish-example" role="note" aria-labelledby="admonition-examples-of-maps-title">
+<div class="admonition-title">
+<div id="admonition-examples-of-maps-title">
+<p>Examples of maps</p>
+</div>
+<a class="admonition-anchor-link" href="expressions.html#admonition-examples-of-maps"></a>
+</div>
+<div>
+<pre><code class="language-json">{"answer": 42}
 </code></pre>
+<pre><code class="language-json">{"name": "Heart of Gold", "engine": "Improbability drive"}
+</code></pre>
+</div>
+</div>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="file-options"><a class="header" href="#file-options">File options</a></h1>
 <p>Several instructions (<code>COPY</code>, <code>WRITE</code>, <code>RENDER</code>) write files into the build
 target. They all supports common options that affect how the files are written.</p>
-<pre><code class="language-admonish important">These file options must immediately follow the instruction (i.e. before the
-source or destination path)
-</code></pre>
+<div id="admonition-important" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-title">
+<div class="admonition-title">
+<div id="admonition-important-title">
+<p>Important</p>
+</div>
+<a class="admonition-anchor-link" href="file-options.html#admonition-important"></a>
+</div>
+<div>
+<p>These file options must immediately follow the instruction (i.e. before the
+source or destination path)</p>
+</div>
+</div>
 <h2 id="change-mode---chmod-mode"><a class="header" href="#change-mode---chmod-mode">Change mode: <code>--chmod &lt;mode&gt;</code></a></h2>
 <p>The <code>--chmod</code> option specifies the mode bits (e.g. permissions) associated with
 the file. The <code>mode</code> is specified as 3 or 4 octal digits.</p>
@@ -303,10 +347,19 @@ COPY --chmod 4755 sudo /usr/bin/sudo
 # user access only, read-only:
 WRITE --chmod 0400 "secret" /etc/service/token
 </code></pre>
-<pre><code class="language-admonish tip">The 3-digit version is identical to the 4-digit version, where the first digit
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="file-options.html#admonition-tip"></a>
+</div>
+<div>
+<p>The 3-digit version is identical to the 4-digit version, where the first digit
 is zero (which is a common case).
-For example, `755` and `0755` represent the same permissions.
-</code></pre>
+For example, <code>755</code> and <code>0755</code> represent the same permissions.</p>
+</div>
+</div>
 <h2 id="change-owner---chown-owner"><a class="header" href="#change-owner---chown-owner">Change owner: <code>--chown &lt;owner&gt;</code></a></h2>
 <p>The <code>--chown</code> option specifies the user and/or group to own the file.</p>
 <div class="table-wrapper"><table><thead><tr><th>Input</th><th>User</th><th>Group</th></tr></thead><tbody>
@@ -316,14 +369,30 @@ For example, `755` and `0755` represent the same permissions.
 <tr><td><code>user:group</code></td><td><code>user</code></td><td><code>group</code></td></tr>
 <tr><td><code>user:</code></td><td><code>user</code></td><td><code>user</code> (!)</td></tr>
 </tbody></table>
+</div><div id="admonition-important-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-1-title">
+<div class="admonition-title">
+<div id="admonition-important-1-title">
+<p>Important</p>
 </div>
-<pre><code class="language-admonish important">Notice the last form, where `user:` is shorthand for `user:user`.
-
-This is the same convention used by GNU coreutils, and several other programs.
-</code></pre>
+<a class="admonition-anchor-link" href="file-options.html#admonition-important-1"></a>
+</div>
+<div>
+<p>Notice the last form, where <code>user:</code> is shorthand for <code>user:user</code>.</p>
+<p>This is the same convention used by GNU coreutils, and several other programs.</p>
+</div>
+</div>
 <h2 id="create-parent-directories--p"><a class="header" href="#create-parent-directories--p">Create parent directories: <code>-p</code></a></h2>
-<pre><code class="language-admonish note">This file option is only valid for the `MKDIR` instruction.
-</code></pre>
+<div id="admonition-note" class="admonition admonish-note" role="note" aria-labelledby="admonition-note-title">
+<div class="admonition-title">
+<div id="admonition-note-title">
+<p>Note</p>
+</div>
+<a class="admonition-anchor-link" href="file-options.html#admonition-note"></a>
+</div>
+<div>
+<p>This file option is only valid for the <code>MKDIR</code> instruction.</p>
+</div>
+</div>
 <p>The <code>-p</code> option instructs <code>MKDIR</code> to create parent directories as needed.</p>
 <p>Importantly, it also makes <code>MKDIR</code> accept existing directories, <em>including</em> the
 last directory.</p>
@@ -353,13 +422,21 @@ MKDIR -p /foo/bar
 <h2 id="raptor-sources"><a class="header" href="#raptor-sources">Raptor sources</a></h2>
 <p>When no schema is specified, the <code>from-source</code> is assumed to be the <a href="inst//module-name.html">module
 name</a> of another raptor layer.</p>
-<pre><code class="language-admonish tip">This will be familiar to docker users. For example..
-```docker
-# Dockerfile
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="inst/from.html#admonition-tip"></a>
+</div>
+<div>
+<p>This will be familiar to docker users. For example..</p>
+<pre><code class="language-docker"># Dockerfile
 FROM base
-```
-..will depend on the docker image `base`
 </code></pre>
+<p>..will depend on the docker image <code>base</code></p>
+</div>
+</div>
 <p>However, unlike docker files, raptor can point to raptor files in other
 directories, or even other packages. See <a href="inst//module-name.html">module names</a> for an
 overview.</p>
@@ -375,8 +452,17 @@ FROM library.debian
 docker image, prefixed with <code>docker://</code>, e.g:</p>
 <pre><code class="language-raptor">FROM docker://debian:trixie
 </code></pre>
-<pre><code class="language-admonish tip">In general, `docker pull &lt;NAME&gt;` becomes `FROM docker://&lt;NAME&gt;`
-</code></pre>
+<div id="admonition-tip-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-1-title">
+<div class="admonition-title">
+<div id="admonition-tip-1-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="inst/from.html#admonition-tip-1"></a>
+</div>
+<div>
+<p>In general, <code>docker pull &lt;NAME&gt;</code> becomes <code>FROM docker://&lt;NAME&gt;</code></p>
+</div>
+</div>
 <p>There are multiple (optional) parts in a <em>docker reference</em>, which has a
 surprisingly intricate syntax.</p>
 <p>Raptor supports the entire grammar for docker references, so anything that
@@ -388,18 +474,24 @@ surprisingly intricate syntax.</p>
 <pre><code class="language-raptor"># enable the foo service
 RUN systemctl enable foo.service
 </code></pre>
-<pre><code class="language-admonish failure title=&quot;Important&quot;">Arguments are executed as-is, i.e. without shell expansion, redirection,
-piping, etc.
-
-This ensures full control over the parsing of commands, but it
-also means normal shell syntax is not available:
-
-```raptor
-# BROKEN: This will call "cat" with 3 arguments
+<div id="admonition-important" class="admonition admonish-failure" role="note" aria-labelledby="admonition-important-title">
+<div class="admonition-title">
+<div id="admonition-important-title">
+<p>Important</p>
+</div>
+<a class="admonition-anchor-link" href="inst/run.html#admonition-important"></a>
+</div>
+<div>
+<p>Arguments are executed as-is, i.e. without shell expansion, redirection,
+piping, etc.</p>
+<p>This ensures full control over the parsing of commands, but it
+also means normal shell syntax is not available:</p>
+<pre><code class="language-raptor"># BROKEN: This will call "cat" with 3 arguments
 RUN cat /etc/hostname "|" md5sum
 #   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this will not work
-```
 </code></pre>
+</div>
+</div>
 <p>Instead, <code>/bin/sh</code> can be called explicitly:</p>
 <pre><code class="language-raptor"># This will produce the md5sum of /etc/hostname
 RUN /bin/sh -c "cat /etc/hostname | md5sum"
@@ -408,9 +500,18 @@ RUN /bin/sh -c "cat /etc/hostname | md5sum"
 <pre><code class="language-raptor">ENV &lt;key&gt;=&lt;value&gt; [...&lt;key=value&gt;]
 </code></pre>
 <p>The <code>ENV</code> instruction sets one or more environment variables inside the build namespace.</p>
-<pre><code class="language-admonish important">The `ENV` instructions only affects *building* a container, not *running* a
-container.
-</code></pre>
+<div id="admonition-important" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-title">
+<div class="admonition-title">
+<div id="admonition-important-title">
+<p>Important</p>
+</div>
+<a class="admonition-anchor-link" href="inst/env.html#admonition-important"></a>
+</div>
+<div>
+<p>The <code>ENV</code> instructions only affects <em>building</em> a container, not <em>running</em> a
+container.</p>
+</div>
+</div>
 <p>Example:</p>
 <pre><code class="language-raptor">ENV CFLAGS="--with-sprinkles"
 ENV API_TOKEN="acbd18db4cc2f85cedef654fccc4a4d8" API_USER="user@example.org"
@@ -430,9 +531,18 @@ RUN sh -c "echo $HITCHHIKER" # outputs "Ford Prefect"
 </code></pre>
 <p>The <code>WORKDIR</code> instruction changes the current working directory inside the build
 namespace. This affects all relative destination paths, as well as <code>RUN</code>:</p>
-<pre><code class="language-admonish important">The `WORKDIR` instructions only affects *building* a container, not *running*
-a container.
-</code></pre>
+<div id="admonition-important" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-title">
+<div class="admonition-title">
+<div id="admonition-important-title">
+<p>Important</p>
+</div>
+<a class="admonition-anchor-link" href="inst/workdir.html#admonition-important"></a>
+</div>
+<div>
+<p>The <code>WORKDIR</code> instructions only affects <em>building</em> a container, not <em>running</em>
+a container.</p>
+</div>
+</div>
 <pre><code class="language-raptor"># This will copy "program" to "/bin/program" (initial directory is "/")
 COPY program bin/program
 
@@ -455,14 +565,20 @@ to write a short value, and <code>COPY</code> might feel like overkill.</p>
 <p>Using <code>WRITE</code>, we can put values directly into files:</p>
 <pre><code class="language-raptor">WRITE "hello world" hello.txt
 </code></pre>
-<pre><code class="language-admonish tip">Be aware that `WRITE` does not add a newline at the end of your input.
-
-To end the file in a line break, add `\n` at the end of the quoted string:
-
-```raptor
-WRITE "hostname\n" /etc/hostname
-```
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="inst/write.html#admonition-tip"></a>
+</div>
+<div>
+<p>Be aware that <code>WRITE</code> does not add a newline at the end of your input.</p>
+<p>To end the file in a line break, add <code>\n</code> at the end of the quoted string:</p>
+<pre><code class="language-raptor">WRITE "hostname\n" /etc/hostname
 </code></pre>
+</div>
+</div>
 <p>The same file options as <code>COPY</code> and <code>RENDER</code> are accepted:</p>
 <pre><code class="language-raptor">WRITE --chmod 0600 --chown service:root "API-TOKEN" /etc/service/token.conf
 </code></pre>
@@ -470,8 +586,17 @@ WRITE "hostname\n" /etc/hostname
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-copy"><a class="header" href="#instruction-copy">Instruction <code>COPY</code></a></h1>
 <pre><code class="language-nginx">COPY [&lt;file-options&gt;] &lt;source&gt; [...&lt;source&gt;] &lt;destination&gt;
 </code></pre>
-<pre><code class="language-admonish tip">See the section on [file options](/file-options.md).
-</code></pre>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="inst/copy.html#admonition-tip"></a>
+</div>
+<div>
+<p>See the section on <a href="inst//file-options.html">file options</a>.</p>
+</div>
+</div>
 <p>The <code>COPY</code> instruction takes one or more source files, and copies them to the
 destination.</p>
 <p>If multiple source files are specified, the destination MUST BE a directory.</p>
@@ -499,18 +624,25 @@ INCLUDE lib.set-hostname hostname="server1"
 </code></pre>
 <p>In the above example, we set the hostname of a server using an included
 component.</p>
-<pre><code class="language-admonish tip">Since all values have to be specified as `key=value`, we might end up passing
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="inst/include.html#admonition-tip"></a>
+</div>
+<div>
+<p>Since all values have to be specified as <code>key=value</code>, we might end up passing
 variables through several raptor files. This often ends up looking like this in
-the middle:
-```raptor
-INCLUDE setup-thing username=username password=password
-```
-This is of course valid, but a shorter syntax exists for this case:
-```raptor
-INCLUDE setup-thing username password
-```
-In other words, an include parameter `name=name` can always be shortened to `name`.
+the middle:</p>
+<pre><code class="language-raptor">INCLUDE setup-thing username=username password=password
 </code></pre>
+<p>This is of course valid, but a shorter syntax exists for this case:</p>
+<pre><code class="language-raptor">INCLUDE setup-thing username password
+</code></pre>
+<p>In other words, an include parameter <code>name=name</code> can always be shortened to <code>name</code>.</p>
+</div>
+</div>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-render"><a class="header" href="#instruction-render">Instruction <code>RENDER</code></a></h1>
 <pre><code class="language-raptor">RENDER [&lt;file-options&gt;] &lt;source&gt; &lt;destination&gt; [...&lt;include-arg&gt;]
 </code></pre>
