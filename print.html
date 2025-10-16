@@ -1,0 +1,576 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Raptor Manual</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="./mdbook-admonish.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Raptor Manual</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="raptor-user-guide"><a class="header" href="#raptor-user-guide">Raptor User guide</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="chapter-2"><a class="header" href="#chapter-2">Chapter 2</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="module-names"><a class="header" href="#module-names">Module names</a></h1>
+<div class="table-wrapper"><table><thead><tr><th>Type</th><th>Description</th><th>Example</th></tr></thead><tbody>
+<tr><td>Relative</td><td></td><td><code>foo.bar</code></td></tr>
+<tr><td>Absolute</td><td></td><td><code>$.foo.bar</code></td></tr>
+<tr><td>Package</td><td></td><td><code>$foo.bar</code></td></tr>
+</tbody></table>
+</div><div style="break-before: page; page-break-before: always;"></div><h1 id="strings"><a class="header" href="#strings">Strings</a></h1>
+<p>In raptor files, string values can be expressed as quoted strings, or in certain
+cases as so-called <em>barewords</em>:</p>
+<pre><code class="language-raptor">RUN echo these are barewords
+
+RUN "echo" "these" "are" "quoted" "string"
+</code></pre>
+<p>For example, the following two statements are equivalent:</p>
+<pre><code class="language-raptor">RUN echo word1 word2
+
+RUN echo "word1" "word2"
+</code></pre>
+<p>But the following two statements are <em>not</em>:</p>
+<pre><code class="language-raptor"># This creates 1 file called "filename with spaces"
+RUN touch "filename with spaces"
+
+# This creates *3 files* called "filename", "with", and "spaces", respectively
+RUN touch filename with spaces
+</code></pre>
+<pre><code class="language-admonish tip">Think of barewords as a convenience, to avoid needing to quote everything all
+the time.
+
+It is **always** valid and safe to use quoted strings to clearly convey the
+intended meaning.
+
+When in doubt, use quotes.
+</code></pre>
+<h1 id="string-escaping"><a class="header" href="#string-escaping">String escaping</a></h1>
+<p>When using a quoted string, the backslash character (<code>\</code>) gains special meaning,
+and is known as the <em>escape character</em>.</p>
+<p>When it is followed by certain other characters, the combined expression is
+replaced in the string:</p>
+<div class="table-wrapper"><table><thead><tr><th>Escape expression</th><th>Result</th></tr></thead><tbody>
+<tr><td><code>\\</code></td><td>A single literal backslash</td></tr>
+<tr><td><code>\n</code></td><td>Newline (as if the string continued on the next line of text)</td></tr>
+<tr><td><code>\t</code></td><td>Tabulator (useful to make tab clearly visible, and copy-paste proof)</td></tr>
+<tr><td><code>\"</code></td><td>Quote character (as opposed to ending the string)</td></tr>
+</tbody></table>
+</div>
+<p>A backslash followed by any other character will result in a parse error.</p>
+<pre><code class="language-admonish warning title=&quot;Important&quot;">Because backslash (`\`) is used as the escape character in quoted strings, any
+literal backslashes *must* themselves be escaped, by adding another backslash
+(`\\`).
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="expressions"><a class="header" href="#expressions">Expressions</a></h1>
+<p>Raptor supports a limited form of inline literal expressions (i.e. “values”),
+that can be specified when using the <code>INCLUDE</code> instruction.</p>
+<h2 id="booleans"><a class="header" href="#booleans">Booleans</a></h2>
+<p>Boolean values work identically to json (and many other languages):</p>
+<div class="table-wrapper"><table><thead><tr><th>Literal</th><th>Value</th></tr></thead><tbody>
+<tr><td><code>true</code></td><td>true</td></tr>
+<tr><td><code>false</code></td><td>false</td></tr>
+</tbody></table>
+</div>
+<h2 id="integers"><a class="header" href="#integers">Integers</a></h2>
+<p>Integer values are supported.</p>
+<p>Be aware that raptor always uses <code>i64</code> (signed 64-bit) integers.</p>
+<p>This is <em>unlike</em> the typical json implementations, that uses <code>f64</code> (64-bit
+floating-point) numbers, in two important ways:</p>
+<p><strong>A)</strong> The valid range for i64 integers is <code>-9223372036854775808</code> to
+<code>9223372036854775807</code>, inclusive. This should be sufficient for most
+applications. Any integer in this range will be represented exactly.</p>
+<p><strong>B)</strong> Floating-point (i.e. fractional) numbers are not supported. For example,
+<code>3.14</code> is <em>not</em> valid in raptor. Instead, consider passing such a value as a
+string.</p>
+<p>Currently, alternate integer bases (i.e. hexadecimal or octal) are <em>not</em> supported.</p>
+<h2 id="strings-1"><a class="header" href="#strings-1">Strings</a></h2>
+<p>String are supported, and work much like they do in json, or other common notations.</p>
+<pre><code class="language-admonish tip">See the section on [string escapes](/string-escape.md) for more details.
+</code></pre>
+<h2 id="lists"><a class="header" href="#lists">Lists</a></h2>
+<p>Lists are supported, with a syntax very similar to json. The only difference is
+that raptor allows an optional trailing comma after the last list element, while
+json does not.</p>
+<pre><code class="language-admonish example title=&quot;Examples of lists&quot;">```json
+[1, 2, 3]
+```
+
+```json
+[true, false]
+```
+
+```json
+[["a", "b"], 123]
+```
+</code></pre>
+<h2 id="maps"><a class="header" href="#maps">Maps</a></h2>
+<p>Maps (also typically known as <em>dicts</em> or <em>hashmaps</em>) contain a set of (key, value) pairs.</p>
+<p>The syntax is similar to json. Like lists, raptor allows an optional trailing
+comma after the last key-value pair.</p>
+<pre><code class="language-admonish example title=&quot;Examples of maps&quot;">```json
+{"answer": 42}
+```
+
+```json
+{"name": "Heart of Gold", "engine": "Improbability drive"}
+```
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="file-options"><a class="header" href="#file-options">File options</a></h1>
+<p>Several instructions (<code>COPY</code>, <code>WRITE</code>, <code>RENDER</code>) write files into the build
+target. They all supports common options that affect how the files are written.</p>
+<pre><code class="language-admonish important">These file options must immediately follow the instruction (i.e. before the
+source or destination path)
+</code></pre>
+<h2 id="change-mode---chmod-mode"><a class="header" href="#change-mode---chmod-mode">Change mode: <code>--chmod &lt;mode&gt;</code></a></h2>
+<p>The <code>--chmod</code> option specifies the mode bits (e.g. permissions) associated with
+the file. The <code>mode</code> is specified as 3 or 4 octal digits.</p>
+<p>Examples:</p>
+<pre><code class="language-raptor"># these are equivalent:
+COPY --chmod  755 script.sh /root/script.sh
+COPY --chmod 0755 script.sh /root/script.sh
+
+# set suid bit:
+COPY --chmod 4755 sudo /usr/bin/sudo
+
+# user access only, read-only:
+WRITE --chmod 0400 "secret" /etc/service/token
+</code></pre>
+<pre><code class="language-admonish tip">The 3-digit version is identical to the 4-digit version, where the first digit
+is zero (which is a common case).
+For example, `755` and `0755` represent the same permissions.
+</code></pre>
+<h2 id="change-owner---chown-owner"><a class="header" href="#change-owner---chown-owner">Change owner: <code>--chown &lt;owner&gt;</code></a></h2>
+<p>The <code>--chown</code> option specifies the user and/or group to own the file.</p>
+<div class="table-wrapper"><table><thead><tr><th>Input</th><th>User</th><th>Group</th></tr></thead><tbody>
+<tr><td><code>user</code></td><td><code>user</code></td><td>(no change)</td></tr>
+<tr><td><code>:</code></td><td>(no change)</td><td>(no change)</td></tr>
+<tr><td><code>:group</code></td><td>(no change)</td><td><code>group</code></td></tr>
+<tr><td><code>user:group</code></td><td><code>user</code></td><td><code>group</code></td></tr>
+<tr><td><code>user:</code></td><td><code>user</code></td><td><code>user</code> (!)</td></tr>
+</tbody></table>
+</div>
+<pre><code class="language-admonish important">Notice the last form, where `user:` is shorthand for `user:user`.
+
+This is the same convention used by GNU coreutils, and several other programs.
+</code></pre>
+<h2 id="create-parent-directories--p"><a class="header" href="#create-parent-directories--p">Create parent directories: <code>-p</code></a></h2>
+<pre><code class="language-admonish note">This file option is only valid for the `MKDIR` instruction.
+</code></pre>
+<p>The <code>-p</code> option instructs <code>MKDIR</code> to create parent directories as needed.</p>
+<p>Importantly, it also makes <code>MKDIR</code> accept existing directories, <em>including</em> the
+last directory.</p>
+<p>This is identical to the behavior of <code>-p</code> with the shell command <code>mkdir</code>.</p>
+<pre><code class="language-raptor"># will fail if:
+#   A) /foo is missing
+# or:
+#   B) /foo/bar already exists
+MKDIR /foo/bar
+
+# this will create:
+#   /foo (if missing)
+# and then
+#   /foo/bar (if missing)
+MKDIR -p /foo/bar
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-from"><a class="header" href="#instruction-from">Instruction: <code>FROM</code></a></h1>
+<pre><code class="language-nginx">FROM [&lt;schema&gt;://]&lt;from-source&gt;
+</code></pre>
+<p>The <code>FROM</code> instruction bases the current layer on top of some the specified layer.</p>
+<p>Unlike Docker, multiple types of <code>from-source</code> are supported:</p>
+<div class="table-wrapper"><table><thead><tr><th>Type</th><th>Schema</th><th>Example</th></tr></thead><tbody>
+<tr><td>Raptor</td><td><code>&lt;none&gt;</code></td><td><code>FROM library.base</code></td></tr>
+<tr><td>Docker</td><td><code>docker://</code></td><td><code>FROM docker://debian:trixie</code></td></tr>
+</tbody></table>
+</div>
+<h2 id="raptor-sources"><a class="header" href="#raptor-sources">Raptor sources</a></h2>
+<p>When no schema is specified, the <code>from-source</code> is assumed to be the <a href="inst//module-name.html">module
+name</a> of another raptor layer.</p>
+<pre><code class="language-admonish tip">This will be familiar to docker users. For example..
+```docker
+# Dockerfile
+FROM base
+```
+..will depend on the docker image `base`
+</code></pre>
+<p>However, unlike docker files, raptor can point to raptor files in other
+directories, or even other packages. See <a href="inst//module-name.html">module names</a> for an
+overview.</p>
+<h3 id="examples"><a class="header" href="#examples">Examples</a></h3>
+<pre><code class="language-raptor"># This will depend on `base.rapt`
+FROM base
+</code></pre>
+<pre><code class="language-raptor"># This will depend on `library/debian.rapt`
+FROM library.debian
+</code></pre>
+<h2 id="docker-sources"><a class="header" href="#docker-sources">Docker sources</a></h2>
+<p>To use a docker image as the basis for a raptor layer, specify the name of the
+docker image, prefixed with <code>docker://</code>, e.g:</p>
+<pre><code class="language-raptor">FROM docker://debian:trixie
+</code></pre>
+<pre><code class="language-admonish tip">In general, `docker pull &lt;NAME&gt;` becomes `FROM docker://&lt;NAME&gt;`
+</code></pre>
+<p>There are multiple (optional) parts in a <em>docker reference</em>, which has a
+surprisingly intricate syntax.</p>
+<p>Raptor supports the entire grammar for docker references, so anything that
+<code>docker pull</code> will accept, should work with <code>FROM docker://</code> in raptor.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-run"><a class="header" href="#instruction-run">Instruction <code>RUN</code></a></h1>
+<pre><code class="language-raptor">RUN &lt;command&gt; [...&lt;arg&gt;]
+</code></pre>
+<p>The <code>RUN</code> instruction executes the given command inside the build namespace.</p>
+<pre><code class="language-raptor"># enable the foo service
+RUN systemctl enable foo.service
+</code></pre>
+<pre><code class="language-admonish failure title=&quot;Important&quot;">Arguments are executed as-is, i.e. without shell expansion, redirection,
+piping, etc.
+
+This ensures full control over the parsing of commands, but it
+also means normal shell syntax is not available:
+
+```raptor
+# BROKEN: This will call "cat" with 3 arguments
+RUN cat /etc/hostname "|" md5sum
+#   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this will not work
+```
+</code></pre>
+<p>Instead, <code>/bin/sh</code> can be called explicitly:</p>
+<pre><code class="language-raptor"># This will produce the md5sum of /etc/hostname
+RUN /bin/sh -c "cat /etc/hostname | md5sum"
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-env"><a class="header" href="#instruction-env">Instruction <code>ENV</code></a></h1>
+<pre><code class="language-raptor">ENV &lt;key&gt;=&lt;value&gt; [...&lt;key=value&gt;]
+</code></pre>
+<p>The <code>ENV</code> instruction sets one or more environment variables inside the build namespace.</p>
+<pre><code class="language-admonish important">The `ENV` instructions only affects *building* a container, not *running* a
+container.
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-raptor">ENV CFLAGS="--with-sprinkles"
+ENV API_TOKEN="acbd18db4cc2f85cedef654fccc4a4d8" API_USER="user@example.org"
+</code></pre>
+<p>The <code>ENV</code> instruction affects all instructions that come after it, in the same layer.</p>
+<p>It is possible to overwrite a value that has been set previously:</p>
+<pre><code class="language-raptor">FROM docker://busybox
+
+ENV HITCHHIKER="Arthur Dent"
+RUN sh -c "echo $HITCHHIKER" # outputs "Arthur Dent"
+
+ENV HITCHHIKER="Ford Prefect"
+RUN sh -c "echo $HITCHHIKER" # outputs "Ford Prefect"
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-workdir"><a class="header" href="#instruction-workdir">Instruction <code>WORKDIR</code></a></h1>
+<pre><code class="language-raptor">WORKDIR &lt;path&gt;
+</code></pre>
+<p>The <code>WORKDIR</code> instruction changes the current working directory inside the build
+namespace. This affects all relative destination paths, as well as <code>RUN</code>:</p>
+<pre><code class="language-admonish important">The `WORKDIR` instructions only affects *building* a container, not *running*
+a container.
+</code></pre>
+<pre><code class="language-raptor"># This will copy "program" to "/bin/program" (initial directory is "/")
+COPY program bin/program
+
+WORKDIR /usr
+
+# The same command will now copy "program" to "/usr/bin/program"
+COPY program bin/program
+
+WORKDIR /tmp
+
+# This creates /tmp/foo
+RUN /bin/sh -c "touch foo"
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-write"><a class="header" href="#instruction-write">Instruction <code>WRITE</code></a></h1>
+<pre><code class="language-raptor">WRITE [&lt;file-options&gt;] &lt;value&gt; &lt;path&gt;
+</code></pre>
+<p>The <code>WRITE</code> instruction writes a fixed string to the given path.</p>
+<p>A file can be added to the build output with <code>COPY</code>, but sometimes we just need
+to write a short value, and <code>COPY</code> might feel like overkill.</p>
+<p>Using <code>WRITE</code>, we can put values directly into files:</p>
+<pre><code class="language-raptor">WRITE "hello world" hello.txt
+</code></pre>
+<pre><code class="language-admonish tip">Be aware that `WRITE` does not add a newline at the end of your input.
+
+To end the file in a line break, add `\n` at the end of the quoted string:
+
+```raptor
+WRITE "hostname\n" /etc/hostname
+```
+</code></pre>
+<p>The same file options as <code>COPY</code> and <code>RENDER</code> are accepted:</p>
+<pre><code class="language-raptor">WRITE --chmod 0600 --chown service:root "API-TOKEN" /etc/service/token.conf
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-mkdir"><a class="header" href="#instruction-mkdir">Instruction <code>MKDIR</code></a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-copy"><a class="header" href="#instruction-copy">Instruction <code>COPY</code></a></h1>
+<pre><code class="language-nginx">COPY [&lt;file-options&gt;] &lt;source&gt; [...&lt;source&gt;] &lt;destination&gt;
+</code></pre>
+<pre><code class="language-admonish tip">See the section on [file options](/file-options.md).
+</code></pre>
+<p>The <code>COPY</code> instruction takes one or more source files, and copies them to the
+destination.</p>
+<p>If multiple source files are specified, the destination MUST BE a directory.</p>
+<div class="table-wrapper"><table><thead><tr><th>Input</th><th>Destination</th><th>Result</th></tr></thead><tbody>
+<tr><td>Single file</td><td>File</td><td>File written with destination filename</td></tr>
+<tr><td>Single file</td><td>Directory</td><td>File written to destination dir, with source filename</td></tr>
+<tr><td>Multiple files</td><td>File</td><td><em><strong>Error</strong></em></td></tr>
+<tr><td>Multiple files</td><td>Directory</td><td>Files written to destination dir, with original filename</td></tr>
+<tr><td>Directory</td><td>Any</td><td><em><strong>Error</strong></em>: Not yet supported</td></tr>
+</tbody></table>
+</div><div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-include"><a class="header" href="#instruction-include">Instruction <code>INCLUDE</code></a></h1>
+<pre><code class="language-raptor">INCLUDE &lt;filename&gt; [...&lt;key&gt;=&lt;value&gt;]
+</code></pre>
+<p>The <code>INCLUDE</code> instruction calls on another Raptor file (<code>.rinc</code>) to be
+executed. When <code>INCLUDE</code>ing files, any number of local variables can be passed
+to the included target.</p>
+<p>For example, if we have previously made the file <code>lib/install-utils</code> that
+installs some useful programs, we can use that file in build targets:</p>
+<pre><code class="language-raptor">INCLUDE lib.install-base-utils
+</code></pre>
+<p>We can also make the component accept parameters, to make powerful, flexible
+components:</p>
+<pre><code class="language-raptor"># hypothetical library function to update "/etc/hostname"
+INCLUDE lib.set-hostname hostname="server1"
+</code></pre>
+<p>In the above example, we set the hostname of a server using an included
+component.</p>
+<pre><code class="language-admonish tip">Since all values have to be specified as `key=value`, we might end up passing
+variables through several raptor files. This often ends up looking like this in
+the middle:
+```raptor
+INCLUDE setup-thing username=username password=password
+```
+This is of course valid, but a shorter syntax exists for this case:
+```raptor
+INCLUDE setup-thing username password
+```
+In other words, an include parameter `name=name` can always be shortened to `name`.
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-render"><a class="header" href="#instruction-render">Instruction <code>RENDER</code></a></h1>
+<pre><code class="language-raptor">RENDER [&lt;file-options&gt;] &lt;source&gt; &lt;destination&gt; [...&lt;include-arg&gt;]
+</code></pre>
+<p>The <code>RENDER</code> instruction renders a file from a template, and writes it to the
+specified destination. It accepts the same <code>key=value</code> arguments as
+<code>INCLUDE</code>. These arguments are made available in the template.</p>
+<p>Example:</p>
+<pre><code class="language-raptor">RENDER widgetfactory.tmpl /etc/widgetd/server.conf host="example.org" port=1234
+</code></pre>
+<p>The short form <code>name</code> (meaning <code>name=name</code>) is also supported here.</p>
+<p>For example, in a component where <code>host</code> and <code>port</code> are available in the
+environment:</p>
+<pre><code class="language-raptor">RENDER widgetfactory.tmpl /etc/widgetd/server.conf host port
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-mount"><a class="header" href="#instruction-mount">Instruction <code>MOUNT</code></a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-entrypoint"><a class="header" href="#instruction-entrypoint">Instruction <code>ENTRYPOINT</code></a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-cmd"><a class="header" href="#instruction-cmd">Instruction <code>CMD</code></a></h1>
+<div style="break-before: page; page-break-before: always;"></div><div style="break-before: page; page-break-before: always;"></div>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+
+    </div>
+    </body>
+</html>
