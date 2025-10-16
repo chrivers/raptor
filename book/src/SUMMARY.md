@@ -3,10 +3,11 @@
 # User Guide
 - [User guide](user-guide.md)
 
+---
+
 # Reference
 
 - [Reference manual](reference-manual.md)
----
 - [Concepts]()
   - [Module names](module-name.md)
   - [String escape](string-escape.md)
@@ -29,4 +30,3 @@
   - [ENTRYPOINT](inst/entrypoint.md)
   - [CMD](inst/cmd.md)
 - [Grammar](grammar.md)
----
