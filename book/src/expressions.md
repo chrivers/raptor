@@ -1,7 +1,7 @@
 # Expressions
 
 Raptor supports a limited form of inline literal expressions (i.e. "values"),
-that can be specified when using the `INCLUDE` instruction.
+that can be specified when using the `INCLUDE` and `RENDER` instructions.
 
 ## Booleans
 
