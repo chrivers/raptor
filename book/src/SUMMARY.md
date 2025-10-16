@@ -11,6 +11,7 @@
   - [Module names](module-name.md)
   - [String escape](string-escape.md)
   - [Expressions](expressions.md)
+  - [File options](file-options.md)
 - [Instructions](syntax.md)
   - [FROM](inst/from.md)
   - [RUN](inst/run.md)
