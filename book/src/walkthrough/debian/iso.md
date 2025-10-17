@@ -93,6 +93,9 @@ sudo raptor run                 \
 ```
 ~~~
 
+(See the section on [module names](/module-name.md) to learn more about `--link`
+and the `$rbuild` notation.)
+
 This build process works, but the required command is fairly long and
 complicated.
 
