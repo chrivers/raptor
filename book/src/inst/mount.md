@@ -30,7 +30,7 @@ The syntax `-M <input> <source>` can be a bit unwieldy.
 Since certain mount names are very common, they have a shorter syntax available:
 
 | Name   | Long form         | Short form |
-|--------|-------------------|------------|
+|:-------|:------------------|:-----------|
 | Input  | `-M input <foo>`  | `-I <foo>` |
 | Output | `-M output <foo>` | `-O <foo>` |
 | Cache  | `-M cache <foo>`  | `-C <foo>` |

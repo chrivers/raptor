@@ -46,7 +46,7 @@ When it is followed by certain other characters, the combined expression is
 replaced in the string:
 
 | Escape expression | Result                                                               |
-|-------------------|----------------------------------------------------------------------|
+|:------------------|:---------------------------------------------------------------------|
 | `\\`              | A single literal backslash                                           |
 | `\n`              | Newline (as if the string continued on the next line of text)        |
 | `\t`              | Tabulator (useful to make tab clearly visible, and copy-paste proof) |

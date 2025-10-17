@@ -18,7 +18,7 @@ Multiple `FROM` instructions are **not supported**.
 Raptor supports multiple options for `from-source`:
 
 | Type   | Schema      | Example                       |
-|--------|-------------|-------------------------------|
+|:-------|:------------|:------------------------------|
 | Raptor | `<none>`    | `FROM library.base`           |
 | Docker | `docker://` | `FROM docker://debian:trixie` |
 

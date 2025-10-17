@@ -16,7 +16,7 @@ destination.
 If multiple source files are specified, the destination MUST BE a directory.
 
 | Input          | Destination | Result                                                   |
-|----------------|-------------|----------------------------------------------------------|
+|:---------------|:------------|:---------------------------------------------------------|
 | Single file    | File        | File written with destination filename                   |
 | Single file    | Directory   | File written to destination dir, with source filename    |
 | Multiple files | File        | ***Error***                                              |

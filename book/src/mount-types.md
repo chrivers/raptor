@@ -15,7 +15,7 @@ This is equivalent to how Docker uses volume mounts (`-v` / `--volume`).
 However, Raptor supports more than just mounting directories:
 
 | Type                  | Description                                   | Access     |
-|-----------------------|-----------------------------------------------|------------|
+|:----------------------|:----------------------------------------------|:-----------|
 | `MOUNT --simple ...`  | Mounts a directory from the host (default)    | Read/write |
 | `MOUNT --file ...`    | Mounts a single file from the host            | Read/write |
 | `MOUNT --layers ...`  | Mounts a view of set of layers as directories | Read-only  |

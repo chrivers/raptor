@@ -8,7 +8,7 @@ that can be specified when using the `INCLUDE` and `RENDER` instructions.
 Boolean values work identically to json (and many other languages):
 
 | Literal | Value |
-|---------|-------|
+|:--------|:------|
 | `true`  | true  |
 | `false` | false |
 

@@ -39,7 +39,7 @@ For example, `755` and `0755` represent the same permissions.
 The `--chown` option specifies the user and/or group to own the file.
 
 | Input        | User        | Group       |
-|--------------|-------------|-------------|
+|:-------------|:------------|:------------|
 | `user`       | `user`      | (no change) |
 | `:`          | (no change) | (no change) |
 | `:group`     | (no change) | `group`     |
