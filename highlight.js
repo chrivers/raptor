@@ -4222,154 +4222,122 @@ var hljs = (function () {
   }
 
   /*
-  Language: Nginx config
-  Author: Peter Leonov <gojpeg@yandex.ru>
-  Contributors: Ivan Sagalaev <maniac@softwaremaniacs.org>
-  Category: config, web
-  Website: https://www.nginx.com
+  Language: TOML, also INI
+  Description: TOML aims to be a minimal configuration file format that's easy to read due to obvious semantics.
+  Contributors: Guillaume Gomez <guillaume1.gomez@gmail.com>
+  Category: common, config
+  Website: https://github.com/toml-lang/toml
   */
 
-  /** @type LanguageFn */
-  function nginx(hljs) {
+  function ini(hljs) {
     const regex = hljs.regex;
-    const VAR = {
+    const NUMBERS = {
+      className: 'number',
+      relevance: 0,
+      variants: [
+        { begin: /([+-]+)?[\d]+_[\d_]+/ },
+        { begin: hljs.NUMBER_RE }
+      ]
+    };
+    const COMMENTS = hljs.COMMENT();
+    COMMENTS.variants = [
+      {
+        begin: /;/,
+        end: /$/
+      },
+      {
+        begin: /#/,
+        end: /$/
+      }
+    ];
+    const VARIABLES = {
       className: 'variable',
       variants: [
-        { begin: /\$\d+/ },
-        { begin: /\$\{\w+\}/ },
-        { begin: regex.concat(/[$@]/, hljs.UNDERSCORE_IDENT_RE) }
+        { begin: /\$[\w\d"][\w\d_]*/ },
+        { begin: /\$\{(.*?)\}/ }
       ]
     };
-    const LITERALS = [
-      "on",
-      "off",
-      "yes",
-      "no",
-      "true",
-      "false",
-      "none",
-      "blocked",
-      "debug",
-      "info",
-      "notice",
-      "warn",
-      "error",
-      "crit",
-      "select",
-      "break",
-      "last",
-      "permanent",
-      "redirect",
-      "kqueue",
-      "rtsig",
-      "epoll",
-      "poll",
-      "/dev/poll"
-    ];
-    const DEFAULT = {
-      endsWithParent: true,
-      keywords: {
-        $pattern: /[a-z_]{2,}|\/dev\/poll/,
-        literal: LITERALS
-      },
-      relevance: 0,
-      illegal: '=>',
-      contains: [
-        hljs.HASH_COMMENT_MODE,
+    const LITERALS = {
+      className: 'literal',
+      begin: /\bon|off|true|false|yes|no\b/
+    };
+    const STRINGS = {
+      className: "string",
+      contains: [ hljs.BACKSLASH_ESCAPE ],
+      variants: [
         {
-          className: 'string',
-          contains: [
-            hljs.BACKSLASH_ESCAPE,
-            VAR
-          ],
-          variants: [
-            {
-              begin: /"/,
-              end: /"/
-            },
-            {
-              begin: /'/,
-              end: /'/
-            }
-          ]
-        },
-        // this swallows entire URLs to avoid detecting numbers within
-        {
-          begin: '([a-z]+):/',
-          end: '\\s',
-          endsWithParent: true,
-          excludeEnd: true,
-          contains: [ VAR ]
+          begin: "'''",
+          end: "'''",
+          relevance: 10
         },
         {
-          className: 'regexp',
-          contains: [
-            hljs.BACKSLASH_ESCAPE,
-            VAR
-          ],
-          variants: [
-            {
-              begin: "\\s\\^",
-              end: "\\s|\\{|;",
-              returnEnd: true
-            },
-            // regexp locations (~, ~*)
-            {
-              begin: "~\\*?\\s+",
-              end: "\\s|\\{|;",
-              returnEnd: true
-            },
-            // *.example.com
-            { begin: "\\*(\\.[a-z\\-]+)+" },
-            // sub.example.*
-            { begin: "([a-z\\-]+\\.)+\\*" }
-          ]
+          begin: '"""',
+          end: '"""',
+          relevance: 10
         },
-        // IP
         {
-          className: 'number',
-          begin: '\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(:\\d{1,5})?\\b'
+          begin: '"',
+          end: '"'
         },
-        // units
         {
-          className: 'number',
-          begin: '\\b\\d+[kKmMgGdshdwy]?\\b',
-          relevance: 0
-        },
-        VAR
+          begin: "'",
+          end: "'"
+        }
       ]
+    };
+    const ARRAY = {
+      begin: /\[/,
+      end: /\]/,
+      contains: [
+        COMMENTS,
+        LITERALS,
+        VARIABLES,
+        STRINGS,
+        NUMBERS,
+        'self'
+      ],
+      relevance: 0
     };
 
+    const BARE_KEY = /[A-Za-z0-9_-]+/;
+    const QUOTED_KEY_DOUBLE_QUOTE = /"(\\"|[^"])*"/;
+    const QUOTED_KEY_SINGLE_QUOTE = /'[^']*'/;
+    const ANY_KEY = regex.either(
+      BARE_KEY, QUOTED_KEY_DOUBLE_QUOTE, QUOTED_KEY_SINGLE_QUOTE
+    );
+    const DOTTED_KEY = regex.concat(
+      ANY_KEY, '(\\s*\\.\\s*', ANY_KEY, ')*',
+      regex.lookahead(/\s*=\s*[^#\s]/)
+    );
+
     return {
-      name: 'Nginx config',
-      aliases: [ 'nginxconf' ],
+      name: 'TOML, also INI',
+      aliases: [ 'toml' ],
+      case_insensitive: true,
+      illegal: /\S/,
       contains: [
-        hljs.HASH_COMMENT_MODE,
-        {
-          beginKeywords: "upstream location",
-          end: /;|\{/,
-          contains: DEFAULT.contains,
-          keywords: { section: "upstream location" }
-        },
+        COMMENTS,
         {
           className: 'section',
-          begin: regex.concat(hljs.UNDERSCORE_IDENT_RE + regex.lookahead(/\s+\{/)),
-          relevance: 0
+          begin: /\[+/,
+          end: /\]+/
         },
         {
-          begin: regex.lookahead(hljs.UNDERSCORE_IDENT_RE + '\\s'),
-          end: ';|\\{',
-          contains: [
-            {
-              className: 'attribute',
-              begin: hljs.UNDERSCORE_IDENT_RE,
-              starts: DEFAULT
-            }
-          ],
-          relevance: 0
+          begin: DOTTED_KEY,
+          className: 'attr',
+          starts: {
+            end: /$/,
+            contains: [
+              COMMENTS,
+              ARRAY,
+              LITERALS,
+              VARIABLES,
+              STRINGS,
+              NUMBERS
+            ]
+          }
         }
-      ],
-      illegal: '[^\\s\\}\\{]'
+      ]
     };
   }
 
@@ -4378,8 +4346,8 @@ var hljs = (function () {
     grmr_bash: bash,
     grmr_diff: diff,
     grmr_dockerfile: dockerfile,
+    grmr_ini: ini,
     grmr_json: json,
-    grmr_nginx: nginx,
     grmr_plaintext: plaintext,
     grmr_raptorfile: raptorfile,
     grmr_ruby: ruby,

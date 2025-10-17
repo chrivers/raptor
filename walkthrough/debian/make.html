@@ -177,6 +177,72 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="make"><a class="header" href="#make">Make</a></h1>
+<p>In the <a href="iso.html">previous chapter</a> we took a look at the final command used to
+build a debian liveboot iso:</p>
+<pre><code class="language-sh">sudo raptor run                 \
+  --link book   book/example    \
+  --link rbuild ../raptor-build \
+  --cache liveboot-cache        \
+  --input '$book.ssh'           \
+  --output custom-liveboot.iso  \
+  '$rbuild.deblive'
+</code></pre>
+<p>As mentioned, this works, but it doesn’t exactly roll off the tongue.</p>
+<p>Having to type this command every time we want to build the iso, is not a
+satisfying solution.</p>
+<p>To solve this, the subcommand <code>raptor make</code> is used. It is a
+<a href="https://www.gnu.org/software/make/make.html">make</a>-like system, where
+dependencies are specified in a configuration file.</p>
+<p>For <code>make</code>, this would be a <code>Makefile</code>, for <code>raptor make</code> this is going to be
+<code>Raptor.toml</code>.</p>
+<p>Building a <code>Raptor.toml</code> for your project is recommend, but not required. It is
+perfectly possible to start using <code>raptor</code> from the command line, and only write
+a <code>Raptor.toml</code> file when it feels right.</p>
+<p>That being said, the format for <code>Raptor.toml</code> has been designed to be a smooth
+transition from a constructed command line. The smallest valid <code>Raptor.toml</code>
+file is an empty one.</p>
+<p>In other words, everything can be added bit by bit, as needed.</p>
+<p>Let’s start by adding the two linked packages (<code>--link</code> arguments):</p>
+<div id="admonition-raptortoml" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-title">
+<div class="admonition-title">
+<div id="admonition-raptortoml-title">
+<p>Raptor.toml</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-raptortoml"></a>
+</div>
+<div>
+<pre><code class="language-toml">[raptor.link]
+book = "book/example"
+rbuild = "../raptor-build"
+</code></pre>
+</div>
+</div>
+<p>We have added two package links, but of course any number can be added as desired.</p>
+<p>Next, we will define a <code>run</code> job, which accounts for almost all of the remaining
+command line arguments. It needs a name, so let’s call it <code>book-ssh</code>:</p>
+<div id="admonition-raptortoml-1" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-1-title">
+<div class="admonition-title">
+<div id="admonition-raptortoml-1-title">
+<p>Raptor.toml</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-raptortoml-1"></a>
+</div>
+<div>
+<pre><code class="language-toml">[raptor.link]
+book = "book/example"
+rbuild = "../raptor-build"
+
+[run.book-ssh]
+target = "$rbuild.deblive"
+cache = "liveboot-cache"
+input = "$book.ssh"
+output = "custom-liveboot.iso"
+</code></pre>
+</div>
+</div>
+<p>Now that we have encoded all the arguments, we can use a much simpler <code>raptor make</code> command to run this build job:</p>
+<pre><code class="language-sh">sudo raptor make book-ssh
+</code></pre>
 
                     </main>
 
