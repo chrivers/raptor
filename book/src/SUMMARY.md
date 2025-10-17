@@ -16,6 +16,7 @@
   - [String escape](string-escape.md)
   - [Expressions](expressions.md)
   - [File options](file-options.md)
+  - [Mount types](mount-types.md)
 - [Instructions](syntax.md)
   - [Build instructions]()
     - [FROM](inst/from.md)

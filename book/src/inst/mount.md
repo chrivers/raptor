@@ -11,6 +11,10 @@ The `MOUNT` instructions only affects *running* a container, not *building* a
 container.
 ```
 
+```admonish tip
+See the section on [mount types](/mount-types.md).
+```
+
 By using `MOUNT`, targets can specify certain resources (files, directories,
 layers, etc) that should be made available when running the container.
 
@@ -60,7 +64,7 @@ mount is not specified.
 To fix this, we specify the input mount:
 
 ```sh
-sudo raptor run -I /tmp disk-usage
+sudo raptor run disk-usage -I /tmp
 [*] Completed [675DE2C3A4D8CD82] index.docker.io-library-debian-trixie
 [*] Completed [4BDD0649E00CA728] disk-usage
 128M    /input
@@ -68,3 +72,23 @@ sudo raptor run -I /tmp disk-usage
 
 We could have specified `-I /tmp` as `-M input /tmp`, but the short form usually
 makes the command easier to follow.
+
+## Mount type
+
+The example have just looked will probably feel familiar to Docker users, since
+it is very similar to *docker volumes*, which are also bind mounts from the host
+to the container namespace.
+
+However, Raptor mounts are more advanced than that.
+
+For example, in order to build a Debian liveboot iso, we need to provide the
+Debian `live-boot` scripts with a set of `squashfs` files, generated
+from the individual layers of one or more raptor targets.
+
+Docker does not easily provide access to container layers, as it is seen as more
+of an implementation detail.
+
+In contrast, Raptor considers layers a first-class object, and makes them
+available using the `MOUNT` instruction.
+
+To learn more about different mount types, please see the [mount types](/mount-types.md) section.
