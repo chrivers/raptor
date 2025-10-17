@@ -1,8 +1,10 @@
 # Instruction `RUN`
 
+~~~admonish summary
 ```raptor
 RUN <command> [...<arg>]
 ```
+~~~
 
 The `RUN` instruction executes the given command inside the build namespace.
 

@@ -1,8 +1,10 @@
 # Instruction `RENDER`
 
+~~~admonish summary
 ```raptor
 RENDER [<file-options>] <source> <destination> [...<include-arg>]
 ```
+~~~
 
 The `RENDER` instruction renders a file from a template, and writes it to the
 specified destination. It accepts the same `key=value` arguments as

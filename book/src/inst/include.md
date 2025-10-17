@@ -1,18 +1,28 @@
 # Instruction `INCLUDE`
 
+~~~admonish summary
 ```raptor
-INCLUDE <filename> [...<key>=<value>]
+INCLUDE <module-name> [...<key>=<value>]
+```
+~~~
+
+```admonish tip
+See the section on [module names](/module-name.md).
 ```
 
-The `INCLUDE` instruction calls on another Raptor file (`.rinc`) to be
-executed. When `INCLUDE`ing files, any number of local variables can be passed
+The `INCLUDE` instruction points to a Raptor include file (`.rinc`) to be
+executed. When using `INCLUDE`, any number of local variables can be passed
 to the included target.
 
-For example, if we have previously made the file `lib/install-utils` that
+For example, if we have previously made the file `lib/install-utils.rinc` that
 installs some useful programs, we can use that file in build targets:
 
 ```raptor
-INCLUDE lib.install-base-utils
+# Note: We use module name notation when including files
+#
+# The file is called `lib/install-utils.rinc`, which makes
+#    the module name `lib.install-utils`
+INCLUDE lib.install-utils
 ```
 
 We can also make the component accept parameters, to make powerful, flexible

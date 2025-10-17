@@ -1,16 +1,17 @@
 # File options
 
-Several instructions (`COPY`, `WRITE`, `RENDER`) write files into the build
-target. They all supports common options that affect how the files are written.
+Several instructions (`COPY`, `WRITE`, `RENDER`, `MKDIR`) write files into the
+build target. They all supports common options that affect how the files are
+written.
 
-```admonish important
-These file options must immediately follow the instruction (i.e. before the
+~~~admonish important
+File options must be specified after the instruction (i.e. before
 source or destination path)
-```
+~~~
 
 ## Change mode: `--chmod <mode>`
 
-The `--chmod` option specifies the mode bits (e.g. permissions) associated with
+The `--chmod` option specifies the mode bits (i.e. permissions) associated with
 the file. The `mode` is specified as 3 or 4 octal digits.
 
 Examples:

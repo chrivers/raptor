@@ -1,8 +1,10 @@
 # Instruction `ENV`
 
+~~~admonish summary
 ```raptor
 ENV <key>=<value> [...<key=value>]
 ```
+~~~
 
 The `ENV` instruction sets one or more environment variables inside the build namespace.
 
