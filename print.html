@@ -635,7 +635,265 @@ MKDIR /foo/bar
 #   /foo/bar (if missing)
 MKDIR -p /foo/bar
 </code></pre>
-<div style="break-before: page; page-break-before: always;"></div><div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-from"><a class="header" href="#instruction-from">Instruction: <code>FROM</code></a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="mount-types"><a class="header" href="#mount-types">Mount types</a></h1>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="mount-types.html#admonition-tip"></a>
+</div>
+<div>
+<p>For an introduction to mounts, see the <a href="/inst/mount.html">MOUNT</a> referrence.</p>
+</div>
+</div>
+<p>When running containers, Raptor supports mounting various file resources into
+the container namespace.</p>
+<p>In the simplest form, this means presenting a directory from the host
+environment, at a specified location in the container.</p>
+<p>This is equivalent to how Docker uses volume mounts (<code>-v</code> / <code>--volume</code>).</p>
+<p>However, Raptor supports more than just mounting directories:</p>
+<div class="table-wrapper"><table><thead><tr><th>Type</th><th>Description</th><th>Access</th></tr></thead><tbody>
+<tr><td><code>MOUNT --simple ...</code></td><td>Mounts a directory from the host (default)</td><td>Read/write</td></tr>
+<tr><td><code>MOUNT --file ...</code></td><td>Mounts a single file from the host</td><td>Read/write</td></tr>
+<tr><td><code>MOUNT --layers ...</code></td><td>Mounts a view of set of layers as directories</td><td>Read-only</td></tr>
+<tr><td><code>MOUNT --overlay ...</code></td><td>Mounts a view of the sum of a set of layers</td><td>Read-only</td></tr>
+</tbody></table>
+</div><div id="admonition-tip-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-1-title">
+<div class="admonition-title">
+<div id="admonition-tip-1-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="mount-types.html#admonition-tip-1"></a>
+</div>
+<div>
+<p>If no mount type is specified, <code>--simple</code> is implied as the default.</p>
+<p>For clarity, it is recommended to always specify a mount type.</p>
+</div>
+</div>
+<h2 id="type---simple"><a class="header" href="#type---simple">Type <code>--simple</code></a></h2>
+<p>This is the default mount type.</p>
+<p>A <code>--simple</code> mount will mount a directory from the host into the
+container. Docker users are likely to be familiar with this concept.</p>
+<h3 id="example"><a class="header" href="#example">Example</a></h3>
+<div id="admonition-file-listerrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-file-listerrapt-title">
+<div class="admonition-title">
+<div id="admonition-file-listerrapt-title">
+<p>file-lister.rapt</p>
+</div>
+<a class="admonition-anchor-link" href="mount-types.html#admonition-file-listerrapt"></a>
+</div>
+<div>
+<pre><code class="language-raptor">FROM docker://debian:trixie
+
+MOUNT --simple list /input
+
+CMD "ls -l /input"
+</code></pre>
+</div>
+</div>
+<p>This container can be run, to provide a file listing on the mounted directory:</p>
+<pre><code class="language-sh">$ sudo raptor run file-lister -M list /tmp
+... &lt;"ls" output would be shown here&gt; ...
+</code></pre>
+<h2 id="type---file"><a class="header" href="#type---file">Type <code>--file</code></a></h2>
+<p>This mount type requires that a single file is mounted.</p>
+<div id="admonition-tip-2" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-2-title">
+<div class="admonition-title">
+<div id="admonition-tip-2-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="mount-types.html#admonition-tip-2"></a>
+</div>
+<div>
+<p>When running a raptor container with a <code>--file</code> mount, the target file will be created if it does not exist.</p>
+</div>
+</div>
+<h3 id="example-1"><a class="header" href="#example-1">Example</a></h3>
+<p>Let us expand on the earlier example, to make the file lister provide output to a file.</p>
+<div id="admonition-file-lister-outputrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-file-lister-outputrapt-title">
+<div class="admonition-title">
+<div id="admonition-file-lister-outputrapt-title">
+<p>file-lister-output.rapt</p>
+</div>
+<a class="admonition-anchor-link" href="mount-types.html#admonition-file-lister-outputrapt"></a>
+</div>
+<div>
+<pre><code class="language-raptor">FROM docker://debian:trixie
+
+MOUNT --simple input /input
+MOUNT --file output /output
+
+CMD "ls -l /input &gt; /output"
+</code></pre>
+</div>
+</div>
+<p>Now that we have named the mounts <code>input</code> and <code>output</code>, we can use the
+<a href="/inst/mount.html#admonition-tip-1">shorthand notation</a> for convenience:</p>
+<pre><code class="language-sh">$ sudo raptor run file-lister-output -I /etc -O /tmp/filelist.txt
+...
+$ sudo cat /tmp/filelist.txt
+... &lt;"ls" output would be shown here&gt; ...
+</code></pre>
+<p>The above example would generate a file listing of <code>/etc</code> <strong>from the host</strong>, and
+place it in <code>/tmp/filelist.txt</code>. However, the execution of <code>ls</code> takes place in
+the container.</p>
+<h2 id="type---layers"><a class="header" href="#type---layers">Type <code>--layers</code></a></h2>
+<p>The <code>--simple</code> and <code>--file</code> mount types both present content from the host
+filesystem inside the container, and both have equivalents in Docker.</p>
+<p>This is not the case for <code>--layers</code>, which is specific to Raptor.</p>
+<p>When using a <code>--layers</code> mount, the input argument when running Raptor is not a
+file path, but a set of <em>Raptor build targets</em>.</p>
+<p>Let us take a look at a target, that lists the files in a <code>--layers</code> mounts:</p>
+<div id="admonition-layers-listerrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-layers-listerrapt-title">
+<div class="admonition-title">
+<div id="admonition-layers-listerrapt-title">
+<p>layers-lister.rapt</p>
+</div>
+<a class="admonition-anchor-link" href="mount-types.html#admonition-layers-listerrapt"></a>
+</div>
+<div>
+<pre><code class="language-raptor">FROM docker://debian:trixie
+
+MOUNT --layers input /input
+
+CMD "ls -l /input"
+</code></pre>
+</div>
+</div>
+<p>Let’s try running this, using the previous <code>file-lister.rapt</code> target as input:</p>
+<pre><code class="language-sh">$ sudo raptor run layers-lister -I file-lister
+total 12
+drwxr-xr-x  2 root root 4096 Oct 17 13:37 file-lister-16689594BA5D2989
+drwxr-xr-x 17 root root 4096 Sep 29 00:00 index.docker.io-library-debian-trixie-675DE2C3A4D8CD82
+-rw-r--r--  1 root root  200 Oct 17 13:37 raptor.json
+</code></pre>
+<p>We see that each layer in the input is available as a directory, but also a
+<code>raptor.json</code> file.</p>
+<p>Think of this file as a manifest of the contents in the <code>--layers</code> mount. It
+contains useful metadata about the inputs, including which targets have been
+specified, as well as the stacking order for each target:</p>
+<div id="admonition-raptorjson" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptorjson-title">
+<div class="admonition-title">
+<div id="admonition-raptorjson-title">
+<p>raptor.json</p>
+</div>
+<a class="admonition-anchor-link" href="mount-types.html#admonition-raptorjson"></a>
+</div>
+<div>
+<pre><code class="language-json">{
+  "targets": [
+    "file-lister"
+  ],
+  "layers": {
+    "file-lister": [
+      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
+      "file-lister-16689594BA5D2989"
+    ]
+  }
+}
+</code></pre>
+</div>
+</div>
+<p>At first, this might seem like overly complicated. If we just needed the layer
+order, surely a simple text file would suffice?</p>
+<p>In fact, <em>multiple</em> build targets can be specified at the same time:</p>
+<pre><code class="language-sh">$ sudo raptor run layers-lister -I file-lister -I file-lister-output
+total 16
+drwxr-xr-x  2 root root 4096 Oct 17 11:33 file-lister-16689594BA5D2989
+drwxr-xr-x  2 root root 4096 Oct 17 11:31 file-lister-output-2CFDE4FEBD507157
+drwxr-xr-x 17 root root 4096 Sep 29 00:00 index.docker.io-library-debian-trixie-675DE2C3A4D8CD82
+-rw-r--r--  1 root root  381 Oct 17 11:45 raptor.json
+</code></pre>
+<p>We now have multiple build targets, and the Docker layer is shared between both
+inputs.</p>
+<p>However, we can still make sense of this using <code>raptor.json</code>:</p>
+<div id="admonition-raptorjson-1" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptorjson-1-title">
+<div class="admonition-title">
+<div id="admonition-raptorjson-1-title">
+<p>raptor.json</p>
+</div>
+<a class="admonition-anchor-link" href="mount-types.html#admonition-raptorjson-1"></a>
+</div>
+<div>
+<pre><code class="language-json">{
+  "targets": [
+    "file-lister",
+    "file-lister-output"
+  ],
+  "layers": {
+    "file-lister-output": [
+      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
+      "file-lister-output-2CFDE4FEBD507157"
+    ],
+    "file-lister": [
+      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
+      "file-lister-16689594BA5D2989"
+    ]
+  }
+}
+</code></pre>
+</div>
+</div>
+<p>This mount type is useful for any build container that needs to work the
+contents of individual layers.</p>
+<p>For example, the <code>deblive</code> builder<sup class="footnote-reference" id="fr-deblive-1"><a href="#footnote-deblive">1</a></sup> uses this mount type, in order to
+build Debian liveboot images.</p>
+<h2 id="type---overlay"><a class="header" href="#type---overlay">Type <code>--overlay</code></a></h2>
+<p>Like <code>--layers</code>, this is a Raptor-specific mount type.</p>
+<p>Raptor targets are almost always built from a set of layers (i.e., there’s at
+least one <code>FROM</code> instruction).</p>
+<p>When running a raptor container, this stack of layers is combined using
+<code>overlayfs</code>, which makes the kernel present them to the container as a single,
+unified filesystem.</p>
+<p>For build containers that need to operate on this combined view of a build
+target, the <code>--overlay</code> mount type is available.</p>
+<p>For example, the <code>disk-image</code> builder<sup class="footnote-reference" id="fr-deblive-2"><a href="#footnote-deblive">1</a></sup> uses this mount type, in order to
+build disk images for virtual (or physical) machines.</p>
+<div id="admonition-overlay-listerrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-overlay-listerrapt-title">
+<div class="admonition-title">
+<div id="admonition-overlay-listerrapt-title">
+<p>overlay-lister.rapt</p>
+</div>
+<a class="admonition-anchor-link" href="mount-types.html#admonition-overlay-listerrapt"></a>
+</div>
+<div>
+<pre><code class="language-raptor">FROM docker://debian:trixie
+
+MOUNT --overlay input /input
+
+CMD "ls -l /input"
+</code></pre>
+</div>
+</div>
+<pre><code class="language-sh">$ sudo raptor run overlay-lister -I file-lister
+total 60
+lrwxrwxrwx  1 root root    7 Aug 24 16:20 bin -&gt; usr/bin
+drwxr-xr-x  2 root root 4096 Aug 24 16:20 boot
+drwxr-xr-x  2 root root 4096 Sep 29 00:00 dev
+drwxr-xr-x 27 root root 4096 Sep 29 00:00 etc
+drwxr-xr-x  2 root root 4096 Aug 24 16:20 home
+lrwxrwxrwx  1 root root    7 Aug 24 16:20 lib -&gt; usr/lib
+lrwxrwxrwx  1 root root    9 Aug 24 16:20 lib64 -&gt; usr/lib64
+drwxr-xr-x  2 root root 4096 Sep 29 00:00 media
+drwxr-xr-x  2 root root 4096 Sep 29 00:00 mnt
+drwxr-xr-x  2 root root 4096 Sep 29 00:00 opt
+drwxr-xr-x  2 root root 4096 Sep 29 00:00 proc
+drwx------  2 root root 4096 Sep 29 00:00 root
+drwxr-xr-x  3 root root 4096 Sep 29 00:00 run
+lrwxrwxrwx  1 root root    8 Aug 24 16:20 sbin -&gt; usr/sbin
+drwxr-xr-x  2 root root 4096 Sep 29 00:00 srv
+drwxr-xr-x  2 root root 4096 Aug 24 16:20 sys
+drwxrwxrwt  2 root root 4096 Sep 29 00:00 tmp
+drwxr-xr-x 12 root root 4096 Sep 29 00:00 usr
+drwxr-xr-x 11 root root 4096 Sep 29 00:00 var
+</code></pre>
+<hr>
+<ol class="footnote-definition"><li id="footnote-deblive">
+<p>From the <a href="https://github.com/chrivers/raptor-build">raptor-build</a>
+companion project. <a href="#fr-deblive-1">↩</a> <a href="#fr-deblive-2">↩2</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-from"><a class="header" href="#instruction-from">Instruction: <code>FROM</code></a></h1>
 <div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
 <div class="admonition-title">
 <div id="admonition-summary-title">
@@ -816,7 +1074,7 @@ namespace. This affects all subsequent relative paths, including the <code>RUN</
 instruction.</p>
 <p>The workdir is <strong>not</strong> inherited through <code>FROM</code>.</p>
 <p>The initial workdir is always <code>/</code>.</p>
-<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<h2 id="example-2"><a class="header" href="#example-2">Example</a></h2>
 <pre><code class="language-raptor"># This will copy "program" to "/bin/program" (since initial directory is "/")
 COPY program bin/program
 
@@ -918,7 +1176,7 @@ to write a short value, and <code>COPY</code> might feel like overkill.</p>
 <p>However, using <code>RUN mkdir</code> requires the <code>mkdir</code> command to be available and
 executable inside the build target. This is not always the case, especially when
 building things from scratch.</p>
-<h2 id="example-1"><a class="header" href="#example-1">Example</a></h2>
+<h2 id="example-3"><a class="header" href="#example-3">Example</a></h2>
 <pre><code class="language-raptor">MKDIR /data
 
 MKDIR -p --chown babelfish:daemon /usr/local/translate/
@@ -1067,17 +1325,28 @@ environment:</p>
 container.</p>
 </div>
 </div>
-<p>By using <code>MOUNT</code>, targets can specify certain resources (files, directories,
-layers, etc) that should be made available when running the container.</p>
-<p>Raptor mounts are identified by a <code>name</code>, which is used when running the
-container, to declare what to mount.</p>
-<p>When running a raptor container, a mount input is specified with the <code>-M &lt;name&gt; &lt;source&gt;</code> command line option.</p>
 <div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
 <div class="admonition-title">
 <div id="admonition-tip-title">
 <p>Tip</p>
 </div>
 <a class="admonition-anchor-link" href="inst/mount.html#admonition-tip"></a>
+</div>
+<div>
+<p>See the section on <a href="inst//mount-types.html">mount types</a>.</p>
+</div>
+</div>
+<p>By using <code>MOUNT</code>, targets can specify certain resources (files, directories,
+layers, etc) that should be made available when running the container.</p>
+<p>Raptor mounts are identified by a <code>name</code>, which is used when running the
+container, to declare what to mount.</p>
+<p>When running a raptor container, a mount input is specified with the <code>-M &lt;name&gt; &lt;source&gt;</code> command line option.</p>
+<div id="admonition-tip-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-1-title">
+<div class="admonition-title">
+<div id="admonition-tip-1-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="inst/mount.html#admonition-tip-1"></a>
 </div>
 <div>
 <p>The syntax <code>-M &lt;input&gt; &lt;source&gt;</code> can be a bit unwieldy.</p>
@@ -1108,13 +1377,26 @@ CMD "du -sh /input"
 <p>As we can see, the container builds correctly, but fails because the <code>input</code>
 mount is not specified.</p>
 <p>To fix this, we specify the input mount:</p>
-<pre><code class="language-sh">sudo raptor run -I /tmp disk-usage
+<pre><code class="language-sh">sudo raptor run disk-usage -I /tmp
 [*] Completed [675DE2C3A4D8CD82] index.docker.io-library-debian-trixie
 [*] Completed [4BDD0649E00CA728] disk-usage
 128M    /input
 </code></pre>
 <p>We could have specified <code>-I /tmp</code> as <code>-M input /tmp</code>, but the short form usually
 makes the command easier to follow.</p>
+<h2 id="mount-type"><a class="header" href="#mount-type">Mount type</a></h2>
+<p>The example have just looked will probably feel familiar to Docker users, since
+it is very similar to <em>docker volumes</em>, which are also bind mounts from the host
+to the container namespace.</p>
+<p>However, Raptor mounts are more advanced than that.</p>
+<p>For example, in order to build a Debian liveboot iso, we need to provide the
+Debian <code>live-boot</code> scripts with a set of <code>squashfs</code> files, generated
+from the individual layers of one or more raptor targets.</p>
+<p>Docker does not easily provide access to container layers, as it is seen as more
+of an implementation detail.</p>
+<p>In contrast, Raptor considers layers a first-class object, and makes them
+available using the <code>MOUNT</code> instruction.</p>
+<p>To learn more about different mount types, please see the <a href="inst//mount-types.html">mount types</a> section.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-entrypoint"><a class="header" href="#instruction-entrypoint">Instruction <code>ENTRYPOINT</code></a></h1>
 <div id="admonition-build-time-instruction" class="admonition admonish-tip" role="note" aria-labelledby="admonition-build-time-instruction-title">
 <div class="admonition-title">

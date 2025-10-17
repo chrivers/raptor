@@ -201,17 +201,28 @@
 container.</p>
 </div>
 </div>
-<p>By using <code>MOUNT</code>, targets can specify certain resources (files, directories,
-layers, etc) that should be made available when running the container.</p>
-<p>Raptor mounts are identified by a <code>name</code>, which is used when running the
-container, to declare what to mount.</p>
-<p>When running a raptor container, a mount input is specified with the <code>-M &lt;name&gt; &lt;source&gt;</code> command line option.</p>
 <div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
 <div class="admonition-title">
 <div id="admonition-tip-title">
 <p>Tip</p>
 </div>
 <a class="admonition-anchor-link" href="#admonition-tip"></a>
+</div>
+<div>
+<p>See the section on <a href="/mount-types.html">mount types</a>.</p>
+</div>
+</div>
+<p>By using <code>MOUNT</code>, targets can specify certain resources (files, directories,
+layers, etc) that should be made available when running the container.</p>
+<p>Raptor mounts are identified by a <code>name</code>, which is used when running the
+container, to declare what to mount.</p>
+<p>When running a raptor container, a mount input is specified with the <code>-M &lt;name&gt; &lt;source&gt;</code> command line option.</p>
+<div id="admonition-tip-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-1-title">
+<div class="admonition-title">
+<div id="admonition-tip-1-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip-1"></a>
 </div>
 <div>
 <p>The syntax <code>-M &lt;input&gt; &lt;source&gt;</code> can be a bit unwieldy.</p>
@@ -242,13 +253,26 @@ CMD "du -sh /input"
 <p>As we can see, the container builds correctly, but fails because the <code>input</code>
 mount is not specified.</p>
 <p>To fix this, we specify the input mount:</p>
-<pre><code class="language-sh">sudo raptor run -I /tmp disk-usage
+<pre><code class="language-sh">sudo raptor run disk-usage -I /tmp
 [*] Completed [675DE2C3A4D8CD82] index.docker.io-library-debian-trixie
 [*] Completed [4BDD0649E00CA728] disk-usage
 128M    /input
 </code></pre>
 <p>We could have specified <code>-I /tmp</code> as <code>-M input /tmp</code>, but the short form usually
 makes the command easier to follow.</p>
+<h2 id="mount-type"><a class="header" href="#mount-type">Mount type</a></h2>
+<p>The example have just looked will probably feel familiar to Docker users, since
+it is very similar to <em>docker volumes</em>, which are also bind mounts from the host
+to the container namespace.</p>
+<p>However, Raptor mounts are more advanced than that.</p>
+<p>For example, in order to build a Debian liveboot iso, we need to provide the
+Debian <code>live-boot</code> scripts with a set of <code>squashfs</code> files, generated
+from the individual layers of one or more raptor targets.</p>
+<p>Docker does not easily provide access to container layers, as it is seen as more
+of an implementation detail.</p>
+<p>In contrast, Raptor considers layers a first-class object, and makes them
+available using the <code>MOUNT</code> instruction.</p>
+<p>To learn more about different mount types, please see the <a href="/mount-types.html">mount types</a> section.</p>
 
                     </main>
 
