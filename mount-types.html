@@ -194,11 +194,11 @@ the container namespace.</p>
 environment, at a specified location in the container.</p>
 <p>This is equivalent to how Docker uses volume mounts (<code>-v</code> / <code>--volume</code>).</p>
 <p>However, Raptor supports more than just mounting directories:</p>
-<div class="table-wrapper"><table><thead><tr><th>Type</th><th>Description</th><th>Access</th></tr></thead><tbody>
-<tr><td><code>MOUNT --simple ...</code></td><td>Mounts a directory from the host (default)</td><td>Read/write</td></tr>
-<tr><td><code>MOUNT --file ...</code></td><td>Mounts a single file from the host</td><td>Read/write</td></tr>
-<tr><td><code>MOUNT --layers ...</code></td><td>Mounts a view of set of layers as directories</td><td>Read-only</td></tr>
-<tr><td><code>MOUNT --overlay ...</code></td><td>Mounts a view of the sum of a set of layers</td><td>Read-only</td></tr>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Type</th><th style="text-align: left">Description</th><th style="text-align: left">Access</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>MOUNT --simple ...</code></td><td style="text-align: left">Mounts a directory from the host (default)</td><td style="text-align: left">Read/write</td></tr>
+<tr><td style="text-align: left"><code>MOUNT --file ...</code></td><td style="text-align: left">Mounts a single file from the host</td><td style="text-align: left">Read/write</td></tr>
+<tr><td style="text-align: left"><code>MOUNT --layers ...</code></td><td style="text-align: left">Mounts a view of set of layers as directories</td><td style="text-align: left">Read-only</td></tr>
+<tr><td style="text-align: left"><code>MOUNT --overlay ...</code></td><td style="text-align: left">Mounts a view of the sum of a set of layers</td><td style="text-align: left">Read-only</td></tr>
 </tbody></table>
 </div><div id="admonition-tip-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-1-title">
 <div class="admonition-title">

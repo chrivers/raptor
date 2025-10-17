@@ -405,12 +405,106 @@ layer. In Raptor, each <code>.rapt</code> file forms a new layer. <a href="#fr-l
 </ol><div style="break-before: page; page-break-before: always;"></div><h1 id="make"><a class="header" href="#make">Make</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="chapter-2"><a class="header" href="#chapter-2">Chapter 2</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="module-names"><a class="header" href="#module-names">Module names</a></h1>
-<div class="table-wrapper"><table><thead><tr><th>Type</th><th>Description</th><th>Example</th></tr></thead><tbody>
-<tr><td>Relative</td><td></td><td><code>foo.bar</code></td></tr>
-<tr><td>Absolute</td><td></td><td><code>$.foo.bar</code></td></tr>
-<tr><td>Package</td><td></td><td><code>$foo.bar</code></td></tr>
+<p>In Raptor, “module names” are the names Raptor files use to refer to other
+Raptor files.</p>
+<p>This is the case both for the <code>FROM</code> instruction (where the modules have the
+<code>.rapt</code> extension) and <code>INCLUDE</code> (<code>.rinc</code> extension).</p>
+<p>There are three types of module names; Relative, Absolute and Package names.</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Type</th><th style="text-align: left">Example</th><th>Description</th></tr></thead><tbody>
+<tr><td style="text-align: left">Relative</td><td style="text-align: left"><code>foo.bar</code></td><td>Used to refer to paths at or below the current directory</td></tr>
+<tr><td style="text-align: left">Absolute</td><td style="text-align: left"><code>$.foo.bar</code></td><td>Used to refer to paths from the root of the current package</td></tr>
+<tr><td style="text-align: left">Package</td><td style="text-align: left"><code>$foo.bar</code></td><td>Used to refer to paths in other packages</td></tr>
 </tbody></table>
-</div><div style="break-before: page; page-break-before: always;"></div><h1 id="strings"><a class="header" href="#strings">Strings</a></h1>
+</div>
+<h2 id="relative-module-names"><a class="header" href="#relative-module-names">Relative module names</a></h2>
+<p>The first, and arguably simplest form, is the <em>Relative</em> name. It is
+characterized by not having a dollar sign (<code>$</code>) in front of the first element,
+unlike the other two forms.</p>
+<p>Relative module paths form a sequence of one or more <em>elements</em>, which are the
+names between the dots (<code>.</code>).</p>
+<p>Each element before the last is viewed as a directory. The last element is the
+file name, appended with either <code>.rapt</code> for <code>FROM</code> instructions, or <code>.rinc</code> for
+<code>INCLUDE</code> instructions.</p>
+<p>In other words, <code>a.b.c.d</code> becomes <code>a/b/c/d.rapt</code> (<code>FROM</code>) or <code>a/b/c/d.rinc</code> (<code>INCLUDE</code>).</p>
+<h3 id="examples"><a class="header" href="#examples">Examples:</a></h3>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Statement</th><th style="text-align: left">Source file</th><th style="text-align: left">Resulting path</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>FROM base</code></td><td style="text-align: left"><code>target.rapt</code></td><td style="text-align: left"><code>base.rapt</code></td></tr>
+<tr><td style="text-align: left"><code>FROM base</code></td><td style="text-align: left"><code>lib/target.rapt</code></td><td style="text-align: left"><code>lib/base.rapt</code></td></tr>
+<tr><td style="text-align: left"><code>FROM utils.base</code></td><td style="text-align: left"><code>lib/target.rapt</code></td><td style="text-align: left"><code>lib/utils/base.rapt</code></td></tr>
+<tr><td style="text-align: left"><code>INCLUDE babelfish</code></td><td style="text-align: left"><code>lib/target.rapt</code></td><td style="text-align: left"><code>lib/babelfish.rinc</code></td></tr>
+<tr><td style="text-align: left"><code>INCLUDE hitchhiker.guide</code></td><td style="text-align: left"><code>lib/target.rapt</code></td><td style="text-align: left"><code>lib/hitchhiker/guide.rinc</code></td></tr>
+</tbody></table>
+</div>
+<h2 id="absolute-module-names"><a class="header" href="#absolute-module-names">Absolute module names</a></h2>
+<p>Relative module names are simple, but lack the ability to point upwards in the
+directory heirarchy.</p>
+<p>For example, suppose you want to organize a set of Raptor files like so:</p>
+<pre><code>~/project/base.rapt
+~/project/hostname.rinc
+~/project/target/common.rapt
+~/project/target/frontend.rapt
+~/project/target/database.rapt
+~/project/lib/utils/tools.rinc
+</code></pre>
+<p>The <code>base</code> layer can <code>INCLUDE hostname</code>, but the <code>frontend</code> and <code>database</code>
+targets have no way to specify they want to build <code>FROM</code> the <code>base</code> layer!</p>
+<p>This is where <em>absolute</em> module names are useful.</p>
+<p>By prefixing a name with <code>$.</code> (dollar + dot) the name refers to the root of the
+current package.</p>
+<p>We will go into more detail of what a package is, in the next section. For now,
+it is enough to know that when invoking <code>raptor</code> on a target, the root for that
+target is the directory that <code>raptor</code> was started from.</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Statement</th><th style="text-align: left">Source file</th><th style="text-align: left">Resulting path</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>FROM $.base</code></td><td style="text-align: left"><code>target/frontend.rapt</code></td><td style="text-align: left"><code>base.rapt</code></td></tr>
+<tr><td style="text-align: left"><code>FROM common</code></td><td style="text-align: left"><code>target/frontend.rapt</code></td><td style="text-align: left"><code>target/common.rapt</code></td></tr>
+<tr><td style="text-align: left"><code>FROM $.target.common</code></td><td style="text-align: left"><code>target/frontend.rapt</code></td><td style="text-align: left"><code>target/common.rapt</code></td></tr>
+<tr><td style="text-align: left"><code>INCLUDE $.lib.utils.tools</code></td><td style="text-align: left"><code>target/database.rapt</code></td><td style="text-align: left"><code>lib/utils/tools.rapt</code></td></tr>
+</tbody></table>
+</div>
+<h2 id="package-module-names"><a class="header" href="#package-module-names">Package module names</a></h2>
+<p>In the previous section, we briefly mentioned <em>packages</em>.</p>
+<p>Raptor is designed to work collaboratively, encouraging sharing of code between
+projects, and people. A Raptor package is simply a collection of useful Raptor
+files, typically distributed as a git repository.</p>
+<p>This means we need a robust way to refer to Raptor files outside of our current
+project, as well as a way to tell Raptor how to find these files.</p>
+<p>This is where <em>package</em> module names are used.</p>
+<p>First, let us take a look at how to make Raptor aware of external code
+bases. This is called <em>linking</em>, analogous to how the term is used when building
+a program from several sources.</p>
+<p>When invoking <code>raptor</code>, the <code>-L</code> option defines a linked raptor package:</p>
+<pre><code class="language-sh">sudo raptor -L name src ...
+</code></pre>
+<p>For example, imagine we are working on a web service, and we want to generate
+the deployment with Raptor. Now imagine this requires a database server, and
+that someone else is responsible for the Raptor code that controls the database.</p>
+<p>Then we might have a file layout like so:</p>
+<pre><code>~/project/web/server.rapt
+~/project/database/db-setup.rinc
+</code></pre>
+<p>We fully control <code>~/projects/web</code>, but <code>~/project/database</code> is a git repository
+we only pull changes from.</p>
+<p>We would like to <code>INCLUDE</code> the <code>db-setup</code> module, but it exists outside our own
+repository.</p>
+<p>This can be solved by declaring <code>database</code> as linked package:</p>
+<pre><code class="language-sh">$ cd ~/project/web
+$ sudo raptor build server -L database ../database
+</code></pre>
+<p>Now, we can refer to the content of <code>../database</code> by using <code>$database</code>.</p>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="module-name.html#admonition-tip"></a>
+</div>
+<div>
+<p>We don’t have to give the link the same name as the directory it refers to!</p>
+<p>If we link with <code>-L lib1 ../database</code>, we could instead refer to it as <code>$lib1.db-setup</code>.</p>
+<p>Feel free to use any link name that suits the project; the linked names have no impact outside your project.</p>
+</div>
+</div>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="strings"><a class="header" href="#strings">Strings</a></h1>
 <p>In raptor files, string values can be expressed as quoted strings, or in certain
 cases as so-called <em>barewords</em>:</p>
 <pre><code class="language-raptor">RUN echo these are barewords
@@ -449,11 +543,11 @@ intended meaning.</p>
 and is known as the <em>escape character</em>.</p>
 <p>When it is followed by certain other characters, the combined expression is
 replaced in the string:</p>
-<div class="table-wrapper"><table><thead><tr><th>Escape expression</th><th>Result</th></tr></thead><tbody>
-<tr><td><code>\\</code></td><td>A single literal backslash</td></tr>
-<tr><td><code>\n</code></td><td>Newline (as if the string continued on the next line of text)</td></tr>
-<tr><td><code>\t</code></td><td>Tabulator (useful to make tab clearly visible, and copy-paste proof)</td></tr>
-<tr><td><code>\"</code></td><td>Quote character (as opposed to ending the string)</td></tr>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Escape expression</th><th style="text-align: left">Result</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>\\</code></td><td style="text-align: left">A single literal backslash</td></tr>
+<tr><td style="text-align: left"><code>\n</code></td><td style="text-align: left">Newline (as if the string continued on the next line of text)</td></tr>
+<tr><td style="text-align: left"><code>\t</code></td><td style="text-align: left">Tabulator (useful to make tab clearly visible, and copy-paste proof)</td></tr>
+<tr><td style="text-align: left"><code>\"</code></td><td style="text-align: left">Quote character (as opposed to ending the string)</td></tr>
 </tbody></table>
 </div>
 <p>A backslash followed by any other character will result in a parse error.</p>
@@ -475,9 +569,9 @@ literal backslashes <em>must</em> themselves be escaped, by adding another backs
 that can be specified when using the <code>INCLUDE</code> and <code>RENDER</code> instructions.</p>
 <h2 id="booleans"><a class="header" href="#booleans">Booleans</a></h2>
 <p>Boolean values work identically to json (and many other languages):</p>
-<div class="table-wrapper"><table><thead><tr><th>Literal</th><th>Value</th></tr></thead><tbody>
-<tr><td><code>true</code></td><td>true</td></tr>
-<tr><td><code>false</code></td><td>false</td></tr>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Literal</th><th style="text-align: left">Value</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>true</code></td><td style="text-align: left">true</td></tr>
+<tr><td style="text-align: left"><code>false</code></td><td style="text-align: left">false</td></tr>
 </tbody></table>
 </div>
 <h2 id="integers"><a class="header" href="#integers">Integers</a></h2>
@@ -588,12 +682,12 @@ For example, <code>755</code> and <code>0755</code> represent the same permissio
 </div>
 <h2 id="change-owner---chown-owner"><a class="header" href="#change-owner---chown-owner">Change owner: <code>--chown &lt;owner&gt;</code></a></h2>
 <p>The <code>--chown</code> option specifies the user and/or group to own the file.</p>
-<div class="table-wrapper"><table><thead><tr><th>Input</th><th>User</th><th>Group</th></tr></thead><tbody>
-<tr><td><code>user</code></td><td><code>user</code></td><td>(no change)</td></tr>
-<tr><td><code>:</code></td><td>(no change)</td><td>(no change)</td></tr>
-<tr><td><code>:group</code></td><td>(no change)</td><td><code>group</code></td></tr>
-<tr><td><code>user:group</code></td><td><code>user</code></td><td><code>group</code></td></tr>
-<tr><td><code>user:</code></td><td><code>user</code></td><td><code>user</code> (!)</td></tr>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Input</th><th style="text-align: left">User</th><th style="text-align: left">Group</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>user</code></td><td style="text-align: left"><code>user</code></td><td style="text-align: left">(no change)</td></tr>
+<tr><td style="text-align: left"><code>:</code></td><td style="text-align: left">(no change)</td><td style="text-align: left">(no change)</td></tr>
+<tr><td style="text-align: left"><code>:group</code></td><td style="text-align: left">(no change)</td><td style="text-align: left"><code>group</code></td></tr>
+<tr><td style="text-align: left"><code>user:group</code></td><td style="text-align: left"><code>user</code></td><td style="text-align: left"><code>group</code></td></tr>
+<tr><td style="text-align: left"><code>user:</code></td><td style="text-align: left"><code>user</code></td><td style="text-align: left"><code>user</code> (!)</td></tr>
 </tbody></table>
 </div><div id="admonition-important-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-1-title">
 <div class="admonition-title">
@@ -653,11 +747,11 @@ the container namespace.</p>
 environment, at a specified location in the container.</p>
 <p>This is equivalent to how Docker uses volume mounts (<code>-v</code> / <code>--volume</code>).</p>
 <p>However, Raptor supports more than just mounting directories:</p>
-<div class="table-wrapper"><table><thead><tr><th>Type</th><th>Description</th><th>Access</th></tr></thead><tbody>
-<tr><td><code>MOUNT --simple ...</code></td><td>Mounts a directory from the host (default)</td><td>Read/write</td></tr>
-<tr><td><code>MOUNT --file ...</code></td><td>Mounts a single file from the host</td><td>Read/write</td></tr>
-<tr><td><code>MOUNT --layers ...</code></td><td>Mounts a view of set of layers as directories</td><td>Read-only</td></tr>
-<tr><td><code>MOUNT --overlay ...</code></td><td>Mounts a view of the sum of a set of layers</td><td>Read-only</td></tr>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Type</th><th style="text-align: left">Description</th><th style="text-align: left">Access</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>MOUNT --simple ...</code></td><td style="text-align: left">Mounts a directory from the host (default)</td><td style="text-align: left">Read/write</td></tr>
+<tr><td style="text-align: left"><code>MOUNT --file ...</code></td><td style="text-align: left">Mounts a single file from the host</td><td style="text-align: left">Read/write</td></tr>
+<tr><td style="text-align: left"><code>MOUNT --layers ...</code></td><td style="text-align: left">Mounts a view of set of layers as directories</td><td style="text-align: left">Read-only</td></tr>
+<tr><td style="text-align: left"><code>MOUNT --overlay ...</code></td><td style="text-align: left">Mounts a view of the sum of a set of layers</td><td style="text-align: left">Read-only</td></tr>
 </tbody></table>
 </div><div id="admonition-tip-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-1-title">
 <div class="admonition-title">
@@ -912,9 +1006,9 @@ is building from an empty base, with no dependencies.</p>
 <p>Multiple <code>FROM</code> instructions are <strong>not supported</strong>.</p>
 <h2 id="from-sources"><a class="header" href="#from-sources">From sources</a></h2>
 <p>Raptor supports multiple options for <code>from-source</code>:</p>
-<div class="table-wrapper"><table><thead><tr><th>Type</th><th>Schema</th><th>Example</th></tr></thead><tbody>
-<tr><td>Raptor</td><td><code>&lt;none&gt;</code></td><td><code>FROM library.base</code></td></tr>
-<tr><td>Docker</td><td><code>docker://</code></td><td><code>FROM docker://debian:trixie</code></td></tr>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Type</th><th style="text-align: left">Schema</th><th style="text-align: left">Example</th></tr></thead><tbody>
+<tr><td style="text-align: left">Raptor</td><td style="text-align: left"><code>&lt;none&gt;</code></td><td style="text-align: left"><code>FROM library.base</code></td></tr>
+<tr><td style="text-align: left">Docker</td><td style="text-align: left"><code>docker://</code></td><td style="text-align: left"><code>FROM docker://debian:trixie</code></td></tr>
 </tbody></table>
 </div>
 <h3 id="raptor-sources"><a class="header" href="#raptor-sources">Raptor sources</a></h3>
@@ -938,7 +1032,7 @@ FROM base
 <p>However, unlike docker files, raptor can point to raptor files in other
 directories, or even other packages. See <a href="inst//module-name.html">module names</a> for an
 overview.</p>
-<h4 id="examples"><a class="header" href="#examples">Examples</a></h4>
+<h4 id="examples-1"><a class="header" href="#examples-1">Examples</a></h4>
 <pre><code class="language-raptor"># This will depend on `base.rapt`
 FROM base
 </code></pre>
@@ -1208,12 +1302,12 @@ MKDIR -p --chown babelfish:daemon /usr/local/translate/
 <p>The <code>COPY</code> instruction takes one or more source files, and copies them to the
 destination.</p>
 <p>If multiple source files are specified, the destination MUST BE a directory.</p>
-<div class="table-wrapper"><table><thead><tr><th>Input</th><th>Destination</th><th>Result</th></tr></thead><tbody>
-<tr><td>Single file</td><td>File</td><td>File written with destination filename</td></tr>
-<tr><td>Single file</td><td>Directory</td><td>File written to destination dir, with source filename</td></tr>
-<tr><td>Multiple files</td><td>File</td><td><em><strong>Error</strong></em></td></tr>
-<tr><td>Multiple files</td><td>Directory</td><td>Files written to destination dir, with original filename</td></tr>
-<tr><td>Directory</td><td>Any</td><td><em><strong>Not yet supported</strong></em></td></tr>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Input</th><th style="text-align: left">Destination</th><th style="text-align: left">Result</th></tr></thead><tbody>
+<tr><td style="text-align: left">Single file</td><td style="text-align: left">File</td><td style="text-align: left">File written with destination filename</td></tr>
+<tr><td style="text-align: left">Single file</td><td style="text-align: left">Directory</td><td style="text-align: left">File written to destination dir, with source filename</td></tr>
+<tr><td style="text-align: left">Multiple files</td><td style="text-align: left">File</td><td style="text-align: left"><em><strong>Error</strong></em></td></tr>
+<tr><td style="text-align: left">Multiple files</td><td style="text-align: left">Directory</td><td style="text-align: left">Files written to destination dir, with original filename</td></tr>
+<tr><td style="text-align: left">Directory</td><td style="text-align: left">Any</td><td style="text-align: left"><em><strong>Not yet supported</strong></em></td></tr>
 </tbody></table>
 </div><div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-include"><a class="header" href="#instruction-include">Instruction <code>INCLUDE</code></a></h1>
 <div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
@@ -1351,10 +1445,10 @@ container, to declare what to mount.</p>
 <div>
 <p>The syntax <code>-M &lt;input&gt; &lt;source&gt;</code> can be a bit unwieldy.</p>
 <p>Since certain mount names are very common, they have a shorter syntax available:</p>
-<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Long form</th><th>Short form</th></tr></thead><tbody>
-<tr><td>Input</td><td><code>-M input &lt;foo&gt;</code></td><td><code>-I &lt;foo&gt;</code></td></tr>
-<tr><td>Output</td><td><code>-M output &lt;foo&gt;</code></td><td><code>-O &lt;foo&gt;</code></td></tr>
-<tr><td>Cache</td><td><code>-M cache &lt;foo&gt;</code></td><td><code>-C &lt;foo&gt;</code></td></tr>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Long form</th><th style="text-align: left">Short form</th></tr></thead><tbody>
+<tr><td style="text-align: left">Input</td><td style="text-align: left"><code>-M input &lt;foo&gt;</code></td><td style="text-align: left"><code>-I &lt;foo&gt;</code></td></tr>
+<tr><td style="text-align: left">Output</td><td style="text-align: left"><code>-M output &lt;foo&gt;</code></td><td style="text-align: left"><code>-O &lt;foo&gt;</code></td></tr>
+<tr><td style="text-align: left">Cache</td><td style="text-align: left"><code>-M cache &lt;foo&gt;</code></td><td style="text-align: left"><code>-C &lt;foo&gt;</code></td></tr>
 </tbody></table>
 </div></div>
 </div>
