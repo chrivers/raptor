@@ -177,6 +177,78 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="instruction-mount"><a class="header" href="#instruction-mount">Instruction <code>MOUNT</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-summary"></a>
+</div>
+<div>
+<pre><code class="language-raptor">MOUNT [--&lt;mount-type&gt;] &lt;name&gt; &lt;destination&gt;
+</code></pre>
+</div>
+</div>
+<div id="admonition-build-time-instruction" class="admonition admonish-tip" role="note" aria-labelledby="admonition-build-time-instruction-title">
+<div class="admonition-title">
+<div id="admonition-build-time-instruction-title">
+<p>Build-time instruction</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-build-time-instruction"></a>
+</div>
+<div>
+<p>The <code>MOUNT</code> instructions only affects <em>running</em> a container, not <em>building</em> a
+container.</p>
+</div>
+</div>
+<p>By using <code>MOUNT</code>, targets can specify certain resources (files, directories,
+layers, etc) that should be made available when running the container.</p>
+<p>Raptor mounts are identified by a <code>name</code>, which is used when running the
+container, to declare what to mount.</p>
+<p>When running a raptor container, a mount input is specified with the <code>-M &lt;name&gt; &lt;source&gt;</code> command line option.</p>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip"></a>
+</div>
+<div>
+<p>The syntax <code>-M &lt;input&gt; &lt;source&gt;</code> can be a bit unwieldy.</p>
+<p>Since certain mount names are very common, they have a shorter syntax available:</p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Long form</th><th>Short form</th></tr></thead><tbody>
+<tr><td>Input</td><td><code>-M input &lt;foo&gt;</code></td><td><code>-I &lt;foo&gt;</code></td></tr>
+<tr><td>Output</td><td><code>-M output &lt;foo&gt;</code></td><td><code>-O &lt;foo&gt;</code></td></tr>
+<tr><td>Cache</td><td><code>-M cache &lt;foo&gt;</code></td><td><code>-C &lt;foo&gt;</code></td></tr>
+</tbody></table>
+</div></div>
+</div>
+<p>For example, suppose we have a simple container (<code>disk-usage.rapt</code>) that just
+calculates the disk space used by a mount:</p>
+<pre><code class="language-raptor">FROM docker://debian:trixie
+
+# Declare the mount "input", and place it at /input
+MOUNT input /input
+
+# Calculate the disk space used in /input
+CMD "du -sh /input"
+</code></pre>
+<p>If we try to run this, we will get an error message:</p>
+<pre><code class="language-sh">$ sudo raptor run disk-usage
+[*] Completed [675DE2C3A4D8CD82] index.docker.io-library-debian-trixie
+[*] Completed [A24E97B01374CFEF] disk-usage
+[E] Raptor failed: Required mount [input] not specified
+</code></pre>
+<p>As we can see, the container builds correctly, but fails because the <code>input</code>
+mount is not specified.</p>
+<p>To fix this, we specify the input mount:</p>
+<pre><code class="language-sh">sudo raptor run -I /tmp disk-usage
+[*] Completed [675DE2C3A4D8CD82] index.docker.io-library-debian-trixie
+[*] Completed [4BDD0649E00CA728] disk-usage
+128M    /input
+</code></pre>
+<p>We could have specified <code>-I /tmp</code> as <code>-M input /tmp</code>, but the short form usually
+makes the command easier to follow.</p>
 
                     </main>
 

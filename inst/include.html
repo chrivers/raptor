@@ -177,14 +177,39 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="instruction-include"><a class="header" href="#instruction-include">Instruction <code>INCLUDE</code></a></h1>
-<pre><code class="language-raptor">INCLUDE &lt;filename&gt; [...&lt;key&gt;=&lt;value&gt;]
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-summary"></a>
+</div>
+<div>
+<pre><code class="language-raptor">INCLUDE &lt;module-name&gt; [...&lt;key&gt;=&lt;value&gt;]
 </code></pre>
-<p>The <code>INCLUDE</code> instruction calls on another Raptor file (<code>.rinc</code>) to be
-executed. When <code>INCLUDE</code>ing files, any number of local variables can be passed
+</div>
+</div>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip"></a>
+</div>
+<div>
+<p>See the section on <a href="/module-name.html">module names</a>.</p>
+</div>
+</div>
+<p>The <code>INCLUDE</code> instruction points to a Raptor include file (<code>.rinc</code>) to be
+executed. When using <code>INCLUDE</code>, any number of local variables can be passed
 to the included target.</p>
-<p>For example, if we have previously made the file <code>lib/install-utils</code> that
+<p>For example, if we have previously made the file <code>lib/install-utils.rinc</code> that
 installs some useful programs, we can use that file in build targets:</p>
-<pre><code class="language-raptor">INCLUDE lib.install-base-utils
+<pre><code class="language-raptor"># Note: We use module name notation when including files
+#
+# The file is called `lib/install-utils.rinc`, which makes
+#    the module name `lib.install-utils`
+INCLUDE lib.install-utils
 </code></pre>
 <p>We can also make the component accept parameters, to make powerful, flexible
 components:</p>
@@ -193,12 +218,12 @@ INCLUDE lib.set-hostname hostname="server1"
 </code></pre>
 <p>In the above example, we set the hostname of a server using an included
 component.</p>
-<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div id="admonition-tip-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-1-title">
 <div class="admonition-title">
-<div id="admonition-tip-title">
+<div id="admonition-tip-1-title">
 <p>Tip</p>
 </div>
-<a class="admonition-anchor-link" href="#admonition-tip"></a>
+<a class="admonition-anchor-link" href="#admonition-tip-1"></a>
 </div>
 <div>
 <p>Since all values have to be specified as <code>key=value</code>, we might end up passing

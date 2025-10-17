@@ -177,8 +177,9 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="file-options"><a class="header" href="#file-options">File options</a></h1>
-<p>Several instructions (<code>COPY</code>, <code>WRITE</code>, <code>RENDER</code>) write files into the build
-target. They all supports common options that affect how the files are written.</p>
+<p>Several instructions (<code>COPY</code>, <code>WRITE</code>, <code>RENDER</code>, <code>MKDIR</code>) write files into the
+build target. They all supports common options that affect how the files are
+written.</p>
 <div id="admonition-important" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-title">
 <div class="admonition-title">
 <div id="admonition-important-title">
@@ -187,12 +188,12 @@ target. They all supports common options that affect how the files are written.<
 <a class="admonition-anchor-link" href="#admonition-important"></a>
 </div>
 <div>
-<p>These file options must immediately follow the instruction (i.e. before the
+<p>File options must be specified after the instruction (i.e. before
 source or destination path)</p>
 </div>
 </div>
 <h2 id="change-mode---chmod-mode"><a class="header" href="#change-mode---chmod-mode">Change mode: <code>--chmod &lt;mode&gt;</code></a></h2>
-<p>The <code>--chmod</code> option specifies the mode bits (e.g. permissions) associated with
+<p>The <code>--chmod</code> option specifies the mode bits (i.e. permissions) associated with
 the file. The <code>mode</code> is specified as 3 or 4 octal digits.</p>
 <p>Examples:</p>
 <pre><code class="language-raptor"># these are equivalent:

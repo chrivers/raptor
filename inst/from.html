@@ -177,16 +177,30 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="instruction-from"><a class="header" href="#instruction-from">Instruction: <code>FROM</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-summary"></a>
+</div>
+<div>
 <pre><code class="language-nginx">FROM [&lt;schema&gt;://]&lt;from-source&gt;
 </code></pre>
+</div>
+</div>
 <p>The <code>FROM</code> instruction bases the current layer on top of some the specified layer.</p>
-<p>Unlike Docker, multiple types of <code>from-source</code> are supported:</p>
+<p>This instruction is <em>not</em> required. If no <code>FROM</code> instruction is used, the target
+is building from an empty base, with no dependencies.</p>
+<p>Multiple <code>FROM</code> instructions are <strong>not supported</strong>.</p>
+<h2 id="from-sources"><a class="header" href="#from-sources">From sources</a></h2>
+<p>Raptor supports multiple options for <code>from-source</code>:</p>
 <div class="table-wrapper"><table><thead><tr><th>Type</th><th>Schema</th><th>Example</th></tr></thead><tbody>
 <tr><td>Raptor</td><td><code>&lt;none&gt;</code></td><td><code>FROM library.base</code></td></tr>
 <tr><td>Docker</td><td><code>docker://</code></td><td><code>FROM docker://debian:trixie</code></td></tr>
 </tbody></table>
 </div>
-<h2 id="raptor-sources"><a class="header" href="#raptor-sources">Raptor sources</a></h2>
+<h3 id="raptor-sources"><a class="header" href="#raptor-sources">Raptor sources</a></h3>
 <p>When no schema is specified, the <code>from-source</code> is assumed to be the <a href="/module-name.html">module
 name</a> of another raptor layer.</p>
 <div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
@@ -207,14 +221,14 @@ FROM base
 <p>However, unlike docker files, raptor can point to raptor files in other
 directories, or even other packages. See <a href="/module-name.html">module names</a> for an
 overview.</p>
-<h3 id="examples"><a class="header" href="#examples">Examples</a></h3>
+<h4 id="examples"><a class="header" href="#examples">Examples</a></h4>
 <pre><code class="language-raptor"># This will depend on `base.rapt`
 FROM base
 </code></pre>
 <pre><code class="language-raptor"># This will depend on `library/debian.rapt`
 FROM library.debian
 </code></pre>
-<h2 id="docker-sources"><a class="header" href="#docker-sources">Docker sources</a></h2>
+<h3 id="docker-sources"><a class="header" href="#docker-sources">Docker sources</a></h3>
 <p>To use a docker image as the basis for a raptor layer, specify the name of the
 docker image, prefixed with <code>docker://</code>, e.g:</p>
 <pre><code class="language-raptor">FROM docker://debian:trixie

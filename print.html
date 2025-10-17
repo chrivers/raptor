@@ -544,8 +544,9 @@ comma after the last key-value pair.</p>
 </div>
 </div>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="file-options"><a class="header" href="#file-options">File options</a></h1>
-<p>Several instructions (<code>COPY</code>, <code>WRITE</code>, <code>RENDER</code>) write files into the build
-target. They all supports common options that affect how the files are written.</p>
+<p>Several instructions (<code>COPY</code>, <code>WRITE</code>, <code>RENDER</code>, <code>MKDIR</code>) write files into the
+build target. They all supports common options that affect how the files are
+written.</p>
 <div id="admonition-important" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-title">
 <div class="admonition-title">
 <div id="admonition-important-title">
@@ -554,12 +555,12 @@ target. They all supports common options that affect how the files are written.<
 <a class="admonition-anchor-link" href="file-options.html#admonition-important"></a>
 </div>
 <div>
-<p>These file options must immediately follow the instruction (i.e. before the
+<p>File options must be specified after the instruction (i.e. before
 source or destination path)</p>
 </div>
 </div>
 <h2 id="change-mode---chmod-mode"><a class="header" href="#change-mode---chmod-mode">Change mode: <code>--chmod &lt;mode&gt;</code></a></h2>
-<p>The <code>--chmod</code> option specifies the mode bits (e.g. permissions) associated with
+<p>The <code>--chmod</code> option specifies the mode bits (i.e. permissions) associated with
 the file. The <code>mode</code> is specified as 3 or 4 octal digits.</p>
 <p>Examples:</p>
 <pre><code class="language-raptor"># these are equivalent:
@@ -635,16 +636,30 @@ MKDIR /foo/bar
 MKDIR -p /foo/bar
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-from"><a class="header" href="#instruction-from">Instruction: <code>FROM</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="inst/from.html#admonition-summary"></a>
+</div>
+<div>
 <pre><code class="language-nginx">FROM [&lt;schema&gt;://]&lt;from-source&gt;
 </code></pre>
+</div>
+</div>
 <p>The <code>FROM</code> instruction bases the current layer on top of some the specified layer.</p>
-<p>Unlike Docker, multiple types of <code>from-source</code> are supported:</p>
+<p>This instruction is <em>not</em> required. If no <code>FROM</code> instruction is used, the target
+is building from an empty base, with no dependencies.</p>
+<p>Multiple <code>FROM</code> instructions are <strong>not supported</strong>.</p>
+<h2 id="from-sources"><a class="header" href="#from-sources">From sources</a></h2>
+<p>Raptor supports multiple options for <code>from-source</code>:</p>
 <div class="table-wrapper"><table><thead><tr><th>Type</th><th>Schema</th><th>Example</th></tr></thead><tbody>
 <tr><td>Raptor</td><td><code>&lt;none&gt;</code></td><td><code>FROM library.base</code></td></tr>
 <tr><td>Docker</td><td><code>docker://</code></td><td><code>FROM docker://debian:trixie</code></td></tr>
 </tbody></table>
 </div>
-<h2 id="raptor-sources"><a class="header" href="#raptor-sources">Raptor sources</a></h2>
+<h3 id="raptor-sources"><a class="header" href="#raptor-sources">Raptor sources</a></h3>
 <p>When no schema is specified, the <code>from-source</code> is assumed to be the <a href="inst//module-name.html">module
 name</a> of another raptor layer.</p>
 <div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
@@ -665,14 +680,14 @@ FROM base
 <p>However, unlike docker files, raptor can point to raptor files in other
 directories, or even other packages. See <a href="inst//module-name.html">module names</a> for an
 overview.</p>
-<h3 id="examples"><a class="header" href="#examples">Examples</a></h3>
+<h4 id="examples"><a class="header" href="#examples">Examples</a></h4>
 <pre><code class="language-raptor"># This will depend on `base.rapt`
 FROM base
 </code></pre>
 <pre><code class="language-raptor"># This will depend on `library/debian.rapt`
 FROM library.debian
 </code></pre>
-<h2 id="docker-sources"><a class="header" href="#docker-sources">Docker sources</a></h2>
+<h3 id="docker-sources"><a class="header" href="#docker-sources">Docker sources</a></h3>
 <p>To use a docker image as the basis for a raptor layer, specify the name of the
 docker image, prefixed with <code>docker://</code>, e.g:</p>
 <pre><code class="language-raptor">FROM docker://debian:trixie
@@ -693,8 +708,18 @@ surprisingly intricate syntax.</p>
 <p>Raptor supports the entire grammar for docker references, so anything that
 <code>docker pull</code> will accept, should work with <code>FROM docker://</code> in raptor.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-run"><a class="header" href="#instruction-run">Instruction <code>RUN</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="inst/run.html#admonition-summary"></a>
+</div>
+<div>
 <pre><code class="language-raptor">RUN &lt;command&gt; [...&lt;arg&gt;]
 </code></pre>
+</div>
+</div>
 <p>The <code>RUN</code> instruction executes the given command inside the build namespace.</p>
 <pre><code class="language-raptor"># enable the foo service
 RUN systemctl enable foo.service
@@ -722,8 +747,18 @@ RUN cat /etc/hostname "|" md5sum
 RUN /bin/sh -c "cat /etc/hostname | md5sum"
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-env"><a class="header" href="#instruction-env">Instruction <code>ENV</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="inst/env.html#admonition-summary"></a>
+</div>
+<div>
 <pre><code class="language-raptor">ENV &lt;key&gt;=&lt;value&gt; [...&lt;key=value&gt;]
 </code></pre>
+</div>
+</div>
 <p>The <code>ENV</code> instruction sets one or more environment variables inside the build namespace.</p>
 <div id="admonition-important" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-title">
 <div class="admonition-title">
@@ -752,10 +787,18 @@ ENV HITCHHIKER="Ford Prefect"
 RUN sh -c "echo $HITCHHIKER" # outputs "Ford Prefect"
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-workdir"><a class="header" href="#instruction-workdir">Instruction <code>WORKDIR</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="inst/workdir.html#admonition-summary"></a>
+</div>
+<div>
 <pre><code class="language-raptor">WORKDIR &lt;path&gt;
 </code></pre>
-<p>The <code>WORKDIR</code> instruction changes the current working directory inside the build
-namespace. This affects all relative destination paths, as well as <code>RUN</code>:</p>
+</div>
+</div>
 <div id="admonition-important" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-title">
 <div class="admonition-title">
 <div id="admonition-important-title">
@@ -768,28 +811,47 @@ namespace. This affects all relative destination paths, as well as <code>RUN</co
 a container.</p>
 </div>
 </div>
-<pre><code class="language-raptor"># This will copy "program" to "/bin/program" (initial directory is "/")
+<p>The <code>WORKDIR</code> instruction changes the current working directory inside the build
+namespace. This affects all subsequent relative paths, including the <code>RUN</code>
+instruction.</p>
+<p>The workdir is <strong>not</strong> inherited through <code>FROM</code>.</p>
+<p>The initial workdir is always <code>/</code>.</p>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<pre><code class="language-raptor"># This will copy "program" to "/bin/program" (since initial directory is "/")
 COPY program bin/program
 
+# This creates /foo
+RUN /bin/sh -c "touch foo"
+
+
+
+# Switch to /usr
 WORKDIR /usr
 
 # The same command will now copy "program" to "/usr/bin/program"
 COPY program bin/program
 
+
+
+# Switch to /tmp
 WORKDIR /tmp
 
 # This creates /tmp/foo
 RUN /bin/sh -c "touch foo"
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-write"><a class="header" href="#instruction-write">Instruction <code>WRITE</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="inst/write.html#admonition-summary"></a>
+</div>
+<div>
 <pre><code class="language-raptor">WRITE [&lt;file-options&gt;] &lt;value&gt; &lt;path&gt;
 </code></pre>
-<p>The <code>WRITE</code> instruction writes a fixed string to the given path.</p>
-<p>A file can be added to the build output with <code>COPY</code>, but sometimes we just need
-to write a short value, and <code>COPY</code> might feel like overkill.</p>
-<p>Using <code>WRITE</code>, we can put values directly into files:</p>
-<pre><code class="language-raptor">WRITE "hello world" hello.txt
-</code></pre>
+</div>
+</div>
 <div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
 <div class="admonition-title">
 <div id="admonition-tip-title">
@@ -798,8 +860,26 @@ to write a short value, and <code>COPY</code> might feel like overkill.</p>
 <a class="admonition-anchor-link" href="inst/write.html#admonition-tip"></a>
 </div>
 <div>
+<p>See the section on <a href="inst//file-options.html">file options</a>.</p>
+</div>
+</div>
+<p>The <code>WRITE</code> instruction writes a fixed string to the given path.</p>
+<p>A file can be added to the build output with <code>COPY</code>, but sometimes we just need
+to write a short value, and <code>COPY</code> might feel like overkill.</p>
+<p>Using <code>WRITE</code>, we can put values directly into files:</p>
+<pre><code class="language-raptor">WRITE "hello world" hello.txt
+</code></pre>
+<div id="admonition-tip-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-1-title">
+<div class="admonition-title">
+<div id="admonition-tip-1-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="inst/write.html#admonition-tip-1"></a>
+</div>
+<div>
 <p>Be aware that <code>WRITE</code> does not add a newline at the end of your input.</p>
-<p>To end the file in a line break, add <code>\n</code> at the end of the quoted string:</p>
+<p>For text files, it is almost always preferred to end with a newline.</p>
+<p>To do this, add <code>\n</code> at the end of the quoted string:</p>
 <pre><code class="language-raptor">WRITE "hostname\n" /etc/hostname
 </code></pre>
 </div>
@@ -808,9 +888,54 @@ to write a short value, and <code>COPY</code> might feel like overkill.</p>
 <pre><code class="language-raptor">WRITE --chmod 0600 --chown service:root "API-TOKEN" /etc/service/token.conf
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-mkdir"><a class="header" href="#instruction-mkdir">Instruction <code>MKDIR</code></a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-copy"><a class="header" href="#instruction-copy">Instruction <code>COPY</code></a></h1>
-<pre><code class="language-nginx">COPY [&lt;file-options&gt;] &lt;source&gt; [...&lt;source&gt;] &lt;destination&gt;
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="inst/mkdir.html#admonition-summary"></a>
+</div>
+<div>
+<pre><code class="language-raptor">MKDIR [&lt;file-options&gt;] &lt;path&gt;
 </code></pre>
+</div>
+</div>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="inst/mkdir.html#admonition-tip"></a>
+</div>
+<div>
+<p>See the section on <a href="inst//file-options.html">file options</a>.</p>
+</div>
+</div>
+<p>The <code>MKDIR</code> instruction creates an empty directory inside the build target.</p>
+<p>This is roughly equivalent to the following command:</p>
+<pre><code class="language-raptor">RUN mkdir /foo
+</code></pre>
+<p>However, using <code>RUN mkdir</code> requires the <code>mkdir</code> command to be available and
+executable inside the build target. This is not always the case, especially when
+building things from scratch.</p>
+<h2 id="example-1"><a class="header" href="#example-1">Example</a></h2>
+<pre><code class="language-raptor">MKDIR /data
+
+MKDIR -p --chown babelfish:daemon /usr/local/translate/
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-copy"><a class="header" href="#instruction-copy">Instruction <code>COPY</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="inst/copy.html#admonition-summary"></a>
+</div>
+<div>
+<pre><code class="language-raptor">COPY [&lt;file-options&gt;] &lt;source&gt; [...&lt;source&gt;] &lt;destination&gt;
+</code></pre>
+</div>
+</div>
 <div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
 <div class="admonition-title">
 <div id="admonition-tip-title">
@@ -830,17 +955,42 @@ destination.</p>
 <tr><td>Single file</td><td>Directory</td><td>File written to destination dir, with source filename</td></tr>
 <tr><td>Multiple files</td><td>File</td><td><em><strong>Error</strong></em></td></tr>
 <tr><td>Multiple files</td><td>Directory</td><td>Files written to destination dir, with original filename</td></tr>
-<tr><td>Directory</td><td>Any</td><td><em><strong>Error</strong></em>: Not yet supported</td></tr>
+<tr><td>Directory</td><td>Any</td><td><em><strong>Not yet supported</strong></em></td></tr>
 </tbody></table>
 </div><div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-include"><a class="header" href="#instruction-include">Instruction <code>INCLUDE</code></a></h1>
-<pre><code class="language-raptor">INCLUDE &lt;filename&gt; [...&lt;key&gt;=&lt;value&gt;]
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="inst/include.html#admonition-summary"></a>
+</div>
+<div>
+<pre><code class="language-raptor">INCLUDE &lt;module-name&gt; [...&lt;key&gt;=&lt;value&gt;]
 </code></pre>
-<p>The <code>INCLUDE</code> instruction calls on another Raptor file (<code>.rinc</code>) to be
-executed. When <code>INCLUDE</code>ing files, any number of local variables can be passed
+</div>
+</div>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="inst/include.html#admonition-tip"></a>
+</div>
+<div>
+<p>See the section on <a href="inst//module-name.html">module names</a>.</p>
+</div>
+</div>
+<p>The <code>INCLUDE</code> instruction points to a Raptor include file (<code>.rinc</code>) to be
+executed. When using <code>INCLUDE</code>, any number of local variables can be passed
 to the included target.</p>
-<p>For example, if we have previously made the file <code>lib/install-utils</code> that
+<p>For example, if we have previously made the file <code>lib/install-utils.rinc</code> that
 installs some useful programs, we can use that file in build targets:</p>
-<pre><code class="language-raptor">INCLUDE lib.install-base-utils
+<pre><code class="language-raptor"># Note: We use module name notation when including files
+#
+# The file is called `lib/install-utils.rinc`, which makes
+#    the module name `lib.install-utils`
+INCLUDE lib.install-utils
 </code></pre>
 <p>We can also make the component accept parameters, to make powerful, flexible
 components:</p>
@@ -849,12 +999,12 @@ INCLUDE lib.set-hostname hostname="server1"
 </code></pre>
 <p>In the above example, we set the hostname of a server using an included
 component.</p>
-<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div id="admonition-tip-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-1-title">
 <div class="admonition-title">
-<div id="admonition-tip-title">
+<div id="admonition-tip-1-title">
 <p>Tip</p>
 </div>
-<a class="admonition-anchor-link" href="inst/include.html#admonition-tip"></a>
+<a class="admonition-anchor-link" href="inst/include.html#admonition-tip-1"></a>
 </div>
 <div>
 <p>Since all values have to be specified as <code>key=value</code>, we might end up passing
@@ -869,8 +1019,18 @@ the middle:</p>
 </div>
 </div>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-render"><a class="header" href="#instruction-render">Instruction <code>RENDER</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="inst/render.html#admonition-summary"></a>
+</div>
+<div>
 <pre><code class="language-raptor">RENDER [&lt;file-options&gt;] &lt;source&gt; &lt;destination&gt; [...&lt;include-arg&gt;]
 </code></pre>
+</div>
+</div>
 <p>The <code>RENDER</code> instruction renders a file from a template, and writes it to the
 specified destination. It accepts the same <code>key=value</code> arguments as
 <code>INCLUDE</code>. These arguments are made available in the template.</p>
@@ -883,8 +1043,104 @@ environment:</p>
 <pre><code class="language-raptor">RENDER widgetfactory.tmpl /etc/widgetd/server.conf host port
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-mount"><a class="header" href="#instruction-mount">Instruction <code>MOUNT</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="inst/mount.html#admonition-summary"></a>
+</div>
+<div>
+<pre><code class="language-raptor">MOUNT [--&lt;mount-type&gt;] &lt;name&gt; &lt;destination&gt;
+</code></pre>
+</div>
+</div>
+<div id="admonition-build-time-instruction" class="admonition admonish-tip" role="note" aria-labelledby="admonition-build-time-instruction-title">
+<div class="admonition-title">
+<div id="admonition-build-time-instruction-title">
+<p>Build-time instruction</p>
+</div>
+<a class="admonition-anchor-link" href="inst/mount.html#admonition-build-time-instruction"></a>
+</div>
+<div>
+<p>The <code>MOUNT</code> instructions only affects <em>running</em> a container, not <em>building</em> a
+container.</p>
+</div>
+</div>
+<p>By using <code>MOUNT</code>, targets can specify certain resources (files, directories,
+layers, etc) that should be made available when running the container.</p>
+<p>Raptor mounts are identified by a <code>name</code>, which is used when running the
+container, to declare what to mount.</p>
+<p>When running a raptor container, a mount input is specified with the <code>-M &lt;name&gt; &lt;source&gt;</code> command line option.</p>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="inst/mount.html#admonition-tip"></a>
+</div>
+<div>
+<p>The syntax <code>-M &lt;input&gt; &lt;source&gt;</code> can be a bit unwieldy.</p>
+<p>Since certain mount names are very common, they have a shorter syntax available:</p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Long form</th><th>Short form</th></tr></thead><tbody>
+<tr><td>Input</td><td><code>-M input &lt;foo&gt;</code></td><td><code>-I &lt;foo&gt;</code></td></tr>
+<tr><td>Output</td><td><code>-M output &lt;foo&gt;</code></td><td><code>-O &lt;foo&gt;</code></td></tr>
+<tr><td>Cache</td><td><code>-M cache &lt;foo&gt;</code></td><td><code>-C &lt;foo&gt;</code></td></tr>
+</tbody></table>
+</div></div>
+</div>
+<p>For example, suppose we have a simple container (<code>disk-usage.rapt</code>) that just
+calculates the disk space used by a mount:</p>
+<pre><code class="language-raptor">FROM docker://debian:trixie
+
+# Declare the mount "input", and place it at /input
+MOUNT input /input
+
+# Calculate the disk space used in /input
+CMD "du -sh /input"
+</code></pre>
+<p>If we try to run this, we will get an error message:</p>
+<pre><code class="language-sh">$ sudo raptor run disk-usage
+[*] Completed [675DE2C3A4D8CD82] index.docker.io-library-debian-trixie
+[*] Completed [A24E97B01374CFEF] disk-usage
+[E] Raptor failed: Required mount [input] not specified
+</code></pre>
+<p>As we can see, the container builds correctly, but fails because the <code>input</code>
+mount is not specified.</p>
+<p>To fix this, we specify the input mount:</p>
+<pre><code class="language-sh">sudo raptor run -I /tmp disk-usage
+[*] Completed [675DE2C3A4D8CD82] index.docker.io-library-debian-trixie
+[*] Completed [4BDD0649E00CA728] disk-usage
+128M    /input
+</code></pre>
+<p>We could have specified <code>-I /tmp</code> as <code>-M input /tmp</code>, but the short form usually
+makes the command easier to follow.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-entrypoint"><a class="header" href="#instruction-entrypoint">Instruction <code>ENTRYPOINT</code></a></h1>
+<div id="admonition-build-time-instruction" class="admonition admonish-tip" role="note" aria-labelledby="admonition-build-time-instruction-title">
+<div class="admonition-title">
+<div id="admonition-build-time-instruction-title">
+<p>Build-time instruction</p>
+</div>
+<a class="admonition-anchor-link" href="inst/entrypoint.html#admonition-build-time-instruction"></a>
+</div>
+<div>
+<p>The <code>MOUNT</code> instructions only affects <em>running</em> a container, not <em>building</em> a
+container.</p>
+</div>
+</div>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-cmd"><a class="header" href="#instruction-cmd">Instruction <code>CMD</code></a></h1>
+<div id="admonition-build-time-instruction" class="admonition admonish-tip" role="note" aria-labelledby="admonition-build-time-instruction-title">
+<div class="admonition-title">
+<div id="admonition-build-time-instruction-title">
+<p>Build-time instruction</p>
+</div>
+<a class="admonition-anchor-link" href="inst/cmd.html#admonition-build-time-instruction"></a>
+</div>
+<div>
+<p>The <code>MOUNT</code> instructions only affects <em>running</em> a container, not <em>building</em> a
+container.</p>
+</div>
+</div>
 <div style="break-before: page; page-break-before: always;"></div><div style="break-before: page; page-break-before: always;"></div>
                     </main>
 

@@ -177,10 +177,18 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="instruction-workdir"><a class="header" href="#instruction-workdir">Instruction <code>WORKDIR</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-summary"></a>
+</div>
+<div>
 <pre><code class="language-raptor">WORKDIR &lt;path&gt;
 </code></pre>
-<p>The <code>WORKDIR</code> instruction changes the current working directory inside the build
-namespace. This affects all relative destination paths, as well as <code>RUN</code>:</p>
+</div>
+</div>
 <div id="admonition-important" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-title">
 <div class="admonition-title">
 <div id="admonition-important-title">
@@ -193,14 +201,29 @@ namespace. This affects all relative destination paths, as well as <code>RUN</co
 a container.</p>
 </div>
 </div>
-<pre><code class="language-raptor"># This will copy "program" to "/bin/program" (initial directory is "/")
+<p>The <code>WORKDIR</code> instruction changes the current working directory inside the build
+namespace. This affects all subsequent relative paths, including the <code>RUN</code>
+instruction.</p>
+<p>The workdir is <strong>not</strong> inherited through <code>FROM</code>.</p>
+<p>The initial workdir is always <code>/</code>.</p>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<pre><code class="language-raptor"># This will copy "program" to "/bin/program" (since initial directory is "/")
 COPY program bin/program
 
+# This creates /foo
+RUN /bin/sh -c "touch foo"
+
+
+
+# Switch to /usr
 WORKDIR /usr
 
 # The same command will now copy "program" to "/usr/bin/program"
 COPY program bin/program
 
+
+
+# Switch to /tmp
 WORKDIR /tmp
 
 # This creates /tmp/foo

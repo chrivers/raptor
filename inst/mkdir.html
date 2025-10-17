@@ -177,6 +177,41 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="instruction-mkdir"><a class="header" href="#instruction-mkdir">Instruction <code>MKDIR</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-summary"></a>
+</div>
+<div>
+<pre><code class="language-raptor">MKDIR [&lt;file-options&gt;] &lt;path&gt;
+</code></pre>
+</div>
+</div>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip"></a>
+</div>
+<div>
+<p>See the section on <a href="/file-options.html">file options</a>.</p>
+</div>
+</div>
+<p>The <code>MKDIR</code> instruction creates an empty directory inside the build target.</p>
+<p>This is roughly equivalent to the following command:</p>
+<pre><code class="language-raptor">RUN mkdir /foo
+</code></pre>
+<p>However, using <code>RUN mkdir</code> requires the <code>mkdir</code> command to be available and
+executable inside the build target. This is not always the case, especially when
+building things from scratch.</p>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<pre><code class="language-raptor">MKDIR /data
+
+MKDIR -p --chown babelfish:daemon /usr/local/translate/
+</code></pre>
 
                     </main>
 

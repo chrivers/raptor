@@ -177,14 +177,18 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="instruction-write"><a class="header" href="#instruction-write">Instruction <code>WRITE</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-summary"></a>
+</div>
+<div>
 <pre><code class="language-raptor">WRITE [&lt;file-options&gt;] &lt;value&gt; &lt;path&gt;
 </code></pre>
-<p>The <code>WRITE</code> instruction writes a fixed string to the given path.</p>
-<p>A file can be added to the build output with <code>COPY</code>, but sometimes we just need
-to write a short value, and <code>COPY</code> might feel like overkill.</p>
-<p>Using <code>WRITE</code>, we can put values directly into files:</p>
-<pre><code class="language-raptor">WRITE "hello world" hello.txt
-</code></pre>
+</div>
+</div>
 <div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
 <div class="admonition-title">
 <div id="admonition-tip-title">
@@ -193,8 +197,26 @@ to write a short value, and <code>COPY</code> might feel like overkill.</p>
 <a class="admonition-anchor-link" href="#admonition-tip"></a>
 </div>
 <div>
+<p>See the section on <a href="/file-options.html">file options</a>.</p>
+</div>
+</div>
+<p>The <code>WRITE</code> instruction writes a fixed string to the given path.</p>
+<p>A file can be added to the build output with <code>COPY</code>, but sometimes we just need
+to write a short value, and <code>COPY</code> might feel like overkill.</p>
+<p>Using <code>WRITE</code>, we can put values directly into files:</p>
+<pre><code class="language-raptor">WRITE "hello world" hello.txt
+</code></pre>
+<div id="admonition-tip-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-1-title">
+<div class="admonition-title">
+<div id="admonition-tip-1-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip-1"></a>
+</div>
+<div>
 <p>Be aware that <code>WRITE</code> does not add a newline at the end of your input.</p>
-<p>To end the file in a line break, add <code>\n</code> at the end of the quoted string:</p>
+<p>For text files, it is almost always preferred to end with a newline.</p>
+<p>To do this, add <code>\n</code> at the end of the quoted string:</p>
 <pre><code class="language-raptor">WRITE "hostname\n" /etc/hostname
 </code></pre>
 </div>
