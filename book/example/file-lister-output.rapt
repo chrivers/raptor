@@ -1,0 +1,6 @@
+FROM docker://debian:trixie
+
+MOUNT --simple input /input
+MOUNT --file output /output
+
+CMD "ls -l /input > /output"
