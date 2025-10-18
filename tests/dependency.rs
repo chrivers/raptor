@@ -318,6 +318,26 @@ fn dep_include3() -> RaptorResult<()> {
 }
 
 #[test]
+fn dep_include4() -> RaptorResult<()> {
+    let mut test = Tester::setup(["INCLUDE inc.a"], |test| {
+        test.mkdir("inc")?;
+        test.write("inc/a.rinc", "RUN echo foo")?;
+        test.write("inc/b.rinc", "RUN echo foo")?;
+        Ok(())
+    })?;
+
+    test.expect_same("include file 1", |test| test.program_write("INCLUDE inc.b"))?;
+    test.expect_same("include file a", |test| {
+        test.write("inc/a.rinc", "RUN echo bar")
+    })?;
+    test.expect_new("include file b", |test| {
+        test.write("inc/b.rinc", "RUN echo bar")
+    })?;
+
+    Ok(())
+}
+
+#[test]
 fn dep_instance() -> RaptorResult<()> {
     let mut test = Tester::setup(["INCLUDE a@one"], |test| {
         test.write("a@.rinc", "WRITE {{instance[0]}} /tmp/foo")
