@@ -310,7 +310,7 @@ impl<'src> Parser<'src> {
         let key = self.bareword()?.to_string();
 
         let value = if self.accept(&Token::Equals)? {
-            self.bareword()?.to_string()
+            self.value()?
         } else {
             key.clone()
         };
