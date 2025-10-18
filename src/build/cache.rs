@@ -40,8 +40,8 @@ impl Cacher {
                 .metadata()
                 .map_err(|err| RaptorError::CacheIoError(source.into(), err))?;
 
-            md.ctime().hash(&mut state);
-            md.ctime_nsec().hash(&mut state);
+            md.mtime().hash(&mut state);
+            md.mtime_nsec().hash(&mut state);
         }
 
         Ok(state.finish())
