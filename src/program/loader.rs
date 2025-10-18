@@ -293,4 +293,20 @@ impl Loader<'_> {
 
         Ok(self.programs.get(path).unwrap().clone())
     }
+
+    pub fn load_program(&self, name: &ModuleName, origin: Origin) -> RaptorResult<Arc<Program>> {
+        let path = self.to_program_path(name, &origin)?;
+        let context = name
+            .instance()
+            .as_ref()
+            .map_or_else(|| context! {}, |instance| context! { instance });
+
+        let mut origins = vec![origin];
+
+        self.load_template(&path, context, &mut origins)
+            .or_else(|err| {
+                self.explain_error(&err, &origins)?;
+                Err(err)
+            })
+    }
 }

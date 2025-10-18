@@ -7,7 +7,6 @@ use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
 use dregistry::downloader::DockerDownloader;
 use dregistry::source::DockerSource;
-use minijinja::context;
 use siphasher::sip::SipHasher13;
 
 use crate::RaptorResult;
@@ -74,20 +73,9 @@ impl<'a> RaptorBuilder<'a> {
     pub fn load_with_source(
         &self,
         name: &ModuleName,
-        source: Origin,
+        origin: Origin,
     ) -> RaptorResult<Arc<Program>> {
-        let path = self.loader.to_program_path(name, &source)?;
-        let mut origins = vec![source];
-        let context = name
-            .instance()
-            .as_ref()
-            .map_or_else(|| context! {}, |instance| context! { instance });
-        self.loader
-            .load_template(&path, context, &mut origins)
-            .or_else(|err| {
-                self.loader.explain_error(&err, &origins)?;
-                Err(err)
-            })
+        self.loader.load_program(name, origin)
     }
 
     pub fn layer_info(&self, target: &BuildTarget) -> RaptorResult<LayerInfo> {
@@ -144,7 +132,7 @@ impl<'a> RaptorBuilder<'a> {
                 }
 
                 FromSource::Raptor(from) => {
-                    let fromprog = self.load_with_source(from, origin.clone())?;
+                    let fromprog = self.loader.load_program(from, origin.clone())?;
 
                     next = Some(fromprog);
                 }
