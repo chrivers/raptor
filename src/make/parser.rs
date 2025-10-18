@@ -12,23 +12,26 @@ use tap::Tap;
 
 #[derive(Deserialize, Debug)]
 pub struct Make {
+    #[serde(default)]
     pub raptor: Raptor,
+    #[serde(default)]
     pub run: BTreeMap<String, RunTarget>,
+    #[serde(default)]
     pub group: BTreeMap<String, GroupTarget>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default)]
 pub struct Raptor {
     #[serde(deserialize_with = "de_map_string_or_struct")]
     pub link: BTreeMap<String, Link>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default)]
 pub struct Link {
     pub source: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default)]
 pub struct GroupTarget {
     pub run: BTreeSet<String>,
 }
