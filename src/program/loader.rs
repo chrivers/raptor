@@ -139,8 +139,11 @@ impl Loader<'_> {
 
     fn show_include_stack(&self, origins: &[Origin]) {
         for org in origins {
+            let Some(source) = self.sources.get(org.path.as_str()) else {
+                continue;
+            };
             show_origin_error_context(
-                &self.sources.get(org.path.as_str()).unwrap(),
+                &source,
                 org,
                 "Error while evaluating INCLUDE",
                 "(included here)",
