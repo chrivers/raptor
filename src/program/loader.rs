@@ -62,7 +62,7 @@ impl Loader<'_> {
         self.packages.get(name)
     }
 
-    pub fn to_path(
+    fn to_path(
         &self,
         root: &ModuleRoot,
         origin: &Origin,
@@ -233,7 +233,7 @@ impl Loader<'_> {
         Ok(())
     }
 
-    pub fn parse_template(
+    fn parse_template(
         &self,
         path: impl AsRef<Utf8Path>,
         origins: &mut Vec<Origin>,
