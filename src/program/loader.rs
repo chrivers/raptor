@@ -171,13 +171,15 @@ impl Loader<'_> {
                     if let Some((last, origins)) = &origins.split_last() {
                         self.show_include_stack(origins);
 
-                        show_error_context(
-                            &self.sources.get(last.path.as_str()).unwrap(),
-                            last.path.as_ref(),
-                            "Error while loading source file",
-                            err.detail().unwrap_or("error"),
-                            err.range().unwrap_or_else(|| last.span.clone()),
-                        );
+                        if let Some(src) = self.sources.get(last.path.as_str()) {
+                            show_error_context(
+                                &src,
+                                last.path.as_ref(),
+                                "Error while loading source file",
+                                err.detail().unwrap_or("error"),
+                                err.range().unwrap_or_else(|| last.span.clone()),
+                            );
+                        }
                     } else {
                         error!("Cannot provide error context: {err}");
                     }
