@@ -121,11 +121,17 @@ impl Loader<'_> {
                 ));
             }
 
-            let map = prog.ctx.resolve_args(&include.args)?;
+            let map = Value::from(prog.ctx.resolve_args(&include.args)?);
             let src = self.to_include_path(&include.src, &origin)?;
 
+            let context = if let Some(instance) = include.src.instance() {
+                context! { instance, ..map }
+            } else {
+                map
+            };
+
             origins.push(origin.clone());
-            let include = self.parse_template(&src, origins, Value::from(map))?;
+            let include = self.parse_template(&src, origins, context)?;
             origins.pop();
 
             prog.code.push(Item::Statement(Statement { inst, origin }));
