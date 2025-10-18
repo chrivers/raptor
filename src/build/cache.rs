@@ -61,7 +61,7 @@ impl Cacher {
                 }
 
                 Instruction::Render(inst) => {
-                    data.insert(prog.path_for(&inst.src)?);
+                    data.insert(stmt.origin.path_for(&inst.src)?);
                 }
 
                 Instruction::Include(_inst) => {
