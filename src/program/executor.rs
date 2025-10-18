@@ -42,7 +42,7 @@ impl Executor {
             | Instruction::Cmd(_) => {}
 
             Instruction::Copy(inst) => {
-                let srcname = stmt.origin.basedir()?.join(&inst.srcs[0]);
+                let srcname = stmt.origin.path_for(&inst.srcs[0])?;
                 let src = File::open(&srcname)?;
                 let fd = client.create_file(
                     &Utf8PathBuf::from(&inst.dest),
@@ -58,7 +58,7 @@ impl Executor {
             Instruction::Render(inst) => {
                 let map = ctx.resolve_args(&inst.args)?;
 
-                let srcname = stmt.origin.basedir()?.join(&inst.src);
+                let srcname = stmt.origin.path_for(&inst.src)?;
 
                 let source = template::make_environment()?
                     .get_template(srcname.as_str())

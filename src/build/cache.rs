@@ -55,7 +55,7 @@ impl Cacher {
                     data.extend(
                         inst.srcs
                             .iter()
-                            .map(|file| Ok(stmt.origin.basedir()?.join(file)))
+                            .map(|file| Ok(stmt.origin.path_for(file)?))
                             .collect::<Result<Vec<_>, RaptorError>>()?,
                     );
                 }
