@@ -5,7 +5,6 @@ use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use itertools::Itertools;
-use raptor_parser::util::module_name::ModuleRoot;
 use siphasher::sip::SipHasher13;
 
 use crate::build::RaptorBuilder;
@@ -56,8 +55,8 @@ impl Cacher {
                     data.extend(
                         inst.srcs
                             .iter()
-                            .map(|file| loader.to_path(&ModuleRoot::Relative, &stmt.origin, file))
-                            .collect::<Result<Vec<_>, _>>()?,
+                            .map(|file| Ok(stmt.origin.basedir()?.join(file)))
+                            .collect::<Result<Vec<_>, RaptorError>>()?,
                     );
                 }
 
