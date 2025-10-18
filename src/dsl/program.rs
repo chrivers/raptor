@@ -102,24 +102,6 @@ impl Program {
     }
 }
 
-impl IntoIterator for Program {
-    type Item = Item;
-    type IntoIter = <Vec<Item> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.code.into_iter()
-    }
-}
-
-impl<'a> IntoIterator for &'a Program {
-    type Item = &'a Item;
-    type IntoIter = <&'a Vec<Item> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.code.iter()
-    }
-}
-
 impl Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fn dump(f: &mut fmt::Formatter, program: &Program, level: usize) -> fmt::Result {
@@ -143,11 +125,5 @@ impl Display for Program {
         }
 
         dump(f, self, 0)
-    }
-}
-
-impl Program {
-    pub fn iter(&self) -> std::slice::Iter<Item> {
-        self.code.iter()
     }
 }
