@@ -107,11 +107,10 @@ impl Executor {
     pub fn run(&mut self, loader: &Loader, program: &Program) -> RaptorResult<()> {
         program.traverse(&mut |stmt| {
             info!("{}", stmt.inst);
-            if let Err(err) = self.handle(stmt, &program.ctx) {
+            self.handle(stmt, &program.ctx).or_else(|err| {
                 loader.explain_exec_error(stmt, &err, &[])?;
-                return Err(err);
-            }
-            Ok(())
+                Err(err)
+            })
         })
     }
 
