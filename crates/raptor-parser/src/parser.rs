@@ -735,9 +735,24 @@ pub fn parse(
 
     parser.file().map_err(|err| {
         let mut origin = Origin::new(path.clone(), parser.lexer.span());
-        if buf[origin.span.clone()].ends_with('\n') {
+
+        /* Error spans that include a newline at the end, are presented quite
+         * awkwardly in the terminal, so trim the final newline */
+        if parser.lexer.slice().ends_with('\n') {
             origin.span.end -= 1;
         }
+
+        /* Generic lexer errors are reported *before* the token that fails, so
+         * attempt to synthesize a useful error span, by pointing at the
+         * remainder of the line */
+        if matches!(err, ParseError::LexerError(LexerError::LexerError)) {
+            let remainder = &buf[origin.span.start..];
+            if let Some(nl) = remainder.find('\n') {
+                origin.span.start += 1;
+                origin.span.end += nl - 1;
+            }
+        }
+
         Location::make(origin, err)
     })
 }
