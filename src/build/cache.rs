@@ -8,10 +8,9 @@ use itertools::Itertools;
 use siphasher::sip::SipHasher13;
 
 use crate::build::RaptorBuilder;
-use crate::dsl::Program;
-use crate::program::Loader;
+use crate::dsl::{Item, Program};
 use crate::{RaptorError, RaptorResult};
-use raptor_parser::ast::{FromSource, Instruction};
+use raptor_parser::ast::{FromSource, Instruction, Statement};
 
 pub struct Cacher;
 
@@ -30,7 +29,15 @@ impl Cacher {
         }
 
         for stmt in &program.code {
-            stmt.hash(&mut state);
+            if !matches!(
+                stmt,
+                Item::Statement(Statement {
+                    inst: Instruction::Include(_),
+                    ..
+                })
+            ) {
+                stmt.hash(&mut state);
+            }
         }
 
         for source in &Self::sources(program)? {
