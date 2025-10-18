@@ -59,16 +59,8 @@ impl<'a> RaptorBuilder<'a> {
     }
 
     pub fn load(&self, name: &ModuleName) -> RaptorResult<Arc<Program>> {
-        let mut origins = vec![];
-        let origin = Origin::make("<inline>", 0..0);
-        let path = self.loader.to_program_path(name, &origin)?;
-
-        self.loader
-            .parse_template(path, &mut origins, context! {}, name.instance().clone())
-            .or_else(|err| {
-                self.loader.explain_error(&err, &origins)?;
-                Err(err)
-            })
+        let origin = Origin::inline();
+        self.load_with_source(name, origin)
     }
 
     pub const fn loader<'b>(&'b self) -> &'b Loader<'a> {
@@ -81,13 +73,17 @@ impl<'a> RaptorBuilder<'a> {
 
     pub fn load_with_source(
         &self,
-        path: impl AsRef<Utf8Path>,
+        name: &ModuleName,
         source: Origin,
-        instance: Option<String>,
     ) -> RaptorResult<Arc<Program>> {
-        let origins = vec![source];
+        let path = self.loader.to_program_path(name, &source)?;
+        let mut origins = vec![source];
+        let context = name
+            .instance()
+            .as_ref()
+            .map_or_else(|| context! {}, |instance| context! { instance });
         self.loader
-            .load_template(&path, context! {}, instance)
+            .load_template(&path, context, &mut origins)
             .or_else(|err| {
                 self.loader.explain_error(&err, &origins)?;
                 Err(err)
@@ -148,9 +144,7 @@ impl<'a> RaptorBuilder<'a> {
                 }
 
                 FromSource::Raptor(from) => {
-                    let fromprog = self.loader.to_program_path(from, origin).and_then(|path| {
-                        self.load_with_source(path, origin.clone(), from.instance().clone())
-                    })?;
+                    let fromprog = self.load_with_source(from, origin.clone())?;
 
                     next = Some(fromprog);
                 }

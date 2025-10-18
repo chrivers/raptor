@@ -11,14 +11,10 @@ pub enum LexerError {
 
     #[error("Unsupported string escape: {0:?}")]
     BadEscape(String),
-
-    #[error("Tried to resolve instance in non-instanced unit")]
-    NoInstance,
 }
 
 #[derive(Logos, Debug, PartialEq, Eq, Clone)]
 #[logos(error = LexerError)]
-#[logos(extras = Option<String>)]
 pub enum Token {
     #[token("[")]
     LBracket,
@@ -68,9 +64,6 @@ pub enum Token {
     #[regex(r"#.+\n")]
     Comment,
 
-    #[token("%", escape_callback)]
-    Escape(Escape),
-
     #[token("\"", string_callback)]
     String(String),
 
@@ -82,18 +75,6 @@ pub enum Token {
 
 #[derive(Logos, Debug, PartialEq, Eq, Clone)]
 #[logos(error = LexerError)]
-#[logos(extras = Option<String>)]
-pub enum Escape {
-    #[token("%")]
-    Percent,
-
-    #[token("i")]
-    Instance,
-}
-
-#[derive(Logos, Debug, PartialEq, Eq, Clone)]
-#[logos(error = LexerError)]
-#[logos(extras = Option<String>)]
 enum StringToken {
     #[token("\"")]
     ExitString,
@@ -116,10 +97,7 @@ enum StringToken {
     #[token("\n")]
     Newline,
 
-    #[token("%", escape_callback)]
-    Escape(Escape),
-
-    #[regex(r#"[^\\"\n%]+"#)]
+    #[regex(r#"[^\\"\n]+"#)]
     Chars,
 }
 
@@ -144,7 +122,6 @@ impl Token {
             Self::Newline => "\\n",
             Self::Comment => "<comment>",
             Self::String(_) => "<string>",
-            Self::Escape(_) => "<escape>",
             Self::Whitespace => "<whitespace>",
             Self::Eof => "<end of file>",
         }
@@ -170,7 +147,6 @@ impl Token {
             Self::Newline => "\\n (newline)",
             Self::Comment => "<comment>",
             Self::String(_) => "<string>",
-            Self::Escape(_) => "<escape>",
             Self::Whitespace => "<whitespace>",
             Self::Eof => "<end of file>",
         }
@@ -195,37 +171,12 @@ fn string_callback(lex: &mut Lexer<Token>) -> Result<String, LexerError> {
             StringToken::Chars => res.push_str(string_lexer.slice()),
             StringToken::Newline => Err(LexerError::UnterminatedString(string_lexer.span()))?,
             StringToken::BadEscape => Err(LexerError::BadEscape(string_lexer.slice().to_string()))?,
-            StringToken::Escape(esc) => match esc {
-                Escape::Percent => res.push('%'),
-                Escape::Instance => {
-                    if let Some(instance) = &lex.extras {
-                        res.push_str(instance);
-                    } else {
-                        return Err(LexerError::NoInstance);
-                    }
-                }
-            },
         }
     }
 
     *lex = string_lexer.morph();
 
     Ok(res)
-}
-
-fn escape_callback<'src, T>(lex: &mut Lexer<'src, T>) -> Result<Escape, LexerError>
-where
-    T: Logos<'src, Source = str> + Clone,
-    T::Extras: Clone + From<Option<String>>,
-    Option<String>: From<T::Extras>,
-{
-    let mut lexer = lex.clone().morph();
-
-    let res = lexer.next().ok_or(LexerError::LexerError)?;
-
-    *lex = lexer.morph();
-
-    res
 }
 
 #[cfg(test)]
