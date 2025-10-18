@@ -1,8 +1,8 @@
+use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::sync::Arc;
-use std::time::{Duration, SystemTime};
-use std::{fs, thread};
+use std::time::SystemTime;
 
 use camino::Utf8PathBuf;
 use camino_tempfile::Utf8TempDir;
@@ -178,9 +178,6 @@ impl Tester {
     }
 
     fn touch(&self, name: &str) -> RaptorResult<()> {
-        // the hash depends on the mtime, so let enough time pass for the next
-        // ctime to be different
-        thread::sleep(Duration::from_millis(10));
         File::open(self.path(name))?.set_modified(SystemTime::now())?;
 
         Ok(())
