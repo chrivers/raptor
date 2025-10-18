@@ -22,6 +22,10 @@ impl Origin {
         Self::new(Arc::new(path.as_ref().into()), span)
     }
 
+    pub fn inline() -> Self {
+        Origin::make("<inline>", 0..0)
+    }
+
     pub fn basedir(&self) -> Result<&Utf8Path, SafeParentError> {
         self.path.try_parent()
     }
