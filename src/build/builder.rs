@@ -19,6 +19,7 @@ use raptor_parser::util::module_name::ModuleName;
 
 pub struct RaptorBuilder<'a> {
     loader: Loader<'a>,
+    falcon_path: Utf8PathBuf,
     dry_run: bool,
 }
 
@@ -53,8 +54,12 @@ impl DockerSourceExt for DockerSource {
 }
 
 impl<'a> RaptorBuilder<'a> {
-    pub const fn new(loader: Loader<'a>, dry_run: bool) -> Self {
-        Self { loader, dry_run }
+    pub const fn new(loader: Loader<'a>, falcon_path: Utf8PathBuf, dry_run: bool) -> Self {
+        Self {
+            loader,
+            falcon_path,
+            dry_run,
+        }
     }
 
     pub fn load(&self, name: &ModuleName) -> RaptorResult<Arc<Program>> {
@@ -153,7 +158,7 @@ impl<'a> RaptorBuilder<'a> {
     ) -> RaptorResult<()> {
         match target {
             BuildTarget::Program(prog) => {
-                let sandbox = Sandbox::new(layers, Utf8Path::new(&rootdir))?;
+                let sandbox = Sandbox::new(layers, rootdir, &self.falcon_path)?;
 
                 let mut exec = Executor::new(sandbox);
 

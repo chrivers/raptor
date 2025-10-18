@@ -11,6 +11,7 @@ use raptor::RaptorResult;
 use raptor::build::{Cacher, RaptorBuilder};
 use raptor::dsl::Program;
 use raptor::program::Loader;
+use raptor::sandbox::Sandbox;
 use raptor_parser::ast::Origin;
 use raptor_parser::util::module_name::ModuleName;
 
@@ -61,7 +62,7 @@ impl Tester {
     ) -> RaptorResult<Self> {
         let tempdir = Utf8TempDir::new()?;
         let loader = Loader::new()?.with_base(&tempdir);
-        let builder = RaptorBuilder::new(loader, true);
+        let builder = RaptorBuilder::new(loader, Sandbox::find_falcon_dev().unwrap(), true);
 
         let mut res = Self {
             program_name,

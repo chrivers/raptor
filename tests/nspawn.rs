@@ -45,7 +45,12 @@ fn spawn_sandbox(name: &str) -> RaptorResult<SandboxWrapper> {
     let rootdir = Utf8Path::new("tests/output").join(name);
 
     let builder = Sandbox::builder().sudo(true);
-    let sandbox = Sandbox::custom(builder, &[tempdir.path()], &rootdir)?;
+    let sandbox = Sandbox::custom(
+        builder,
+        &[tempdir.path()],
+        &rootdir,
+        &Sandbox::find_falcon_dev().unwrap(),
+    )?;
 
     Ok(SandboxWrapper { sandbox, tempdir })
 }

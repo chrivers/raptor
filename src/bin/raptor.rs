@@ -243,12 +243,11 @@ fn check_for_root() -> RaptorResult<()> {
     }
 }
 
-fn check_for_falcon_binary() -> RaptorResult<()> {
-    if !std::fs::exists(Sandbox::FALCON_PATH)? {
-        error!(
-            "The program falcon could not be found\n\n  {}\n",
-            Sandbox::FALCON_PATH
-        );
+fn check_for_falcon_binary() -> RaptorResult<Utf8PathBuf> {
+    let falcon_path = Sandbox::find_falcon_dev();
+
+    if falcon_path.is_err() {
+        error!("The program falcon could not be found\n\n  {falcon_path:?}\n");
 
         info!("Please compile it before proceeding:");
 
@@ -267,7 +266,8 @@ fn check_for_falcon_binary() -> RaptorResult<()> {
         );
         std::process::exit(1);
     }
-    Ok(())
+
+    falcon_path
 }
 
 fn raptor() -> RaptorResult<()> {
@@ -275,7 +275,7 @@ fn raptor() -> RaptorResult<()> {
 
     log::set_max_level(args.log_level());
 
-    check_for_falcon_binary()?;
+    let falcon_path = check_for_falcon_binary()?;
 
     let loader = Loader::new()?.with_dump(args.mode.dump());
 
@@ -283,7 +283,7 @@ fn raptor() -> RaptorResult<()> {
         loader.add_package(name.into(), path.into());
     }
 
-    let builder = RaptorBuilder::new(loader, args.no_act);
+    let builder = RaptorBuilder::new(loader, falcon_path, args.no_act);
 
     match &args.mode {
         Mode::Dump { targets } | Mode::Check { targets } | Mode::Build { targets } => {
