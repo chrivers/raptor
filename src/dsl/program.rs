@@ -1,13 +1,12 @@
 use std::fmt::{self, Display};
 
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8PathBuf;
 use colored::Colorize;
 use minijinja::Value;
 
 use raptor_parser::ast::{
     FromSource, InstCmd, InstEntrypoint, InstMount, Instruction, Origin, Statement,
 };
-use raptor_parser::util::SafeParent;
 
 use crate::RaptorResult;
 use crate::dsl::Item;
@@ -100,10 +99,6 @@ impl Program {
         }
 
         mounts
-    }
-
-    pub fn path_for(&self, path: impl AsRef<Utf8Path>) -> RaptorResult<Utf8PathBuf> {
-        Ok(self.path.try_parent()?.join(path.as_ref()))
     }
 }
 
