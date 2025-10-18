@@ -5,7 +5,6 @@ use colored::Colorize;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use minijinja::{Environment, ErrorKind, Value, context};
-use raptor_parser::util::SafeParent;
 use raptor_parser::util::module_name::{ModuleName, ModuleRoot};
 
 use crate::dsl::{Item, Program};
@@ -69,7 +68,7 @@ impl Loader<'_> {
         end: &Utf8Path,
     ) -> RaptorResult<Utf8PathBuf> {
         let res = match root {
-            ModuleRoot::Relative => origin.path.try_parent()?.join(end),
+            ModuleRoot::Relative => origin.path_for(end)?,
             ModuleRoot::Absolute => self.base.join(end),
             ModuleRoot::Package(pkg) => {
                 let package = self
