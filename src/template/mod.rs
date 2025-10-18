@@ -25,6 +25,12 @@ where
     }
 }
 
+impl<T> AdaptError<T> for Option<T> {
+    fn adapt_err(self, msg: impl Into<Cow<'static, str>>) -> Result<T, Error> {
+        self.ok_or_else(|| Error::new(ErrorKind::InvalidOperation, msg))
+    }
+}
+
 pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
     let mut env = Environment::new();
     env.set_debug(true);
