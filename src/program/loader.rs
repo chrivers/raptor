@@ -122,14 +122,12 @@ impl Loader<'_> {
                 ));
             }
 
-            let map = Value::from(prog.ctx.resolve_args(&include.args)?);
+            let mut context = Value::from(prog.ctx.resolve_args(&include.args)?);
             let src = self.to_include_path(&include.src, &origin)?;
 
-            let context = if let Some(instance) = include.src.instance() {
-                context! { instance, ..map }
-            } else {
-                map
-            };
+            if let Some(instance) = include.src.instance() {
+                context = context! { instance, ..context };
+            }
 
             origins.push(origin.clone());
             let include = self.parse_template(&src, origins, context)?;
@@ -209,34 +207,23 @@ impl Loader<'_> {
                     &err.to_string(),
                 );
             }
+            RaptorError::SandboxRequestError(_errno) => {
+                if let Some((last, origins)) = &origins.split_last() {
+                    self.show_include_stack(origins);
+
+                    let prefix = err.category();
+                    show_origin_error_context(
+                        &self.sources.get(last.path.as_str()).unwrap(),
+                        last,
+                        "Error while executing instruction",
+                        &format!("{prefix}: {err}"),
+                    );
+                }
+            }
             err => {
                 error!("Unexpected error: {err}");
             }
         }
-        Ok(())
-    }
-
-    pub fn explain_exec_error(
-        &self,
-        stmt: &Statement,
-        err: &RaptorError,
-        origins: &[Origin],
-    ) -> RaptorResult<()> {
-        let origin = &stmt.origin;
-
-        let prefix = err.category();
-
-        show_origin_error_context(
-            &self.sources.get(origin.path.as_str()).unwrap(),
-            origin,
-            "Error while executing instruction",
-            &format!("{prefix}: {err}"),
-        );
-
-        if let RaptorError::MinijinjaError(_) = err {
-            self.explain_error(err, origins)?;
-        }
-
         Ok(())
     }
 

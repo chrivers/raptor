@@ -108,7 +108,7 @@ impl Executor {
         program.traverse(&mut |stmt| {
             info!("{}", stmt.inst);
             self.handle(stmt, &program.ctx).or_else(|err| {
-                loader.explain_exec_error(stmt, &err, &[])?;
+                loader.explain_error(&err, std::slice::from_ref(&stmt.origin))?;
                 Err(err)
             })
         })
