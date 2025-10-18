@@ -35,10 +35,6 @@ harness = false
 name = "raptor"
 test = false
 
-[[bin]]
-name = "debootwrap"
-test = false
-
 [lints]
 workspace = true
 
