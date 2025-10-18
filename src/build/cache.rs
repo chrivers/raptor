@@ -21,7 +21,7 @@ impl Cacher {
         if let Some((from, origin)) = program.from() {
             match from {
                 FromSource::Raptor(from) => {
-                    let prog = builder.load_with_source(from, origin.clone())?;
+                    let prog = builder.loader().load_program(from, origin.clone())?;
                     Self::cache_key(&prog, builder)?.hash(&mut state);
                 }
                 FromSource::Docker(src) => src.hash(&mut state),

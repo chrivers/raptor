@@ -59,7 +59,7 @@ impl<'a> RaptorBuilder<'a> {
 
     pub fn load(&self, name: &ModuleName) -> RaptorResult<Arc<Program>> {
         let origin = Origin::inline();
-        self.load_with_source(name, origin)
+        self.loader.load_program(name, origin)
     }
 
     pub const fn loader<'b>(&'b self) -> &'b Loader<'a> {
@@ -68,14 +68,6 @@ impl<'a> RaptorBuilder<'a> {
 
     pub const fn loader_mut<'b>(&'b mut self) -> &'b mut Loader<'a> {
         &mut self.loader
-    }
-
-    pub fn load_with_source(
-        &self,
-        name: &ModuleName,
-        origin: Origin,
-    ) -> RaptorResult<Arc<Program>> {
-        self.loader.load_program(name, origin)
     }
 
     pub fn layer_info(&self, target: &BuildTarget) -> RaptorResult<LayerInfo> {
