@@ -64,9 +64,9 @@ impl Cacher {
                     data.insert(prog.path_for(&inst.src)?);
                 }
 
-                Instruction::Include(inst) => {
-                    let path = loader.to_include_path(&inst.src, &stmt.origin)?;
-                    data.insert(path);
+                Instruction::Include(_inst) => {
+                    /* let path = loader.to_include_path(&inst.src, &stmt.origin)?; */
+                    /* data.insert(path); */
                 }
 
                 Instruction::Mount(_)

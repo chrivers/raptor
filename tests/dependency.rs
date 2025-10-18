@@ -74,7 +74,7 @@ impl Tester {
         &mut self,
         act: &str,
         fun: impl Fn(&mut Self) -> RaptorResult<()>,
-    ) -> RaptorResult<()> {
+    ) -> RaptorResult<u64> {
         // clear cache to prevent stale programs
         self.builder.clear_cache();
 
@@ -86,7 +86,8 @@ impl Tester {
             panic!("Program hash did not change after changing {act}");
         }
         self.hash = hash;
-        Ok(())
+
+        Ok(hash)
     }
 
     /// Perform a (non-semantic) modification to one or more input files, and verify that the
@@ -95,7 +96,7 @@ impl Tester {
         &mut self,
         act: &str,
         fun: impl Fn(&mut Self) -> RaptorResult<()>,
-    ) -> RaptorResult<()> {
+    ) -> RaptorResult<u64> {
         // clear cache to prevent stale programs
         self.builder.clear_cache();
 
@@ -107,7 +108,30 @@ impl Tester {
             panic!("Program hash changed after changing {act}");
         }
 
-        Ok(())
+        Ok(hash)
+    }
+
+    /// Perform a modification to one or more input files, and verify that the
+    /// build hash becomes the expected value
+    fn expect_hash(
+        &mut self,
+        act: &str,
+        fun: impl Fn(&mut Self) -> RaptorResult<()>,
+        expected: u64,
+    ) -> RaptorResult<u64> {
+        // clear cache to prevent stale programs
+        self.builder.clear_cache();
+
+        fun(self)?;
+
+        let hash = self.program_hash()?;
+        if hash != expected {
+            eprintln!("{}", self.load(&Self::program_module())?);
+            panic!("Program hash did not change after changing {act}");
+        }
+        self.hash = expected;
+
+        Ok(hash)
     }
 
     fn path(&self, name: &str) -> Utf8PathBuf {
@@ -229,7 +253,7 @@ fn dep_from3() -> RaptorResult<()> {
     test.expect_new("FROM src 2", |test| test.append_inst("a.rapt"))?;
     test.expect_new("FROM src 3", |test| test.append_inst(Tester::PROGRAM_NAME))?;
 
-    test.expect_new("FROM src 1", |test| test.touch("b.rinc"))?;
+    test.expect_same("FROM src 1", |test| test.touch("b.rinc"))?;
     test.expect_same("FROM src 2", |test| test.touch("a.rapt"))?;
     test.expect_same("FROM src 3", |test| test.touch(Tester::PROGRAM_NAME))?;
 
@@ -251,7 +275,7 @@ fn dep_self() -> RaptorResult<()> {
 fn dep_include() -> RaptorResult<()> {
     let mut test = Tester::setup(["INCLUDE a"], |test| test.write("a.rinc", ""))?;
 
-    test.expect_new("include file 1", |test| test.touch("a.rinc"))?;
+    test.expect_same("include file 1", |test| test.touch("a.rinc"))?;
 
     Ok(())
 }
@@ -263,8 +287,41 @@ fn dep_include2() -> RaptorResult<()> {
         test.write("b.rinc", "")
     })?;
 
-    test.expect_new("include file 1", |test| test.touch("a.rinc"))?;
-    test.expect_new("include file 2", |test| test.touch("b.rinc"))?;
+    test.expect_same("include file 1", |test| test.touch("a.rinc"))?;
+    test.expect_same("include file 2", |test| test.touch("b.rinc"))?;
+
+    test.expect_new("include file 1", |test| test.append_inst("a.rinc"))?;
+    test.expect_new("include file 2", |test| test.append_inst("b.rinc"))?;
+
+    Ok(())
+}
+
+#[test]
+fn dep_instance() -> RaptorResult<()> {
+    let mut test = Tester::setup(["INCLUDE a@one"], |test| {
+        test.write("a@.rinc", "WRITE {{instance[0]}} /tmp/foo")
+    })?;
+
+    test.expect_new("instance", |test| test.program_write("INCLUDE a@two"))?;
+
+    Ok(())
+}
+
+#[test]
+fn dep_instance2() -> RaptorResult<()> {
+    let mut test = Tester::setup(["INCLUDE a"], |test| {
+        test.write("a.rinc", "INCLUDE b@one")?;
+        test.write("b@.rinc", "WRITE {{instance}} /tmp/foo")
+    })?;
+
+    let orig = test.hash;
+
+    test.expect_new("instance", |test| test.write("a.rinc", "INCLUDE b@two"))?;
+    test.expect_hash(
+        "instance",
+        |test| test.write("a.rinc", "INCLUDE b@one"),
+        orig,
+    )?;
 
     Ok(())
 }
