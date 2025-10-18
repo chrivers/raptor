@@ -173,6 +173,10 @@ impl Tester {
         self.append(name, ["", &format!("RUN echo {name}")])
     }
 
+    fn mkdir(&self, name: &str) -> RaptorResult<()> {
+        Ok(fs::create_dir_all(self.path(name))?)
+    }
+
     fn touch(&self, name: &str) -> RaptorResult<()> {
         // the hash depends on the mtime, so let enough time pass for the next
         // ctime to be different
@@ -292,6 +296,26 @@ fn dep_include2() -> RaptorResult<()> {
 
     test.expect_new("include file 1", |test| test.append_inst("a.rinc"))?;
     test.expect_new("include file 2", |test| test.append_inst("b.rinc"))?;
+
+    Ok(())
+}
+
+#[test]
+fn dep_include3() -> RaptorResult<()> {
+    let mut test = Tester::setup(["INCLUDE inc.a"], |test| {
+        test.mkdir("inc")?;
+        test.write("inc/src", "data")?;
+        test.write("inc/rnd", "data")?;
+        test.write("inc/a.rinc", "INCLUDE b")?;
+        test.write("inc/b.rinc", ["COPY src /dest1", "RENDER rnd /dest2"])?;
+        Ok(())
+    })?;
+
+    test.expect_same("include file 1", |test| test.touch("inc/a.rinc"))?;
+    test.expect_same("include file 2", |test| test.touch("inc/b.rinc"))?;
+
+    test.expect_new("include file 1", |test| test.append_inst("inc/a.rinc"))?;
+    test.expect_new("include file 2", |test| test.append_inst("inc/b.rinc"))?;
 
     Ok(())
 }
