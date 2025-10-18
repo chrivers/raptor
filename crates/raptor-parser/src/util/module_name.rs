@@ -133,8 +133,6 @@ mod tests {
     fn basic() {
         let name = ModuleName::new(vec![String::from("a"), String::from("b")]);
 
-        /* assert_eq!(name.to_program_path(), "a/b.rapt"); */
-        /* assert_eq!(name.to_include_path(), "a/b.rinc"); */
         assert_eq!(name.parts(), &["a", "b"]);
     }
 
