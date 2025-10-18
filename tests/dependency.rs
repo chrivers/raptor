@@ -11,6 +11,7 @@ use raptor::RaptorResult;
 use raptor::build::{Cacher, RaptorBuilder};
 use raptor::dsl::Program;
 use raptor::program::Loader;
+use raptor_parser::ast::Origin;
 use raptor_parser::util::module_name::ModuleName;
 
 trait Writable {
@@ -38,25 +39,32 @@ impl Writable for &[&str] {
 }
 
 struct Tester {
+    program_name: ModuleName,
     builder: RaptorBuilder<'static>,
     tempdir: Utf8TempDir,
     hash: u64,
 }
 
 impl Tester {
-    const PROGRAM_MODULE: &str = "program";
-    const PROGRAM_NAME: &str = "program.rapt";
-
     fn setup(
         program: impl Writable,
         init: impl Fn(&Self) -> RaptorResult<()>,
     ) -> RaptorResult<Self> {
-        let tempdir = Utf8TempDir::new()?;
+        let name = ModuleName::from("$.program");
+        Self::setup_custom(name, program, init)
+    }
 
+    fn setup_custom(
+        program_name: ModuleName,
+        program: impl Writable,
+        init: impl Fn(&Self) -> RaptorResult<()>,
+    ) -> RaptorResult<Self> {
+        let tempdir = Utf8TempDir::new()?;
         let loader = Loader::new()?.with_base(&tempdir);
         let builder = RaptorBuilder::new(loader, true);
 
         let mut res = Self {
+            program_name,
             builder,
             tempdir,
             hash: 0,
@@ -82,7 +90,7 @@ impl Tester {
 
         let hash = self.program_hash()?;
         if self.hash == hash {
-            eprintln!("{}", self.load(&Self::program_module())?);
+            eprintln!("{}", self.load(&self.program_name)?);
             panic!("Program hash did not change after changing {act}");
         }
         self.hash = hash;
@@ -104,7 +112,7 @@ impl Tester {
 
         let hash = self.program_hash()?;
         if self.hash != hash {
-            eprintln!("{}", self.load(&Self::program_module())?);
+            eprintln!("{}", self.load(&self.program_name)?);
             panic!("Program hash changed after changing {act}");
         }
 
@@ -126,7 +134,7 @@ impl Tester {
 
         let hash = self.program_hash()?;
         if hash != expected {
-            eprintln!("{}", self.load(&Self::program_module())?);
+            eprintln!("{}", self.load(&self.program_name)?);
             panic!("Program hash did not change after changing {act}");
         }
         self.hash = expected;
@@ -138,12 +146,12 @@ impl Tester {
         self.tempdir.path().join(name)
     }
 
-    fn program_path(&self) -> Utf8PathBuf {
-        self.path(Self::PROGRAM_NAME)
-    }
-
-    fn program_module() -> ModuleName {
-        ModuleName::absolute(vec![Self::PROGRAM_MODULE.to_string()], None)
+    fn program_path(&self) -> String {
+        self.builder
+            .loader()
+            .to_program_path(&self.program_name, &Origin::inline())
+            .unwrap()
+            .to_string()
     }
 
     fn program_write(&self, value: impl Writable) -> RaptorResult<()> {
@@ -151,7 +159,7 @@ impl Tester {
     }
 
     fn program_hash(&self) -> RaptorResult<u64> {
-        self.hash(&Self::program_module())
+        self.hash(&self.program_name)
     }
 
     fn write(&self, name: &str, value: impl Writable) -> RaptorResult<()> {
@@ -233,12 +241,12 @@ fn dep_from2() -> RaptorResult<()> {
     test.expect_new("FROM src 1", |test| test.append_inst("c.rapt"))?;
     test.expect_new("FROM src 2", |test| test.append_inst("b.rapt"))?;
     test.expect_new("FROM src 3", |test| test.append_inst("a.rapt"))?;
-    test.expect_new("FROM src 4", |test| test.append_inst(Tester::PROGRAM_NAME))?;
+    test.expect_new("FROM src 4", |test| test.append_inst(&test.program_path()))?;
 
     test.expect_same("FROM src 1", |test| test.touch("c.rapt"))?;
     test.expect_same("FROM src 2", |test| test.touch("b.rapt"))?;
     test.expect_same("FROM src 3", |test| test.touch("a.rapt"))?;
-    test.expect_same("FROM src 4", |test| test.touch(Tester::PROGRAM_NAME))?;
+    test.expect_same("FROM src 4", |test| test.touch(&test.program_path()))?;
 
     Ok(())
 }
@@ -252,11 +260,11 @@ fn dep_from3() -> RaptorResult<()> {
 
     test.expect_new("FROM src 1", |test| test.append_inst("b.rinc"))?;
     test.expect_new("FROM src 2", |test| test.append_inst("a.rapt"))?;
-    test.expect_new("FROM src 3", |test| test.append_inst(Tester::PROGRAM_NAME))?;
+    test.expect_new("FROM src 3", |test| test.append_inst(&test.program_path()))?;
 
     test.expect_same("FROM src 1", |test| test.touch("b.rinc"))?;
     test.expect_same("FROM src 2", |test| test.touch("a.rapt"))?;
-    test.expect_same("FROM src 3", |test| test.touch(Tester::PROGRAM_NAME))?;
+    test.expect_same("FROM src 3", |test| test.touch(&test.program_path()))?;
 
     Ok(())
 }
@@ -265,9 +273,9 @@ fn dep_from3() -> RaptorResult<()> {
 fn dep_self() -> RaptorResult<()> {
     let mut test = Tester::setup([""], |test| test.write("a.rapt", ""))?;
 
-    test.expect_new("program", |test| test.append_inst(Tester::PROGRAM_NAME))?;
+    test.expect_new("program", |test| test.append_inst(&test.program_path()))?;
 
-    test.expect_same("program", |test| test.touch(Tester::PROGRAM_NAME))?;
+    test.expect_same("program", |test| test.touch(&test.program_path()))?;
 
     Ok(())
 }
