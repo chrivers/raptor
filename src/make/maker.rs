@@ -42,8 +42,8 @@ impl<'a> Maker<'a> {
         }
     }
 
-    fn program_mtime(program: &Program, loader: &Loader) -> RaptorResult<SystemTime> {
-        let sources = Cacher::sources(program, loader)?;
+    fn program_mtime(program: &Program, _loader: &Loader) -> RaptorResult<SystemTime> {
+        let sources = Cacher::sources(program)?;
 
         let res = sources
             .into_iter()

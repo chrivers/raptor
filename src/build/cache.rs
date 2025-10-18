@@ -33,7 +33,7 @@ impl Cacher {
             stmt.hash(&mut state);
         }
 
-        for source in &Self::sources(program, builder.loader())? {
+        for source in &Self::sources(program)? {
             trace!("Checking source [{source}]");
             let md = source
                 .metadata()
@@ -46,7 +46,7 @@ impl Cacher {
         Ok(state.finish())
     }
 
-    pub fn sources(prog: &Program, loader: &Loader) -> RaptorResult<Vec<Utf8PathBuf>> {
+    pub fn sources(prog: &Program) -> RaptorResult<Vec<Utf8PathBuf>> {
         let mut data = HashSet::<Utf8PathBuf>::new();
 
         prog.traverse(&mut |stmt| {
