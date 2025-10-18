@@ -374,3 +374,24 @@ fn dep_instance2() -> RaptorResult<()> {
 
     Ok(())
 }
+
+#[test]
+fn dep_instance3() -> RaptorResult<()> {
+    let mut test = Tester::setup_custom(
+        ModuleName::from("$.program@one"),
+        ["WRITE {{instance}} /tmp/foo"],
+        |_test| Ok(()),
+    )?;
+
+    let orig = test.hash;
+
+    test.program_name = ModuleName::from("$.program@two");
+    test.builder.clear_cache();
+    assert_ne!(orig, test.program_hash()?);
+
+    test.program_name = ModuleName::from("$.program@one");
+    test.builder.clear_cache();
+    assert_eq!(orig, test.program_hash()?);
+
+    Ok(())
+}
