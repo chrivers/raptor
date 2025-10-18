@@ -130,7 +130,7 @@ impl<'src> Parser<'src> {
         Ok(())
     }
 
-    fn parse_path(&mut self) -> ParseResult<Utf8PathBuf> {
+    fn parse_word(&mut self) -> ParseResult<String> {
         let mut res = String::new();
         loop {
             let state = self.lexer.clone();
@@ -153,7 +153,11 @@ impl<'src> Parser<'src> {
 
         self.trim()?;
 
-        Ok(res.into())
+        Ok(res)
+    }
+
+    fn parse_path(&mut self) -> ParseResult<Utf8PathBuf> {
+        Ok(self.parse_word()?.into())
     }
 
     fn module_name_ident(&mut self) -> ParseResult<Option<String>> {
@@ -197,8 +201,9 @@ impl<'src> Parser<'src> {
         }
 
         let instance = if self.accept(&Token::At)? {
-            self.expect(&Token::Number)?;
-            Some(self.token_string())
+            words.last_mut().unwrap().push('@');
+
+            Some(self.parse_word()?)
         } else {
             None
         };
