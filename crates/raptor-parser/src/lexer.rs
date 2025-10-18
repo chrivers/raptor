@@ -9,6 +9,9 @@ pub enum LexerError {
     #[error("Lexer error")]
     LexerError,
 
+    #[error("Unsupported string escape: {0:?}")]
+    BadEscape(String),
+
     #[error("Tried to resolve instance in non-instanced unit")]
     NoInstance,
 }
@@ -104,6 +107,12 @@ enum StringToken {
     #[token("\\\"")]
     EscQuote,
 
+    #[token("\\\\")]
+    EscBackslash,
+
+    #[regex(r"\\.", priority = 1)]
+    BadEscape,
+
     #[token("\n")]
     Newline,
 
@@ -182,8 +191,10 @@ fn string_callback(lex: &mut Lexer<Token>) -> Result<String, LexerError> {
             StringToken::EscNewline => res.push('\n'),
             StringToken::EscTab => res.push('\t'),
             StringToken::EscQuote => res.push('"'),
+            StringToken::EscBackslash => res.push('\\'),
             StringToken::Chars => res.push_str(string_lexer.slice()),
             StringToken::Newline => Err(LexerError::UnterminatedString(string_lexer.span()))?,
+            StringToken::BadEscape => Err(LexerError::BadEscape(string_lexer.slice().to_string()))?,
             StringToken::Escape(esc) => match esc {
                 Escape::Percent => res.push('%'),
                 Escape::Instance => {
