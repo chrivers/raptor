@@ -56,7 +56,7 @@ pub enum Token {
     #[token("@")]
     At,
 
-    #[regex("[a-zA-Z_][^\\]/. \n\t\",=:{}\\[-]*")]
+    #[regex("[a-zA-Z_][^\\]@/. \n\t\",=:{}\\[-]*")]
     Bareword,
 
     #[regex("[0-9]+")]
