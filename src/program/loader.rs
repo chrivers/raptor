@@ -102,6 +102,7 @@ impl Loader<'_> {
 
     pub fn clear_cache(&mut self) {
         self.env.clear_templates();
+        self.sources.clear();
         self.programs.clear();
     }
 
