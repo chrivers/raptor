@@ -144,8 +144,12 @@ impl<'a> Planner<'a> {
     pub fn add(&mut self, target: &MakeTarget) -> RaptorResult<()> {
         match target {
             MakeTarget::Group(grp) => {
-                for name in &self.maker.rules().group[grp].run {
+                let group = &self.maker.rules().group[grp];
+                for name in &group.run {
                     self.add_named_run_job(name)?;
+                }
+                for name in &group.build {
+                    self.add_build_job(name)?;
                 }
             }
             MakeTarget::Job(name) => {

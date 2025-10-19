@@ -33,7 +33,10 @@ pub struct Link {
 
 #[derive(Deserialize, Debug, Default)]
 pub struct GroupTarget {
+    #[serde(default)]
     pub run: BTreeSet<String>,
+    #[serde(default)]
+    pub build: BTreeSet<ModuleName>,
 }
 
 #[derive(Deserialize, Debug, Clone, Hash)]
