@@ -17,6 +17,7 @@ use crate::tui::ptyctrl::{PtyJob, PtyJobController, PtyJobView};
 
 pub mod joblist;
 pub mod jobstate;
+pub mod logo;
 pub mod ptyctrl;
 
 pub struct TerminalParallelRunner<'a> {
