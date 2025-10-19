@@ -23,6 +23,7 @@ pub mod joblist;
 pub mod jobstate;
 pub mod logo;
 pub mod ptyctrl;
+pub mod statusbar;
 
 pub enum TerminalEvent {
     Job(Box<PtyJob>),
