@@ -14,6 +14,7 @@
 - [Reference manual](reference-manual.md)
 - [Concepts]()
   - [Module names](module-name.md)
+  - [Instancing](instancing.md)
   - [String escape](string-escape.md)
   - [Expressions](expressions.md)
   - [File options](file-options.md)
