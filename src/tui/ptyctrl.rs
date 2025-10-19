@@ -77,6 +77,11 @@ impl PtyJobController {
     }
 
     #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.jobs.is_empty()
+    }
+
+    #[must_use]
     pub fn job_state(&self, id: u64) -> JobState {
         *self.states.get(&id).unwrap_or(&JobState::Planned)
     }
@@ -153,6 +158,12 @@ impl PtyJobController {
                 }
             }
         }
+    }
+
+    pub fn add_job(&mut self, job: PtyJob) {
+        self.states.insert(job.id, JobState::Running);
+        self.jobs.insert(job.file.as_raw_fd(), job);
+        self.resize = true;
     }
 
     pub fn event(&mut self) -> RaptorResult<ControlFlow<()>> {
