@@ -75,7 +75,7 @@ impl Theme for Formatter<'_> {
             " {}{}{}",
             arg.key.yellow(),
             "=".dimmed(),
-            arg.value.red()
+            format!("{:?}", arg.value).red()
         )
     }
 

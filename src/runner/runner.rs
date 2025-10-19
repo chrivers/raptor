@@ -6,6 +6,7 @@ use std::process::ExitStatus;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use camino_tempfile::{Builder, Utf8TempDir};
+use raptor_parser::util::module_name::ModuleName;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -49,11 +50,11 @@ impl AddMounts for SpawnBuilder {
         tempdir: &Utf8Path,
     ) -> RaptorResult<Self> {
         for mount in program.mounts() {
-            let srcs: Vec<Utf8PathBuf> = mounts
+            let srcs: Vec<String> = mounts
                 .get(&mount.name.as_str())
                 .ok_or_else(|| RaptorError::MountMissing(mount.clone()))?
                 .iter()
-                .map(Into::into)
+                .map(ToString::to_string)
                 .collect();
 
             match mount.opts.mtype {
@@ -79,14 +80,13 @@ impl AddMounts for SpawnBuilder {
                     let mut info = MountsInfo::new();
 
                     for src in srcs {
-                        let program = builder.load(&src)?;
-                        let name = program.path.with_extension("").as_str().replace('/', ".");
-
+                        let name = ModuleName::from(&src);
+                        let program = builder.load(&name)?;
                         let layers = builder.build_program(program)?;
 
-                        info.targets.push(name.clone());
+                        info.targets.push(src.clone());
 
-                        let layer_info = info.layers.entry(name).or_default();
+                        let layer_info = info.layers.entry(src).or_default();
 
                         for layer in &layers {
                             let filename = layer.file_name().unwrap();
@@ -106,7 +106,7 @@ impl AddMounts for SpawnBuilder {
                         return Err(RaptorError::SingleMountOnly(mount.opts.mtype));
                     }
 
-                    let program = builder.load(&srcs[0])?;
+                    let program = builder.load(&ModuleName::from(&srcs[0]))?;
                     let layers = builder.build_program(program)?;
                     self = self.overlay_ro(&layers, &mount.dest);
                 }

@@ -10,7 +10,7 @@ use crate::ast::{
     InstEnvAssign, InstFrom, InstInclude, InstMkdir, InstMount, InstRender, InstRun, InstWorkdir,
     InstWrite, Instruction, Lookup, MountOptions, MountType, Origin, Statement,
 };
-use crate::lexer::Token;
+use crate::lexer::{LexerError, Token};
 use crate::util::Location;
 use crate::util::module_name::{ModuleName, ModuleRoot};
 use crate::{ParseError, ParseResult};
@@ -130,7 +130,7 @@ impl<'src> Parser<'src> {
         Ok(())
     }
 
-    fn parse_path(&mut self) -> ParseResult<Utf8PathBuf> {
+    fn parse_word(&mut self) -> ParseResult<String> {
         let mut res = String::new();
         loop {
             let state = self.lexer.clone();
@@ -153,7 +153,11 @@ impl<'src> Parser<'src> {
 
         self.trim()?;
 
-        Ok(res.into())
+        Ok(res)
+    }
+
+    fn parse_path(&mut self) -> ParseResult<Utf8PathBuf> {
+        Ok(self.parse_word()?.into())
     }
 
     fn module_name_ident(&mut self) -> ParseResult<Option<String>> {
@@ -196,7 +200,15 @@ impl<'src> Parser<'src> {
             return Err(ParseError::Expected("module name"));
         }
 
-        Ok(ModuleName::build(root, words))
+        let instance = if self.accept(&Token::At)? {
+            words.last_mut().unwrap().push('@');
+
+            Some(self.parse_word()?)
+        } else {
+            None
+        };
+
+        Ok(ModuleName::build(root, words, instance))
     }
 
     fn end_of_line(&mut self) -> ParseResult<()> {
@@ -225,6 +237,7 @@ impl<'src> Parser<'src> {
         loop {
             match self.next()? {
                 Token::String(word) => args.push(word),
+
                 Token::Whitespace => {
                     if !value.is_empty() {
                         let mut val = String::new();
@@ -232,7 +245,9 @@ impl<'src> Parser<'src> {
                         args.push(val);
                     }
                 }
+
                 Token::Newline | Token::Comment | Token::Eof => break,
+
                 _ => value.push_str(self.token()),
             }
         }
@@ -280,7 +295,7 @@ impl<'src> Parser<'src> {
         let key = self.bareword()?.to_string();
 
         let value = if self.accept(&Token::Equals)? {
-            self.bareword()?.to_string()
+            self.value()?
         } else {
             key.clone()
         };
@@ -701,9 +716,24 @@ pub fn parse(name: &str, buf: &str) -> Result<Vec<Statement>, Location<ParseErro
 
     parser.file().map_err(|err| {
         let mut origin = Origin::new(path.clone(), parser.lexer.span());
-        if buf[origin.span.clone()].ends_with('\n') {
+
+        /* Error spans that include a newline at the end, are presented quite
+         * awkwardly in the terminal, so trim the final newline */
+        if parser.lexer.slice().ends_with('\n') {
             origin.span.end -= 1;
         }
+
+        /* Generic lexer errors are reported *before* the token that fails, so
+         * attempt to synthesize a useful error span, by pointing at the
+         * remainder of the line */
+        if matches!(err, ParseError::LexerError(LexerError::LexerError)) {
+            let remainder = &buf[origin.span.start..];
+            if let Some(nl) = remainder.find('\n') {
+                origin.span.start += 1;
+                origin.span.end += nl - 1;
+            }
+        }
+
         Location::make(origin, err)
     })
 }

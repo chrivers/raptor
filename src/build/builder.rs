@@ -7,7 +7,6 @@ use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
 use dregistry::downloader::DockerDownloader;
 use dregistry::source::DockerSource;
-use minijinja::context;
 use siphasher::sip::SipHasher13;
 
 use crate::RaptorResult;
@@ -16,9 +15,11 @@ use crate::dsl::Program;
 use crate::program::{Executor, Loader, PrintExecutor};
 use crate::sandbox::Sandbox;
 use raptor_parser::ast::{FromSource, Origin};
+use raptor_parser::util::module_name::ModuleName;
 
 pub struct RaptorBuilder<'a> {
     loader: Loader<'a>,
+    falcon_path: Utf8PathBuf,
     dry_run: bool,
 }
 
@@ -53,18 +54,17 @@ impl DockerSourceExt for DockerSource {
 }
 
 impl<'a> RaptorBuilder<'a> {
-    pub const fn new(loader: Loader<'a>, dry_run: bool) -> Self {
-        Self { loader, dry_run }
+    pub const fn new(loader: Loader<'a>, falcon_path: Utf8PathBuf, dry_run: bool) -> Self {
+        Self {
+            loader,
+            falcon_path,
+            dry_run,
+        }
     }
 
-    pub fn load(&self, path: impl AsRef<Utf8Path>) -> RaptorResult<Arc<Program>> {
-        let mut origins = vec![];
-        self.loader
-            .parse_template(path.as_ref(), &mut origins, context! {})
-            .or_else(|err| {
-                self.loader.explain_error(&err, &origins)?;
-                Err(err)
-            })
+    pub fn load(&self, name: &ModuleName) -> RaptorResult<Arc<Program>> {
+        let origin = Origin::inline();
+        self.loader.load_program(name, origin)
     }
 
     pub const fn loader<'b>(&'b self) -> &'b Loader<'a> {
@@ -73,20 +73,6 @@ impl<'a> RaptorBuilder<'a> {
 
     pub const fn loader_mut<'b>(&'b mut self) -> &'b mut Loader<'a> {
         &mut self.loader
-    }
-
-    pub fn load_with_source(
-        &self,
-        path: impl AsRef<Utf8Path>,
-        source: Origin,
-    ) -> RaptorResult<Arc<Program>> {
-        let origins = vec![source];
-        self.loader
-            .load_template(&path, context! {})
-            .or_else(|err| {
-                self.loader.explain_error(&err, &origins)?;
-                Err(err)
-            })
     }
 
     pub fn layer_info(&self, target: &BuildTarget) -> RaptorResult<LayerInfo> {
@@ -143,10 +129,7 @@ impl<'a> RaptorBuilder<'a> {
                 }
 
                 FromSource::Raptor(from) => {
-                    let fromprog = self
-                        .loader
-                        .to_program_path(from, origin)
-                        .and_then(|path| self.load_with_source(path, origin.clone()))?;
+                    let fromprog = self.loader.load_program(from, origin.clone())?;
 
                     next = Some(fromprog);
                 }
@@ -175,7 +158,7 @@ impl<'a> RaptorBuilder<'a> {
     ) -> RaptorResult<()> {
         match target {
             BuildTarget::Program(prog) => {
-                let sandbox = Sandbox::new(layers, Utf8Path::new(&rootdir))?;
+                let sandbox = Sandbox::new(layers, rootdir, &self.falcon_path)?;
 
                 let mut exec = Executor::new(sandbox);
 

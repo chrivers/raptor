@@ -42,7 +42,7 @@ impl Executor {
             | Instruction::Cmd(_) => {}
 
             Instruction::Copy(inst) => {
-                let srcname = stmt.origin.basedir()?.join(&inst.srcs[0]);
+                let srcname = stmt.origin.path_for(&inst.srcs[0])?;
                 let src = File::open(&srcname)?;
                 let fd = client.create_file(
                     &Utf8PathBuf::from(&inst.dest),
@@ -58,7 +58,7 @@ impl Executor {
             Instruction::Render(inst) => {
                 let map = ctx.resolve_args(&inst.args)?;
 
-                let srcname = stmt.origin.basedir()?.join(&inst.src);
+                let srcname = stmt.origin.path_for(&inst.src)?;
 
                 let source = template::make_environment()?
                     .get_template(srcname.as_str())
@@ -107,11 +107,10 @@ impl Executor {
     pub fn run(&mut self, loader: &Loader, program: &Program) -> RaptorResult<()> {
         program.traverse(&mut |stmt| {
             info!("{}", stmt.inst);
-            if let Err(err) = self.handle(stmt, &program.ctx) {
-                loader.explain_exec_error(stmt, &err, &[])?;
-                return Err(err);
-            }
-            Ok(())
+            self.handle(stmt, &program.ctx).or_else(|err| {
+                loader.explain_error(&err, std::slice::from_ref(&stmt.origin))?;
+                Err(err)
+            })
         })
     }
 

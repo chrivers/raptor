@@ -49,6 +49,12 @@ pub enum RaptorError {
     #[error(transparent)]
     ParseTomlError(#[from] toml::de::Error),
 
+    #[error(transparent)]
+    WhichError(#[from] which::Error),
+
+    #[error(transparent)]
+    FromPathBufError(#[from] camino::FromPathBufError),
+
     #[error("Crossbeam channel send error")]
     SendError,
 
@@ -114,6 +120,8 @@ impl RaptorError {
             Self::SingleMountOnly(_) => "Single mount error",
             Self::ParseIntError(_) => "Parse int error",
             Self::ParseTomlError(_) => "Parse toml error",
+            Self::WhichError(_) => "Which error",
+            Self::FromPathBufError(_) => "PathBuf conversion error",
             Self::LayerCacheParseError => "Layer cache parse error",
             Self::PackageNotFound(_, _) => "Package not found",
             Self::UnknownJob(_) => "Unknown job",

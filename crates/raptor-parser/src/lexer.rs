@@ -8,6 +8,9 @@ pub enum LexerError {
     #[default]
     #[error("Lexer error")]
     LexerError,
+
+    #[error("Unsupported string escape: {0:?}")]
+    BadEscape(String),
 }
 
 #[derive(Logos, Debug, PartialEq, Eq, Clone)]
@@ -46,7 +49,10 @@ pub enum Token {
     #[token("$")]
     Dollar,
 
-    #[regex("[a-zA-Z_][^\\]/. \n\t\",=:{}\\[-]*")]
+    #[token("@")]
+    At,
+
+    #[regex("[a-zA-Z_][^\\]@/. \n\t\",=:{}\\[-]*")]
     Bareword,
 
     #[regex("[0-9]+")]
@@ -82,6 +88,12 @@ enum StringToken {
     #[token("\\\"")]
     EscQuote,
 
+    #[token("\\\\")]
+    EscBackslash,
+
+    #[regex(r"\\.", priority = 1)]
+    BadEscape,
+
     #[token("\n")]
     Newline,
 
@@ -104,6 +116,7 @@ impl Token {
             Self::Dot => ".",
             Self::Minus => "-",
             Self::Dollar => "$",
+            Self::At => "@",
             Self::Bareword => "<bareword>",
             Self::Number => "<number>",
             Self::Newline => "\\n",
@@ -128,6 +141,7 @@ impl Token {
             Self::Dot => "'.' (dot)",
             Self::Minus => "'-' (minus)",
             Self::Dollar => "'$' (dollar)",
+            Self::At => "'@' (at)",
             Self::Bareword => "<bareword>",
             Self::Number => "<number>",
             Self::Newline => "\\n (newline)",
@@ -153,12 +167,54 @@ fn string_callback(lex: &mut Lexer<Token>) -> Result<String, LexerError> {
             StringToken::EscNewline => res.push('\n'),
             StringToken::EscTab => res.push('\t'),
             StringToken::EscQuote => res.push('"'),
+            StringToken::EscBackslash => res.push('\\'),
             StringToken::Chars => res.push_str(string_lexer.slice()),
             StringToken::Newline => Err(LexerError::UnterminatedString(string_lexer.span()))?,
+            StringToken::BadEscape => Err(LexerError::BadEscape(string_lexer.slice().to_string()))?,
         }
     }
 
     *lex = string_lexer.morph();
 
     Ok(res)
+}
+
+#[cfg(test)]
+mod tests {
+    use logos::Logos;
+
+    use crate::lexer::{LexerError, Token};
+
+    macro_rules! next_ok {
+        ($lexer:expr, $match:pat $(if $guard:expr)?) => {
+            assert!(matches!($lexer.next().unwrap().unwrap(), $match $(if $guard)?));
+        };
+    }
+
+    macro_rules! next_err {
+        ($lexer:expr, $match:pat $(if $guard:expr)? ) => {
+            assert!(matches!($lexer.next().unwrap().unwrap_err(), $match $(if $guard)?));
+        };
+    }
+
+    #[test]
+    fn string_escapes() {
+        let mut lexer = Token::lexer(r#""foo\tbar"#);
+        next_ok!(lexer, Token::String(s) if s == "foo\tbar");
+
+        let mut lexer = Token::lexer(r#""foo\nbar"#);
+        next_ok!(lexer, Token::String(s) if s == "foo\nbar");
+
+        let mut lexer = Token::lexer(r#""foo\"bar"#);
+        next_ok!(lexer, Token::String(s) if s == "foo\"bar");
+
+        let mut lexer = Token::lexer(r#""foo\\bar"#);
+        next_ok!(lexer, Token::String(s) if s == "foo\\bar");
+    }
+
+    #[test]
+    fn string_escape_err() {
+        let mut lexer = Token::lexer(r#""foo\xbar"#);
+        next_err!(lexer, LexerError::BadEscape(e) if e == "\\x");
+    }
 }

@@ -18,6 +18,7 @@ use raptor::program::Loader;
 use raptor::runner::Runner;
 use raptor::sandbox::Sandbox;
 use raptor::{RaptorError, RaptorResult};
+use raptor_parser::util::module_name::ModuleName;
 
 #[derive(clap::Parser, Debug)]
 #[command(about, long_about = None, styles=raptor::util::clapcolor::style())]
@@ -72,25 +73,25 @@ enum Mode {
     /// Build mode: generate output from raptor files
     #[command(alias = "b")]
     Build {
-        /// Targets to build <target1.rapt target2.rapt ...>
+        /// Targets to build <target1 target2 ...>
         #[arg(value_name = "targets")]
-        targets: Vec<Utf8PathBuf>,
+        targets: Vec<ModuleName>,
     },
 
     /// Dump mode: show output from templating pass
     #[command(alias = "d")]
     Dump {
-        /// Targets to dump <target1.rapt target2.rapt ...>
+        /// Targets to dump <target1 target2 ...>
         #[arg(value_name = "targets")]
-        targets: Vec<Utf8PathBuf>,
+        targets: Vec<ModuleName>,
     },
 
     /// Check mode: check validity of input files only
     #[command(alias = "c")]
     Check {
-        /// Targets to check <target1.rapt target2.rapt ...>
+        /// Targets to check <target1 target2 ...>
         #[arg(value_name = "targets")]
-        targets: Vec<Utf8PathBuf>,
+        targets: Vec<ModuleName>,
     },
 
     /// Run mode: run a shell or command inside the layer
@@ -99,7 +100,7 @@ enum Mode {
 
     /// Show mode: print list of build targets
     #[command(alias = "s")]
-    Show { dirs: Vec<Utf8PathBuf> },
+    Show { dirs: Vec<ModuleName> },
 
     /// Make mode: run build operations from makefile (Raptor.toml)
     Make {
@@ -125,7 +126,7 @@ enum Mode {
 struct RunCmd {
     /// Target to run
     #[arg(value_name = "target")]
-    target: Utf8PathBuf,
+    target: ModuleName,
 
     /// State directory for changes (ephemeral if unset)
     #[arg(short = 's', long)]
@@ -242,12 +243,11 @@ fn check_for_root() -> RaptorResult<()> {
     }
 }
 
-fn check_for_falcon_binary() -> RaptorResult<()> {
-    if !std::fs::exists(Sandbox::FALCON_PATH)? {
-        error!(
-            "The program falcon could not be found\n\n  {}\n",
-            Sandbox::FALCON_PATH
-        );
+fn check_for_falcon_binary() -> RaptorResult<Utf8PathBuf> {
+    let falcon_path = Sandbox::find_falcon_dev();
+
+    if falcon_path.is_err() {
+        error!("The program falcon could not be found\n\n  {falcon_path:?}\n");
 
         info!("Please compile it before proceeding:");
 
@@ -266,7 +266,8 @@ fn check_for_falcon_binary() -> RaptorResult<()> {
         );
         std::process::exit(1);
     }
-    Ok(())
+
+    falcon_path
 }
 
 fn raptor() -> RaptorResult<()> {
@@ -274,7 +275,7 @@ fn raptor() -> RaptorResult<()> {
 
     log::set_max_level(args.log_level());
 
-    check_for_falcon_binary()?;
+    let falcon_path = check_for_falcon_binary()?;
 
     let loader = Loader::new()?.with_dump(args.mode.dump());
 
@@ -282,7 +283,7 @@ fn raptor() -> RaptorResult<()> {
         loader.add_package(name.into(), path.into());
     }
 
-    let builder = RaptorBuilder::new(loader, args.no_act);
+    let builder = RaptorBuilder::new(loader, falcon_path, args.no_act);
 
     match &args.mode {
         Mode::Dump { targets } | Mode::Check { targets } | Mode::Build { targets } => {

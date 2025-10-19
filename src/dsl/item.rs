@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
 use camino::Utf8Path;
@@ -7,7 +8,7 @@ use minijinja::Value;
 use crate::dsl::Program;
 use raptor_parser::ast::{Instruction, Origin, Statement};
 
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Item {
     Statement(Statement),
     Program(Arc<Program>),
@@ -38,6 +39,18 @@ impl Debug for Item {
         match self {
             Self::Program(prog) => prog.fmt(f),
             Self::Statement(stmt) => stmt.fmt(f),
+        }
+    }
+}
+
+impl Hash for Item {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Statement(statement) => statement.inst.hash(state),
+            Self::Program(program) => {
+                program.code.hash(state);
+                program.ctx.hash(state);
+            }
         }
     }
 }

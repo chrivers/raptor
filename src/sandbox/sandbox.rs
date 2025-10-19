@@ -7,11 +7,11 @@ use camino::{Utf8Path, Utf8PathBuf};
 use camino_tempfile::{Builder, Utf8TempDir};
 use uuid::Uuid;
 
-use crate::RaptorResult;
 use crate::sandbox::{
     BindMount, ConsoleMode, FalconClient, LinkJournal, ResolvConf, Settings, SpawnBuilder, Timezone,
 };
 use crate::util::link_or_copy_file;
+use crate::{RaptorError, RaptorResult};
 
 #[derive(Debug)]
 pub struct Sandbox {
@@ -22,8 +22,23 @@ pub struct Sandbox {
 }
 
 impl Sandbox {
-    /* TODO: ugly hack, but works for testing */
-    pub const FALCON_PATH: &str = "target/x86_64-unknown-linux-musl/release/falcon";
+    pub const DEV_FALCON_PATH: &str = "target/x86_64-unknown-linux-musl/release/falcon";
+
+    pub fn find_falcon() -> RaptorResult<Utf8PathBuf> {
+        Ok(Utf8PathBuf::try_from(which::which_global("falcon")?)?)
+    }
+
+    pub fn find_falcon_dev() -> RaptorResult<Utf8PathBuf> {
+        if let Ok(res) = Self::find_falcon() {
+            return Ok(res);
+        }
+
+        if std::fs::exists(Self::DEV_FALCON_PATH)? {
+            return Ok(Self::DEV_FALCON_PATH.into());
+        }
+
+        Err(RaptorError::WhichError(which::Error::CannotFindBinaryPath))
+    }
 
     #[must_use]
     pub fn builder() -> SpawnBuilder {
@@ -37,14 +52,19 @@ impl Sandbox {
             .console(ConsoleMode::Pipe)
     }
 
-    pub fn new(layers: &[impl AsRef<Utf8Path>], rootdir: &Utf8Path) -> RaptorResult<Self> {
-        Self::custom(Self::builder(), layers, rootdir)
+    pub fn new(
+        layers: &[impl AsRef<Utf8Path>],
+        rootdir: &Utf8Path,
+        falcon_path: &Utf8Path,
+    ) -> RaptorResult<Self> {
+        Self::custom(Self::builder(), layers, rootdir, falcon_path)
     }
 
     pub fn custom(
         mut spawn: SpawnBuilder,
         layers: &[impl AsRef<Utf8Path>],
         rootdir: &Utf8Path,
+        falcon_path: &Utf8Path,
     ) -> RaptorResult<Self> {
         /*
         For the sandbox, we need two directories, "temp" and "conn".
@@ -114,7 +134,7 @@ impl Sandbox {
         let int_socket_path = int_root.join("raptor");
         let int_client_path = int_root.join("falcon");
 
-        link_or_copy_file(Self::FALCON_PATH, &ext_client_path)?;
+        link_or_copy_file(falcon_path, &ext_client_path)?;
 
         let listen = UnixListener::bind(ext_socket_path)?;
 

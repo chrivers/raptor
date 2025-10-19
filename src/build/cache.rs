@@ -5,14 +5,12 @@ use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use itertools::Itertools;
-use raptor_parser::util::module_name::ModuleRoot;
 use siphasher::sip::SipHasher13;
 
 use crate::build::RaptorBuilder;
-use crate::dsl::Program;
-use crate::program::Loader;
+use crate::dsl::{Item, Program};
 use crate::{RaptorError, RaptorResult};
-use raptor_parser::ast::{FromSource, Instruction};
+use raptor_parser::ast::{FromSource, Instruction, Statement};
 
 pub struct Cacher;
 
@@ -23,9 +21,7 @@ impl Cacher {
         if let Some((from, origin)) = program.from() {
             match from {
                 FromSource::Raptor(from) => {
-                    let filename = builder.loader().to_program_path(from, origin)?;
-
-                    let prog = builder.load_with_source(filename, origin.clone())?;
+                    let prog = builder.loader().load_program(from, origin.clone())?;
                     Self::cache_key(&prog, builder)?.hash(&mut state);
                 }
                 FromSource::Docker(src) => src.hash(&mut state),
@@ -33,23 +29,31 @@ impl Cacher {
         }
 
         for stmt in &program.code {
-            stmt.hash(&mut state);
+            if !matches!(
+                stmt,
+                Item::Statement(Statement {
+                    inst: Instruction::Include(_),
+                    ..
+                })
+            ) {
+                stmt.hash(&mut state);
+            }
         }
 
-        for source in &Self::sources(program, builder.loader())? {
+        for source in &Self::sources(program)? {
             trace!("Checking source [{source}]");
             let md = source
                 .metadata()
                 .map_err(|err| RaptorError::CacheIoError(source.into(), err))?;
 
-            md.ctime().hash(&mut state);
-            md.ctime_nsec().hash(&mut state);
+            md.mtime().hash(&mut state);
+            md.mtime_nsec().hash(&mut state);
         }
 
         Ok(state.finish())
     }
 
-    pub fn sources(prog: &Program, loader: &Loader) -> RaptorResult<Vec<Utf8PathBuf>> {
+    pub fn sources(prog: &Program) -> RaptorResult<Vec<Utf8PathBuf>> {
         let mut data = HashSet::<Utf8PathBuf>::new();
 
         prog.traverse(&mut |stmt| {
@@ -58,18 +62,18 @@ impl Cacher {
                     data.extend(
                         inst.srcs
                             .iter()
-                            .map(|file| loader.to_path(&ModuleRoot::Relative, &stmt.origin, file))
-                            .collect::<Result<Vec<_>, _>>()?,
+                            .map(|file| Ok(stmt.origin.path_for(file)?))
+                            .collect::<Result<Vec<_>, RaptorError>>()?,
                     );
                 }
 
                 Instruction::Render(inst) => {
-                    data.insert(prog.path_for(&inst.src)?);
+                    data.insert(stmt.origin.path_for(&inst.src)?);
                 }
 
-                Instruction::Include(inst) => {
-                    let path = loader.to_include_path(&inst.src, &stmt.origin)?;
-                    data.insert(path);
+                Instruction::Include(_inst) => {
+                    /* let path = loader.to_include_path(&inst.src, &stmt.origin)?; */
+                    /* data.insert(path); */
                 }
 
                 Instruction::Mount(_)

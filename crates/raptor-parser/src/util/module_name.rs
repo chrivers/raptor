@@ -11,56 +11,79 @@ pub enum ModuleRoot {
 pub struct ModuleName {
     root: ModuleRoot,
     names: Vec<String>,
+    instance: Option<String>,
 }
 
 impl ModuleName {
+    #[allow(clippy::collapsible_if)]
     #[must_use]
     pub fn new(mut names: Vec<String>) -> Self {
+        let mut instance = None;
+
+        if let Some(last) = names.last_mut() {
+            if let Some(index) = last.rfind('@') {
+                instance = Some(last[index + 1..].to_string());
+                last.truncate(index + 1);
+            }
+        }
+
         if names.first().is_some_and(|f| f.starts_with('$')) {
             let mut root = names.remove(0);
             root.remove(0);
             if root.is_empty() {
-                Self::absolute(names)
+                Self::absolute(names, instance)
             } else {
-                Self::package(root, names)
+                Self::package(root, names, instance)
             }
         } else {
-            Self::relative(names)
+            Self::relative(names, instance)
         }
     }
 
     #[must_use]
-    pub const fn build(root: ModuleRoot, names: Vec<String>) -> Self {
-        Self { root, names }
+    pub const fn build(root: ModuleRoot, names: Vec<String>, instance: Option<String>) -> Self {
+        Self {
+            root,
+            names,
+            instance,
+        }
     }
 
     #[must_use]
-    pub const fn relative(names: Vec<String>) -> Self {
+    pub const fn relative(names: Vec<String>, instance: Option<String>) -> Self {
         Self {
             root: ModuleRoot::Relative,
             names,
+            instance,
         }
     }
 
     #[must_use]
-    pub const fn absolute(names: Vec<String>) -> Self {
+    pub const fn absolute(names: Vec<String>, instance: Option<String>) -> Self {
         Self {
             root: ModuleRoot::Absolute,
             names,
+            instance,
         }
     }
 
     #[must_use]
-    pub const fn package(root: String, names: Vec<String>) -> Self {
+    pub const fn package(root: String, names: Vec<String>, instance: Option<String>) -> Self {
         Self {
             root: ModuleRoot::Package(root),
             names,
+            instance,
         }
     }
 
     #[must_use]
     pub const fn root(&self) -> &ModuleRoot {
         &self.root
+    }
+
+    #[must_use]
+    pub const fn instance(&self) -> &Option<String> {
+        &self.instance
     }
 
     #[must_use]
@@ -71,7 +94,18 @@ impl ModuleName {
 
 impl Display for ModuleName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.names.join("."))
+        match &self.root {
+            ModuleRoot::Relative => {}
+            ModuleRoot::Absolute => write!(f, "$.")?,
+            ModuleRoot::Package(pkg) => write!(f, "${pkg}.")?,
+        }
+
+        write!(f, "{}", self.names.join("."))?;
+
+        if let Some(instance) = &self.instance {
+            write!(f, "@{instance}")?;
+        }
+        Ok(())
     }
 }
 
@@ -85,6 +119,12 @@ impl From<&str> for ModuleName {
     }
 }
 
+impl From<&String> for ModuleName {
+    fn from(value: &String) -> Self {
+        Self::from(value.as_str())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::util::module_name::{ModuleName, ModuleRoot};
@@ -93,8 +133,6 @@ mod tests {
     fn basic() {
         let name = ModuleName::new(vec![String::from("a"), String::from("b")]);
 
-        /* assert_eq!(name.to_program_path(), "a/b.rapt"); */
-        /* assert_eq!(name.to_include_path(), "a/b.rinc"); */
         assert_eq!(name.parts(), &["a", "b"]);
     }
 
@@ -139,5 +177,25 @@ mod tests {
         let expected: &[&str] = &["a", "b", "c"];
 
         assert_eq!(name.parts(), expected);
+    }
+
+    #[test]
+    fn roundtrip() {
+        const TESTS: &[&str] = &[
+            "a",       // relative paths
+            "a.b",     //
+            "a.b.c",   //
+            "$.a",     // absolute paths
+            "$.a.b",   //
+            "$.a.b.c", //
+            "$a.b",    // package paths
+            "$a.b.c",  //
+        ];
+
+        for test in TESTS {
+            let name = ModuleName::from(*test);
+            let text = name.to_string();
+            assert_eq!(*test, text);
+        }
     }
 }

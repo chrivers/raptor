@@ -1,13 +1,12 @@
 use std::fmt::{self, Display};
 
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8PathBuf;
 use colored::Colorize;
 use minijinja::Value;
 
 use raptor_parser::ast::{
     FromSource, InstCmd, InstEntrypoint, InstMount, Instruction, Origin, Statement,
 };
-use raptor_parser::util::SafeParent;
 
 use crate::RaptorResult;
 use crate::dsl::Item;
@@ -101,28 +100,6 @@ impl Program {
 
         mounts
     }
-
-    pub fn path_for(&self, path: impl AsRef<Utf8Path>) -> RaptorResult<Utf8PathBuf> {
-        Ok(self.path.try_parent()?.join(path.as_ref()))
-    }
-}
-
-impl IntoIterator for Program {
-    type Item = Item;
-    type IntoIter = <Vec<Item> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.code.into_iter()
-    }
-}
-
-impl<'a> IntoIterator for &'a Program {
-    type Item = &'a Item;
-    type IntoIter = <&'a Vec<Item> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.code.iter()
-    }
 }
 
 impl Display for Program {
@@ -148,11 +125,5 @@ impl Display for Program {
         }
 
         dump(f, self, 0)
-    }
-}
-
-impl Program {
-    pub fn iter(&self) -> std::slice::Iter<Item> {
-        self.code.iter()
     }
 }

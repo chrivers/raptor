@@ -5,7 +5,6 @@ use colored::Colorize;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use minijinja::{Environment, ErrorKind, Value, context};
-use raptor_parser::util::SafeParent;
 use raptor_parser::util::module_name::{ModuleName, ModuleRoot};
 
 use crate::dsl::{Item, Program};
@@ -62,14 +61,14 @@ impl Loader<'_> {
         self.packages.get(name)
     }
 
-    pub fn to_path(
+    fn to_path(
         &self,
         root: &ModuleRoot,
         origin: &Origin,
         end: &Utf8Path,
     ) -> RaptorResult<Utf8PathBuf> {
         let res = match root {
-            ModuleRoot::Relative => origin.path.try_parent()?.join(end),
+            ModuleRoot::Relative => origin.path_for(end)?,
             ModuleRoot::Absolute => self.base.join(end),
             ModuleRoot::Package(pkg) => {
                 let package = self
@@ -102,6 +101,7 @@ impl Loader<'_> {
 
     pub fn clear_cache(&mut self) {
         self.env.clear_templates();
+        self.sources.clear();
         self.programs.clear();
     }
 
@@ -121,11 +121,15 @@ impl Loader<'_> {
                 ));
             }
 
-            let map = prog.ctx.resolve_args(&include.args)?;
+            let mut context = Value::from(prog.ctx.resolve_args(&include.args)?);
             let src = self.to_include_path(&include.src, &origin)?;
 
+            if let Some(instance) = include.src.instance() {
+                context = context! { instance, ..context };
+            }
+
             origins.push(origin.clone());
-            let include = self.parse_template(&src, origins, Value::from(map))?;
+            let include = self.parse_template(&src, origins, context)?;
             origins.pop();
 
             prog.code.push(Item::Statement(Statement { inst, origin }));
@@ -139,8 +143,11 @@ impl Loader<'_> {
 
     fn show_include_stack(&self, origins: &[Origin]) {
         for org in origins {
+            let Some(source) = self.sources.get(org.path.as_str()) else {
+                continue;
+            };
             show_origin_error_context(
-                &self.sources.get(org.path.as_str()).unwrap(),
+                &source,
                 org,
                 "Error while evaluating INCLUDE",
                 "(included here)",
@@ -164,13 +171,15 @@ impl Loader<'_> {
                     if let Some((last, origins)) = &origins.split_last() {
                         self.show_include_stack(origins);
 
-                        show_error_context(
-                            &self.sources.get(last.path.as_str()).unwrap(),
-                            last.path.as_ref(),
-                            "Error while loading source file",
-                            err.detail().unwrap_or("error"),
-                            err.range().unwrap_or_else(|| last.span.clone()),
-                        );
+                        if let Some(src) = self.sources.get(last.path.as_str()) {
+                            show_error_context(
+                                &src,
+                                last.path.as_ref(),
+                                "Error while loading source file",
+                                err.detail().unwrap_or("error"),
+                                err.range().unwrap_or_else(|| last.span.clone()),
+                            );
+                        }
                     } else {
                         error!("Cannot provide error context: {err}");
                     }
@@ -199,6 +208,19 @@ impl Loader<'_> {
                     &err.to_string(),
                 );
             }
+            RaptorError::SandboxRequestError(_errno) => {
+                if let Some((last, origins)) = &origins.split_last() {
+                    self.show_include_stack(origins);
+
+                    let prefix = err.category();
+                    show_origin_error_context(
+                        &self.sources.get(last.path.as_str()).unwrap(),
+                        last,
+                        "Error while executing instruction",
+                        &format!("{prefix}: {err}"),
+                    );
+                }
+            }
             err => {
                 error!("Unexpected error: {err}");
             }
@@ -206,31 +228,7 @@ impl Loader<'_> {
         Ok(())
     }
 
-    pub fn explain_exec_error(
-        &self,
-        stmt: &Statement,
-        err: &RaptorError,
-        origins: &[Origin],
-    ) -> RaptorResult<()> {
-        let origin = &stmt.origin;
-
-        let prefix = err.category();
-
-        show_origin_error_context(
-            &self.sources.get(origin.path.as_str()).unwrap(),
-            origin,
-            "Error while executing instruction",
-            &format!("{prefix}: {err}"),
-        );
-
-        if let RaptorError::MinijinjaError(_) = err {
-            self.explain_error(err, origins)?;
-        }
-
-        Ok(())
-    }
-
-    pub fn parse_template(
+    fn parse_template(
         &self,
         path: impl AsRef<Utf8Path>,
         origins: &mut Vec<Origin>,
@@ -276,6 +274,7 @@ impl Loader<'_> {
         &self,
         path: impl AsRef<Utf8Path>,
         ctx: Value,
+        origins: &mut Vec<Origin>,
     ) -> RaptorResult<Arc<Program>> {
         let path = path.as_ref();
 
@@ -283,12 +282,26 @@ impl Loader<'_> {
             return Ok(program.clone());
         }
 
-        let mut origins = Vec::new();
-
-        let program = self.parse_template(path, &mut origins, ctx)?;
+        let program = self.parse_template(path, origins, ctx)?;
 
         self.programs.insert(path.into(), program);
 
         Ok(self.programs.get(path).unwrap().clone())
+    }
+
+    pub fn load_program(&self, name: &ModuleName, origin: Origin) -> RaptorResult<Arc<Program>> {
+        let path = self.to_program_path(name, &origin)?;
+        let context = name
+            .instance()
+            .as_ref()
+            .map_or_else(|| context! {}, |instance| context! { instance });
+
+        let mut origins = vec![origin];
+
+        self.load_template(&path, context, &mut origins)
+            .or_else(|err| {
+                self.explain_error(&err, &origins)?;
+                Err(err)
+            })
     }
 }
