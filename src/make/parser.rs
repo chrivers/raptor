@@ -48,8 +48,8 @@ pub struct RunTarget {
     #[serde(deserialize_with = "string_or_list", default)]
     pub input: Vec<String>,
 
-    #[serde(default)]
-    pub output: Option<String>,
+    #[serde(deserialize_with = "string_or_list", default)]
+    pub output: Vec<String>,
 
     #[serde(default)]
     pub entrypoint: Vec<String>,

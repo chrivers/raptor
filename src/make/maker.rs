@@ -91,14 +91,17 @@ impl<'a> Maker<'a> {
             }
         }
 
-        if let Some(output) = &job.output
-            && Utf8Path::new(output)
-                .metadata()
-                .and_then(|md| md.modified())
-                .unwrap_or(SystemTime::UNIX_EPOCH)
-                >= newest
-        {
-            info!("Output file [{output}] is up to date");
+        let oldest = job
+            .output
+            .iter()
+            .map(Utf8Path::new)
+            .flat_map(Utf8Path::metadata)
+            .flat_map(|md| md.modified())
+            .min()
+            .unwrap_or(SystemTime::UNIX_EPOCH);
+
+        if oldest >= newest {
+            info!("Output is up to date");
             return Ok(ExitStatus::default());
         }
 
@@ -122,9 +125,10 @@ impl<'a> Maker<'a> {
             .or_default()
             .extend(job.input.iter().map(String::as_str));
 
-        if let Some(output) = &job.output {
-            mounts.insert("output", vec![output.as_str()]);
-        }
+        mounts
+            .entry("output")
+            .or_default()
+            .extend(job.output.iter().map(String::as_str));
 
         let env = job
             .env
