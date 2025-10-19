@@ -8,11 +8,31 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Padding, Paragraph, StatefulWidget, Widget};
 
 use crate::make::planner::{Job, Planner};
+use crate::tui::jobstate::JobState;
 use crate::tui::ptyctrl::PtyJobController;
 
 pub struct JobList {
     jobs: Vec<(usize, u64)>,
     targetlist: HashMap<u64, Job>,
+}
+
+#[derive(Default)]
+pub struct JobStats {
+    pub planned: usize,
+    pub running: usize,
+    pub completed: usize,
+}
+
+impl JobStats {
+    #[must_use]
+    pub const fn sum(&self) -> usize {
+        self.planned + self.running + self.completed
+    }
+
+    #[must_use]
+    pub const fn complete(&self) -> bool {
+        (self.planned + self.running) == 0
+    }
 }
 
 impl JobList {
@@ -38,6 +58,19 @@ impl JobList {
         self.targetlist
             .keys()
             .all(|id| ctrl.job_state(*id) == JobState::Completed)
+    }
+
+    #[must_use]
+    pub fn stats(&self, ctrl: &PtyJobController) -> JobStats {
+        let mut stats = JobStats::default();
+        for key in self.targetlist.keys() {
+            match ctrl.job_state(*key) {
+                JobState::Planned => stats.planned += 1,
+                JobState::Running => stats.running += 1,
+                JobState::Completed => stats.completed += 1,
+            }
+        }
+        stats
     }
 
     fn generate_sublist(
