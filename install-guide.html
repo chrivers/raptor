@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Module names - Raptor Manual</title>
+        <title>Installling Raptor - Raptor Manual</title>
 
 
         <!-- Custom HTML head -->
@@ -176,129 +176,95 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="module-names"><a class="header" href="#module-names">Module names</a></h1>
-<p>In Raptor, “module names” are the names Raptor files use to refer to other
-Raptor files.</p>
-<p>This is the case both for the <code>FROM</code> instruction (where the modules have the
-<code>.rapt</code> extension) and <code>INCLUDE</code> (<code>.rinc</code> extension).</p>
-<p>There are three types of module names; Relative, Absolute and Package names.</p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Type</th><th style="text-align: left">Example</th><th>Description</th></tr></thead><tbody>
-<tr><td style="text-align: left">Relative</td><td style="text-align: left"><code>foo.bar</code></td><td>Used to refer to paths at or below the current directory</td></tr>
-<tr><td style="text-align: left">Absolute</td><td style="text-align: left"><code>$.foo.bar</code></td><td>Used to refer to paths from the root of the current package</td></tr>
-<tr><td style="text-align: left">Package</td><td style="text-align: left"><code>$foo.bar</code></td><td>Used to refer to paths in other packages</td></tr>
-</tbody></table>
-</div>
-<p>The difference between these forms is how they resolve to paths in the
-filesystem. For a detailed explanation of each, see the following sections.</p>
-<h2 id="instancing"><a class="header" href="#instancing">Instancing</a></h2>
-<p>Each of these forms support <em>instancing</em>, which is a way to pass a single,
-simple parameter through the module name, by appending a <code>@</code> followed by the
-value, to the module name.</p>
-<p>All raptor files are either instanced (<code>example@.rapt</code> / <code>example@.rinc</code>) or not
-(<code>example.rapt</code> / <code>example.rinc</code>).</p>
-<p>Non-instanced files <em>cannot</em> be referenced with an instanced name, and vice
-versa.</p>
-<p>Users of <code>systemd</code> might recognize this pattern, which is used in the same way
-there.</p>
-<p>To learn more, read the <a href="/instancing.html">section on instancing</a>.</p>
-<h2 id="relative-module-names"><a class="header" href="#relative-module-names">Relative module names</a></h2>
-<p>The first, and arguably simplest form, is the <em>Relative</em> name. It is
-characterized by not having a dollar sign (<code>$</code>) in front of the first element,
-unlike the other two forms.</p>
-<p>Relative module paths form a sequence of one or more <em>elements</em>, which are the
-names between the dots (<code>.</code>).</p>
-<p>Each element before the last is viewed as a directory. The last element is the
-file name, appended with either <code>.rapt</code> for <code>FROM</code> instructions, or <code>.rinc</code> for
-<code>INCLUDE</code> instructions.</p>
-<p>In other words, <code>a.b.c.d</code> becomes <code>a/b/c/d.rapt</code> (<code>FROM</code>) or <code>a/b/c/d.rinc</code> (<code>INCLUDE</code>).</p>
-<h3 id="examples"><a class="header" href="#examples">Examples:</a></h3>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Statement</th><th style="text-align: left">Source file</th><th style="text-align: left">Resulting path</th></tr></thead><tbody>
-<tr><td style="text-align: left"><code>FROM base</code></td><td style="text-align: left"><code>target.rapt</code></td><td style="text-align: left"><code>base.rapt</code></td></tr>
-<tr><td style="text-align: left"><code>FROM base</code></td><td style="text-align: left"><code>lib/target.rapt</code></td><td style="text-align: left"><code>lib/base.rapt</code></td></tr>
-<tr><td style="text-align: left"><code>FROM utils.base</code></td><td style="text-align: left"><code>lib/target.rapt</code></td><td style="text-align: left"><code>lib/utils/base.rapt</code></td></tr>
-<tr><td style="text-align: left"><code>INCLUDE babelfish</code></td><td style="text-align: left"><code>lib/target.rapt</code></td><td style="text-align: left"><code>lib/babelfish.rinc</code></td></tr>
-<tr><td style="text-align: left"><code>INCLUDE hitchhiker.guide</code></td><td style="text-align: left"><code>lib/target.rapt</code></td><td style="text-align: left"><code>lib/hitchhiker/guide.rinc</code></td></tr>
-</tbody></table>
-</div>
-<h2 id="absolute-module-names"><a class="header" href="#absolute-module-names">Absolute module names</a></h2>
-<p>Relative module names are simple, but lack the ability to point upwards in the
-directory heirarchy.</p>
-<p>For example, suppose you want to organize a set of Raptor files like so:</p>
-<pre><code>~/project/base.rapt
-~/project/hostname.rinc
-~/project/target/common.rapt
-~/project/target/frontend.rapt
-~/project/target/database.rapt
-~/project/lib/utils/tools.rinc
+                        <h1 id="install-guide"><a class="header" href="#install-guide">Install guide</a></h1>
+<p>Currently, the only supported and recommended way to install raptor is by
+compiling from source. Pre-built binary packages might be available in the
+future.</p>
+<h2 id="new-user"><a class="header" href="#new-user">New user?</a></h2>
+<ol>
+<li>Complete “Install prerequisites”</li>
+<li>Complete “Install Raptor from git”</li>
+</ol>
+<h2 id="install-prerequisites"><a class="header" href="#install-prerequisites">Install prerequisites</a></h2>
+<ol>
+<li>
+<p>Install necessary packages:</p>
+<pre><code class="language-sh">sudo apt-get update
+sudo apt-get install -y git musl-tools
 </code></pre>
-<p>The <code>base</code> layer can <code>INCLUDE hostname</code>, but the <code>frontend</code> and <code>database</code>
-targets have no way to specify they want to build <code>FROM</code> the <code>base</code> layer!</p>
-<p>This is where <em>absolute</em> module names are useful.</p>
-<p>By prefixing a name with <code>$.</code> (dollar + dot) the name refers to the root of the
-current package.</p>
-<p>We will go into more detail of what a package is, in the next section. For now,
-it is enough to know that when invoking <code>raptor</code> on a target, the root for that
-target is the directory that <code>raptor</code> was started from.</p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Statement</th><th style="text-align: left">Source file</th><th style="text-align: left">Resulting path</th></tr></thead><tbody>
-<tr><td style="text-align: left"><code>FROM $.base</code></td><td style="text-align: left"><code>target/frontend.rapt</code></td><td style="text-align: left"><code>base.rapt</code></td></tr>
-<tr><td style="text-align: left"><code>FROM common</code></td><td style="text-align: left"><code>target/frontend.rapt</code></td><td style="text-align: left"><code>target/common.rapt</code></td></tr>
-<tr><td style="text-align: left"><code>FROM $.target.common</code></td><td style="text-align: left"><code>target/frontend.rapt</code></td><td style="text-align: left"><code>target/common.rapt</code></td></tr>
-<tr><td style="text-align: left"><code>INCLUDE $.lib.utils.tools</code></td><td style="text-align: left"><code>target/database.rapt</code></td><td style="text-align: left"><code>lib/utils/tools.rapt</code></td></tr>
-</tbody></table>
-</div>
-<h2 id="package-module-names"><a class="header" href="#package-module-names">Package module names</a></h2>
-<p>In the previous section, we briefly mentioned <em>packages</em>.</p>
-<p>Raptor is designed to work collaboratively, encouraging sharing of code between
-projects, and people. A Raptor package is simply a collection of useful Raptor
-files, typically distributed as a git repository.</p>
-<p>This means we need a robust way to refer to Raptor files outside of our current
-project, as well as a way to tell Raptor how to find these files.</p>
-<p>This is where <em>package</em> module names are used.</p>
-<p>First, let us take a look at how to make Raptor aware of external code
-bases. This is called <em>linking</em>, analogous to how the term is used when building
-a program from several sources.</p>
-<p>When invoking <code>raptor</code>, the <code>-L</code> option defines a linked raptor package:</p>
-<pre><code class="language-sh">sudo raptor -L name src ...
+</li>
+<li>
+<p>Install <a href="https://rustup.rs">Rust 1.90 or greater</a>:</p>
+<pre><code class="language-sh">curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 </code></pre>
-<p>For example, imagine we are working on a web service, and we want to generate
-the deployment with Raptor. Now imagine this requires a database server, and
-that someone else is responsible for the Raptor code that controls the database.</p>
-<p>Then we might have a file layout like so:</p>
-<pre><code>~/project/web/server.rapt
-~/project/database/db-setup.rinc
+</li>
+<li>
+<p>Install <code>musl</code> target for rust:</p>
+<pre><code class="language-sh">rustup target add x86_64-unknown-linux-musl
 </code></pre>
-<p>We fully control <code>~/projects/web</code>, but <code>~/project/database</code> is a git repository
-we only pull changes from.</p>
-<p>We would like to <code>INCLUDE</code> the <code>db-setup</code> module, but it exists outside our own
-repository.</p>
-<p>This can be solved by declaring <code>database</code> as linked package:</p>
-<pre><code class="language-sh">$ cd ~/project/web
-$ sudo raptor build server -L database ../database
+</li>
+</ol>
+<p>Now you are ready to install Raptor.</p>
+<h2 id="install-raptor-from-git-stable"><a class="header" href="#install-raptor-from-git-stable">Install Raptor from git [stable]</a></h2>
+<ol>
+<li>
+<p>Install prerequisites (see first section)</p>
+</li>
+<li>
+<p>Install <code>raptor</code> and <code>falcon</code> from git:</p>
+<pre><code class="language-sh">cargo install \
+    --target "x86_64-unknown-linux-musl" \
+    --git "https://github.com/chrivers/raptor" \
+    raptor falcon
 </code></pre>
-<p>Now, we can refer to the content of <code>../database</code> by using <code>$database</code>.</p>
-<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+</li>
+</ol>
+<div id="admonition-caution" class="admonition admonish-warning" role="note" aria-labelledby="admonition-caution-title">
 <div class="admonition-title">
-<div id="admonition-tip-title">
-<p>Tip</p>
+<div id="admonition-caution-title">
+<p>Caution</p>
 </div>
-<a class="admonition-anchor-link" href="#admonition-tip"></a>
+<a class="admonition-anchor-link" href="#admonition-caution"></a>
 </div>
 <div>
-<p>We don’t have to give the link the same name as the directory it refers to!</p>
-<p>If we link with <code>-L lib1 ../database</code>, we could instead refer to it as <code>$lib1.db-setup</code>.</p>
-<p>Feel free to use any link name that suits the project; the linked names have no impact outside your project.</p>
+<p>The argument <code>--target "x86_64-unknown-linux-musl"</code> is very important!</p>
+<p>Without it, Raptor <em>will compile</em>, but Falcon (the sandbox client used for
+building containers) will not be statically compiled. Since it is running inside
+sandboxed environments, where glibc is not always available in the correct
+version (or at all), you will get confusing errors when trying to build Raptor
+targets.</p>
+<p><strong>Consequence</strong>: without <code>--target "x86_64-unknown-linux-musl"</code>, the <code>cargo install</code>
+command will compile and install, but the installation <em>will</em> be broken.</p>
 </div>
 </div>
+<h2 id="install-raptor-from-git-development-branch"><a class="header" href="#install-raptor-from-git-development-branch">Install Raptor from git [development branch]</a></h2>
+<p>This procedure is intended for developers, beta testers, and anyone else who
+want to try a specific branch build of Raptor. To test a branch named
+<code>hypothetical</code>:</p>
+<ol>
+<li>
+<p>Install prerequisites (see first section)</p>
+</li>
+<li>
+<p>Install <code>raptor</code> and <code>falcon</code> from git:</p>
+<pre><code class="language-sh">cargo install \
+    --target "x86_64-unknown-linux-musl" \
+    --git "https://github.com/chrivers/raptor" \
+    --branch "hypothetical" \
+    raptor falcon
+</code></pre>
+</li>
+</ol>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="reference-manual.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="user-guide.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="instancing.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="walkthrough/debian/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -308,11 +274,11 @@ $ sudo raptor build server -L database ../database
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="reference-manual.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="user-guide.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="instancing.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="walkthrough/debian/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

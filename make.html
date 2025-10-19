@@ -176,7 +176,92 @@
 
                 <div id="content" class="content">
                     <main>
-                        
+                        <h1 id="raptor-make"><a class="header" href="#raptor-make">Raptor make</a></h1>
+<h2 id="overall-structure"><a class="header" href="#overall-structure">Overall structure</a></h2>
+<p>Below is an example of the overall structure of a <code>Raptor.toml</code> file.</p>
+<p><strong>Note</strong>: All parts are optional, so you only need to define the parts you need.</p>
+<pre><code class="language-toml">[raptor.link]
+name1 = "path/to/source1"
+name2 = "path/to/source2"
+...
+
+[run.purple]
+# ..run target here..
+
+[run.orange]
+# ..run target here..
+
+[group.green]
+# ..group here..
+
+[group.yellow]
+# ..group here..
+</code></pre>
+<h2 id="run-target-format"><a class="header" href="#run-target-format">Run target format</a></h2>
+<p>A run target (<code>[run.&lt;name&gt;]</code>) is the most commonly used feature in
+<code>Raptor.toml</code>.</p>
+<p>The structure for a job named <code>example</code> is shown below, where each field is
+specified with its default value.</p>
+<p><strong>Note</strong>: Only the <code>target</code> field is required! Everything else can be specified as needed.</p>
+<div id="admonition-raptortoml-run" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-run-title">
+<div class="admonition-title">
+<div id="admonition-raptortoml-run-title">
+<p>Raptor.toml run</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-raptortoml-run"></a>
+</div>
+<div>
+<pre><code class="language-toml">[run.example]
+target = &lt;required&gt;
+
+# Cache mounts
+# (default is empty list)
+#
+# Note: A single element can be specified as a string instead of the list
+cache = []
+
+# Input mounts
+# (default is empty list)
+#
+# Note: A single element can be specified as a string instead of the list
+input = []
+
+# Output mounts
+# (default is empty list)
+#
+# Note: A single element can be specified as a string instead of the list
+output = []
+
+# Entrypoint arguments
+entrypoint = []
+
+# Command arguments
+args = []
+
+# BTreeMap&lt;String, String&gt;
+env = {}
+
+# State directory for container state
+# (default is unset, meaning ephemeral containers)
+#state_dir =
+</code></pre>
+</div>
+</div>
+<h2 id="group-format"><a class="header" href="#group-format">Group format</a></h2>
+<p>A group is used to collectively refer to a number of run and build jobs, by a
+single name.</p>
+<pre><code class="language-toml">[group.example]
+# List of layers to build
+#
+# Default is empty list
+build = []
+
+# List of names for [run.&lt;name&gt;] targets to run
+#
+# Default is empty list
+run = []
+</code></pre>
+
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
