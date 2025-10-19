@@ -33,5 +33,6 @@ pub fn link_or_copy_file(from: impl AsRef<Utf8Path>, to: impl AsRef<Utf8Path>) -
 
 pub mod capture_proc_fd;
 pub mod clapcolor;
+pub mod flag;
 pub mod kwargs;
 pub mod tty;
