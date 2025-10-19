@@ -126,7 +126,7 @@ impl<'a> TerminalParallelRunner<'a> {
 
             terminal.try_draw(|f| -> IoResult<()> {
                 let layout = Layout::vertical([
-                    Constraint::Max(joblist.lines() as u16),
+                    Constraint::Length(joblist.lines() as u16 + 4),
                     Constraint::Fill(1),
                     Constraint::Length(1),
                 ])
