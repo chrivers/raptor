@@ -24,6 +24,6 @@ additional-css = ["./mdbook-admonish.css"]
 
 # to build custom highlight.js:
 #
-# node ./tools/build.js -t browser plaintext dockerfile raptorfile rust diff json yaml ini
+# node ./tools/build.js -t browser plaintext dockerfile raptorfile rust diff json yaml ini bnf
 #
 # cp highlight.js/build/highlight.js theme/highlight.js
