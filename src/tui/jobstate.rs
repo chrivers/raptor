@@ -1,7 +1,7 @@
 use ratatui::style::{Color, Style};
 use throbber_widgets_tui::QUADRANT_BLOCK_CRACK;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JobState {
     Planned,
     Running,
