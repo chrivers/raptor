@@ -62,7 +62,7 @@ impl<'a> TerminalParallelRunner<'a> {
             ForkptyResult::Child => {
                 let res = match target {
                     Job::Build(build) => maker.build(build).map(drop),
-                    Job::Run(run_target) => maker.run_job(run_target).map(drop),
+                    Job::Run { job, .. } => maker.run_job(job).map(drop),
                 };
 
                 // random delay to debug timing issues and timing-related

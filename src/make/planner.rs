@@ -32,7 +32,7 @@ impl BuildLayer {
 #[derive(Debug, Clone)]
 pub enum Job {
     Build(BuildLayer),
-    Run(RunTarget),
+    Run { name: String, job: RunTarget },
 }
 
 impl Display for Job {
@@ -41,8 +41,8 @@ impl Display for Job {
             Self::Build(layer) => {
                 write!(f, "build: {}", layer.layerinfo.name())
             }
-            Self::Run(run) => {
-                write!(f, "run: {} {:?}", run.target, run.input)
+            Self::Run { name, job } => {
+                write!(f, "run: {name} {} {:?}", job.target, job.input)
             }
         }
     }
@@ -115,10 +115,10 @@ impl<'a> Planner<'a> {
         let job = run_rules
             .get(name)
             .ok_or_else(|| RaptorError::UnknownJob(name.to_string()))?;
-        self.add_run_job(job)
+        self.add_run_job(name, job)
     }
 
-    pub fn add_run_job(&mut self, job: &RunTarget) -> RaptorResult<()> {
+    pub fn add_run_job(&mut self, name: &str, job: &RunTarget) -> RaptorResult<()> {
         let job_hash = self.add_build_job(&job.target)?;
 
         let run_hash = job.hash_value();
@@ -126,7 +126,13 @@ impl<'a> Planner<'a> {
         let mut node = Node::new(run_hash);
         job_hash.inspect(|job_hash| node.add_dep(*job_hash));
         self.nodes.insert(run_hash, node);
-        self.jobs.insert(run_hash, Job::Run(job.clone()));
+        self.jobs.insert(
+            run_hash,
+            Job::Run {
+                name: name.to_string(),
+                job: job.clone(),
+            },
+        );
 
         for input in &job.input {
             let input_hash = self.add_build_job(&ModuleName::from(input))?;
