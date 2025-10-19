@@ -33,6 +33,13 @@ impl JobList {
         self.jobs.len()
     }
 
+    #[must_use]
+    pub fn complete(&self, ctrl: &PtyJobController) -> bool {
+        self.targetlist
+            .keys()
+            .all(|id| ctrl.job_state(*id) == JobState::Completed)
+    }
+
     fn generate_sublist(
         plan: &DepGraph<u64>,
         node: u64,

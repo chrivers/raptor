@@ -83,13 +83,6 @@ impl PtyJobController {
         *self.states.get(&id).unwrap_or(&JobState::Planned)
     }
 
-    #[must_use]
-    pub fn complete(&self) -> bool {
-        self.states
-            .values()
-            .all(|state| *state == JobState::Completed)
-    }
-
     fn poll_fds(&self) -> RaptorResult<Vec<RawFd>> {
         let mut pollfds = vec![];
         for job in self.jobs.values() {

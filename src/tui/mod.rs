@@ -131,7 +131,7 @@ impl<'a> TerminalParallelRunner<'a> {
                 let job_view = JobView::new(&joblist, &jobctrl);
                 f.render_stateful_widget(job_view, layout[0], &mut index);
 
-                if jobctrl.complete() {
+                if joblist.complete(&jobctrl) {
                     let logo = RaptorCompleteLogo::new();
                     f.render_widget(logo, layout[1]);
                 } else {
