@@ -2,11 +2,9 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::{Read, Result as IoResult};
-use std::ops::ControlFlow;
 use std::os::fd::{AsFd, AsRawFd, RawFd};
 use std::rc::Rc;
 
-use crossbeam::channel::{Receiver, TryRecvError};
 use itertools::Itertools;
 use nix::poll::{PollFd, PollFlags};
 use ratatui::Frame;
@@ -56,21 +54,20 @@ impl PtyJob {
     }
 }
 
+#[derive(Default)]
 pub struct PtyJobController {
     jobs: HashMap<RawFd, PtyJob>,
     resize: bool,
-    rx: Receiver<PtyJob>,
     boxes: Rc<[Rect]>,
     states: HashMap<u64, JobState>,
 }
 
 impl PtyJobController {
     #[must_use]
-    pub fn new(rx: Receiver<PtyJob>) -> Self {
+    pub fn new() -> Self {
         Self {
             jobs: HashMap::new(),
             resize: false,
-            rx,
             boxes: Rc::new([]),
             states: HashMap::new(),
         }
@@ -146,39 +143,18 @@ impl PtyJobController {
         Ok(self.boxes.clone())
     }
 
-    fn process_queue(&mut self) -> ControlFlow<()> {
-        loop {
-            match self.rx.try_recv() {
-                Ok(job) => {
-                    self.states.insert(job.id, JobState::Running);
-                    self.jobs.insert(job.file.as_raw_fd(), job);
-                    self.resize = true;
-                }
-
-                Err(TryRecvError::Empty) => return ControlFlow::Continue(()),
-                Err(TryRecvError::Disconnected) => {
-                    return if self.jobs.is_empty() {
-                        ControlFlow::Break(())
-                    } else {
-                        ControlFlow::Continue(())
-                    };
-                }
-            }
-        }
-    }
-
     pub fn add_job(&mut self, job: PtyJob) {
         self.states.insert(job.id, JobState::Running);
         self.jobs.insert(job.file.as_raw_fd(), job);
         self.resize = true;
     }
 
-    pub fn event(&mut self) -> RaptorResult<ControlFlow<()>> {
+    pub fn event(&mut self) -> RaptorResult<()> {
         let fds = self.poll_fds()?;
 
         self.process_fds(&fds);
 
-        Ok(self.process_queue())
+        Ok(())
     }
 }
 
