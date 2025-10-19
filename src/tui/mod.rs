@@ -9,6 +9,7 @@ use rand::Rng;
 use ratatui::DefaultTerminal;
 use ratatui::crossterm::event::{self, Event, KeyCode};
 use ratatui::layout::{Constraint, Layout};
+use ratatui::style::Stylize;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::RaptorResult;
@@ -17,6 +18,7 @@ use crate::make::planner::{Job, Planner};
 use crate::tui::joblist::{JobList, JobView};
 use crate::tui::logo::RaptorCompleteLogo;
 use crate::tui::ptyctrl::{PtyJob, PtyJobController, PtyJobView};
+use crate::tui::statusbar::StatusBar;
 use crate::util::flag::Flag;
 
 pub mod joblist;
@@ -126,19 +128,32 @@ impl<'a> TerminalParallelRunner<'a> {
                 let layout = Layout::vertical([
                     Constraint::Max(joblist.lines() as u16),
                     Constraint::Fill(1),
+                    Constraint::Length(1),
                 ])
                 .split(f.area());
 
                 let job_view = JobView::new(&joblist, &jobctrl);
                 f.render_stateful_widget(job_view, layout[0], &mut index);
 
-                if joblist.complete(&jobctrl) {
+                let jobstats = joblist.stats(&jobctrl);
+
+                if jobstats.complete() {
                     let logo = RaptorCompleteLogo::new();
                     f.render_widget(logo, layout[1]);
                 } else {
                     let pty_view = PtyJobView::new(&mut jobctrl);
                     pty_view.render(f, layout[1])?;
                 }
+
+                let mut status = StatusBar::new();
+
+                status.add(" Raptor".bold());
+                status.counter(jobstats.sum(), "jobs");
+                status.counter(jobstats.planned, "planned");
+                status.counter(jobstats.running, "running");
+                status.counter(jobstats.completed, "completed");
+
+                f.render_widget(status, layout[2]);
 
                 Ok(())
             })?;
