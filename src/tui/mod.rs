@@ -4,7 +4,8 @@ use std::time::Duration;
 
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use nix::pty::ForkptyResult;
-use nix::sys::wait::waitpid;
+use nix::sys::wait::{WaitStatus, waitpid};
+use nix::unistd::Pid;
 use rand::Rng;
 use ratatui::DefaultTerminal;
 use ratatui::crossterm::event::{self, Event, KeyCode};
@@ -12,7 +13,6 @@ use ratatui::layout::{Constraint, Layout};
 use ratatui::style::Stylize;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
-use crate::RaptorResult;
 use crate::make::maker::Maker;
 use crate::make::planner::{Job, Planner};
 use crate::tui::joblist::{JobList, JobView};
@@ -20,6 +20,7 @@ use crate::tui::logo::RaptorLogo;
 use crate::tui::ptyctrl::{PtyJob, PtyJobController, PtyJobView};
 use crate::tui::statusbar::StatusBar;
 use crate::util::flag::Flag;
+use crate::{RaptorError, RaptorResult};
 
 pub mod joblist;
 pub mod jobstate;
@@ -28,7 +29,8 @@ pub mod ptyctrl;
 pub mod statusbar;
 
 pub enum TerminalEvent {
-    Job(Box<PtyJob>),
+    JobBegin(Pid, Box<PtyJob>),
+    JobEnd(Pid, i32),
     Event(Event),
 }
 
@@ -47,23 +49,21 @@ impl<'a> TerminalParallelRunner<'a> {
         tx: &Sender<TerminalEvent>,
         id: u64,
         target: &Job,
-    ) -> RaptorResult<()> {
+    ) -> RaptorResult<Pid> {
         match unsafe { nix::pty::forkpty(None, None)? } {
             ForkptyResult::Parent { child, master } => {
                 let job = PtyJob::new(master.into(), target.clone(), id);
 
-                tx.send(TerminalEvent::Job(Box::new(job)))?;
+                tx.send(TerminalEvent::JobBegin(child, Box::new(job)))?;
 
-                waitpid(child, None)?;
-
-                Ok(())
+                Ok(child)
             }
 
             ForkptyResult::Child => {
-                match target {
-                    Job::Build(build) => maker.build(build).map(drop)?,
-                    Job::Run(run_target) => maker.run_job(run_target).map(drop)?,
-                }
+                let res = match target {
+                    Job::Build(build) => maker.build(build).map(drop),
+                    Job::Run(run_target) => maker.run_job(run_target).map(drop),
+                };
 
                 // random delay to debug timing issues and timing-related
                 // presentation quirks
@@ -71,7 +71,40 @@ impl<'a> TerminalParallelRunner<'a> {
                 let duration = Duration::from_millis(amount);
                 std::thread::sleep(duration);
 
-                std::process::exit(0);
+                match res {
+                    Ok(()) => std::process::exit(0),
+                    Err(err) => {
+                        error!("Child process failed: {err:?}");
+                        std::process::exit(1)
+                    }
+                }
+            }
+        }
+    }
+
+    fn run_pty_job(
+        maker: &Maker,
+        tx: &Sender<TerminalEvent>,
+        id: u64,
+        target: &Job,
+    ) -> RaptorResult<()> {
+        let pid = Self::spawn_pty_job(maker, tx, id, target)?;
+
+        loop {
+            match waitpid(pid, None)? {
+                WaitStatus::Exited(pid, result) => {
+                    tx.send(TerminalEvent::JobEnd(pid, result))?;
+                    return Err(RaptorError::LayerBuildError);
+                }
+                WaitStatus::Signaled(_pid, _signal, _) => {
+                    tx.send(TerminalEvent::JobEnd(pid, -1))?;
+                    return Err(RaptorError::LayerBuildError);
+                }
+                WaitStatus::Stopped(_pid, _signal) => {}
+                WaitStatus::PtraceEvent(_pid, _signal, _) => {}
+                WaitStatus::PtraceSyscall(_pid) => {}
+                WaitStatus::Continued(_pid) => {}
+                WaitStatus::StillAlive => unreachable!(),
             }
         }
     }
@@ -83,7 +116,18 @@ impl<'a> TerminalParallelRunner<'a> {
     ) -> ControlFlow<()> {
         loop {
             match rx.try_recv() {
-                Ok(TerminalEvent::Job(job)) => jobctrl.add_job(*job),
+                Ok(TerminalEvent::JobBegin(pid, job)) => {
+                    jobctrl.add_job(pid, *job);
+                }
+
+                Ok(TerminalEvent::JobEnd(pid, status)) => {
+                    if status == 0 {
+                        jobctrl.end_job(pid);
+                    } else {
+                        jobctrl.fail_job(pid);
+                    }
+                }
+
                 Ok(TerminalEvent::Event(evt)) => {
                     if let Event::Key(key) = evt
                         && key.code == KeyCode::Char('q')
@@ -192,7 +236,7 @@ impl<'a> TerminalParallelRunner<'a> {
             s.spawn(|| Self::read_events(&tx, &alive));
 
             plan.into_par_iter().try_for_each_with(&tx, |tx, id| {
-                Self::spawn_pty_job(self.maker, tx, *id, &targetlist[&id])
+                Self::run_pty_job(self.maker, tx, *id, &targetlist[&id])
             })
         })
     }

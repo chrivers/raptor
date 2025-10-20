@@ -7,6 +7,7 @@ use std::rc::Rc;
 
 use itertools::Itertools;
 use nix::poll::{PollFd, PollFlags};
+use nix::unistd::Pid;
 use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
@@ -65,6 +66,7 @@ pub struct PtyJobController {
     resize: bool,
     boxes: Rc<[Rect]>,
     states: HashMap<u64, JobState>,
+    tasks: HashMap<Pid, u64>,
 }
 
 impl PtyJobController {
@@ -75,6 +77,7 @@ impl PtyJobController {
             resize: false,
             boxes: Rc::new([]),
             states: HashMap::new(),
+            tasks: HashMap::new(),
         }
     }
 
@@ -114,7 +117,6 @@ impl PtyJobController {
             let sz = job.file.read(&mut buf);
             match sz {
                 Ok(0) | Err(_) => {
-                    self.states.insert(job.id, JobState::Completed);
                     self.jobs.remove(fd);
                     self.resize = true;
                 }
@@ -141,10 +143,19 @@ impl PtyJobController {
         Ok(self.boxes.clone())
     }
 
-    pub fn add_job(&mut self, job: PtyJob) {
+    pub fn add_job(&mut self, pid: Pid, job: PtyJob) {
         self.states.insert(job.id, JobState::Running);
+        self.tasks.insert(pid, job.id);
         self.jobs.insert(job.file.as_raw_fd(), job);
         self.resize = true;
+    }
+
+    pub fn end_job(&mut self, pid: Pid) {
+        self.states.insert(self.tasks[&pid], JobState::Completed);
+    }
+
+    pub fn fail_job(&mut self, pid: Pid) {
+        self.states.insert(self.tasks[&pid], JobState::Failed);
     }
 
     pub fn event(&mut self) -> RaptorResult<()> {
