@@ -21,12 +21,13 @@ pub struct JobStats {
     pub planned: usize,
     pub running: usize,
     pub completed: usize,
+    pub failed: usize,
 }
 
 impl JobStats {
     #[must_use]
     pub const fn sum(&self) -> usize {
-        self.planned + self.running + self.completed
+        self.planned + self.running + self.completed + self.failed
     }
 
     #[must_use]
@@ -68,6 +69,7 @@ impl JobList {
                 JobState::Planned => stats.planned += 1,
                 JobState::Running => stats.running += 1,
                 JobState::Completed => stats.completed += 1,
+                JobState::Failed => stats.failed += 1,
             }
         }
         stats
