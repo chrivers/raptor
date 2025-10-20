@@ -100,7 +100,7 @@ impl<'a> Maker<'a> {
             .min()
             .unwrap_or(SystemTime::UNIX_EPOCH);
 
-        if oldest >= newest {
+        if oldest >= newest && newest != SystemTime::UNIX_EPOCH {
             info!("Output is up to date");
             return Ok(ExitStatus::default());
         }
