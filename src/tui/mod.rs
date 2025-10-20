@@ -152,6 +152,7 @@ impl<'a> TerminalParallelRunner<'a> {
                 status.counter(jobstats.planned, "planned");
                 status.counter(jobstats.running, "running");
                 status.counter(jobstats.completed, "completed");
+                status.counter(jobstats.failed, "failed");
 
                 f.render_widget(status, layout[2]);
 
