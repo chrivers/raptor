@@ -44,6 +44,11 @@ impl PtyJob {
     }
 
     #[must_use]
+    pub const fn id(&self) -> u64 {
+        self.id
+    }
+
+    #[must_use]
     pub const fn custom(file: File, job: Job, parser: vt100::Parser, id: u64) -> Self {
         Self {
             file,
