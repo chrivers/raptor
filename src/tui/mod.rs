@@ -16,7 +16,7 @@ use crate::RaptorResult;
 use crate::make::maker::Maker;
 use crate::make::planner::{Job, Planner};
 use crate::tui::joblist::{JobList, JobView};
-use crate::tui::logo::RaptorCompleteLogo;
+use crate::tui::logo::RaptorLogo;
 use crate::tui::ptyctrl::{PtyJob, PtyJobController, PtyJobView};
 use crate::tui::statusbar::StatusBar;
 use crate::util::flag::Flag;
@@ -138,7 +138,11 @@ impl<'a> TerminalParallelRunner<'a> {
                 let jobstats = joblist.stats(&jobctrl);
 
                 if jobstats.complete() {
-                    let logo = RaptorCompleteLogo::new();
+                    let logo = if jobstats.failed == 0 {
+                        RaptorLogo::complete()
+                    } else {
+                        RaptorLogo::failed()
+                    };
                     f.render_widget(logo, layout[1]);
                 } else {
                     let pty_view = PtyJobView::new(&mut jobctrl);

@@ -3,19 +3,13 @@ use ratatui::style::Stylize;
 use ratatui::widgets::Widget;
 use tui_big_text::{BigText, PixelSize};
 
-pub struct RaptorCompleteLogo<'a> {
+pub struct RaptorLogo<'a> {
     text: BigText<'a>,
 }
 
-impl Default for RaptorCompleteLogo<'_> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl RaptorCompleteLogo<'_> {
+impl RaptorLogo<'_> {
     #[must_use]
-    pub fn new() -> Self {
+    pub fn complete() -> Self {
         let text = BigText::builder()
             .pixel_size(PixelSize::Quadrant)
             .lines(vec![
@@ -28,9 +22,24 @@ impl RaptorCompleteLogo<'_> {
 
         Self { text }
     }
+
+    #[must_use]
+    pub fn failed() -> Self {
+        let text = BigText::builder()
+            .pixel_size(PixelSize::Quadrant)
+            .lines(vec![
+                "<Build failure>".light_red().bold().into(),
+                "---------------".dark_gray().into(),
+                "press q to quit".white().into(),
+            ])
+            .centered()
+            .build();
+
+        Self { text }
+    }
 }
 
-impl Widget for RaptorCompleteLogo<'_> {
+impl Widget for RaptorLogo<'_> {
     #[allow(clippy::cast_possible_truncation)]
     fn render(self, area: Rect, buf: &mut ratatui::prelude::Buffer)
     where
