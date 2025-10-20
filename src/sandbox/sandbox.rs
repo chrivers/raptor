@@ -24,6 +24,10 @@ pub struct Sandbox {
 impl Sandbox {
     pub const DEV_FALCON_PATH: &str = "target/x86_64-unknown-linux-musl/release/falcon";
 
+    pub const NSPAWN_BASE_DIRS: &[&str] = &[
+        "usr", "var", "sys", "run", "root", "proc", "etc", "dev", "tmp",
+    ];
+
     pub fn find_falcon() -> RaptorResult<Utf8PathBuf> {
         Ok(Utf8PathBuf::try_from(which::which_global("falcon")?)?)
     }
@@ -96,6 +100,9 @@ impl Sandbox {
 
         temp:
           - /usr (<-- empty dir)
+          - /var
+          - /etc
+          - /...
 
         conn:
           - /raptor (<-- socket)
@@ -117,8 +124,10 @@ impl Sandbox {
         let uuid_name = uuid.as_simple().to_string();
 
         /* the ephemeral root directory needs to have /usr for systemd-nspawn to accept it */
-        let root = tempdir.path().join("root");
-        std::fs::create_dir_all(root.join("usr"))?;
+        let root = tempdir.path();
+        for dir in Self::NSPAWN_BASE_DIRS {
+            std::fs::create_dir(root.join(dir))?;
+        }
 
         /* external root is the absolute path of the tempdir */
         let ext_root = conndir.path();
@@ -140,11 +149,11 @@ impl Sandbox {
 
         spawn = spawn
             .uuid(uuid)
-            .root_overlay(tempdir.path())
+            .root_overlay(root)
             .root_overlays(layers)
             .root_overlay(rootdir)
             .bind_ro(BindMount::new(ext_root, &int_root))
-            .directory(&root)
+            .directory(root)
             .setenv("FALCON_SOCKET", int_socket_path.as_str())
             .setenv("FALCON_LOG_LEVEL", log::max_level().as_str())
             .arg(int_client_path.as_str());
