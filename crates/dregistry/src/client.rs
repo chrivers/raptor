@@ -102,12 +102,11 @@ impl DockerClient {
     }
 
     fn api_url(&self, url: impl AsRef<str>) -> String {
-        format!(
-            "https://{}/v2/{}/{}",
-            &self.domain,
-            &self.image,
-            url.as_ref()
-        )
+        let domain = &self.domain;
+        let image = &self.image;
+        let url = url.as_ref();
+
+        format!("https://{domain}/v2/{image}/{url}")
     }
 
     fn get<T: DeserializeOwned>(&self, url: impl IntoUrl, accept: &str) -> DResult<T> {
