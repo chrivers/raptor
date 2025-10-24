@@ -26,6 +26,9 @@ pub enum DockerError {
     #[error(transparent)]
     ParseError(#[from] crate::authparse::ParseError),
 
+    #[error("Registry uses unsupported authentication method (only \"Bearer\" is supported)")]
+    UnsupportedAuthMethod,
+
     #[error("Could not parse digest")]
     DigestError,
 
