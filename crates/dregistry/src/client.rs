@@ -1,16 +1,15 @@
 use std::borrow::Cow;
-use std::collections::HashMap;
-use std::sync::LazyLock;
 
 use reqwest::blocking::{Client, RequestBuilder, Response};
-use reqwest::header;
-use reqwest::{IntoUrl, Method};
+use reqwest::header::{ACCEPT, HeaderValue, WWW_AUTHENTICATE};
+use reqwest::{IntoUrl, Method, StatusCode};
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 
-use crate::api::{DockerLayers, DockerManifests, DockerTagsList};
+use crate::api::{DockerTagsList, Manifest, V2Manifest};
+use crate::authparse::parse_www_authenticate;
 use crate::digest::Digest;
-use crate::error::DResult;
+use crate::error::{DResult, DockerError};
 
 pub trait Reference {
     fn reference(&self) -> Cow<str>;
@@ -46,33 +45,6 @@ pub struct DockerClient {
     image: String,
 }
 
-pub struct TokenProvider<'a> {
-    pub domain: &'a str,
-    pub service: &'a str,
-}
-
-pub static TOKEN_PROVIDERS: LazyLock<HashMap<&'static str, TokenProvider<'static>>> =
-    LazyLock::new(|| {
-        let mut map = HashMap::new();
-        map.insert(
-            "index.docker.io",
-            TokenProvider {
-                domain: "auth.docker.io",
-                service: "registry.docker.io",
-            },
-        );
-
-        map.insert(
-            "ghcr.io",
-            TokenProvider {
-                domain: "ghcr.io",
-                service: "ghcr.io",
-            },
-        );
-
-        map
-    });
-
 impl DockerClient {
     const MIME_TYPE_MANIFEST: &str = "application/vnd.oci.image.manifest.v1+json";
     const MIME_TYPE_INDEX: &str = "application/vnd.oci.image.index.v1+json";
@@ -81,12 +53,10 @@ impl DockerClient {
         let image = image.as_ref().to_string();
         let domain = domain.as_ref().to_string();
 
-        let token = Self::get_docker_token(&client, &domain, &image)?;
-
         Ok(Self {
             client,
             domain,
-            token,
+            token: None,
             image,
         })
     }
@@ -109,7 +79,7 @@ impl DockerClient {
         format!("https://{domain}/v2/{image}/{url}")
     }
 
-    fn get<T: DeserializeOwned>(&self, url: impl IntoUrl, accept: &str) -> DResult<T> {
+    fn get<T: DeserializeOwned>(&mut self, url: impl IntoUrl, accept: &str) -> DResult<T> {
         /* eprintln!( */
         /*     "curl -H 'Authorization: Bearer {}' {}", */
         /*     &self.token.as_deref().unwrap_or(""), */
@@ -117,53 +87,80 @@ impl DockerClient {
         /* ); */
 
         let url = url.into_url()?;
-        let res = self
-            .request(Method::GET, url)
-            .header(header::ACCEPT, accept)
-            .send()?
-            .error_for_status()?
-            .json()?;
-
-        Ok(res)
-    }
-
-    fn get_docker_token(client: &Client, domain: &str, image: &str) -> DResult<Option<String>> {
-        let Some(TokenProvider { domain, service }) = TOKEN_PROVIDERS.get(domain) else {
-            return Ok(None);
-        };
-
-        let res = client
-            .get(format!(
-                "https://{domain}/token?service={service}&scope=repository:{image}:pull",
-            ))
+        let resp = self
+            .request(Method::GET, url.clone())
+            .header(ACCEPT, accept)
             .send()?;
 
-        let js = res.error_for_status()?.json::<DockerAuthResult>()?;
+        if let Some(header) = resp.headers().get(WWW_AUTHENTICATE)
+            && resp.status() == StatusCode::UNAUTHORIZED
+            && self.token.is_none()
+        {
+            self.token = Some(self.get_docker_token(header)?.token);
+            return self.get(url, accept);
+        }
 
-        Ok(Some(js.token))
+        Ok(resp.error_for_status()?.json()?)
     }
 
-    pub fn tags(&self) -> DResult<DockerTagsList> {
+    fn get_docker_token(&self, header: &HeaderValue) -> DResult<DockerAuthResult> {
+        let mut w = parse_www_authenticate(header.to_str()?)?;
+
+        let Some(mut settings) = w.remove("Bearer") else {
+            return Err(DockerError::UnsupportedAuthMethod);
+        };
+
+        let Some(realm) = settings.remove("realm") else {
+            return Err(DockerError::UnsupportedAuthMethod);
+        };
+
+        let auth_req = self.request(Method::GET, realm).query(&settings);
+
+        Ok(auth_req.send()?.json()?)
+    }
+
+    pub fn tags(&mut self) -> DResult<DockerTagsList> {
         let url = self.api_url("tags/list");
 
         self.get(url, Self::MIME_TYPE_MANIFEST)
     }
 
-    pub fn manifests(&self, reference: &str) -> DResult<DockerManifests> {
-        let url = self.api_url(format!("manifests/{reference}"));
+    pub fn manifest(&mut self, reference: &impl Reference) -> DResult<Manifest> {
+        let url = self.api_url(format!("manifests/{}", reference.reference()));
 
-        self.get(url, Self::MIME_TYPE_INDEX)
+        let mime_type = [Self::MIME_TYPE_INDEX, Self::MIME_TYPE_MANIFEST].join(",");
+
+        self.get(url, &mime_type)
     }
 
-    pub fn layers(&self, hash: &Digest) -> DResult<DockerLayers> {
-        let url = self.api_url(format!("manifests/{hash}",));
-
-        self.get(url, Self::MIME_TYPE_MANIFEST)
-    }
-
-    pub fn blob(&self, digest: &Digest) -> DResult<Response> {
+    pub fn blob(&mut self, digest: &Digest) -> DResult<Response> {
         let url = self.api_url(format!("blobs/{digest}"));
 
         Ok(self.request(Method::GET, url).send()?)
+    }
+
+    pub fn digests(&mut self, manifest: &Manifest, os: &str, arch: &str) -> DResult<Vec<Digest>> {
+        let res = match manifest {
+            Manifest::V1(manifest) => manifest
+                .fs_layers
+                .iter()
+                .map(|layer| layer.blob_sum.clone())
+                .collect(),
+
+            Manifest::V2(v2 @ V2Manifest::Index { .. }) => {
+                let digest = v2.select(os, arch)?;
+
+                let manifest = self.manifest(&digest)?;
+                self.digests(&manifest, os, arch)?
+            }
+
+            Manifest::V2(V2Manifest::Manifest(docker_layers)) => docker_layers
+                .layers
+                .iter()
+                .map(|layer| layer.digest.clone())
+                .collect(),
+        };
+
+        Ok(res)
     }
 }

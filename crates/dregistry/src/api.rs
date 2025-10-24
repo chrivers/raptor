@@ -46,7 +46,6 @@ pub struct DockerManifests {
 pub struct DockerLayers {
     pub config: DockerLayer,
     pub layers: Vec<DockerLayer>,
-    pub media_type: String,
     pub schema_version: u8,
 }
 
@@ -134,12 +133,17 @@ pub struct DockerManifestPlatform {
     pub features: Vec<String>,
 }
 
-impl DockerManifests {
+impl V2Manifest {
     pub fn select(&self, os: &str, arch: &str) -> DResult<Digest> {
-        for manifest in &self.manifests {
-            if manifest.platform.os == os && manifest.platform.architecture == arch {
-                return Ok(manifest.digest.clone());
+        match self {
+            Self::Index { manifests } => {
+                for manifest in manifests {
+                    if manifest.platform.os == os && manifest.platform.architecture == arch {
+                        return Ok(manifest.digest.clone());
+                    }
+                }
             }
+            Self::Manifest { .. } => {}
         }
 
         Err(DockerError::ManifestNotFound)
