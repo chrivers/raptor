@@ -18,7 +18,13 @@ pub enum DockerError {
     ParseIntError(#[from] std::num::ParseIntError),
 
     #[error(transparent)]
+    ToStrError(#[from] reqwest::header::ToStrError),
+
+    #[error(transparent)]
     PestError(#[from] Box<pest_consume::Error<Rule>>),
+
+    #[error(transparent)]
+    ParseError(#[from] crate::authparse::ParseError),
 
     #[error("Could not parse digest")]
     DigestError,
