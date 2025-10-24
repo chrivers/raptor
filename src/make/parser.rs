@@ -33,7 +33,10 @@ pub struct Link {
 
 #[derive(Deserialize, Debug, Default)]
 pub struct GroupTarget {
+    #[serde(default)]
     pub run: BTreeSet<String>,
+    #[serde(default)]
+    pub build: BTreeSet<ModuleName>,
 }
 
 #[derive(Deserialize, Debug, Clone, Hash)]
@@ -48,8 +51,8 @@ pub struct RunTarget {
     #[serde(deserialize_with = "string_or_list", default)]
     pub input: Vec<String>,
 
-    #[serde(default)]
-    pub output: Option<String>,
+    #[serde(deserialize_with = "string_or_list", default)]
+    pub output: Vec<String>,
 
     #[serde(default)]
     pub entrypoint: Vec<String>,

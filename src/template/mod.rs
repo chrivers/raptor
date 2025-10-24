@@ -32,7 +32,7 @@ impl<T> AdaptError<T> for Option<T> {
 }
 
 pub fn make_environment<'a>() -> RaptorResult<Environment<'a>> {
-    let mut env = Environment::new();
+    let mut env = Environment::empty();
     env.set_debug(true);
     env.set_keep_trailing_newline(true);
     env.set_undefined_behavior(UndefinedBehavior::Strict);

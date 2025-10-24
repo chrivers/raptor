@@ -88,6 +88,9 @@ pub enum RaptorError {
     #[error("Invalid layer cache name")]
     LayerCacheParseError,
 
+    #[error("Layer build error")]
+    LayerBuildError,
+
     #[error("Package not found: ${0}")]
     PackageNotFound(String, Origin),
 
@@ -123,6 +126,7 @@ impl RaptorError {
             Self::WhichError(_) => "Which error",
             Self::FromPathBufError(_) => "PathBuf conversion error",
             Self::LayerCacheParseError => "Layer cache parse error",
+            Self::LayerBuildError => "Layer build error",
             Self::PackageNotFound(_, _) => "Package not found",
             Self::UnknownJob(_) => "Unknown job",
         }

@@ -1,17 +1,30 @@
 use std::fmt::Display;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+use serde::Deserialize;
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub enum ModuleRoot {
     Relative,
     Absolute,
     Package(String),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct ModuleName {
     root: ModuleRoot,
     names: Vec<String>,
     instance: Option<String>,
+}
+
+impl<'de> Deserialize<'de> for ModuleName {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let val = String::deserialize(deserializer)?;
+
+        Ok(Self::from(&val))
+    }
 }
 
 impl ModuleName {

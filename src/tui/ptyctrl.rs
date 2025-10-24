@@ -2,13 +2,12 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::{Read, Result as IoResult};
-use std::ops::ControlFlow;
 use std::os::fd::{AsFd, AsRawFd, RawFd};
 use std::rc::Rc;
 
-use crossbeam::channel::{Receiver, TryRecvError};
 use itertools::Itertools;
 use nix::poll::{PollFd, PollFlags};
+use nix::unistd::Pid;
 use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
@@ -46,6 +45,11 @@ impl PtyJob {
     }
 
     #[must_use]
+    pub const fn id(&self) -> u64 {
+        self.id
+    }
+
+    #[must_use]
     pub const fn custom(file: File, job: Job, parser: vt100::Parser, id: u64) -> Self {
         Self {
             file,
@@ -56,24 +60,30 @@ impl PtyJob {
     }
 }
 
+#[derive(Default)]
 pub struct PtyJobController {
     jobs: HashMap<RawFd, PtyJob>,
     resize: bool,
-    rx: Receiver<PtyJob>,
     boxes: Rc<[Rect]>,
     states: HashMap<u64, JobState>,
+    tasks: HashMap<Pid, u64>,
 }
 
 impl PtyJobController {
     #[must_use]
-    pub fn new(rx: Receiver<PtyJob>) -> Self {
+    pub fn new() -> Self {
         Self {
             jobs: HashMap::new(),
             resize: false,
-            rx,
             boxes: Rc::new([]),
             states: HashMap::new(),
+            tasks: HashMap::new(),
         }
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.jobs.is_empty()
     }
 
     #[must_use]
@@ -107,7 +117,6 @@ impl PtyJobController {
             let sz = job.file.read(&mut buf);
             match sz {
                 Ok(0) | Err(_) => {
-                    self.states.insert(job.id, JobState::Completed);
                     self.jobs.remove(fd);
                     self.resize = true;
                 }
@@ -134,33 +143,27 @@ impl PtyJobController {
         Ok(self.boxes.clone())
     }
 
-    fn process_queue(&mut self) -> ControlFlow<()> {
-        loop {
-            match self.rx.try_recv() {
-                Ok(job) => {
-                    self.states.insert(job.id, JobState::Running);
-                    self.jobs.insert(job.file.as_raw_fd(), job);
-                    self.resize = true;
-                }
-
-                Err(TryRecvError::Empty) => return ControlFlow::Continue(()),
-                Err(TryRecvError::Disconnected) => {
-                    return if self.jobs.is_empty() {
-                        ControlFlow::Break(())
-                    } else {
-                        ControlFlow::Continue(())
-                    };
-                }
-            }
-        }
+    pub fn add_job(&mut self, pid: Pid, job: PtyJob) {
+        self.states.insert(job.id, JobState::Running);
+        self.tasks.insert(pid, job.id);
+        self.jobs.insert(job.file.as_raw_fd(), job);
+        self.resize = true;
     }
 
-    pub fn event(&mut self) -> RaptorResult<ControlFlow<()>> {
+    pub fn end_job(&mut self, pid: Pid) {
+        self.states.insert(self.tasks[&pid], JobState::Completed);
+    }
+
+    pub fn fail_job(&mut self, pid: Pid) {
+        self.states.insert(self.tasks[&pid], JobState::Failed);
+    }
+
+    pub fn event(&mut self) -> RaptorResult<()> {
         let fds = self.poll_fds()?;
 
         self.process_fds(&fds);
 
-        Ok(self.process_queue())
+        Ok(())
     }
 }
 

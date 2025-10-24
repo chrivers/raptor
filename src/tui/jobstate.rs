@@ -1,11 +1,12 @@
 use ratatui::style::{Color, Style};
 use throbber_widgets_tui::QUADRANT_BLOCK_CRACK;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JobState {
     Planned,
     Running,
     Completed,
+    Failed,
 }
 
 impl JobState {
@@ -16,6 +17,7 @@ impl JobState {
             Self::Planned => "✚",
             Self::Running => table.symbols[index % table.symbols.len()],
             Self::Completed => "🗹",
+            Self::Failed => "X",
         }
     }
 
@@ -25,6 +27,7 @@ impl JobState {
             Self::Planned => Style::new().fg(Color::White),
             Self::Running => Style::new().fg(Color::LightBlue),
             Self::Completed => Style::new().fg(Color::LightGreen),
+            Self::Failed => Style::new().fg(Color::LightRed),
         }
     }
 }
