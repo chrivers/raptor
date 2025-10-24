@@ -21,6 +21,9 @@ pub struct DockerDownloader {
 }
 
 impl DockerDownloader {
+    const LAYER_PATH: &str = "layer";
+    const MANIFEST_PATH: &str = "manifest";
+
     pub fn new(download_dir: Utf8PathBuf) -> DResult<Self> {
         let builder = ClientBuilder::new();
         let client = builder.build()?;
@@ -43,12 +46,12 @@ impl DockerDownloader {
 
     #[must_use]
     pub fn layer_file_name(&self, digest: &Digest) -> Utf8PathBuf {
-        self.root.join("layer").join(digest.to_string())
+        self.root.join(Self::LAYER_PATH).join(digest.to_string())
     }
 
     fn manifest_file_name(&self, digest: &str) -> Utf8PathBuf {
         self.root
-            .join("manifest")
+            .join(Self::MANIFEST_PATH)
             .join(digest)
             .with_extension("json")
     }
