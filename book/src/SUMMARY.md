@@ -3,10 +3,15 @@
 # User Guide
 - [User guide](user-guide.md)
   - [Installling Raptor](install-guide.md)
-- [Walkthrough: Debian Liveboot](walkthrough/debian/index.md)
+
+---
+
+# Walkthroughs
+- [Debian Liveboot](walkthrough/debian/index.md)
   - [Build filesystem](walkthrough/debian/build.md)
   - [Generate iso](walkthrough/debian/iso.md)
   - [Use raptor-make](walkthrough/debian/make.md)
+
 ---
 
 # Reference
