@@ -174,10 +174,10 @@ impl<'a> RaptorBuilder<'a> {
 
                 let layers = dc.pull(image, "linux", "amd64")?;
 
-                for layer in layers.layers {
-                    info!("Extracting layer [{}]", layer.digest);
+                for layer in layers {
+                    info!("Extracting layer [{layer}]");
 
-                    let filename = dc.layer_file_name(&layer.digest);
+                    let filename = dc.layer_file_name(&layer);
 
                     Command::new("tar")
                         .arg("-x")

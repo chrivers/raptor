@@ -13,10 +13,12 @@ pub struct DockerSource {
 }
 
 impl DockerSource {
+    const DOCKER: &str = "index.docker.io";
+
     #[allow(clippy::option_if_let_else)]
     #[must_use]
     pub fn domain(&self) -> String {
-        let host = &self.host.as_deref().unwrap_or("index.docker.io");
+        let host = &self.host.as_deref().unwrap_or(Self::DOCKER);
         if let Some(port) = self.port {
             format!("{host}:{port}")
         } else {
@@ -25,12 +27,24 @@ impl DockerSource {
     }
 
     #[must_use]
+    pub fn is_docker(&self) -> bool {
+        self.host.as_deref().unwrap_or(Self::DOCKER) == Self::DOCKER
+    }
+
+    #[allow(clippy::option_if_let_else)]
+    #[must_use]
     pub fn image_ref(&self) -> String {
-        format!(
-            "{}/{}",
-            self.namespace.as_deref().unwrap_or("library"),
-            &self.repository
-        )
+        let namespace = if self.is_docker() {
+            self.namespace.as_deref().or(Some("library"))
+        } else {
+            self.namespace.as_deref()
+        };
+
+        if let Some(ns) = namespace {
+            format!("{ns}/{}", &self.repository)
+        } else {
+            self.repository.to_string()
+        }
     }
 
     #[must_use]

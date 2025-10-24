@@ -9,7 +9,6 @@ use reqwest::blocking::{Client, ClientBuilder};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
-use crate::api::{DockerLayer, DockerLayers};
 use crate::client::DockerClient;
 use crate::digest::Digest;
 use crate::error::DResult;
@@ -21,7 +20,13 @@ pub struct DockerDownloader {
 }
 
 impl DockerDownloader {
+    const LAYER_PATH: &str = "layer";
+    const MANIFEST_PATH: &str = "manifest";
+
     pub fn new(download_dir: Utf8PathBuf) -> DResult<Self> {
+        fs::create_dir_all(download_dir.join(Self::LAYER_PATH))?;
+        fs::create_dir_all(download_dir.join(Self::MANIFEST_PATH))?;
+
         let builder = ClientBuilder::new();
         let client = builder.build()?;
 
@@ -43,30 +48,29 @@ impl DockerDownloader {
 
     #[must_use]
     pub fn layer_file_name(&self, digest: &Digest) -> Utf8PathBuf {
-        self.root.join("layer").join(digest.to_string())
+        self.root.join(Self::LAYER_PATH).join(digest.to_string())
     }
 
-    fn manifest_file_name(&self, digest: &str) -> Utf8PathBuf {
+    fn manifest_file_name(&self, source: &DockerSource) -> Utf8PathBuf {
         self.root
-            .join("manifest")
-            .join(digest)
+            .join(Self::MANIFEST_PATH)
+            .join(source.domain())
+            .join(source.image_ref())
             .with_extension("json")
     }
 
-    fn download_single_layer(&self, dc: &DockerClient, layer: &DockerLayer) -> DResult<()> {
-        let dst_file = self.layer_file_name(&layer.digest);
+    fn download_single_layer(&self, dc: &mut DockerClient, layer: &Digest) -> DResult<()> {
+        let dst_file = self.layer_file_name(layer);
         let tmp_file = dst_file.with_extension("tmp");
 
-        if let Ok(md) = fs::metadata(&dst_file)
-            && md.len() == layer.size
-        {
+        if fs::exists(&dst_file)? {
             /* eprintln!("Already downloaded!"); */
             return Ok(());
         }
 
         let mut fd = File::create(&tmp_file)?;
 
-        let mut res = dc.blob(&layer.digest)?;
+        let mut res = dc.blob(layer)?;
 
         let total_size = res.content_length().unwrap_or_default();
         let pb = ProgressBar::new(total_size);
@@ -106,35 +110,27 @@ impl DockerDownloader {
         Ok(())
     }
 
-    pub fn pull(&self, source: &DockerSource, os: &str, arch: &str) -> DResult<DockerLayers> {
+    pub fn pull(&self, source: &DockerSource, os: &str, arch: &str) -> DResult<Vec<Digest>> {
         info!("Logging in to registry..");
-        let dc = DockerClient::new(self.client.clone(), source.domain(), source.image_ref())?;
+        let mut dc = DockerClient::new(self.client.clone(), source.domain(), source.image_ref())?;
 
         info!("Loading manifests..");
-        let manifest_file = self.manifest_file_name(&source.image_ref());
+        let manifest_file = self.manifest_file_name(source);
 
-        fs::create_dir_all(manifest_file.parent().unwrap())?;
+        let manifest = if manifest_file.exists() {
+            Self::read_json(&manifest_file)?
+        } else {
+            fs::create_dir_all(manifest_file.parent().unwrap())?;
 
-        let manifest = dc.manifests(source.image_tag())?;
-        /* eprintln!("{manifest:#?}"); */
+            dc.manifest(&source.image_tag())?
+        };
 
-        let hash = manifest.select(os, arch)?;
-        /* eprintln!("{hash:#?}"); */
-
-        let dst_file = self.layer_file_name(&hash).with_extension("json");
-
-        if dst_file.exists() {
-            return Self::read_json(&dst_file);
-        }
-
-        let layers = dc.layers(&hash)?;
-
-        Self::write_json(&dst_file, &layers)?;
+        let layers = dc.digests(&manifest, os, arch)?;
 
         info!("Downloading layers..");
-        for layer in &layers.layers {
-            info!("Downloading layer {}", layer.digest);
-            self.download_single_layer(&dc, layer)?;
+        for layer in &layers {
+            info!("Downloading layer {layer}");
+            self.download_single_layer(&mut dc, layer)?;
         }
 
         Self::write_json(&manifest_file, &manifest)?;
