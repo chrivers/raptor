@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
@@ -10,6 +11,28 @@ use serde::de::DeserializeOwned;
 use crate::api::{DockerLayers, DockerManifests, DockerTagsList};
 use crate::digest::Digest;
 use crate::error::DResult;
+
+pub trait Reference {
+    fn reference(&self) -> Cow<str>;
+}
+
+impl Reference for &str {
+    fn reference(&self) -> Cow<str> {
+        Cow::Borrowed(self)
+    }
+}
+
+impl Reference for String {
+    fn reference(&self) -> Cow<str> {
+        Cow::Borrowed(self)
+    }
+}
+
+impl Reference for Digest {
+    fn reference(&self) -> Cow<str> {
+        Cow::Owned(self.to_string())
+    }
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct DockerAuthResult {
