@@ -550,7 +550,7 @@ output = "custom-liveboot.iso"
 <p>Now that we have encoded all the arguments, we can use a much simpler <code>raptor make</code> command to run this build job:</p>
 <pre><code class="language-sh">sudo raptor make book-ssh
 </code></pre>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="chapter-2"><a class="header" href="#chapter-2">Chapter 2</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="raptor-reference-manual"><a class="header" href="#raptor-reference-manual">Raptor reference manual</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="module-names"><a class="header" href="#module-names">Module names</a></h1>
 <p>In Raptor, “module names” are the names Raptor files use to refer to other
 Raptor files.</p>
@@ -984,7 +984,14 @@ environment, at a specified location in the container.</p>
 <p>For clarity, it is recommended to always specify a mount type.</p>
 </div>
 </div>
-<h2 id="type---simple"><a class="header" href="#type---simple">Type <code>--simple</code></a></h2>
+<p>Read more about the specific mount types:</p>
+<ul>
+<li><a href="mount-types/simple.html"><code>--simple</code></a></li>
+<li><a href="mount-types/file.html"><code>--file</code></a></li>
+<li><a href="mount-types/layers.html"><code>--layers</code></a></li>
+<li><a href="mount-types/overlay.html"><code>--overlay</code></a></li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="mount-type---simple"><a class="header" href="#mount-type---simple">Mount type <code>--simple</code></a></h2>
 <p>This is the default mount type.</p>
 <p>A <code>--simple</code> mount will mount a directory from the host into the
 container. Docker users are likely to be familiar with this concept.</p>
@@ -994,7 +1001,7 @@ container. Docker users are likely to be familiar with this concept.</p>
 <div id="admonition-file-listerrapt-title">
 <p>file-lister.rapt</p>
 </div>
-<a class="admonition-anchor-link" href="mount-types.html#admonition-file-listerrapt"></a>
+<a class="admonition-anchor-link" href="mount-types/simple.html#admonition-file-listerrapt"></a>
 </div>
 <div>
 <pre><code class="language-raptor">FROM docker://debian:trixie
@@ -1009,14 +1016,14 @@ CMD "ls -l /input"
 <pre><code class="language-sh">$ sudo raptor run file-lister -M list /tmp
 ... &lt;"ls" output would be shown here&gt; ...
 </code></pre>
-<h2 id="type---file"><a class="header" href="#type---file">Type <code>--file</code></a></h2>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="mount-type---file"><a class="header" href="#mount-type---file">Mount type <code>--file</code></a></h2>
 <p>This mount type requires that a single file is mounted.</p>
-<div id="admonition-tip-2" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-2-title">
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
 <div class="admonition-title">
-<div id="admonition-tip-2-title">
+<div id="admonition-tip-title">
 <p>Tip</p>
 </div>
-<a class="admonition-anchor-link" href="mount-types.html#admonition-tip-2"></a>
+<a class="admonition-anchor-link" href="mount-types/file.html#admonition-tip"></a>
 </div>
 <div>
 <p>When running a raptor container with a <code>--file</code> mount, the target file will be created if it does not exist.</p>
@@ -1029,7 +1036,7 @@ CMD "ls -l /input"
 <div id="admonition-file-lister-outputrapt-title">
 <p>file-lister-output.rapt</p>
 </div>
-<a class="admonition-anchor-link" href="mount-types.html#admonition-file-lister-outputrapt"></a>
+<a class="admonition-anchor-link" href="mount-types/file.html#admonition-file-lister-outputrapt"></a>
 </div>
 <div>
 <pre><code class="language-raptor">FROM docker://debian:trixie
@@ -1042,7 +1049,7 @@ CMD "ls -l /input &gt; /output"
 </div>
 </div>
 <p>Now that we have named the mounts <code>input</code> and <code>output</code>, we can use the
-<a href="/inst/mount.html#admonition-tip-1">shorthand notation</a> for convenience:</p>
+<a href="mount-types//inst/mount.html#admonition-tip-1">shorthand notation</a> for convenience:</p>
 <pre><code class="language-sh">$ sudo raptor run file-lister-output -I /etc -O /tmp/filelist.txt
 ...
 $ sudo cat /tmp/filelist.txt
@@ -1051,7 +1058,7 @@ $ sudo cat /tmp/filelist.txt
 <p>The above example would generate a file listing of <code>/etc</code> <strong>from the host</strong>, and
 place it in <code>/tmp/filelist.txt</code>. However, the execution of <code>ls</code> takes place in
 the container.</p>
-<h2 id="type---layers"><a class="header" href="#type---layers">Type <code>--layers</code></a></h2>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="mount-type---layers"><a class="header" href="#mount-type---layers">Mount type <code>--layers</code></a></h2>
 <p>The <code>--simple</code> and <code>--file</code> mount types both present content from the host
 filesystem inside the container, and both have equivalents in Docker.</p>
 <p>This is not the case for <code>--layers</code>, which is specific to Raptor.</p>
@@ -1063,7 +1070,7 @@ file path, but a set of <em>Raptor build targets</em>.</p>
 <div id="admonition-layers-listerrapt-title">
 <p>layers-lister.rapt</p>
 </div>
-<a class="admonition-anchor-link" href="mount-types.html#admonition-layers-listerrapt"></a>
+<a class="admonition-anchor-link" href="mount-types/layers.html#admonition-layers-listerrapt"></a>
 </div>
 <div>
 <pre><code class="language-raptor">FROM docker://debian:trixie
@@ -1091,7 +1098,7 @@ specified, as well as the stacking order for each target:</p>
 <div id="admonition-raptorjson-title">
 <p>raptor.json</p>
 </div>
-<a class="admonition-anchor-link" href="mount-types.html#admonition-raptorjson"></a>
+<a class="admonition-anchor-link" href="mount-types/layers.html#admonition-raptorjson"></a>
 </div>
 <div>
 <pre><code class="language-json">{
@@ -1126,7 +1133,7 @@ inputs.</p>
 <div id="admonition-raptorjson-1-title">
 <p>raptor.json</p>
 </div>
-<a class="admonition-anchor-link" href="mount-types.html#admonition-raptorjson-1"></a>
+<a class="admonition-anchor-link" href="mount-types/layers.html#admonition-raptorjson-1"></a>
 </div>
 <div>
 <pre><code class="language-json">{
@@ -1152,7 +1159,12 @@ inputs.</p>
 contents of individual layers.</p>
 <p>For example, the <code>deblive</code> builder<sup class="footnote-reference" id="fr-deblive-1"><a href="#footnote-deblive">1</a></sup> uses this mount type, in order to
 build Debian liveboot images.</p>
-<h2 id="type---overlay"><a class="header" href="#type---overlay">Type <code>--overlay</code></a></h2>
+<hr>
+<ol class="footnote-definition"><li id="footnote-deblive">
+<p>From the <a href="https://github.com/chrivers/raptor-build">raptor-build</a>
+companion project. <a href="#fr-deblive-1">↩</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><h2 id="mount-type---overlay"><a class="header" href="#mount-type---overlay">Mount type <code>--overlay</code></a></h2>
 <p>Like <code>--layers</code>, this is a Raptor-specific mount type.</p>
 <p>Raptor targets are almost always built from a set of layers (i.e., there’s at
 least one <code>FROM</code> instruction).</p>
@@ -1161,14 +1173,14 @@ least one <code>FROM</code> instruction).</p>
 unified filesystem.</p>
 <p>For build containers that need to operate on this combined view of a build
 target, the <code>--overlay</code> mount type is available.</p>
-<p>For example, the <code>disk-image</code> builder<sup class="footnote-reference" id="fr-deblive-2"><a href="#footnote-deblive">1</a></sup> uses this mount type, in order to
+<p>For example, the <code>disk-image</code> builder[^deblive] uses this mount type, in order to
 build disk images for virtual (or physical) machines.</p>
 <div id="admonition-overlay-listerrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-overlay-listerrapt-title">
 <div class="admonition-title">
 <div id="admonition-overlay-listerrapt-title">
 <p>overlay-lister.rapt</p>
 </div>
-<a class="admonition-anchor-link" href="mount-types.html#admonition-overlay-listerrapt"></a>
+<a class="admonition-anchor-link" href="mount-types/overlay.html#admonition-overlay-listerrapt"></a>
 </div>
 <div>
 <pre><code class="language-raptor">FROM docker://debian:trixie
@@ -1201,12 +1213,21 @@ drwxrwxrwt  2 root root 4096 Sep 29 00:00 tmp
 drwxr-xr-x 12 root root 4096 Sep 29 00:00 usr
 drwxr-xr-x 11 root root 4096 Sep 29 00:00 var
 </code></pre>
-<hr>
-<ol class="footnote-definition"><li id="footnote-deblive">
-<p>From the <a href="https://github.com/chrivers/raptor-build">raptor-build</a>
-companion project. <a href="#fr-deblive-1">↩</a> <a href="#fr-deblive-2">↩2</a></p>
-</li>
-</ol><div style="break-before: page; page-break-before: always;"></div><div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-from"><a class="header" href="#instruction-from">Instruction: <code>FROM</code></a></h1>
+<div style="break-before: page; page-break-before: always;"></div><div class="table-wrapper"><table><thead><tr><th style="text-align: left">Instruction</th><th style="text-align: left">Multiple valid?</th><th style="text-align: left">Build or Run</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="inst/from.html"><code>FROM</code></a></td><td style="text-align: left"><em><strong>No</strong></em></td><td style="text-align: left">Build</td></tr>
+<tr><td style="text-align: left"><a href="inst/run.html"><code>RUN</code></a></td><td style="text-align: left">Yes</td><td style="text-align: left">Build</td></tr>
+<tr><td style="text-align: left"><a href="inst/env.html"><code>ENV</code></a></td><td style="text-align: left">Yes</td><td style="text-align: left">Build</td></tr>
+<tr><td style="text-align: left"><a href="inst/workdir.html"><code>WORKDIR</code></a></td><td style="text-align: left">Yes</td><td style="text-align: left">Build</td></tr>
+<tr><td style="text-align: left"><a href="inst/write.html"><code>WRITE</code></a></td><td style="text-align: left">Yes</td><td style="text-align: left">Build</td></tr>
+<tr><td style="text-align: left"><a href="inst/mkdir.html"><code>MKDIR</code></a></td><td style="text-align: left">Yes</td><td style="text-align: left">Build</td></tr>
+<tr><td style="text-align: left"><a href="inst/copy.html"><code>COPY</code></a></td><td style="text-align: left">Yes</td><td style="text-align: left">Build</td></tr>
+<tr><td style="text-align: left"><a href="inst/include.html"><code>INCLUDE</code></a></td><td style="text-align: left">Yes</td><td style="text-align: left">Build</td></tr>
+<tr><td style="text-align: left"><a href="inst/render.html"><code>RENDER</code></a></td><td style="text-align: left">Yes</td><td style="text-align: left">Build</td></tr>
+<tr><td style="text-align: left"><a href="inst/mount.html"><code>MOUNT</code></a></td><td style="text-align: left">Yes</td><td style="text-align: left">Run</td></tr>
+<tr><td style="text-align: left"><a href="inst/entrypoint.html"><code>ENTRYPOINT</code></a></td><td style="text-align: left"><em><strong>No</strong></em></td><td style="text-align: left">Run</td></tr>
+<tr><td style="text-align: left"><a href="inst/cmd.html"><code>CMD</code></a></td><td style="text-align: left"><em><strong>No</strong></em></td><td style="text-align: left">Run</td></tr>
+</tbody></table>
+</div><div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-from"><a class="header" href="#instruction-from">Instruction: <code>FROM</code></a></h1>
 <div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
 <div class="admonition-title">
 <div id="admonition-summary-title">

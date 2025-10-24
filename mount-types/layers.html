@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Debian Liveboot - Raptor Manual</title>
+        <title>--layers - Raptor Manual</title>
 
 
         <!-- Custom HTML head -->
@@ -12,35 +12,35 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="../../favicon.svg">
-        <link rel="shortcut icon" href="../../favicon.png">
-        <link rel="stylesheet" href="../../css/variables.css">
-        <link rel="stylesheet" href="../../css/general.css">
-        <link rel="stylesheet" href="../../css/chrome.css">
-        <link rel="stylesheet" href="../../css/print.css" media="print">
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="../../fonts/fonts.css">
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="../../highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="../../tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="../../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../.././mdbook-admonish.css">
+        <link rel="stylesheet" href=".././mdbook-admonish.css">
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "../../";
+            const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "../../searchindex.js";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc.js"></script>
+        <script src="../toc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -107,7 +107,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
             </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -142,7 +142,7 @@
                     <h1 class="menu-title">Raptor Manual</h1>
 
                     <div class="right-buttons">
-                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
 
@@ -176,76 +176,122 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="making-a-debian-liveboot-iso-with-raptor"><a class="header" href="#making-a-debian-liveboot-iso-with-raptor">Making a Debian liveboot iso with Raptor</a></h1>
-<p>In this walkthrough, we will take a look at all the steps needed to make a
-customized Debian liveboot <code>.iso</code> image.</p>
-<p>By putting the image on a USB stick or external hard drive, any computer can be
-booted from this external device, without affecting existing data on the
-computer.</p>
-<p>Using this technique, you will be able to create custom images, containing the
-tools, programs and settings that you like, and build them consistently and
-easily with raptor.</p>
-<p>This guide is presented as a three-step process:</p>
-<ul>
-<li>
-<p><a href="build.html">Build</a>: Build raptor layers suitable for live booting.</p>
-</li>
-<li>
-<p><a href="iso.html">Generate</a>: Generate a live boot iso from the layers</p>
-</li>
-<li>
-<p><a href="make.html">Make</a>: Use raptor-make to simplify the build process <strong>[optional]</strong></p>
-</li>
-</ul>
-<div id="admonition-tldr" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-tldr-title">
+                        <h2 id="mount-type---layers"><a class="header" href="#mount-type---layers">Mount type <code>--layers</code></a></h2>
+<p>The <code>--simple</code> and <code>--file</code> mount types both present content from the host
+filesystem inside the container, and both have equivalents in Docker.</p>
+<p>This is not the case for <code>--layers</code>, which is specific to Raptor.</p>
+<p>When using a <code>--layers</code> mount, the input argument when running Raptor is not a
+file path, but a set of <em>Raptor build targets</em>.</p>
+<p>Let us take a look at a target, that lists the files in a <code>--layers</code> mounts:</p>
+<div id="admonition-layers-listerrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-layers-listerrapt-title">
 <div class="admonition-title">
-<div id="admonition-tldr-title">
-<p>TL;DR</p>
+<div id="admonition-layers-listerrapt-title">
+<p>layers-lister.rapt</p>
 </div>
-<a class="admonition-anchor-link" href="#admonition-tldr"></a>
+<a class="admonition-anchor-link" href="#admonition-layers-listerrapt"></a>
 </div>
 <div>
-<p>Below is an absolutely minimal example of generating a liveboot iso, for the impatient.</p>
+<pre><code class="language-raptor">FROM docker://debian:trixie
+
+MOUNT --layers input /input
+
+CMD "ls -l /input"
+</code></pre>
 </div>
 </div>
-<hr />
-<p>Create a raptor file:</p>
-<div id="admonition-baserapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-baserapt-title">
+<p>Let’s try running this, using the previous <code>file-lister.rapt</code> target as input:</p>
+<pre><code class="language-sh">$ sudo raptor run layers-lister -I file-lister
+total 12
+drwxr-xr-x  2 root root 4096 Oct 17 13:37 file-lister-16689594BA5D2989
+drwxr-xr-x 17 root root 4096 Sep 29 00:00 index.docker.io-library-debian-trixie-675DE2C3A4D8CD82
+-rw-r--r--  1 root root  200 Oct 17 13:37 raptor.json
+</code></pre>
+<p>We see that each layer in the input is available as a directory, but also a
+<code>raptor.json</code> file.</p>
+<p>Think of this file as a manifest of the contents in the <code>--layers</code> mount. It
+contains useful metadata about the inputs, including which targets have been
+specified, as well as the stacking order for each target:</p>
+<div id="admonition-raptorjson" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptorjson-title">
 <div class="admonition-title">
-<div id="admonition-baserapt-title">
-<p>base.rapt</p>
+<div id="admonition-raptorjson-title">
+<p>raptor.json</p>
 </div>
-<a class="admonition-anchor-link" href="#admonition-baserapt"></a>
+<a class="admonition-anchor-link" href="#admonition-raptorjson"></a>
 </div>
 <div>
-<pre><code class="language-raptor"># Start from a docker iso
-FROM docker://debian:trixie
-
-# Update package sources, and install packages
-RUN apt-get update
-RUN apt-get install -qy live-boot linux-image-amd64
+<pre><code class="language-json">{
+  "targets": [
+    "file-lister"
+  ],
+  "layers": {
+    "file-lister": [
+      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
+      "file-lister-16689594BA5D2989"
+    ]
+  }
+}
 </code></pre>
 </div>
 </div>
-<p>Git clone (or otherwise download) the necessary build container recipes:</p>
-<pre><code class="language-sh">git clone https://github.com/chrivers/raptor-build.git
+<p>At first, this might seem like overly complicated. If we just needed the layer
+order, surely a simple text file would suffice?</p>
+<p>In fact, <em>multiple</em> build targets can be specified at the same time:</p>
+<pre><code class="language-sh">$ sudo raptor run layers-lister -I file-lister -I file-lister-output
+total 16
+drwxr-xr-x  2 root root 4096 Oct 17 11:33 file-lister-16689594BA5D2989
+drwxr-xr-x  2 root root 4096 Oct 17 11:31 file-lister-output-2CFDE4FEBD507157
+drwxr-xr-x 17 root root 4096 Sep 29 00:00 index.docker.io-library-debian-trixie-675DE2C3A4D8CD82
+-rw-r--r--  1 root root  381 Oct 17 11:45 raptor.json
 </code></pre>
-<p>Then use these to build <code>liveboot.iso</code>:</p>
-<pre><code class="language-sh">sudo raptor build -I base -O liveboot.iso -L rbuild raptor-build '$rbuild.deblive'
+<p>We now have multiple build targets, and the Docker layer is shared between both
+inputs.</p>
+<p>However, we can still make sense of this using <code>raptor.json</code>:</p>
+<div id="admonition-raptorjson-1" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptorjson-1-title">
+<div class="admonition-title">
+<div id="admonition-raptorjson-1-title">
+<p>raptor.json</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-raptorjson-1"></a>
+</div>
+<div>
+<pre><code class="language-json">{
+  "targets": [
+    "file-lister",
+    "file-lister-output"
+  ],
+  "layers": {
+    "file-lister-output": [
+      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
+      "file-lister-output-2CFDE4FEBD507157"
+    ],
+    "file-lister": [
+      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
+      "file-lister-16689594BA5D2989"
+    ]
+  }
+}
 </code></pre>
-<hr />
-<p>After this command has run, you should have the file <code>liveboot.iso</code> available. Enjoy!</p>
-<p>To learn how (and why) this works, read the next chapters of this guide.</p>
-
+</div>
+</div>
+<p>This mount type is useful for any build container that needs to work the
+contents of individual layers.</p>
+<p>For example, the <code>deblive</code> builder<sup class="footnote-reference" id="fr-deblive-1"><a href="#footnote-deblive">1</a></sup> uses this mount type, in order to
+build Debian liveboot images.</p>
+<hr>
+<ol class="footnote-definition"><li id="footnote-deblive">
+<p>From the <a href="https://github.com/chrivers/raptor-build">raptor-build</a>
+companion project. <a href="#fr-deblive-1">↩</a></p>
+</li>
+</ol>
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../install-guide.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../mount-types/file.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../../walkthrough/debian/build.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../mount-types/overlay.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -255,11 +301,11 @@ RUN apt-get install -qy live-boot linux-image-amd64
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../install-guide.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../mount-types/file.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../../walkthrough/debian/build.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../mount-types/overlay.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -274,13 +320,13 @@ RUN apt-get install -qy live-boot linux-image-amd64
         </script>
 
 
-        <script src="../../elasticlunr.min.js"></script>
-        <script src="../../mark.min.js"></script>
-        <script src="../../searcher.js"></script>
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
 
-        <script src="../../clipboard.min.js"></script>
-        <script src="../../highlight.js"></script>
-        <script src="../../book.js"></script>
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
 
