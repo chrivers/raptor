@@ -24,6 +24,7 @@ pest = { workspace = true }
 pest_consume = { workspace = true }
 reqwest = { workspace = true, features = ["blocking", "json", "rustls-tls"] }
 serde = { workspace = true, features = ["derive"] }
+serde-nested-json = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 

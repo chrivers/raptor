@@ -610,6 +610,7 @@ dependencies = [
  "pretty_assertions",
  "reqwest",
  "serde",
+ "serde-nested-json",
  "serde_json",
  "thiserror",
 ]
@@ -2005,6 +2006,16 @@ checksum = "80ece43fc6fbed4eb5392ab50c07334d3e577cbf40997ee896fe7af40bba4245"
 dependencies = [
  "serde_core",
  "serde_derive",
+]
+
+[[package]]
+name = "serde-nested-json"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4668ab4f388de185ef4de91b06ac01d52b0eedb5778cf4bcf11763d14a955b81"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
