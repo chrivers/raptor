@@ -1,4 +1,5 @@
 pub mod api;
+pub mod authparse;
 pub mod client;
 pub mod digest;
 pub mod downloader;

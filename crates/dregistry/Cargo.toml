@@ -19,6 +19,7 @@ camino = { workspace = true }
 hex = { workspace = true }
 indicatif = { workspace = true }
 log = { workspace = true }
+logos = { workspace = true }
 pest = { workspace = true }
 pest_consume = { workspace = true }
 reqwest = { workspace = true, features = ["blocking", "json", "rustls-tls"] }
@@ -30,3 +31,5 @@ thiserror = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 colog = { workspace = true }
 log = { workspace = true }
+maplit = { workspace = true }
+pretty_assertions = { workspace = true }
