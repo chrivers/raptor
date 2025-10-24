@@ -25,6 +25,9 @@ impl DockerDownloader {
     const MANIFEST_PATH: &str = "manifest";
 
     pub fn new(download_dir: Utf8PathBuf) -> DResult<Self> {
+        fs::create_dir_all(download_dir.join(Self::LAYER_PATH))?;
+        fs::create_dir_all(download_dir.join(Self::MANIFEST_PATH))?;
+
         let builder = ClientBuilder::new();
         let client = builder.build()?;
 
