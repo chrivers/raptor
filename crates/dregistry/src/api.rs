@@ -34,6 +34,8 @@ pub struct DockerLayers {
 pub struct DockerLayer {
     #[serde(default)]
     pub data: Option<String>,
+    #[serde(default)]
+    pub annotations: BTreeMap<String, String>,
     pub digest: Digest,
     pub media_type: String,
     pub size: u64,
@@ -49,6 +51,8 @@ pub struct DockerManifest {
     pub media_type: String,
     pub platform: DockerManifestPlatform,
     pub size: u64,
+    #[serde(default)]
+    pub artifact_type: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -58,8 +62,12 @@ pub struct DockerManifestPlatform {
     pub os: String,
     #[serde(default, rename = "os.version")]
     pub os_version: Option<String>,
+    #[serde(default, rename = "os.features")]
+    pub os_features: Vec<String>,
     #[serde(default)]
     pub variant: Option<String>,
+    #[serde(default)]
+    pub features: Vec<String>,
 }
 
 impl DockerManifests {
