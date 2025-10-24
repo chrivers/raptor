@@ -101,7 +101,7 @@ pub struct DockerLayer {
     #[serde(default)]
     pub annotations: BTreeMap<String, String>,
     pub digest: Digest,
-    pub media_type: String,
+    pub media_type: MediaType,
     pub size: u64,
 }
 
@@ -112,7 +112,7 @@ pub struct DockerManifest {
     #[serde(default)]
     pub annotations: BTreeMap<String, String>,
     pub digest: Digest,
-    pub media_type: String,
+    pub media_type: MediaType,
     pub platform: DockerManifestPlatform,
     pub size: u64,
     #[serde(default)]
