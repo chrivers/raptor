@@ -4,12 +4,12 @@ In the [previous chapter](iso.md) we took a look at the final command used to
 build a debian liveboot iso:
 
 ```sh
-sudo raptor run                 \
-  --link book   book/example    \
-  --link rbuild ../raptor-build \
-  --cache liveboot-cache        \
-  --input '$book.ssh'           \
-  --output custom-liveboot.iso  \
+sudo raptor run                    \
+  --link book   book/example       \
+  --link rbuild ../raptor-builders \
+  --cache liveboot-cache           \
+  --input '$book.ssh'              \
+  --output custom-liveboot.iso     \
   '$rbuild.deblive'
 ```
 
@@ -39,7 +39,7 @@ Let's start by adding the two linked packages (`--link` arguments):
 ```toml
 [raptor.link]
 book = "book/example"
-rbuild = "../raptor-build"
+rbuild = "../raptor-builders"
 ```
 ~~~
 
@@ -59,7 +59,7 @@ for this example:
 ```toml
 [raptor.link]
 book = "book/example"
-rbuild = "../raptor-build"
+rbuild = "../raptor-builders"
 
 # The name `book-ssh` is not special.
 # Feel free to choose any name you like!

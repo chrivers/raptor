@@ -30,7 +30,7 @@ than Docker.
 
 ~~~admonish warning title="Heads up!"
 The entire Raptor project, including this book, the program itself, and the
-companion project [raptor-build](https://github.com/chrivers/raptor-build), is
+companion project [raptor-builders](https://github.com/chrivers/raptor-builders), is
 still quite young.
 
 If you find (or suspect) any bugs, [please report

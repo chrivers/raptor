@@ -42,7 +42,7 @@ Raptor builds *layers*, much in the same way as Docker.
 However, this is where the similarities end! Raptor is able to run build
 processes on top of finished layers, to produce any kind of desired output.
 
-The companion project [raptor-build](https://github.com/chrivers/raptor-build) can create:
+The companion project [raptor-builders](https://github.com/chrivers/raptor-builders) can create:
 
  - Debian Live Boot iso files
  - Disk images for virtual (or physical) machines
@@ -63,22 +63,22 @@ RUN apt-get update
 RUN apt-get install -qy systemd-sysv live-boot linux-image-amd64
 ```
 
-Then clone the `raptor-build` project, which has the build container for making Debian Live Boot images:
+Then clone the `raptor-builders` project, which has the build container for making Debian Live Boot images:
 
 ```sh
-git clone https://github.com/chrivers/raptor-build.git
+git clone https://github.com/chrivers/raptor-builders.git
 ```
 
-Then run the `deblive` container from `raptor-build`, using the `base(.rapt)` we just made:
+Then run the `deblive` container from `raptor-builders`, using the `base(.rapt)` we just made:
 
 ```sh
 # Create cache dir (used in `-C` option)
 mkdir /tmp/raptor-cache
 
-# Run the `deblive` builder from `raptor-build`
+# Run the `deblive` builder from `raptor-builders`
 sudo raptor run \
     '$rbuild.deblive' \
-    -L rbuild raptor-build \
+    -L rbuild raptor-builders \
     -C /tmp/raptor-cache \
     -I base \
     -O liveboot.iso

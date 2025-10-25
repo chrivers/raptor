@@ -35,13 +35,13 @@ Create a raptor file:
 
 Git clone (or otherwise download) the necessary build container recipes:
 ```sh
-git clone https://github.com/chrivers/raptor-build.git
+git clone https://github.com/chrivers/raptor-builders.git
 ```
 
 Then use these to build `liveboot.iso`:
 
 ```sh
-sudo raptor run -L rbuild raptor-build '$rbuild.deblive' -I base -O liveboot.iso
+sudo raptor run -L rbuild raptor-builders '$rbuild.deblive' -I base -O liveboot.iso
 ```
 
 ----

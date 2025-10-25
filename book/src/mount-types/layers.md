@@ -95,5 +95,5 @@ contents of individual layers.
 For example, the `deblive` builder[^deblive] uses this mount type, in order to
 build Debian liveboot images.
 
-[^deblive]: From the [raptor-build](https://github.com/chrivers/raptor-build)
+[^deblive]: From the [raptor-builders](https://github.com/chrivers/raptor-builders)
     companion project.

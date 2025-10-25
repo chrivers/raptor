@@ -36,7 +36,7 @@ variety of output layers, depending on what you need.
 
 To help get started with this, Raptor provides a standard set of build
 containers, in the companion project
-[raptor-build](https://github.com/chrivers/raptor-build):
+[raptor-builders](https://github.com/chrivers/raptor-builders):
 
  - \[`deblive`\] Builds Debian liveboot isos from Raptor layers.
  - \[`disk-image`\] Builds disk images (for virtual or physical machines) from Raptor layers.
@@ -45,35 +45,35 @@ containers, in the companion project
 Raptor build containers are just regular Raptor containers, that are
 configured to expect an input, and produce an output.
 
-The containers from the `raptor-build` project are available to anyone,
+The containers from the `raptor-builders` project are available to anyone,
 but are not "built in" to Raptor - they don't use any special features
 or private APIs. Anyone can make build containers that are similar (or
-even identical to) `raptor-build`.
+even identical to) `raptor-builders`.
 ~~~
 
 Since this walkthrough is focused on making a liveboot iso, we'll use the
 `deblive` builder to convert layers to an iso file.
 
-First, we need to clone (or otherwise download) the `raptor-build` project:
+First, we need to clone (or otherwise download) the `raptor-builders` project:
 
 ```sh
-git clone https://github.com/chrivers/raptor-build
+git clone https://github.com/chrivers/raptor-builders
 ```
 
 This builder uses mounts to access input, output and cache from outside the
 container (see [`MOUNT`](../../inst/mount.md)).
 
 To build the layers from the last step into a debian liveboot iso, use the
-following command (assuming `raptor-build` is checked out next to the directory
+following command (assuming `raptor-builders` is checked out next to the directory
 containing `ssh.rapt`):
 
 ```sh
-sudo raptor run             \
-  -L book   book/example    \
-  -L rbuild ../raptor-build \
-  -C liveboot-cache         \
-  -I '$book.ssh'            \
-  -O custom-liveboot.iso    \
+sudo raptor run                \
+  -L book   book/example       \
+  -L rbuild ../raptor-builders \
+  -C liveboot-cache            \
+  -I '$book.ssh'               \
+  -O custom-liveboot.iso       \
   '$rbuild.deblive'
 ```
 
@@ -83,12 +83,12 @@ interactively. Long-form options are also available, if greater clarity is
 desired (e.g. for scripting purposes).
 
 ```sh
-sudo raptor run                 \
-  --link book   book/example    \
-  --link rbuild ../raptor-build \
-  --cache liveboot-cache        \
-  --input '$book.ssh'           \
-  --output custom-liveboot.iso  \
+sudo raptor run                    \
+  --link book   book/example       \
+  --link rbuild ../raptor-builders \
+  --cache liveboot-cache           \
+  --input '$book.ssh'              \
+  --output custom-liveboot.iso     \
   '$rbuild.deblive'
 ```
 ~~~
