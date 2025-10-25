@@ -1,4 +1,4 @@
-![](book/branding/logo-title.png)
+![Raptor headline logo](book/src/images/logo-title.png)
 
 # Raptor
 
@@ -9,7 +9,7 @@ syntax.
 It uses `systemd-nspawn` for sandboxing when building or running containers.
 
 > [!TIP]
-> 📖 For more information, [read the raptor book](https://chrivers.github.io/raptor)
+> 📖 For more information, [read the raptor book](https://chrivers.github.io/raptor/)
 
 ## What it looks like
 
@@ -26,7 +26,7 @@ COPY foo /bar
 ## What it can do
 
 > [!TIP]
-> 📖 For more information, [read the raptor book](https://chrivers.github.io/raptor)
+> 📖 For more information, [read the raptor book](https://chrivers.github.io/raptor/)
 
 Raptor builds *layers*, much in the same way as Docker.
 
@@ -40,7 +40,7 @@ The companion project [raptor build](https://github.com/chrivers/raptor-build) c
 
 ## Example: Building a bootable iso
 
-After [installing Raptor](http://chrivers.github.io/intro/install.html), create a file called `base.rapt`:
+After [installing Raptor](http://chrivers.github.io/raptor/intro/install.html), create a file called `base.rapt`:
 
 ```Dockerfile
 # Start from a docker iso

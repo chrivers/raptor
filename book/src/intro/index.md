@@ -2,7 +2,7 @@
 
 ## What is Raptor?
 
-![raptor logo](../images/raptor-circle-icon.png)
+![raptor logo](../images/logo-title.png)
 
 Raptor[^raptor] is a modern, fast, and easy-to-use system for building disk images,
 bootable isos, containers and much more - all from a simple, Dockerfile-inspired
