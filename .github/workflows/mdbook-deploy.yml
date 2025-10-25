@@ -25,6 +25,11 @@ jobs:
           curl -L ${MDBOOK_URL}          | sudo tar -C /usr/local/bin -xz
           curl -L ${MDBOOK_ADMONISH_URL} | sudo tar -C /usr/local/bin -xz
 
+      - name: Install mdbook-pikchr from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: mdbook-pikchr
+
       - name: Build the book
         run: mdbook build book
 
