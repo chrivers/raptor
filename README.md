@@ -51,7 +51,7 @@ RUN usermod -p "$1$GQf2tS9s$vu72NbrDtUcvvqnyAogrH0" root
 
 # Update package sources, and install packages
 RUN apt-get update
-RUN apt-get install -qy live-boot linux-image-amd64
+RUN apt-get install -qy systemd-sysv live-boot linux-image-amd64
 ```
 
 Then clone the `raptor-build` project, which has the build container for making Debian Live Boot images:
