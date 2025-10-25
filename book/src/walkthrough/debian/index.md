@@ -41,11 +41,11 @@ git clone https://github.com/chrivers/raptor-build.git
 Then use these to build `liveboot.iso`:
 
 ```sh
-sudo raptor build -I base -O liveboot.iso -L rbuild raptor-build '$rbuild.deblive'
+sudo raptor run -L rbuild raptor-build '$rbuild.deblive' -I base -O liveboot.iso
 ```
 
 ----
 
 After this command has run, you should have the file `liveboot.iso` available. Enjoy!
 
-To learn how (and why) this works, read the next chapters of this guide.
+To learn how (and why) this works, **read the next chapters of this guide.**
