@@ -9,7 +9,7 @@ syntax.
 It uses `systemd-nspawn` for sandboxing when building or running containers.
 
 > [!TIP]
-> 📖 For more information, [read the raptor book](https://chrivers.github.io/raptor/)
+> 📕 For more information, [read the raptor book](https://chrivers.github.io/raptor/)
 
 ## What it looks like
 
@@ -18,22 +18,31 @@ keywords, and are terminated by end of line.
 
 All lines starting with `#` are treated as comments:
 
-```nginx
-# This copies "foo" from the host to "/bar" inside the build target
-COPY foo /bar
+```Dockerfile
+# Start from a well-known docker image
+FROM docker://debian:trixie
+
+# Set the hostname
+WRITE "example-host\n" /etc/hostname
+
+# Create app directory
+MKDIR -p /app/bin
+
+# This copies "program" from the host to "/app/bin" inside the build target
+COPY program /app/bin/program
 ```
 
 ## What it can do
 
 > [!TIP]
-> 📖 For more information, [read the raptor book](https://chrivers.github.io/raptor/)
+> 📕 For more information, [read the raptor book](https://chrivers.github.io/raptor/)
 
 Raptor builds *layers*, much in the same way as Docker.
 
 However, this is where the similarities end! Raptor is able to run build
 processes on top of finished layers, to produce any kind of desired output.
 
-The companion project [raptor build](https://github.com/chrivers/raptor-build) can create:
+The companion project [raptor-build](https://github.com/chrivers/raptor-build) can create:
 
  - Debian Live Boot iso files
  - Disk images for virtual (or physical) machines
@@ -63,9 +72,10 @@ git clone https://github.com/chrivers/raptor-build.git
 Then run the `deblive` container from `raptor-build`, using the `base(.rapt)` we just made:
 
 ```sh
-# create cache dir (used in `-C` option)
+# Create cache dir (used in `-C` option)
 mkdir /tmp/raptor-cache
 
+# Run the `deblive` builder from `raptor-build`
 sudo raptor run \
     '$rbuild.deblive' \
     -L rbuild raptor-build \
@@ -81,14 +91,16 @@ qemu-system-x86_64 -enable-kvm -cpu host -m 4G -cdrom liveboot.iso
 ```
 
 > [!TIP]
-> 📖 The whole process is described in [much more detail in the book!](https://chrivers.github.io/raptor/walkthrough/debian/).
+> 📕 The whole process is described in [much more detail in the book!](https://chrivers.github.io/raptor/walkthrough/debian/).
 
 ## Need help?
 
-The [raptor book](https://chrivers.github.io/raptor/) contains a lot more
+The 📕 [Raptor Book](https://chrivers.github.io/raptor/) contains a lot more
 information, including a thorough description of all instructions, features, and
 a grammar for the language itself.
 
 ## License
 
 Raptor is Free Software, licensed under the GNU GPL-3.0.
+
+The [Raptor icon](book/branding/raptor-logo.svg) is derived from a [Creative Commons Attribution](https://www.freepik.com/icon/eagle_17553500)-licensed icon.
