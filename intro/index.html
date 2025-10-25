@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="en" class="light sidebar-visible" dir="ltr">
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -12,21 +12,21 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="../favicon.svg">
-        <link rel="shortcut icon" href="../favicon.png">
-        <link rel="stylesheet" href="../css/variables.css">
-        <link rel="stylesheet" href="../css/general.css">
-        <link rel="stylesheet" href="../css/chrome.css">
-        <link rel="stylesheet" href="../css/print.css" media="print">
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-3865ffda.css">
+        <link rel="stylesheet" href="../css/general-4c35105a.css">
+        <link rel="stylesheet" href="../css/chrome-c0e702bf.css">
+        <link rel="stylesheet" href="../css/print-ad67d350.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="../fonts/fonts.css">
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome-799aeb25.css">
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight-603240e9.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight-ab2f8e6f.css">
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href=".././mdbook-admonish.css">
@@ -35,12 +35,12 @@
         <!-- Provide site root and default themes to javascript -->
         <script>
             const path_to_root = "../";
-            const default_light_theme = "light";
+            const default_light_theme = "ayu";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "../searchindex.js";
+            window.path_to_searchindex_js = "../searchindex-65cb5a44.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc.js"></script>
+        <script src="../toc-9fe4942a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -78,7 +78,7 @@
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             const html = document.documentElement;
-            html.classList.remove('light')
+            html.classList.remove('ayu')
             html.classList.add(theme);
             html.classList.add("js");
         </script>
@@ -145,6 +145,9 @@
                         <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+                        <a href="https://github.com/chrivers/raptor" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
 
                     </div>
                 </div>
@@ -199,43 +202,30 @@ hands-on introduction to building a bootable iso.</p>
 <h2 id="theory-of-operation"><a class="header" href="#theory-of-operation">Theory of operation</a></h2>
 <p>Raptor builds <em>layers</em> from <em><code>.rapt</code></em> files. If you are familiar with Docker,
 this is similar to how Docker builds <em>containers</em> from a <em><code>Dockerfile</code></em>.</p>
-<pre><code class="language-pikchr"># scale = 0.8
-fill = white
-
-All: [
-
-[
-file
-file at previous + (0.1,-0.1)
-file at previous + (0.1,-0.1) "Raptor" "source" "code"
-]
-
-arrow "Raptor build" above width 1
-
-Layers: [
-    file
-    file at previous + (0.1,-0.1)
-    file at previous + (0.1,-0.1) "Layers"
-]
-
-#cylinder \
-#    wid Layers.width + 0.2 \
-#    ht Layers.height + 0.4 \
-#    at Layers \
-#    fill 0xc6e2ff \
-#    behind Layers
-
-#text "Disk storage" at previous.t + (0, 0.1)
-]
-
-box \
-    wid All.width + 0.2 \
-    ht All.height + 0.2 \
-    at All \
-    fill 0xd0f0ff \
-    behind All
-#    fill 0xc6e2ff \
-</code></pre>
+<div style="margin:0 auto;max-width:378px">
+<svg xmlns='http://www.w3.org/2000/svg' style='font-size:initial;' viewBox="0 0 378.72 169.92">
+<path d="M2.16,167.76L376.56,167.76L376.56,2.16L2.16,2.16Z"  style="fill:rgb(208,240,255);stroke-width:2.16;stroke:rgb(0,0,0);" />
+<path d="M16.56,124.56L88.56,124.56L88.56,38.16L66.96,16.56L16.56,16.56Z"  style="fill:rgb(255,255,255);stroke-width:2.16;stroke:rgb(0,0,0);" />
+<path d="M66.96,16.56L66.96,38.16L88.56,38.16"  style="fill:none;stroke-width:2.16;stroke:rgb(0,0,0);" />
+<path d="M30.96,138.96L102.96,138.96L102.96,52.56L81.36,30.96L30.96,30.96Z"  style="fill:rgb(255,255,255);stroke-width:2.16;stroke:rgb(0,0,0);" />
+<path d="M81.36,30.96L81.36,52.56L102.96,52.56"  style="fill:none;stroke-width:2.16;stroke:rgb(0,0,0);" />
+<path d="M45.36,153.36L117.36,153.36L117.36,66.96L95.76,45.36L45.36,45.36Z"  style="fill:rgb(255,255,255);stroke-width:2.16;stroke:rgb(0,0,0);" />
+<path d="M95.76,45.36L95.76,66.96L117.36,66.96"  style="fill:none;stroke-width:2.16;stroke:rgb(0,0,0);" />
+<text x="81.36" y="79.2" text-anchor="middle" fill="rgb(0,0,0)" dominant-baseline="central">Raptor</text>
+<text x="81.36" y="99.36" text-anchor="middle" fill="rgb(0,0,0)" dominant-baseline="central">source</text>
+<text x="81.36" y="119.52" text-anchor="middle" fill="rgb(0,0,0)" dominant-baseline="central">code</text>
+<polygon points="261.36,84.96 249.84,89.28 249.84,80.64" style="fill:rgb(0,0,0)"/>
+<path d="M117.36,84.96L255.6,84.96"  style="fill:none;stroke-width:2.16;stroke:rgb(0,0,0);" />
+<text x="189.36" y="73.26" text-anchor="middle" fill="rgb(0,0,0)" dominant-baseline="central">Raptor build</text>
+<path d="M261.36,124.56L333.36,124.56L333.36,38.16L311.76,16.56L261.36,16.56Z"  style="fill:rgb(255,255,255);stroke-width:2.16;stroke:rgb(0,0,0);" />
+<path d="M311.76,16.56L311.76,38.16L333.36,38.16"  style="fill:none;stroke-width:2.16;stroke:rgb(0,0,0);" />
+<path d="M275.76,138.96L347.76,138.96L347.76,52.56L326.16,30.96L275.76,30.96Z"  style="fill:rgb(255,255,255);stroke-width:2.16;stroke:rgb(0,0,0);" />
+<path d="M326.16,30.96L326.16,52.56L347.76,52.56"  style="fill:none;stroke-width:2.16;stroke:rgb(0,0,0);" />
+<path d="M290.16,153.36L362.16,153.36L362.16,66.96L340.56,45.36L290.16,45.36Z"  style="fill:rgb(255,255,255);stroke-width:2.16;stroke:rgb(0,0,0);" />
+<path d="M340.56,45.36L340.56,66.96L362.16,66.96"  style="fill:none;stroke-width:2.16;stroke:rgb(0,0,0);" />
+<text x="326.16" y="99.36" text-anchor="middle" fill="rgb(0,0,0)" dominant-baseline="central">Layers</text>
+</svg>
+</div>
 <p>However, Raptor has a different scope, and can do considerably different things
 than Docker.</p>
 <div id="admonition-heads-up" class="admonition admonish-warning" role="note" aria-labelledby="admonition-heads-up-title">
@@ -305,13 +295,13 @@ language.</p>
         </script>
 
 
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-9aeb6ddf.js"></script>
 
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-1b70063d.js"></script>
+        <script src="../book-9576a2db.js"></script>
 
         <!-- Custom JS scripts -->
 
