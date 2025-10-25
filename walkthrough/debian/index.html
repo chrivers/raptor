@@ -37,7 +37,7 @@
             const path_to_root = "../../";
             const default_light_theme = "ayu";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "../../searchindex-65cb5a44.js";
+            window.path_to_searchindex_js = "../../searchindex-cff52dd7.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-9fe4942a.js"></script>
@@ -229,7 +229,7 @@ RUN usermod -p "$1$GQf2tS9s$vu72NbrDtUcvvqnyAogrH0" root
 
 # Update package sources, and install packages
 RUN apt-get update
-RUN apt-get install -qy live-boot linux-image-amd64
+RUN apt-get install -qy systemd-sysv live-boot linux-image-amd64
 </code></pre>
 </div>
 </div>
