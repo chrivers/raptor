@@ -3,8 +3,7 @@ name: mdbook-deploy
 on:
   push:
     branches:
-      - main
-      - chrivers/mdbook
+      - master
 
 permissions:
   contents: write
