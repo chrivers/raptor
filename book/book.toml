@@ -17,6 +17,7 @@ command = "mdbook-admonish"
 assets_version = "3.1.0" # do not edit: managed by `mdbook-admonish install`
 
 [output.html]
+default-theme = "ayu"
 preferred-dark-theme = "ayu"
 smart-punctuation = true
 additional-css = ["./mdbook-admonish.css"]
