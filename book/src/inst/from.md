@@ -25,7 +25,7 @@ Raptor supports multiple options for `from-source`:
 ### Raptor sources
 
 When no schema is specified, the `from-source` is assumed to be the [module
-name](/module-name.md) of another raptor layer.
+name](../module-name.md) of another raptor layer.
 
 ~~~admonish tip
 This will be familiar to docker users. For example..
@@ -37,8 +37,8 @@ FROM base
 ~~~
 
 However, unlike docker files, raptor can point to raptor files in other
-directories, or even other packages. See [module names](/module-name.md) for an
-overview.
+directories, or even other packages. See [module names](../module-name.md) for
+an overview.
 
 #### Examples
 

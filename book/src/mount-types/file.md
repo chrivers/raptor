@@ -17,7 +17,7 @@ Let us expand on the earlier example, to make the file lister provide output to 
 ~~~
 
 Now that we have named the mounts `input` and `output`, we can use the
-[shorthand notation](/inst/mount.md#admonition-tip-1) for convenience:
+[shorthand notation](../inst/mount.md#admonition-tip-1) for convenience:
 
 ```sh
 $ sudo raptor run file-lister-output -I /etc -O /tmp/filelist.txt

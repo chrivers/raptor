@@ -38,8 +38,8 @@ To help get started with this, Raptor provides a standard set of build
 containers, in the companion project
 [raptor-build](https://github.com/chrivers/raptor-build):
 
- - [`deblive`] Builds Debian liveboot isos from Raptor layers.
- - [`disk-image`] Builds disk images (for virtual or physical machines) from Raptor layers.
+ - \[`deblive`\] Builds Debian liveboot isos from Raptor layers.
+ - \[`disk-image`\] Builds disk images (for virtual or physical machines) from Raptor layers.
 
 ~~~admonish note title="Build containers"
 Raptor build containers are just regular Raptor containers, that are
@@ -61,7 +61,7 @@ git clone https://github.com/chrivers/raptor-build
 ```
 
 This builder uses mounts to access input, output and cache from outside the
-container (see [`MOUNT`](/inst/mount.md)).
+container (see [`MOUNT`](../../inst/mount.md)).
 
 To build the layers from the last step into a debian liveboot iso, use the
 following command (assuming `raptor-build` is checked out next to the directory
@@ -93,7 +93,7 @@ sudo raptor run                 \
 ```
 ~~~
 
-(See the section on [module names](/module-name.md) to learn more about `--link`
+(See the section on [module names](../../module-name.md) to learn more about `--link`
 and the `$rbuild` notation.)
 
 This build process works, but the required command is fairly long and

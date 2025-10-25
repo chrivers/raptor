@@ -30,9 +30,9 @@ future.
 
 Now you are ready to install Raptor.
 
-## Install Raptor from git [stable]
+## Install Raptor from git \[stable\]
 
-1. Install prerequisites (see first section)
+1. [Install prerequisites](#install-prerequisites)
 
 2. Install `raptor` and `falcon` from git:
    ```sh
@@ -55,13 +55,13 @@ targets.
 command will compile and install, but the installation *will* be broken.
 ~~~
 
-## Install Raptor from git [development branch]
+## Install Raptor from git \[development branch\]
 
 This procedure is intended for developers, beta testers, and anyone else who
 want to try a specific branch build of Raptor. To test a branch named
 `hypothetical`:
 
-1. Install prerequisites (see first section)
+1. [Install prerequisites](#install-prerequisites)
 
 2. Install `raptor` and `falcon` from git:
    ```sh

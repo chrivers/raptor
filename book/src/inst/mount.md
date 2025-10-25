@@ -12,7 +12,7 @@ container.
 ```
 
 ```admonish tip
-See the section on [mount types](/mount-types.md).
+See the section on [mount types](mount-types.md).
 ```
 
 By using `MOUNT`, targets can specify certain resources (files, directories,
@@ -91,4 +91,5 @@ of an implementation detail.
 In contrast, Raptor considers layers a first-class object, and makes them
 available using the `MOUNT` instruction.
 
-To learn more about different mount types, please see the [mount types](/mount-types.md) section.
+To learn more about different mount types, please see the [mount
+types](../mount-types.md) section.

@@ -17,7 +17,7 @@ This guide is presented as a three-step process:
 
  - [Generate](iso.md): Generate a live boot iso from the layers
 
- - [Make](make.md): Use raptor-make to simplify the build process **[optional]**
+ - [Make](make.md): Use raptor-make to simplify the build process **\[optional\]**
 
 ~~~admonish tldr
 Below is an absolutely minimal example of generating a liveboot iso, for the impatient.
