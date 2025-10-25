@@ -1,1 +1,0 @@
-# Raptor User guide

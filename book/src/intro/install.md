@@ -6,8 +6,9 @@ future.
 
 ## New user?
 
- 1. Complete "Install prerequisites"
- 2. Complete "Install Raptor from git"
+ 1. Complete [Install prerequisites](#install-prerequisites)
+ 2. Complete [Install Raptor from git](#install-raptor-from-git-stable)
+ 3. Enjoy Raptor 🦅
 
 ## Install prerequisites
 

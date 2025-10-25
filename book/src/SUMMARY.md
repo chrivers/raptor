@@ -1,8 +1,6 @@
-#
-
-# User Guide
-- [User guide](user-guide.md)
-  - [Installling Raptor](install-guide.md)
+# Getting started
+- [Introduction](intro/index.md)
+- [Installling Raptor](intro/install.md)
 
 ---
 
