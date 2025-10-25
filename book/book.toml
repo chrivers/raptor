@@ -21,6 +21,8 @@ default-theme = "ayu"
 preferred-dark-theme = "ayu"
 smart-punctuation = true
 additional-css = ["./mdbook-admonish.css"]
+git-repository-url = "https://github.com/chrivers/raptor"
+hash-files = true
 #additional-js = ["mermaid.min.js", "mermaid-init.js"]
 
 # to build custom highlight.js:
