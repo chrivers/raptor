@@ -188,20 +188,18 @@ build a debian liveboot iso:</p>
   '$rbuild.deblive'
 </code></pre>
 <p>As mentioned, this works, but it doesn’t exactly roll off the tongue.</p>
-<p>Having to type this command every time we want to build the iso, is not a
-satisfying solution.</p>
+<p>Having to type this command every time we want to build the iso, <em>is not a
+satisfying solution</em>.</p>
 <p>To solve this, the subcommand <code>raptor make</code> is used. It is a
 <a href="https://www.gnu.org/software/make/make.html">make</a>-like system, where
 dependencies are specified in a configuration file.</p>
-<p>For <code>make</code>, this would be a <code>Makefile</code>, for <code>raptor make</code> this is going to be
-<code>Raptor.toml</code>.</p>
-<p>Building a <code>Raptor.toml</code> for your project is recommend, but not required. It is
-perfectly possible to start using <code>raptor</code> from the command line, and only write
-a <code>Raptor.toml</code> file when it feels right.</p>
+<p>For <code>make</code>, this is a <code>Makefile</code>, for Rust it’s <code>Cargo.toml</code>, and for <code>raptor make</code> we have <code>Raptor.toml</code>.</p>
+<p>Building a <code>Raptor.toml</code> for your project is recommend, but <em>not required</em>. It
+is perfectly possible to start using <code>raptor</code> from the command line, and only
+write a <code>Raptor.toml</code> file when it feels right.</p>
 <p>That being said, the format for <code>Raptor.toml</code> has been designed to be a smooth
 transition from a constructed command line. The smallest valid <code>Raptor.toml</code>
 file is an empty one.</p>
-<p>In other words, everything can be added bit by bit, as needed.</p>
 <p>Let’s start by adding the two linked packages (<code>--link</code> arguments):</p>
 <div id="admonition-raptortoml" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-title">
 <div class="admonition-title">
@@ -218,8 +216,13 @@ rbuild = "../raptor-build"
 </div>
 </div>
 <p>We have added two package links, but of course any number can be added as desired.</p>
+<p>All sections named <code>[raptor.*]</code> are settings for Raptor. The section
+<code>[raptor.link]</code> is for specifying linked packages.</p>
 <p>Next, we will define a <code>run</code> job, which accounts for almost all of the remaining
-command line arguments. It needs a name, so let’s call it <code>book-ssh</code>:</p>
+command line arguments.</p>
+<p>A <code>Raptor.toml</code> file can have any number of <code>[run.*]</code> sections, each with their
+own name. Each of those sections is a separate <code>run</code> job. Let’s use <code>book-ssh</code>
+for this example:</p>
 <div id="admonition-raptortoml-1" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-1-title">
 <div class="admonition-title">
 <div id="admonition-raptortoml-1-title">
@@ -232,6 +235,8 @@ command line arguments. It needs a name, so let’s call it <code>book-ssh</code
 book = "book/example"
 rbuild = "../raptor-build"
 
+# The name `book-ssh` is not special.
+# Feel free to choose any name you like!
 [run.book-ssh]
 target = "$rbuild.deblive"
 cache = "liveboot-cache"
@@ -240,6 +245,37 @@ output = "custom-liveboot.iso"
 </code></pre>
 </div>
 </div>
+<details id="admonition-click-here-for-more-details-on-raptorlink" class="admonition admonish-example" role="note" aria-labelledby="admonition-click-here-for-more-details-on-raptorlink-title">
+<summary class="admonition-title">
+<div id="admonition-click-here-for-more-details-on-raptorlink-title">
+<p>Click here for more details on <code>[raptor.link]</code></p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-click-here-for-more-details-on-raptorlink"></a>
+</summary>
+<div>
+<p>You can choose any names for the linked packages.</p>
+<p>For example, instaed of this:</p>
+<pre><code class="language-toml">[raptor.link]
+book = "book/example"
+...
+
+[run.example-1]
+# $book refers to the link name above
+input = "$book.ssh"
+...
+</code></pre>
+<p>…the following <code>Raptor.toml</code> is equivalent:</p>
+<pre><code class="language-toml">[raptor.link]
+example = "book/example"
+...
+
+[run.example-2]
+# $example refers to the link name above
+input = "$example.ssh"
+...
+</code></pre>
+</div>
+</details>
 <p>Now that we have encoded all the arguments, we can use a much simpler <code>raptor make</code> command to run this build job:</p>
 <pre><code class="language-sh">sudo raptor make book-ssh
 </code></pre>
@@ -252,7 +288,7 @@ output = "custom-liveboot.iso"
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../../reference-manual.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../module-name.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -266,7 +302,7 @@ output = "custom-liveboot.iso"
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../../reference-manual.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../module-name.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

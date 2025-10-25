@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>User guide - Raptor Manual</title>
+        <title>Introduction - Raptor Manual</title>
 
 
         <!-- Custom HTML head -->
@@ -12,35 +12,35 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="./mdbook-admonish.css">
+        <link rel="stylesheet" href=".././mdbook-admonish.css">
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "";
+            const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "searchindex.js";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="../toc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -107,7 +107,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
             </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -142,7 +142,7 @@
                     <h1 class="menu-title">Raptor Manual</h1>
 
                     <div class="right-buttons">
-                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
 
@@ -176,14 +176,110 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="raptor-user-guide"><a class="header" href="#raptor-user-guide">Raptor User guide</a></h1>
+                        <h1 id="getting-started-with-raptor"><a class="header" href="#getting-started-with-raptor">Getting started with Raptor</a></h1>
+<h2 id="what-is-raptor"><a class="header" href="#what-is-raptor">What is Raptor?</a></h2>
+<p><img src="../images/raptor-circle-icon.png" alt="raptor logo" /></p>
+<p>Raptor<sup class="footnote-reference" id="fr-raptor-1"><a href="#footnote-raptor">1</a></sup> is a modern, fast, and easy-to-use system for building disk images,
+bootable isos, containers and much more - all from a simple, Dockerfile-inspired
+syntax.</p>
+<p>It uses <code>systemd-nspawn</code> for sandboxing when building or running containers.</p>
+<div id="admonition-eagle-err-eager-to-get-started" class="admonition admonish-tip" role="note" aria-labelledby="admonition-eagle-err-eager-to-get-started-title">
+<div class="admonition-title">
+<div id="admonition-eagle-err-eager-to-get-started-title">
+<p><del>Eagle..</del> err, eager to get started?</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-eagle-err-eager-to-get-started"></a>
+</div>
+<div>
+<p>Start by <a href="install.html">installing raptor</a>, then head over to the
+<a href="/walkthrough/debian/index.html">Debian Liveboot walkthrough</a> to get a
+hands-on introduction to building a bootable iso.</p>
+</div>
+</div>
+<h2 id="theory-of-operation"><a class="header" href="#theory-of-operation">Theory of operation</a></h2>
+<p>Raptor builds <em>layers</em> from <em><code>.rapt</code></em> files. If you are familiar with Docker,
+this is similar to how Docker builds <em>containers</em> from a <em><code>Dockerfile</code></em>.</p>
+<pre><code class="language-pikchr"># scale = 0.8
+fill = white
 
+All: [
+
+[
+file
+file at previous + (0.1,-0.1)
+file at previous + (0.1,-0.1) "Raptor" "source" "code"
+]
+
+arrow "Raptor build" above width 1
+
+Layers: [
+    file
+    file at previous + (0.1,-0.1)
+    file at previous + (0.1,-0.1) "Layers"
+]
+
+#cylinder \
+#    wid Layers.width + 0.2 \
+#    ht Layers.height + 0.4 \
+#    at Layers \
+#    fill 0xc6e2ff \
+#    behind Layers
+
+#text "Disk storage" at previous.t + (0, 0.1)
+]
+
+box \
+    wid All.width + 0.2 \
+    ht All.height + 0.2 \
+    at All \
+    fill 0xd0f0ff \
+    behind All
+#    fill 0xc6e2ff \
+</code></pre>
+<p>However, Raptor has a different scope, and can do considerably different things
+than Docker.</p>
+<div id="admonition-heads-up" class="admonition admonish-warning" role="note" aria-labelledby="admonition-heads-up-title">
+<div class="admonition-title">
+<div id="admonition-heads-up-title">
+<p>Heads up!</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-heads-up"></a>
+</div>
+<div>
+<p>The entire Raptor project, including this book, the program itself, and the
+companion project <a href="https://github.com/chrivers/raptor-build">raptor-build</a>, is
+still quite young.</p>
+<p>If you find (or suspect) any bugs, <a href="https://github.com/chrivers/raptor/issues">please report
+them</a> so everybody can benefit.</p>
+<p>At this point, Raptor has reached a stage where breaking changes are rare, but
+we don’t yet make any particular guarantees. We will <strong>try our best</strong> to announce
+major changes clearly, and ahead of time.</p>
+<p>If you have questions, ideas or feedback, don’t hesitate to <a href="https://github.com/chrivers/raptor/discussions">join the
+discussion</a>.</p>
+</div>
+</div>
+<h2 id="syntax"><a class="header" href="#syntax">Syntax</a></h2>
+<p>Raptor uses a syntax similar to <code>Dockerfile</code>. Statements start with uppercase
+keywords, and are terminated by end of line.</p>
+<p>All lines starting with <code>#</code> are treated as comments:</p>
+<pre><code class="language-raptor"># This copies "foo" from the host to "/bar" inside the build target
+COPY foo /bar
+</code></pre>
+<h2 id="raptor-files"><a class="header" href="#raptor-files">Raptor files</a></h2>
+<p>Before being parsed as raptor files, <code>.rapt</code> files are processed through
+<a href="https://github.com/mitsuhiko/minijinja">minijinja</a>, a powerful templating
+language.</p>
+<hr>
+<ol class="footnote-definition"><li id="footnote-raptor">
+<p><a href="https://en.wikipedia.org/wiki/Raptor">According to wikipedia</a>: “The word “raptor” refers to several groups of avian and non-avian dinosaurs which primarily capture and subdue/kill prey with their talons.“. Hopefully, this Raptor is less scary. <a href="#fr-raptor-1">↩</a></p>
+</li>
+</ol>
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
 
-                            <a rel="next prefetch" href="install-guide.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../intro/install.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -194,7 +290,7 @@
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
 
-                    <a rel="next prefetch" href="install-guide.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../intro/install.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -209,13 +305,13 @@
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
 

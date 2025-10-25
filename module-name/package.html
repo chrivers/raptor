@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Instancing - Raptor Manual</title>
+        <title>Package - Raptor Manual</title>
 
 
         <!-- Custom HTML head -->
@@ -12,35 +12,35 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="./mdbook-admonish.css">
+        <link rel="stylesheet" href=".././mdbook-admonish.css">
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "";
+            const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "searchindex.js";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="../toc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -107,7 +107,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
             </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -142,7 +142,7 @@
                     <h1 class="menu-title">Raptor Manual</h1>
 
                     <div class="right-buttons">
-                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
 
@@ -176,63 +176,47 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="instancing"><a class="header" href="#instancing">Instancing</a></h1>
-<p>Raptor files can be <em>instanced</em>, which makes them work as a template.</p>
-<p>Instanced files can be recognized by ending in <code>@.rapt</code> (for <code>FROM</code>) or <code>@.rinc</code>
-(for <code>INCLUDE</code>).</p>
-<h2 id="file-names-and-syntax"><a class="header" href="#file-names-and-syntax">File names and syntax</a></h2>
-<div class="table-wrapper"><table><thead><tr><th>File</th><th>Instanced?</th><th>Example</th></tr></thead><tbody>
-<tr><td><code>base.rapt</code></td><td>No</td><td><code>FROM base</code></td></tr>
-<tr><td><code>server@.rapt</code></td><td>Yes</td><td><code>FROM server@production</code></td></tr>
-<tr><td><code>settings.rinc</code></td><td>No</td><td><code>INCLUDE settings</code></td></tr>
-<tr><td><code>firewall@.rinc</code></td><td>Yes</td><td><code>INCLUDE firewall@full</code></td></tr>
-</tbody></table>
-</div>
-<p>The table above shows some examples of instanced and non-instanced Raptor files.</p>
-<div id="admonition-beware" class="admonition admonish-danger" role="note" aria-labelledby="admonition-beware-title">
-<div class="admonition-title">
-<div id="admonition-beware-title">
-<p>Beware</p>
-</div>
-<a class="admonition-anchor-link" href="#admonition-beware"></a>
-</div>
-<div>
-<p>It is <strong>invalid</strong> to reference an instanced file without an instance.</p>
-<p>For example, <code>FROM server@</code> or <code>FROM base@value</code> would both fail to compile.</p>
-<p>Therefore, when writing a new Raptor file, you need to determine if it needs to
-be instanced, and name the file accordingly.</p>
-</div>
-</div>
-<h2 id="using-instancing"><a class="header" href="#using-instancing">Using instancing</a></h2>
-<p>So far, we have seen how to create templated (instanced) Raptor files, and how
-to reference them to provide a value.</p>
-<p>Now we will see how to <em>use</em> the provided value, so that instancing becomes
-useful. Let us start the simplest possible example</p>
-<div id="admonition-build-stamprinc" class="admonition admonish-note" role="note" aria-labelledby="admonition-build-stamprinc-title">
-<div class="admonition-title">
-<div id="admonition-build-stamprinc-title">
-<p>build-stamp@.rinc</p>
-</div>
-<a class="admonition-anchor-link" href="#admonition-build-stamprinc"></a>
-</div>
-<div>
-<pre><code class="language-raptor">WRITE "We are instance {{instance}}\n" /root/build-stamp.txt
+                        <h2 id="package-module-names"><a class="header" href="#package-module-names">Package module names</a></h2>
+<p>In the previous section, we briefly mentioned <em>packages</em>.</p>
+<p>Raptor is designed to work collaboratively, encouraging sharing of code between
+projects, and people. A Raptor package is simply a collection of useful Raptor
+files, typically distributed as a git repository.</p>
+<p>This means we need a robust way to refer to Raptor files outside of our current
+project, as well as a way to tell Raptor how to find these files.</p>
+<p>This is where <em>package</em> module names are used.</p>
+<p>First, let us take a look at how to make Raptor aware of external code
+bases. This is called <em>linking</em>, analogous to how the term is used when building
+a program from several sources.</p>
+<p>When invoking <code>raptor</code>, the <code>-L</code> option defines a linked raptor package:</p>
+<pre><code class="language-sh">sudo raptor -L name src ...
 </code></pre>
-</div>
-</div>
-<p>This writes a human-readable line of text to a file, including the instance id.</p>
-<p>Now we can use it from another file:</p>
-<div id="admonition-serverrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-serverrapt-title">
+<p>For example, imagine we are working on a web service, and we want to generate
+the deployment with Raptor. Now imagine this requires a database server, and
+that someone else is responsible for the Raptor code that controls the database.</p>
+<p>Then we might have a file layout like so:</p>
+<pre><code>~/project/web/server.rapt
+~/project/database/db-setup.rinc
+</code></pre>
+<p>We fully control <code>~/projects/web</code>, but <code>~/project/database</code> is a git repository
+we only pull changes from.</p>
+<p>We would like to <code>INCLUDE</code> the <code>db-setup</code> module, but it exists outside our own
+repository.</p>
+<p>This can be solved by declaring <code>database</code> as linked package:</p>
+<pre><code class="language-sh">$ cd ~/project/web
+$ sudo raptor build server -L database ../database
+</code></pre>
+<p>Now, we can refer to the content of <code>../database</code> by using <code>$database</code>.</p>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
 <div class="admonition-title">
-<div id="admonition-serverrapt-title">
-<p>server.rapt</p>
+<div id="admonition-tip-title">
+<p>Tip</p>
 </div>
-<a class="admonition-anchor-link" href="#admonition-serverrapt"></a>
+<a class="admonition-anchor-link" href="#admonition-tip"></a>
 </div>
 <div>
-<pre><code class="language-raptor"># Will write "We are instance 1\n" to /root/build-stamp.txt
-INCLUDE build-stamp@1
-</code></pre>
+<p>We don’t have to give the link the same name as the directory it refers to!</p>
+<p>If we link with <code>-L lib1 ../database</code>, we could instead refer to it as <code>$lib1.db-setup</code>.</p>
+<p>Feel free to use any link name that suits the project; the linked names have no impact outside your project.</p>
 </div>
 </div>
 
@@ -240,11 +224,11 @@ INCLUDE build-stamp@1
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="module-name/package.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../module-name/absolute.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="string-escape.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../instancing.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -254,11 +238,11 @@ INCLUDE build-stamp@1
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="module-name/package.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../module-name/absolute.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="string-escape.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../instancing.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -273,13 +257,13 @@ INCLUDE build-stamp@1
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
 

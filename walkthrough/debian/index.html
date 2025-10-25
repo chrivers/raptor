@@ -221,6 +221,9 @@ easily with raptor.</p>
 <pre><code class="language-raptor"># Start from a docker iso
 FROM docker://debian:trixie
 
+# Set root password to "raptor"
+RUN usermod -p "$1$GQf2tS9s$vu72NbrDtUcvvqnyAogrH0" root
+
 # Update package sources, and install packages
 RUN apt-get update
 RUN apt-get install -qy live-boot linux-image-amd64
@@ -231,17 +234,17 @@ RUN apt-get install -qy live-boot linux-image-amd64
 <pre><code class="language-sh">git clone https://github.com/chrivers/raptor-build.git
 </code></pre>
 <p>Then use these to build <code>liveboot.iso</code>:</p>
-<pre><code class="language-sh">sudo raptor build -I base -O liveboot.iso -L rbuild raptor-build '$rbuild.deblive'
+<pre><code class="language-sh">sudo raptor run -L rbuild raptor-build '$rbuild.deblive' -I base -O liveboot.iso
 </code></pre>
 <hr />
 <p>After this command has run, you should have the file <code>liveboot.iso</code> available. Enjoy!</p>
-<p>To learn how (and why) this works, read the next chapters of this guide.</p>
+<p>To learn how (and why) this works, <strong>read the next chapters of this guide.</strong></p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../install-guide.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../intro/install.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
@@ -255,7 +258,7 @@ RUN apt-get install -qy live-boot linux-image-amd64
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../install-guide.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../intro/install.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 

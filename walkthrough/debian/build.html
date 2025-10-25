@@ -197,6 +197,9 @@ tools and scripts</li>
 <pre><code class="language-raptor"># Start from a docker iso
 FROM docker://debian:trixie
 
+# Set root password to "raptor"
+RUN usermod -p "$1$GQf2tS9s$vu72NbrDtUcvvqnyAogrH0" root
+
 # Update package sources, and install packages
 RUN apt-get update
 RUN apt-get install -qy live-boot linux-image-amd64

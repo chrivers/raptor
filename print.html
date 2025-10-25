@@ -177,15 +177,112 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="raptor-user-guide"><a class="header" href="#raptor-user-guide">Raptor User guide</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="install-guide"><a class="header" href="#install-guide">Install guide</a></h1>
+                        <h1 id="getting-started-with-raptor"><a class="header" href="#getting-started-with-raptor">Getting started with Raptor</a></h1>
+<h2 id="what-is-raptor"><a class="header" href="#what-is-raptor">What is Raptor?</a></h2>
+<p><img src="intro/../images/raptor-circle-icon.png" alt="raptor logo" /></p>
+<p>Raptor<sup class="footnote-reference" id="fr-raptor-1"><a href="#footnote-raptor">1</a></sup> is a modern, fast, and easy-to-use system for building disk images,
+bootable isos, containers and much more - all from a simple, Dockerfile-inspired
+syntax.</p>
+<p>It uses <code>systemd-nspawn</code> for sandboxing when building or running containers.</p>
+<div id="admonition-eagle-err-eager-to-get-started" class="admonition admonish-tip" role="note" aria-labelledby="admonition-eagle-err-eager-to-get-started-title">
+<div class="admonition-title">
+<div id="admonition-eagle-err-eager-to-get-started-title">
+<p><del>Eagle..</del> err, eager to get started?</p>
+</div>
+<a class="admonition-anchor-link" href="intro/index.html#admonition-eagle-err-eager-to-get-started"></a>
+</div>
+<div>
+<p>Start by <a href="intro/install.html">installing raptor</a>, then head over to the
+<a href="intro//walkthrough/debian/index.html">Debian Liveboot walkthrough</a> to get a
+hands-on introduction to building a bootable iso.</p>
+</div>
+</div>
+<h2 id="theory-of-operation"><a class="header" href="#theory-of-operation">Theory of operation</a></h2>
+<p>Raptor builds <em>layers</em> from <em><code>.rapt</code></em> files. If you are familiar with Docker,
+this is similar to how Docker builds <em>containers</em> from a <em><code>Dockerfile</code></em>.</p>
+<pre><code class="language-pikchr"># scale = 0.8
+fill = white
+
+All: [
+
+[
+file
+file at previous + (0.1,-0.1)
+file at previous + (0.1,-0.1) "Raptor" "source" "code"
+]
+
+arrow "Raptor build" above width 1
+
+Layers: [
+    file
+    file at previous + (0.1,-0.1)
+    file at previous + (0.1,-0.1) "Layers"
+]
+
+#cylinder \
+#    wid Layers.width + 0.2 \
+#    ht Layers.height + 0.4 \
+#    at Layers \
+#    fill 0xc6e2ff \
+#    behind Layers
+
+#text "Disk storage" at previous.t + (0, 0.1)
+]
+
+box \
+    wid All.width + 0.2 \
+    ht All.height + 0.2 \
+    at All \
+    fill 0xd0f0ff \
+    behind All
+#    fill 0xc6e2ff \
+</code></pre>
+<p>However, Raptor has a different scope, and can do considerably different things
+than Docker.</p>
+<div id="admonition-heads-up" class="admonition admonish-warning" role="note" aria-labelledby="admonition-heads-up-title">
+<div class="admonition-title">
+<div id="admonition-heads-up-title">
+<p>Heads up!</p>
+</div>
+<a class="admonition-anchor-link" href="intro/index.html#admonition-heads-up"></a>
+</div>
+<div>
+<p>The entire Raptor project, including this book, the program itself, and the
+companion project <a href="https://github.com/chrivers/raptor-build">raptor-build</a>, is
+still quite young.</p>
+<p>If you find (or suspect) any bugs, <a href="https://github.com/chrivers/raptor/issues">please report
+them</a> so everybody can benefit.</p>
+<p>At this point, Raptor has reached a stage where breaking changes are rare, but
+we don’t yet make any particular guarantees. We will <strong>try our best</strong> to announce
+major changes clearly, and ahead of time.</p>
+<p>If you have questions, ideas or feedback, don’t hesitate to <a href="https://github.com/chrivers/raptor/discussions">join the
+discussion</a>.</p>
+</div>
+</div>
+<h2 id="syntax"><a class="header" href="#syntax">Syntax</a></h2>
+<p>Raptor uses a syntax similar to <code>Dockerfile</code>. Statements start with uppercase
+keywords, and are terminated by end of line.</p>
+<p>All lines starting with <code>#</code> are treated as comments:</p>
+<pre><code class="language-raptor"># This copies "foo" from the host to "/bar" inside the build target
+COPY foo /bar
+</code></pre>
+<h2 id="raptor-files"><a class="header" href="#raptor-files">Raptor files</a></h2>
+<p>Before being parsed as raptor files, <code>.rapt</code> files are processed through
+<a href="https://github.com/mitsuhiko/minijinja">minijinja</a>, a powerful templating
+language.</p>
+<hr>
+<ol class="footnote-definition"><li id="footnote-raptor">
+<p><a href="https://en.wikipedia.org/wiki/Raptor">According to wikipedia</a>: “The word “raptor” refers to several groups of avian and non-avian dinosaurs which primarily capture and subdue/kill prey with their talons.“. Hopefully, this Raptor is less scary. <a href="#fr-raptor-1">↩</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><h1 id="install-guide"><a class="header" href="#install-guide">Install guide</a></h1>
 <p>Currently, the only supported and recommended way to install raptor is by
 compiling from source. Pre-built binary packages might be available in the
 future.</p>
 <h2 id="new-user"><a class="header" href="#new-user">New user?</a></h2>
 <ol>
-<li>Complete “Install prerequisites”</li>
-<li>Complete “Install Raptor from git”</li>
+<li>Complete <a href="intro/install.html#install-prerequisites">Install prerequisites</a></li>
+<li>Complete <a href="intro/install.html#install-raptor-from-git-stable">Install Raptor from git</a></li>
+<li>Enjoy Raptor 🦅</li>
 </ol>
 <h2 id="install-prerequisites"><a class="header" href="#install-prerequisites">Install prerequisites</a></h2>
 <ol>
@@ -210,7 +307,7 @@ sudo apt-get install -y git musl-tools
 <h2 id="install-raptor-from-git-stable"><a class="header" href="#install-raptor-from-git-stable">Install Raptor from git [stable]</a></h2>
 <ol>
 <li>
-<p>Install prerequisites (see first section)</p>
+<p><a href="intro/install.html#install-prerequisites">Install prerequisites</a></p>
 </li>
 <li>
 <p>Install <code>raptor</code> and <code>falcon</code> from git:</p>
@@ -226,7 +323,7 @@ sudo apt-get install -y git musl-tools
 <div id="admonition-caution-title">
 <p>Caution</p>
 </div>
-<a class="admonition-anchor-link" href="install-guide.html#admonition-caution"></a>
+<a class="admonition-anchor-link" href="intro/install.html#admonition-caution"></a>
 </div>
 <div>
 <p>The argument <code>--target "x86_64-unknown-linux-musl"</code> is very important!</p>
@@ -245,7 +342,7 @@ want to try a specific branch build of Raptor. To test a branch named
 <code>hypothetical</code>:</p>
 <ol>
 <li>
-<p>Install prerequisites (see first section)</p>
+<p><a href="intro/install.html#install-prerequisites">Install prerequisites</a></p>
 </li>
 <li>
 <p>Install <code>raptor</code> and <code>falcon</code> from git:</p>
@@ -302,6 +399,9 @@ easily with raptor.</p>
 <pre><code class="language-raptor"># Start from a docker iso
 FROM docker://debian:trixie
 
+# Set root password to "raptor"
+RUN usermod -p "$1$GQf2tS9s$vu72NbrDtUcvvqnyAogrH0" root
+
 # Update package sources, and install packages
 RUN apt-get update
 RUN apt-get install -qy live-boot linux-image-amd64
@@ -312,11 +412,11 @@ RUN apt-get install -qy live-boot linux-image-amd64
 <pre><code class="language-sh">git clone https://github.com/chrivers/raptor-build.git
 </code></pre>
 <p>Then use these to build <code>liveboot.iso</code>:</p>
-<pre><code class="language-sh">sudo raptor build -I base -O liveboot.iso -L rbuild raptor-build '$rbuild.deblive'
+<pre><code class="language-sh">sudo raptor run -L rbuild raptor-build '$rbuild.deblive' -I base -O liveboot.iso
 </code></pre>
 <hr />
 <p>After this command has run, you should have the file <code>liveboot.iso</code> available. Enjoy!</p>
-<p>To learn how (and why) this works, read the next chapters of this guide.</p>
+<p>To learn how (and why) this works, <strong>read the next chapters of this guide.</strong></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="building-a-bootable-target"><a class="header" href="#building-a-bootable-target">Building a bootable target</a></h1>
 <p>In order to build a raptor target that can be turned into a bootable iso, there
 are a few requirements we need to consider:</p>
@@ -337,6 +437,9 @@ tools and scripts</li>
 <div>
 <pre><code class="language-raptor"># Start from a docker iso
 FROM docker://debian:trixie
+
+# Set root password to "raptor"
+RUN usermod -p "$1$GQf2tS9s$vu72NbrDtUcvvqnyAogrH0" root
 
 # Update package sources, and install packages
 RUN apt-get update
@@ -438,7 +541,7 @@ even identical to) <code>raptor-build</code>.</p>
 <pre><code class="language-sh">git clone https://github.com/chrivers/raptor-build
 </code></pre>
 <p>This builder uses mounts to access input, output and cache from outside the
-container (see <a href="walkthrough/debian//inst/mount.html"><code>MOUNT</code></a>).</p>
+container (see <a href="walkthrough/debian/../../inst/mount.html"><code>MOUNT</code></a>).</p>
 <p>To build the layers from the last step into a debian liveboot iso, use the
 following command (assuming <code>raptor-build</code> is checked out next to the directory
 containing <code>ssh.rapt</code>):</p>
@@ -471,7 +574,7 @@ desired (e.g. for scripting purposes).</p>
 </code></pre>
 </div>
 </div>
-<p>(See the section on <a href="walkthrough/debian//module-name.html">module names</a> to learn more about <code>--link</code>
+<p>(See the section on <a href="walkthrough/debian/../../module-name.html">module names</a> to learn more about <code>--link</code>
 and the <code>$rbuild</code> notation.)</p>
 <p>This build process works, but the required command is fairly long and
 complicated.</p>
@@ -495,20 +598,18 @@ build a debian liveboot iso:</p>
   '$rbuild.deblive'
 </code></pre>
 <p>As mentioned, this works, but it doesn’t exactly roll off the tongue.</p>
-<p>Having to type this command every time we want to build the iso, is not a
-satisfying solution.</p>
+<p>Having to type this command every time we want to build the iso, <em>is not a
+satisfying solution</em>.</p>
 <p>To solve this, the subcommand <code>raptor make</code> is used. It is a
 <a href="https://www.gnu.org/software/make/make.html">make</a>-like system, where
 dependencies are specified in a configuration file.</p>
-<p>For <code>make</code>, this would be a <code>Makefile</code>, for <code>raptor make</code> this is going to be
-<code>Raptor.toml</code>.</p>
-<p>Building a <code>Raptor.toml</code> for your project is recommend, but not required. It is
-perfectly possible to start using <code>raptor</code> from the command line, and only write
-a <code>Raptor.toml</code> file when it feels right.</p>
+<p>For <code>make</code>, this is a <code>Makefile</code>, for Rust it’s <code>Cargo.toml</code>, and for <code>raptor make</code> we have <code>Raptor.toml</code>.</p>
+<p>Building a <code>Raptor.toml</code> for your project is recommend, but <em>not required</em>. It
+is perfectly possible to start using <code>raptor</code> from the command line, and only
+write a <code>Raptor.toml</code> file when it feels right.</p>
 <p>That being said, the format for <code>Raptor.toml</code> has been designed to be a smooth
 transition from a constructed command line. The smallest valid <code>Raptor.toml</code>
 file is an empty one.</p>
-<p>In other words, everything can be added bit by bit, as needed.</p>
 <p>Let’s start by adding the two linked packages (<code>--link</code> arguments):</p>
 <div id="admonition-raptortoml" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-title">
 <div class="admonition-title">
@@ -525,8 +626,13 @@ rbuild = "../raptor-build"
 </div>
 </div>
 <p>We have added two package links, but of course any number can be added as desired.</p>
+<p>All sections named <code>[raptor.*]</code> are settings for Raptor. The section
+<code>[raptor.link]</code> is for specifying linked packages.</p>
 <p>Next, we will define a <code>run</code> job, which accounts for almost all of the remaining
-command line arguments. It needs a name, so let’s call it <code>book-ssh</code>:</p>
+command line arguments.</p>
+<p>A <code>Raptor.toml</code> file can have any number of <code>[run.*]</code> sections, each with their
+own name. Each of those sections is a separate <code>run</code> job. Let’s use <code>book-ssh</code>
+for this example:</p>
 <div id="admonition-raptortoml-1" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-1-title">
 <div class="admonition-title">
 <div id="admonition-raptortoml-1-title">
@@ -539,6 +645,8 @@ command line arguments. It needs a name, so let’s call it <code>book-ssh</code
 book = "book/example"
 rbuild = "../raptor-build"
 
+# The name `book-ssh` is not special.
+# Feel free to choose any name you like!
 [run.book-ssh]
 target = "$rbuild.deblive"
 cache = "liveboot-cache"
@@ -547,10 +655,40 @@ output = "custom-liveboot.iso"
 </code></pre>
 </div>
 </div>
+<details id="admonition-click-here-for-more-details-on-raptorlink" class="admonition admonish-example" role="note" aria-labelledby="admonition-click-here-for-more-details-on-raptorlink-title">
+<summary class="admonition-title">
+<div id="admonition-click-here-for-more-details-on-raptorlink-title">
+<p>Click here for more details on <code>[raptor.link]</code></p>
+</div>
+<a class="admonition-anchor-link" href="walkthrough/debian/make.html#admonition-click-here-for-more-details-on-raptorlink"></a>
+</summary>
+<div>
+<p>You can choose any names for the linked packages.</p>
+<p>For example, instaed of this:</p>
+<pre><code class="language-toml">[raptor.link]
+book = "book/example"
+...
+
+[run.example-1]
+# $book refers to the link name above
+input = "$book.ssh"
+...
+</code></pre>
+<p>…the following <code>Raptor.toml</code> is equivalent:</p>
+<pre><code class="language-toml">[raptor.link]
+example = "book/example"
+...
+
+[run.example-2]
+# $example refers to the link name above
+input = "$example.ssh"
+...
+</code></pre>
+</div>
+</details>
 <p>Now that we have encoded all the arguments, we can use a much simpler <code>raptor make</code> command to run this build job:</p>
 <pre><code class="language-sh">sudo raptor make book-ssh
 </code></pre>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="raptor-reference-manual"><a class="header" href="#raptor-reference-manual">Raptor reference manual</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="module-names"><a class="header" href="#module-names">Module names</a></h1>
 <p>In Raptor, “module names” are the names Raptor files use to refer to other
 Raptor files.</p>
@@ -575,8 +713,15 @@ value, to the module name.</p>
 versa.</p>
 <p>Users of <code>systemd</code> might recognize this pattern, which is used in the same way
 there.</p>
-<p>To learn more, read the <a href="/instancing.html">section on instancing</a>.</p>
-<h2 id="relative-module-names"><a class="header" href="#relative-module-names">Relative module names</a></h2>
+<p>To learn more, read the <a href="instancing.html">section on instancing</a>.</p>
+<h2 id="learn-more"><a class="header" href="#learn-more">Learn more</a></h2>
+<p>Each type of module name is described in more detail:</p>
+<ul>
+<li><a href="module-name/relative.html">Relative</a></li>
+<li><a href="module-name/absolute.html">Absolute</a></li>
+<li><a href="module-name/package.html">Package</a></li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="relative-module-names"><a class="header" href="#relative-module-names">Relative module names</a></h2>
 <p>The first, and arguably simplest form, is the <em>Relative</em> name. It is
 characterized by not having a dollar sign (<code>$</code>) in front of the first element,
 unlike the other two forms.</p>
@@ -594,8 +739,7 @@ file name, appended with either <code>.rapt</code> for <code>FROM</code> instruc
 <tr><td style="text-align: left"><code>INCLUDE babelfish</code></td><td style="text-align: left"><code>lib/target.rapt</code></td><td style="text-align: left"><code>lib/babelfish.rinc</code></td></tr>
 <tr><td style="text-align: left"><code>INCLUDE hitchhiker.guide</code></td><td style="text-align: left"><code>lib/target.rapt</code></td><td style="text-align: left"><code>lib/hitchhiker/guide.rinc</code></td></tr>
 </tbody></table>
-</div>
-<h2 id="absolute-module-names"><a class="header" href="#absolute-module-names">Absolute module names</a></h2>
+</div><div style="break-before: page; page-break-before: always;"></div><h2 id="absolute-module-names"><a class="header" href="#absolute-module-names">Absolute module names</a></h2>
 <p>Relative module names are simple, but lack the ability to point upwards in the
 directory heirarchy.</p>
 <p>For example, suppose you want to organize a set of Raptor files like so:</p>
@@ -620,8 +764,7 @@ target is the directory that <code>raptor</code> was started from.</p>
 <tr><td style="text-align: left"><code>FROM $.target.common</code></td><td style="text-align: left"><code>target/frontend.rapt</code></td><td style="text-align: left"><code>target/common.rapt</code></td></tr>
 <tr><td style="text-align: left"><code>INCLUDE $.lib.utils.tools</code></td><td style="text-align: left"><code>target/database.rapt</code></td><td style="text-align: left"><code>lib/utils/tools.rapt</code></td></tr>
 </tbody></table>
-</div>
-<h2 id="package-module-names"><a class="header" href="#package-module-names">Package module names</a></h2>
+</div><div style="break-before: page; page-break-before: always;"></div><h2 id="package-module-names"><a class="header" href="#package-module-names">Package module names</a></h2>
 <p>In the previous section, we briefly mentioned <em>packages</em>.</p>
 <p>Raptor is designed to work collaboratively, encouraging sharing of code between
 projects, and people. A Raptor package is simply a collection of useful Raptor
@@ -656,7 +799,7 @@ $ sudo raptor build server -L database ../database
 <div id="admonition-tip-title">
 <p>Tip</p>
 </div>
-<a class="admonition-anchor-link" href="module-name.html#admonition-tip"></a>
+<a class="admonition-anchor-link" href="module-name/package.html#admonition-tip"></a>
 </div>
 <div>
 <p>We don’t have to give the link the same name as the directory it refers to!</p>
@@ -1049,7 +1192,7 @@ CMD "ls -l /input &gt; /output"
 </div>
 </div>
 <p>Now that we have named the mounts <code>input</code> and <code>output</code>, we can use the
-<a href="mount-types//inst/mount.html#admonition-tip-1">shorthand notation</a> for convenience:</p>
+<a href="mount-types/../inst/mount.html#admonition-tip-1">shorthand notation</a> for convenience:</p>
 <pre><code class="language-sh">$ sudo raptor run file-lister-output -I /etc -O /tmp/filelist.txt
 ...
 $ sudo cat /tmp/filelist.txt
@@ -1213,6 +1356,195 @@ drwxrwxrwt  2 root root 4096 Sep 29 00:00 tmp
 drwxr-xr-x 12 root root 4096 Sep 29 00:00 usr
 drwxr-xr-x 11 root root 4096 Sep 29 00:00 var
 </code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="raptor-make"><a class="header" href="#raptor-make">Raptor make</a></h1>
+<h2 id="overall-structure"><a class="header" href="#overall-structure">Overall structure</a></h2>
+<p>Below is an example of the overall structure of a <code>Raptor.toml</code> file.</p>
+<p><strong>Note</strong>: All parts are optional, so you only need to define the parts you need.</p>
+<pre><code class="language-toml">[raptor.link]
+name1 = "path/to/source1"
+name2 = "path/to/source2"
+...
+
+[run.purple]
+# ..run target here..
+
+[run.orange]
+# ..run target here..
+
+[group.green]
+# ..group here..
+
+[group.yellow]
+# ..group here..
+</code></pre>
+<h2 id="run-target-format"><a class="header" href="#run-target-format">Run target format</a></h2>
+<p>A run target (<code>[run.&lt;name&gt;]</code>) is the most commonly used feature in
+<code>Raptor.toml</code>.</p>
+<p>The structure for a job named <code>example</code> is shown below, where each field is
+specified with its default value.</p>
+<p><strong>Note</strong>: Only the <code>target</code> field is required! Everything else can be specified as needed.</p>
+<div id="admonition-raptortoml-run" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-run-title">
+<div class="admonition-title">
+<div id="admonition-raptortoml-run-title">
+<p>Raptor.toml run</p>
+</div>
+<a class="admonition-anchor-link" href="make.html#admonition-raptortoml-run"></a>
+</div>
+<div>
+<pre><code class="language-toml">[run.example]
+target = &lt;required&gt;
+
+# Cache mounts
+# (default is empty list)
+#
+# Note: A single element can be specified as a string instead of the list
+cache = []
+
+# Input mounts
+# (default is empty list)
+#
+# Note: A single element can be specified as a string instead of the list
+input = []
+
+# Output mounts
+# (default is empty list)
+#
+# Note: A single element can be specified as a string instead of the list
+output = []
+
+# Entrypoint arguments
+entrypoint = []
+
+# Command arguments
+args = []
+
+# BTreeMap&lt;String, String&gt;
+env = {}
+
+# State directory for container state
+# (default is unset, meaning ephemeral containers)
+#state_dir =
+</code></pre>
+</div>
+</div>
+<h2 id="group-format"><a class="header" href="#group-format">Group format</a></h2>
+<p>A group is used to collectively refer to a number of run and build jobs, by a
+single name.</p>
+<pre><code class="language-toml">[group.example]
+# List of layers to build
+#
+# Default is empty list
+build = []
+
+# List of names for [run.&lt;name&gt;] targets to run
+#
+# Default is empty list
+run = []
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="grammar"><a class="header" href="#grammar">Grammar</a></h1>
+<div id="admonition-warning" class="admonition admonish-warning" role="note" aria-labelledby="admonition-warning-title">
+<div class="admonition-title">
+<div id="admonition-warning-title">
+<p>Warning</p>
+</div>
+<a class="admonition-anchor-link" href="grammar.html#admonition-warning"></a>
+</div>
+<div>
+<p>The Raptor parser is implemented by hand in a
+<a href="https://github.com/chrivers/raptor/tree/master/crates/raptor-parser">separate crate</a>.</p>
+<p>Because it is hand-written, there is no exact BNF grammar that matches the parsing.</p>
+<p>The following is an attempt to provide a detailed and realistic description of
+the accepted syntax, but might contain minor mistakes and inconsistencies.</p>
+</div>
+</div>
+<p>The parsing starts from the first rule, <code>&lt;file&gt;</code>, and proceeds from there.</p>
+<div id="admonition-syntax-guide" class="admonition admonish-tip" role="note" aria-labelledby="admonition-syntax-guide-title">
+<div class="admonition-title">
+<div id="admonition-syntax-guide-title">
+<p>Syntax guide</p>
+</div>
+<a class="admonition-anchor-link" href="grammar.html#admonition-syntax-guide"></a>
+</div>
+<div>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Syntax</th><th style="text-align: left">Meaning</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>rule?</code></td><td style="text-align: left">Match <code>rule</code> 0 or 1 times (i.e., it is optional)</td></tr>
+<tr><td style="text-align: left"><code>rule+</code></td><td style="text-align: left">Match <code>rule</code> 1 or more times</td></tr>
+<tr><td style="text-align: left"><code>rule*</code></td><td style="text-align: left">Match <code>rule</code> 0 or more times</td></tr>
+<tr><td style="text-align: left"><code>rule1 \| rule2</code></td><td style="text-align: left">Match either <code>rule1</code> or <code>rule2</code> (exactly one of them must match)</td></tr>
+<tr><td style="text-align: left"><code>( rule1 rule2 .. )</code></td><td style="text-align: left">Parenthesized rules are matched/optional/repeated together</td></tr>
+<tr><td style="text-align: left"><code>"word"</code></td><td style="text-align: left">Matches the letters <code>w</code>, <code>o</code>, <code>r</code>, <code>d</code> (but not the quotes)</td></tr>
+</tbody></table>
+</div></div>
+</div>
+<div id="admonition-raptor-grammar" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-raptor-grammar-title">
+<div class="admonition-title">
+<div id="admonition-raptor-grammar-title">
+<p>Raptor grammar</p>
+</div>
+<a class="admonition-anchor-link" href="grammar.html#admonition-raptor-grammar"></a>
+</div>
+<div>
+<pre><code class="language-bnf">&lt;file&gt;         ::= &lt;statement&gt;*
+
+&lt;statement&gt;    ::= &lt;from&gt;
+                 | &lt;mount&gt;
+                 | &lt;render&gt;
+                 | &lt;write&gt;
+                 | &lt;mkdir&gt;
+                 | &lt;copy&gt;
+                 | &lt;include&gt;
+                 | &lt;run&gt;
+                 | &lt;env&gt;
+                 | &lt;workdir&gt;
+                 | &lt;entrypoint&gt;
+                 | &lt;cmd&gt;
+
+&lt;from&gt;         ::= "FROM" &lt;from-source&gt; "\n"
+&lt;mount&gt;        ::= "MOUNT" &lt;mount-type&gt;? &lt;word&gt; &lt;path&gt; "\n"
+&lt;render&gt;       ::= "RENDER" &lt;file-option&gt;* &lt;path&gt; &lt;path&gt; &lt;include-arg&gt;* "\n"
+&lt;write&gt;        ::= "WRITE" &lt;file-option&gt;* &lt;value&gt; &lt;path&gt; "\n"
+&lt;mkdir&gt;        ::= "MKDIR" &lt;mkdir-option&gt;* &lt;path&gt; "\n"
+&lt;copy&gt;         ::= "COPY" &lt;file-option&gt;* &lt;path&gt;+ &lt;path&gt; "\n"
+&lt;include&gt;      ::= "INCLUDE" &lt;module-name&gt; &lt;include-arg&gt;* "\n"
+&lt;run&gt;          ::= "RUN" &lt;word&gt;+ "\n"
+&lt;env&gt;          ::= "ENV" &lt;env-assign&gt;+ "\n"
+&lt;workdir&gt;      ::= "WORKDIR" &lt;path&gt; "\n"
+&lt;entrypoint&gt;   ::= "ENTRYPOINT" &lt;word&gt;* "\n"
+&lt;cmd&gt;          ::= "CMD" &lt;word&gt;* "\n"
+
+&lt;env-assign&gt;   ::= &lt;word&gt; ( "=" &lt;value&gt; )?
+&lt;mount-type&gt;   ::= "--file" | "--simple" | "--layers" | "--overlay"
+
+&lt;mkdir-option&gt; ::= &lt;file-option&gt; | "-p"
+&lt;file-option&gt;  ::= &lt;file-chown&gt; | &lt;file-chmod&gt;
+&lt;file-chown&gt;   ::= "--chown" "="? &lt;chown&gt;
+&lt;file-chmod&gt;   ::= "--chmod" "="? &lt;chmod&gt;
+&lt;chown&gt;        ::= (&lt;word&gt; (":" &lt;word&gt;?)?) | (":" &lt;word&gt;?)
+&lt;chmod&gt;        ::= /* built-in rule: 3 or 4 octal digits */
+
+&lt;include-arg&gt;  ::= &lt;word&gt; ( "=" &lt;expression&gt; )?
+&lt;expression&gt;   ::= &lt;expr-lookup&gt; | &lt;expr-value&gt;
+&lt;expr-lookup&gt;  ::= &lt;word&gt; ("." &lt;word&gt;)*
+&lt;expr-value&gt;   ::= &lt;expr-list&gt;
+                 | &lt;expr-map&gt;
+                 | &lt;expr-string&gt;
+                 | &lt;expr-number&gt;
+                 | &lt;expr-bool&gt;
+&lt;expr-list&gt;    ::= "[" ( &lt;expr-value&gt;   ( "," &lt;expr-value&gt;   )* ","? )? "]"
+&lt;expr-map&gt;     ::= "{" ( &lt;expr-mapitem&gt; ( "," &lt;expr-mapitem&gt; )* ","? )? "}"
+&lt;expr-mapitem&gt; ::= &lt;expr-value&gt; ":" &lt;expr-value&gt;
+&lt;expr-string&gt;  ::= /* built-in rule: see section on string escapes */
+&lt;expr-number&gt;  ::= &lt;digit&gt;+
+&lt;expr-bool&gt;    ::= "true" | "false"
+&lt;digit&gt;        ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+&lt;module-name&gt;  ::= &lt;mn-package&gt;? &lt;mn-body&gt; &lt;mn-instance&gt;?
+&lt;mn-package&gt;   ::= "$" &lt;word&gt;? "."
+&lt;mn-body&gt;      ::= &lt;word&gt; ( "." &lt;word&gt; )*
+&lt;mn-instance&gt;  ::= "@" &lt;word&gt;
+</code></pre>
+</div>
+</div>
 <div style="break-before: page; page-break-before: always;"></div><div class="table-wrapper"><table><thead><tr><th style="text-align: left">Instruction</th><th style="text-align: left">Multiple valid?</th><th style="text-align: left">Build or Run</th></tr></thead><tbody>
 <tr><td style="text-align: left"><a href="inst/from.html"><code>FROM</code></a></td><td style="text-align: left"><em><strong>No</strong></em></td><td style="text-align: left">Build</td></tr>
 <tr><td style="text-align: left"><a href="inst/run.html"><code>RUN</code></a></td><td style="text-align: left">Yes</td><td style="text-align: left">Build</td></tr>
@@ -1252,7 +1584,7 @@ is building from an empty base, with no dependencies.</p>
 </tbody></table>
 </div>
 <h3 id="raptor-sources"><a class="header" href="#raptor-sources">Raptor sources</a></h3>
-<p>When no schema is specified, the <code>from-source</code> is assumed to be the <a href="inst//module-name.html">module
+<p>When no schema is specified, the <code>from-source</code> is assumed to be the <a href="inst/../module-name.html">module
 name</a> of another raptor layer.</p>
 <div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
 <div class="admonition-title">
@@ -1270,8 +1602,8 @@ FROM base
 </div>
 </div>
 <p>However, unlike docker files, raptor can point to raptor files in other
-directories, or even other packages. See <a href="inst//module-name.html">module names</a> for an
-overview.</p>
+directories, or even other packages. See <a href="inst/../module-name.html">module names</a> for
+an overview.</p>
 <h4 id="examples-1"><a class="header" href="#examples-1">Examples</a></h4>
 <pre><code class="language-raptor"># This will depend on `base.rapt`
 FROM base
@@ -1667,7 +1999,7 @@ container.</p>
 <a class="admonition-anchor-link" href="inst/mount.html#admonition-tip"></a>
 </div>
 <div>
-<p>See the section on <a href="inst//mount-types.html">mount types</a>.</p>
+<p>See the section on <a href="inst/mount-types.html">mount types</a>.</p>
 </div>
 </div>
 <p>By using <code>MOUNT</code>, targets can specify certain resources (files, directories,
@@ -1730,7 +2062,8 @@ from the individual layers of one or more raptor targets.</p>
 of an implementation detail.</p>
 <p>In contrast, Raptor considers layers a first-class object, and makes them
 available using the <code>MOUNT</code> instruction.</p>
-<p>To learn more about different mount types, please see the <a href="inst//mount-types.html">mount types</a> section.</p>
+<p>To learn more about different mount types, please see the <a href="inst/../mount-types.html">mount
+types</a> section.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-entrypoint"><a class="header" href="#instruction-entrypoint">Instruction <code>ENTRYPOINT</code></a></h1>
 <div id="admonition-build-time-instruction" class="admonition admonish-tip" role="note" aria-labelledby="admonition-build-time-instruction-title">
 <div class="admonition-title">
@@ -1755,195 +2088,6 @@ container.</p>
 <div>
 <p>The <code>MOUNT</code> instructions only affects <em>running</em> a container, not <em>building</em> a
 container.</p>
-</div>
-</div>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="raptor-make"><a class="header" href="#raptor-make">Raptor make</a></h1>
-<h2 id="overall-structure"><a class="header" href="#overall-structure">Overall structure</a></h2>
-<p>Below is an example of the overall structure of a <code>Raptor.toml</code> file.</p>
-<p><strong>Note</strong>: All parts are optional, so you only need to define the parts you need.</p>
-<pre><code class="language-toml">[raptor.link]
-name1 = "path/to/source1"
-name2 = "path/to/source2"
-...
-
-[run.purple]
-# ..run target here..
-
-[run.orange]
-# ..run target here..
-
-[group.green]
-# ..group here..
-
-[group.yellow]
-# ..group here..
-</code></pre>
-<h2 id="run-target-format"><a class="header" href="#run-target-format">Run target format</a></h2>
-<p>A run target (<code>[run.&lt;name&gt;]</code>) is the most commonly used feature in
-<code>Raptor.toml</code>.</p>
-<p>The structure for a job named <code>example</code> is shown below, where each field is
-specified with its default value.</p>
-<p><strong>Note</strong>: Only the <code>target</code> field is required! Everything else can be specified as needed.</p>
-<div id="admonition-raptortoml-run" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-run-title">
-<div class="admonition-title">
-<div id="admonition-raptortoml-run-title">
-<p>Raptor.toml run</p>
-</div>
-<a class="admonition-anchor-link" href="make.html#admonition-raptortoml-run"></a>
-</div>
-<div>
-<pre><code class="language-toml">[run.example]
-target = &lt;required&gt;
-
-# Cache mounts
-# (default is empty list)
-#
-# Note: A single element can be specified as a string instead of the list
-cache = []
-
-# Input mounts
-# (default is empty list)
-#
-# Note: A single element can be specified as a string instead of the list
-input = []
-
-# Output mounts
-# (default is empty list)
-#
-# Note: A single element can be specified as a string instead of the list
-output = []
-
-# Entrypoint arguments
-entrypoint = []
-
-# Command arguments
-args = []
-
-# BTreeMap&lt;String, String&gt;
-env = {}
-
-# State directory for container state
-# (default is unset, meaning ephemeral containers)
-#state_dir =
-</code></pre>
-</div>
-</div>
-<h2 id="group-format"><a class="header" href="#group-format">Group format</a></h2>
-<p>A group is used to collectively refer to a number of run and build jobs, by a
-single name.</p>
-<pre><code class="language-toml">[group.example]
-# List of layers to build
-#
-# Default is empty list
-build = []
-
-# List of names for [run.&lt;name&gt;] targets to run
-#
-# Default is empty list
-run = []
-</code></pre>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="grammar"><a class="header" href="#grammar">Grammar</a></h1>
-<div id="admonition-warning" class="admonition admonish-warning" role="note" aria-labelledby="admonition-warning-title">
-<div class="admonition-title">
-<div id="admonition-warning-title">
-<p>Warning</p>
-</div>
-<a class="admonition-anchor-link" href="grammar.html#admonition-warning"></a>
-</div>
-<div>
-<p>The Raptor parser is implemented by hand in a
-<a href="https://github.com/chrivers/raptor/tree/master/crates/raptor-parser">separate crate</a>.</p>
-<p>Because it is hand-written, there is no exact BNF grammar that matches the parsing.</p>
-<p>The following is an attempt to provide a detailed and realistic description of
-the accepted syntax, but might contain minor mistakes and inconsistencies.</p>
-</div>
-</div>
-<p>The parsing starts from the first rule, <code>&lt;file&gt;</code>, and proceeds from there.</p>
-<div id="admonition-syntax-guide" class="admonition admonish-tip" role="note" aria-labelledby="admonition-syntax-guide-title">
-<div class="admonition-title">
-<div id="admonition-syntax-guide-title">
-<p>Syntax guide</p>
-</div>
-<a class="admonition-anchor-link" href="grammar.html#admonition-syntax-guide"></a>
-</div>
-<div>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Syntax</th><th style="text-align: left">Meaning</th></tr></thead><tbody>
-<tr><td style="text-align: left"><code>rule?</code></td><td style="text-align: left">Match <code>rule</code> 0 or 1 times (i.e., it is optional)</td></tr>
-<tr><td style="text-align: left"><code>rule+</code></td><td style="text-align: left">Match <code>rule</code> 1 or more times</td></tr>
-<tr><td style="text-align: left"><code>rule*</code></td><td style="text-align: left">Match <code>rule</code> 0 or more times</td></tr>
-<tr><td style="text-align: left"><code>rule1 \| rule2</code></td><td style="text-align: left">Match either <code>rule1</code> or <code>rule2</code> (exactly one of them must match)</td></tr>
-<tr><td style="text-align: left"><code>( rule1 rule2 .. )</code></td><td style="text-align: left">Parenthesized rules are matched/optional/repeated together</td></tr>
-<tr><td style="text-align: left"><code>"word"</code></td><td style="text-align: left">Matches the letters <code>w</code>, <code>o</code>, <code>r</code>, <code>d</code> (but not the quotes)</td></tr>
-</tbody></table>
-</div></div>
-</div>
-<div id="admonition-raptor-grammar" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-raptor-grammar-title">
-<div class="admonition-title">
-<div id="admonition-raptor-grammar-title">
-<p>Raptor grammar</p>
-</div>
-<a class="admonition-anchor-link" href="grammar.html#admonition-raptor-grammar"></a>
-</div>
-<div>
-<pre><code class="language-bnf">&lt;file&gt;         ::= &lt;statement&gt;*
-
-&lt;statement&gt;    ::= &lt;from&gt;
-                 | &lt;mount&gt;
-                 | &lt;render&gt;
-                 | &lt;write&gt;
-                 | &lt;mkdir&gt;
-                 | &lt;copy&gt;
-                 | &lt;include&gt;
-                 | &lt;run&gt;
-                 | &lt;env&gt;
-                 | &lt;workdir&gt;
-                 | &lt;entrypoint&gt;
-                 | &lt;cmd&gt;
-
-&lt;from&gt;         ::= "FROM" &lt;from-source&gt; "\n"
-&lt;mount&gt;        ::= "MOUNT" &lt;mount-type&gt;? &lt;word&gt; &lt;path&gt; "\n"
-&lt;render&gt;       ::= "RENDER" &lt;file-option&gt;* &lt;path&gt; &lt;path&gt; &lt;include-arg&gt;* "\n"
-&lt;write&gt;        ::= "WRITE" &lt;file-option&gt;* &lt;value&gt; &lt;path&gt; "\n"
-&lt;mkdir&gt;        ::= "MKDIR" &lt;mkdir-option&gt;* &lt;path&gt; "\n"
-&lt;copy&gt;         ::= "COPY" &lt;file-option&gt;* &lt;path&gt;+ &lt;path&gt; "\n"
-&lt;include&gt;      ::= "INCLUDE" &lt;module-name&gt; &lt;include-arg&gt;* "\n"
-&lt;run&gt;          ::= "RUN" &lt;word&gt;+ "\n"
-&lt;env&gt;          ::= "ENV" &lt;env-assign&gt;+ "\n"
-&lt;workdir&gt;      ::= "WORKDIR" &lt;path&gt; "\n"
-&lt;entrypoint&gt;   ::= "ENTRYPOINT" &lt;word&gt;* "\n"
-&lt;cmd&gt;          ::= "CMD" &lt;word&gt;* "\n"
-
-&lt;env-assign&gt;   ::= &lt;word&gt; ( "=" &lt;value&gt; )?
-&lt;mount-type&gt;   ::= "--file" | "--simple" | "--layers" | "--overlay"
-
-&lt;mkdir-option&gt; ::= &lt;file-option&gt; | "-p"
-&lt;file-option&gt;  ::= &lt;file-chown&gt; | &lt;file-chmod&gt;
-&lt;file-chown&gt;   ::= "--chown" "="? &lt;chown&gt;
-&lt;file-chmod&gt;   ::= "--chmod" "="? &lt;chmod&gt;
-&lt;chown&gt;        ::= (&lt;word&gt; (":" &lt;word&gt;?)?) | (":" &lt;word&gt;?)
-&lt;chmod&gt;        ::= /* built-in rule: 3 or 4 octal digits */
-
-&lt;include-arg&gt;  ::= &lt;word&gt; ( "=" &lt;expression&gt; )?
-&lt;expression&gt;   ::= &lt;expr-lookup&gt; | &lt;expr-value&gt;
-&lt;expr-lookup&gt;  ::= &lt;word&gt; ("." &lt;word&gt;)*
-&lt;expr-value&gt;   ::= &lt;expr-list&gt;
-                 | &lt;expr-map&gt;
-                 | &lt;expr-string&gt;
-                 | &lt;expr-number&gt;
-                 | &lt;expr-bool&gt;
-&lt;expr-list&gt;    ::= "[" ( &lt;expr-value&gt;   ( "," &lt;expr-value&gt;   )* ","? )? "]"
-&lt;expr-map&gt;     ::= "{" ( &lt;expr-mapitem&gt; ( "," &lt;expr-mapitem&gt; )* ","? )? "}"
-&lt;expr-mapitem&gt; ::= &lt;expr-value&gt; ":" &lt;expr-value&gt;
-&lt;expr-string&gt;  ::= /* built-in rule: see section on string escapes */
-&lt;expr-number&gt;  ::= &lt;digit&gt;+
-&lt;expr-bool&gt;    ::= "true" | "false"
-&lt;digit&gt;        ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-
-&lt;module-name&gt;  ::= &lt;mn-package&gt;? &lt;mn-body&gt; &lt;mn-instance&gt;?
-&lt;mn-package&gt;   ::= "$" &lt;word&gt;? "."
-&lt;mn-body&gt;      ::= &lt;word&gt; ( "." &lt;word&gt; )*
-&lt;mn-instance&gt;  ::= "@" &lt;word&gt;
-</code></pre>
 </div>
 </div>
 
