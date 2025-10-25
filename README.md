@@ -42,7 +42,7 @@ The companion project [raptor build](https://github.com/chrivers/raptor-build) c
 
 After [installing Raptor](http://chrivers.github.io/intro/install.html), create a file called `base.rapt`:
 
-```docker
+```Dockerfile
 # Start from a docker iso
 FROM docker://debian:trixie
 
