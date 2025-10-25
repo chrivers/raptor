@@ -9,7 +9,7 @@ syntax.
 It uses `systemd-nspawn` for sandboxing when building or running containers.
 
 > [!TIP]
-> For more information, [read the raptor book](https://chrivers.github.io/raptor)
+> 📖 For more information, [read the raptor book](https://chrivers.github.io/raptor)
 
 ## What it looks like
 
@@ -23,10 +23,10 @@ All lines starting with `#` are treated as comments:
 COPY foo /bar
 ```
 
-> [!TIP]
-> For more information, [read the raptor book](https://chrivers.github.io/raptor)
-
 ## What it can do
+
+> [!TIP]
+> 📖 For more information, [read the raptor book](https://chrivers.github.io/raptor)
 
 Raptor builds *layers*, much in the same way as Docker.
 
@@ -42,7 +42,7 @@ The companion project [raptor build](https://github.com/chrivers/raptor-build) c
 
 After [installing Raptor](http://chrivers.github.io/intro/install.html), create a file called `base.rapt`:
 
-```nginx
+```docker
 # Start from a docker iso
 FROM docker://debian:trixie
 
@@ -63,20 +63,25 @@ git clone https://github.com/chrivers/raptor-build.git
 Then run the `deblive` container from `raptor-build`, using the `base(.rapt)` we just made:
 
 ```sh
-sudo raptor run -L rbuild raptor-build '$rbuild.deblive' -I base -O liveboot.iso
+# create cache dir (used in `-C` option)
+mkdir /tmp/raptor-cache
+
+sudo raptor run \
+    '$rbuild.deblive' \
+    -L rbuild raptor-build \
+    -C /tmp/raptor-cache \
+    -I base \
+    -O liveboot.iso
 ```
 
 After this step, the file `liveboot.iso` is ready to use. We can try it out with QEMU:
 
 ```sh
-kvm -cpu host -m 4G -cdrom liveboot.iso
-
-# if "kvm" is not available, try this more compatible version:
 qemu-system-x86_64 -enable-kvm -cpu host -m 4G -cdrom liveboot.iso
 ```
 
 > [!TIP]
-> The whole process is described in [much more detail in the book!](https://chrivers.github.io/raptor/walkthrough/debian/).
+> 📖 The whole process is described in [much more detail in the book!](https://chrivers.github.io/raptor/walkthrough/debian/).
 
 ## Need help?
 
