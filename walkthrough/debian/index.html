@@ -37,7 +37,7 @@
             const path_to_root = "../../";
             const default_light_theme = "ayu";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "../../searchindex-cff52dd7.js";
+            window.path_to_searchindex_js = "../../searchindex-3d29b0c9.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-9fe4942a.js"></script>
@@ -234,10 +234,10 @@ RUN apt-get install -qy systemd-sysv live-boot linux-image-amd64
 </div>
 </div>
 <p>Git clone (or otherwise download) the necessary build container recipes:</p>
-<pre><code class="language-sh">git clone https://github.com/chrivers/raptor-build.git
+<pre><code class="language-sh">git clone https://github.com/chrivers/raptor-builders.git
 </code></pre>
 <p>Then use these to build <code>liveboot.iso</code>:</p>
-<pre><code class="language-sh">sudo raptor run -L rbuild raptor-build '$rbuild.deblive' -I base -O liveboot.iso
+<pre><code class="language-sh">sudo raptor run -L rbuild raptor-builders '$rbuild.deblive' -I base -O liveboot.iso
 </code></pre>
 <hr />
 <p>After this command has run, you should have the file <code>liveboot.iso</code> available. Enjoy!</p>

@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "ayu";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "searchindex-cff52dd7.js";
+            window.path_to_searchindex_js = "searchindex-3d29b0c9.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-9fe4942a.js"></script>
@@ -238,7 +238,7 @@ than Docker.</p>
 </div>
 <div>
 <p>The entire Raptor project, including this book, the program itself, and the
-companion project <a href="https://github.com/chrivers/raptor-build">raptor-build</a>, is
+companion project <a href="https://github.com/chrivers/raptor-builders">raptor-builders</a>, is
 still quite young.</p>
 <p>If you find (or suspect) any bugs, <a href="https://github.com/chrivers/raptor/issues">please report
 them</a> so everybody can benefit.</p>
@@ -399,10 +399,10 @@ RUN apt-get install -qy systemd-sysv live-boot linux-image-amd64
 </div>
 </div>
 <p>Git clone (or otherwise download) the necessary build container recipes:</p>
-<pre><code class="language-sh">git clone https://github.com/chrivers/raptor-build.git
+<pre><code class="language-sh">git clone https://github.com/chrivers/raptor-builders.git
 </code></pre>
 <p>Then use these to build <code>liveboot.iso</code>:</p>
-<pre><code class="language-sh">sudo raptor run -L rbuild raptor-build '$rbuild.deblive' -I base -O liveboot.iso
+<pre><code class="language-sh">sudo raptor run -L rbuild raptor-builders '$rbuild.deblive' -I base -O liveboot.iso
 </code></pre>
 <hr />
 <p>After this command has run, you should have the file <code>liveboot.iso</code> available. Enjoy!</p>
@@ -504,7 +504,7 @@ image for a machine.</p>
 variety of output layers, depending on what you need.</p>
 <p>To help get started with this, Raptor provides a standard set of build
 containers, in the companion project
-<a href="https://github.com/chrivers/raptor-build">raptor-build</a>:</p>
+<a href="https://github.com/chrivers/raptor-builders">raptor-builders</a>:</p>
 <ul>
 <li>[<code>deblive</code>] Builds Debian liveboot isos from Raptor layers.</li>
 <li>[<code>disk-image</code>] Builds disk images (for virtual or physical machines) from Raptor layers.</li>
@@ -519,28 +519,28 @@ containers, in the companion project
 <div>
 <p>Raptor build containers are just regular Raptor containers, that are
 configured to expect an input, and produce an output.</p>
-<p>The containers from the <code>raptor-build</code> project are available to anyone,
+<p>The containers from the <code>raptor-builders</code> project are available to anyone,
 but are not “built in” to Raptor - they don’t use any special features
 or private APIs. Anyone can make build containers that are similar (or
-even identical to) <code>raptor-build</code>.</p>
+even identical to) <code>raptor-builders</code>.</p>
 </div>
 </div>
 <p>Since this walkthrough is focused on making a liveboot iso, we’ll use the
 <code>deblive</code> builder to convert layers to an iso file.</p>
-<p>First, we need to clone (or otherwise download) the <code>raptor-build</code> project:</p>
-<pre><code class="language-sh">git clone https://github.com/chrivers/raptor-build
+<p>First, we need to clone (or otherwise download) the <code>raptor-builders</code> project:</p>
+<pre><code class="language-sh">git clone https://github.com/chrivers/raptor-builders
 </code></pre>
 <p>This builder uses mounts to access input, output and cache from outside the
 container (see <a href="walkthrough/debian/../../inst/mount.html"><code>MOUNT</code></a>).</p>
 <p>To build the layers from the last step into a debian liveboot iso, use the
-following command (assuming <code>raptor-build</code> is checked out next to the directory
+following command (assuming <code>raptor-builders</code> is checked out next to the directory
 containing <code>ssh.rapt</code>):</p>
-<pre><code class="language-sh">sudo raptor run             \
-  -L book   book/example    \
-  -L rbuild ../raptor-build \
-  -C liveboot-cache         \
-  -I '$book.ssh'            \
-  -O custom-liveboot.iso    \
+<pre><code class="language-sh">sudo raptor run                \
+  -L book   book/example       \
+  -L rbuild ../raptor-builders \
+  -C liveboot-cache            \
+  -I '$book.ssh'               \
+  -O custom-liveboot.iso       \
   '$rbuild.deblive'
 </code></pre>
 <div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
@@ -554,12 +554,12 @@ containing <code>ssh.rapt</code>):</p>
 <p>The command above uses the short-form command line options typically used
 interactively. Long-form options are also available, if greater clarity is
 desired (e.g. for scripting purposes).</p>
-<pre><code class="language-sh">sudo raptor run                 \
-  --link book   book/example    \
-  --link rbuild ../raptor-build \
-  --cache liveboot-cache        \
-  --input '$book.ssh'           \
-  --output custom-liveboot.iso  \
+<pre><code class="language-sh">sudo raptor run                    \
+  --link book   book/example       \
+  --link rbuild ../raptor-builders \
+  --cache liveboot-cache           \
+  --input '$book.ssh'              \
+  --output custom-liveboot.iso     \
   '$rbuild.deblive'
 </code></pre>
 </div>
@@ -579,12 +579,12 @@ layer. In Raptor, each <code>.rapt</code> file forms a new layer. <a href="#fr-l
 </ol><div style="break-before: page; page-break-before: always;"></div><h1 id="make"><a class="header" href="#make">Make</a></h1>
 <p>In the <a href="walkthrough/debian/iso.html">previous chapter</a> we took a look at the final command used to
 build a debian liveboot iso:</p>
-<pre><code class="language-sh">sudo raptor run                 \
-  --link book   book/example    \
-  --link rbuild ../raptor-build \
-  --cache liveboot-cache        \
-  --input '$book.ssh'           \
-  --output custom-liveboot.iso  \
+<pre><code class="language-sh">sudo raptor run                    \
+  --link book   book/example       \
+  --link rbuild ../raptor-builders \
+  --cache liveboot-cache           \
+  --input '$book.ssh'              \
+  --output custom-liveboot.iso     \
   '$rbuild.deblive'
 </code></pre>
 <p>As mentioned, this works, but it doesn’t exactly roll off the tongue.</p>
@@ -611,7 +611,7 @@ file is an empty one.</p>
 <div>
 <pre><code class="language-toml">[raptor.link]
 book = "book/example"
-rbuild = "../raptor-build"
+rbuild = "../raptor-builders"
 </code></pre>
 </div>
 </div>
@@ -633,7 +633,7 @@ for this example:</p>
 <div>
 <pre><code class="language-toml">[raptor.link]
 book = "book/example"
-rbuild = "../raptor-build"
+rbuild = "../raptor-builders"
 
 # The name `book-ssh` is not special.
 # Feel free to choose any name you like!
@@ -1294,7 +1294,7 @@ contents of individual layers.</p>
 build Debian liveboot images.</p>
 <hr>
 <ol class="footnote-definition"><li id="footnote-deblive">
-<p>From the <a href="https://github.com/chrivers/raptor-build">raptor-build</a>
+<p>From the <a href="https://github.com/chrivers/raptor-builders">raptor-builders</a>
 companion project. <a href="#fr-deblive-1">↩</a></p>
 </li>
 </ol><div style="break-before: page; page-break-before: always;"></div><h2 id="mount-type---overlay"><a class="header" href="#mount-type---overlay">Mount type <code>--overlay</code></a></h2>

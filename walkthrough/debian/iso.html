@@ -37,7 +37,7 @@
             const path_to_root = "../../";
             const default_light_theme = "ayu";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "../../searchindex-cff52dd7.js";
+            window.path_to_searchindex_js = "../../searchindex-3d29b0c9.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-9fe4942a.js"></script>
@@ -206,7 +206,7 @@ image for a machine.</p>
 variety of output layers, depending on what you need.</p>
 <p>To help get started with this, Raptor provides a standard set of build
 containers, in the companion project
-<a href="https://github.com/chrivers/raptor-build">raptor-build</a>:</p>
+<a href="https://github.com/chrivers/raptor-builders">raptor-builders</a>:</p>
 <ul>
 <li>[<code>deblive</code>] Builds Debian liveboot isos from Raptor layers.</li>
 <li>[<code>disk-image</code>] Builds disk images (for virtual or physical machines) from Raptor layers.</li>
@@ -221,28 +221,28 @@ containers, in the companion project
 <div>
 <p>Raptor build containers are just regular Raptor containers, that are
 configured to expect an input, and produce an output.</p>
-<p>The containers from the <code>raptor-build</code> project are available to anyone,
+<p>The containers from the <code>raptor-builders</code> project are available to anyone,
 but are not “built in” to Raptor - they don’t use any special features
 or private APIs. Anyone can make build containers that are similar (or
-even identical to) <code>raptor-build</code>.</p>
+even identical to) <code>raptor-builders</code>.</p>
 </div>
 </div>
 <p>Since this walkthrough is focused on making a liveboot iso, we’ll use the
 <code>deblive</code> builder to convert layers to an iso file.</p>
-<p>First, we need to clone (or otherwise download) the <code>raptor-build</code> project:</p>
-<pre><code class="language-sh">git clone https://github.com/chrivers/raptor-build
+<p>First, we need to clone (or otherwise download) the <code>raptor-builders</code> project:</p>
+<pre><code class="language-sh">git clone https://github.com/chrivers/raptor-builders
 </code></pre>
 <p>This builder uses mounts to access input, output and cache from outside the
 container (see <a href="../../inst/mount.html"><code>MOUNT</code></a>).</p>
 <p>To build the layers from the last step into a debian liveboot iso, use the
-following command (assuming <code>raptor-build</code> is checked out next to the directory
+following command (assuming <code>raptor-builders</code> is checked out next to the directory
 containing <code>ssh.rapt</code>):</p>
-<pre><code class="language-sh">sudo raptor run             \
-  -L book   book/example    \
-  -L rbuild ../raptor-build \
-  -C liveboot-cache         \
-  -I '$book.ssh'            \
-  -O custom-liveboot.iso    \
+<pre><code class="language-sh">sudo raptor run                \
+  -L book   book/example       \
+  -L rbuild ../raptor-builders \
+  -C liveboot-cache            \
+  -I '$book.ssh'               \
+  -O custom-liveboot.iso       \
   '$rbuild.deblive'
 </code></pre>
 <div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
@@ -256,12 +256,12 @@ containing <code>ssh.rapt</code>):</p>
 <p>The command above uses the short-form command line options typically used
 interactively. Long-form options are also available, if greater clarity is
 desired (e.g. for scripting purposes).</p>
-<pre><code class="language-sh">sudo raptor run                 \
-  --link book   book/example    \
-  --link rbuild ../raptor-build \
-  --cache liveboot-cache        \
-  --input '$book.ssh'           \
-  --output custom-liveboot.iso  \
+<pre><code class="language-sh">sudo raptor run                    \
+  --link book   book/example       \
+  --link rbuild ../raptor-builders \
+  --cache liveboot-cache           \
+  --input '$book.ssh'              \
+  --output custom-liveboot.iso     \
   '$rbuild.deblive'
 </code></pre>
 </div>
