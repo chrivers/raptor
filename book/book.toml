@@ -1,0 +1,32 @@
+[book]
+authors = ["Christian Iversen"]
+language = "en"
+src = "src"
+title = "Raptor Manual"
+
+[build]
+create-missing = false
+
+[preprocessor.pikchr]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
+
+[preprocessor.admonish]
+command = "mdbook-admonish"
+assets_version = "3.1.0" # do not edit: managed by `mdbook-admonish install`
+
+[output.html]
+default-theme = "ayu"
+preferred-dark-theme = "ayu"
+smart-punctuation = true
+additional-css = ["./mdbook-admonish.css"]
+git-repository-url = "https://github.com/chrivers/raptor"
+hash-files = true
+#additional-js = ["mermaid.min.js", "mermaid-init.js"]
+
+# to build custom highlight.js:
+#
+# node ./tools/build.js -t browser plaintext dockerfile raptorfile rust diff json yaml ini bnf
+#
+# cp highlight.js/build/highlight.js theme/highlight.js

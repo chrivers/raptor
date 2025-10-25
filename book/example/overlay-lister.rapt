@@ -1,0 +1,5 @@
+FROM docker://debian:trixie
+
+MOUNT --overlay input /input
+
+CMD "ls -l /input"
