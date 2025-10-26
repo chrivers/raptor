@@ -73,7 +73,7 @@ pub fn escape_colon(path: &Utf8Path) -> String {
     path.as_str().replace(':', "\\:")
 }
 
-#[derive(Copy, Clone, Default, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum BindMode {
     #[default]
     NoIdmap,
@@ -86,7 +86,7 @@ impl BindMode {
     const DEFAULT: Self = Self::NoIdmap;
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct BindMount {
     src: Utf8PathBuf,
     dst: Utf8PathBuf,
@@ -132,7 +132,7 @@ impl BindMount {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct SpawnBuilder {
     sudo: bool,
     quiet: bool,
