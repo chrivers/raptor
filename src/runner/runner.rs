@@ -14,7 +14,7 @@ use crate::build::RaptorBuilder;
 use crate::dsl::Program;
 use crate::sandbox::{BindMount, ConsoleMode, Sandbox, SpawnBuilder};
 use crate::{RaptorError, RaptorResult};
-use raptor_parser::ast::MountType;
+use raptor_parser::ast::{InstMount, MountType};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MountsInfo {
@@ -34,25 +34,30 @@ impl MountsInfo {
 pub trait AddMounts: Sized {
     fn add_mounts<S: BuildHasher>(
         self,
-        program: &Program,
+        prog_mounts: &[&InstMount],
         builder: &RaptorBuilder,
         mounts: &HashMap<&str, Vec<&str>, S>,
-        tempdir: &Utf8Path,
+        tempdir: impl AsRef<Utf8Path>,
     ) -> RaptorResult<Self>;
 }
 
 impl AddMounts for SpawnBuilder {
     fn add_mounts<S: BuildHasher>(
         mut self,
-        program: &Program,
+        prog_mounts: &[&InstMount],
         builder: &RaptorBuilder,
         mounts: &HashMap<&str, Vec<&str>, S>,
-        tempdir: &Utf8Path,
+        tempdir: impl AsRef<Utf8Path>,
     ) -> RaptorResult<Self> {
-        for mount in program.mounts() {
-            let srcs: Vec<String> = mounts
-                .get(&mount.name.as_str())
-                .ok_or_else(|| RaptorError::MountMissing(mount.clone()))?
+        for mount in prog_mounts {
+            let mount_list = mounts.get(&mount.name.as_str());
+
+            if mount.opts.optional && mount_list.is_none() {
+                continue;
+            }
+
+            let srcs: Vec<String> = mount_list
+                .ok_or_else(|| RaptorError::MountMissing((*mount).clone()))?
                 .iter()
                 .map(ToString::to_string)
                 .collect();
@@ -65,7 +70,13 @@ impl AddMounts for SpawnBuilder {
 
                     File::options().create(true).append(true).open(&srcs[0])?;
 
-                    self = self.bind(BindMount::new(&srcs[0], Utf8Path::new(&mount.dest)));
+                    let bind = BindMount::new(&srcs[0], Utf8Path::new(&mount.dest));
+
+                    self = if mount.opts.readonly {
+                        self.bind_ro(bind)
+                    } else {
+                        self.bind(bind)
+                    };
                 }
 
                 MountType::Simple => {
@@ -73,7 +84,13 @@ impl AddMounts for SpawnBuilder {
                         return Err(RaptorError::SingleMountOnly(mount.opts.mtype));
                     }
 
-                    self = self.bind(BindMount::new(&srcs[0], Utf8Path::new(&mount.dest)));
+                    let bind = BindMount::new(&srcs[0], Utf8Path::new(&mount.dest));
+
+                    self = if mount.opts.readonly {
+                        self.bind_ro(bind)
+                    } else {
+                        self.bind(bind)
+                    };
                 }
 
                 MountType::Layers => {
@@ -95,7 +112,7 @@ impl AddMounts for SpawnBuilder {
                         }
                     }
 
-                    let listfile = tempdir.join(format!("mounts-{}", mount.name));
+                    let listfile = tempdir.as_ref().join(format!("mounts-{}", mount.name));
                     fs::write(&listfile, serde_json::to_string_pretty(&info)? + "\n")?;
 
                     self = self.bind_ro(BindMount::new(&listfile, mount.dest.join("raptor.json")));
@@ -234,7 +251,7 @@ impl<'a> Runner<'a> {
             .directory(&root)
             .bind(BindMount::new("/dev/kvm", "/dev/kvm"))
             .args(&command)
-            .add_mounts(program, builder, &self.mounts, self.tempdir.path())?
+            .add_mounts(&program.mounts(), builder, &self.mounts, &self.tempdir)?
             .add_environment(self.env)
             .command()
             .spawn()?
