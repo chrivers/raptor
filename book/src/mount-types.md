@@ -33,3 +33,27 @@ Read more about the specific mount types:
   - [`--file`](mount-types/file.md)
   - [`--layers`](mount-types/layers.md)
   - [`--overlay`](mount-types/overlay.md)
+
+## Options
+
+All mount types take two optional arguments:
+
+| Argument      | Description                                                                                        |
+|:--------------|:---------------------------------------------------------------------------------------------------|
+| `--readonly`  | Mount the file or directory read-only.<br>(for `--layers`/`--overlay` this is **always implied**). |
+| `--readwrite` | Mount the file or directory read-write.<br>(for `--layers`/`--overlay` this is **invalid**).       |
+| `--optional`  | Allow starting the container, **even if** this mount is **not specified**.                         |
+| `--required`  | Deny starting the container, **unless** this mount **is specified**.                               |
+
+## Examples
+
+```raptor
+# Both options can be combined:
+MOUNT --readonly --optional --simple input /input
+
+# Optional layers mount:
+MOUNT --optional --layers input /data
+
+# Later --required overrides previous --optional:
+MOUNT --optional --required --layers input /data
+```
