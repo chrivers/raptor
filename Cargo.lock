@@ -1652,6 +1652,7 @@ dependencies = [
  "itertools 0.14.0",
  "libtest-mimic",
  "log",
+ "maplit",
  "minijinja",
  "nix",
  "pretty_assertions",

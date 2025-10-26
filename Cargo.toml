@@ -126,6 +126,7 @@ falcon = { workspace = true }
 indicatif = { workspace = true, features = ["improved_unicode"] }
 itertools = { workspace = true }
 log = { workspace = true }
+maplit.workspace = true
 minijinja = { workspace = true, features = ["custom_syntax", "debug", "deserialization", "loader", "loop_controls", "macros", "multi_template", "serde", "std_collections"] }
 nix = { workspace = true, features = ["fs", "poll", "process", "term", "user"] }
 rand = { workspace = true }
