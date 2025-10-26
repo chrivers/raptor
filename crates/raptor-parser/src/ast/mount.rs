@@ -16,6 +16,8 @@ pub enum MountType {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct MountOptions {
     pub mtype: MountType,
+    pub readonly: bool,
+    pub optional: bool,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]

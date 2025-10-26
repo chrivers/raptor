@@ -383,6 +383,8 @@ impl<'src> Parser<'src> {
     pub fn parse_mount_options(&mut self) -> ParseResult<MountOptions> {
         let mut opts = MountOptions {
             mtype: MountType::Simple,
+            readonly: false,
+            optional: false,
         };
 
         while self.accept(&Token::Minus)? {
@@ -394,8 +396,13 @@ impl<'src> Parser<'src> {
                 "simple" => opts.mtype = MountType::Simple,
                 "layers" => opts.mtype = MountType::Layers,
                 "overlay" => opts.mtype = MountType::Overlay,
+                "optional" => opts.optional = true,
+                "required" => opts.optional = false,
+                "readonly" => opts.readonly = true,
+                "readwrite" => opts.readonly = false,
                 _ => return Err(ParseError::Expected("mount option")),
             }
+            self.trim()?;
         }
 
         self.trim()?;
