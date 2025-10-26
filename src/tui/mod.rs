@@ -94,7 +94,11 @@ impl<'a> TerminalParallelRunner<'a> {
             match waitpid(pid, None)? {
                 WaitStatus::Exited(pid, result) => {
                     tx.send(TerminalEvent::JobEnd(pid, result))?;
-                    return Err(RaptorError::LayerBuildError);
+                    return if result == 0 {
+                        Ok(())
+                    } else {
+                        Err(RaptorError::LayerBuildError)
+                    };
                 }
                 WaitStatus::Signaled(_pid, _signal, _) => {
                     tx.send(TerminalEvent::JobEnd(pid, -1))?;
