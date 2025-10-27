@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::hash::BuildHasher;
-use std::io::{IsTerminal, stdout};
+use std::io::{ErrorKind, IsTerminal, stdout};
 use std::process::ExitStatus;
 
 use camino::{Utf8Path, Utf8PathBuf};
@@ -82,6 +82,15 @@ impl AddMounts for SpawnBuilder {
                 MountType::Simple => {
                     if srcs.len() != 1 {
                         return Err(RaptorError::SingleMountOnly(mount.opts.mtype));
+                    }
+
+                    match fs::create_dir(&srcs[0]) {
+                        Ok(()) => {}
+                        Err(err) if err.kind() == ErrorKind::AlreadyExists => {}
+                        Err(err) => {
+                            error!("Failed to create mount directory {:?}: {err}", &srcs[0]);
+                            Err(err)?;
+                        }
                     }
 
                     let bind = BindMount::new(&srcs[0], Utf8Path::new(&mount.dest));
