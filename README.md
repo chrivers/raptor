@@ -49,7 +49,7 @@ The companion project [raptor-builders](https://github.com/chrivers/raptor-build
 
 ## Example: Building a bootable iso
 
-After [installing Raptor](http://chrivers.github.io/raptor/intro/install.html), create a file called `base.rapt`:
+After [installing Raptor](https://chrivers.github.io/raptor/install.html), create a file called `base.rapt`:
 
 ```Dockerfile
 # Start from a docker iso
