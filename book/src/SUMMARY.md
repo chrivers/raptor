@@ -1,6 +1,6 @@
 # Getting started
-- [Introduction](intro/index.md)
-- [Installling Raptor](intro/install.md)
+- [Introduction](intro.md)
+- [Installling Raptor](install.md)
 
 ---
 

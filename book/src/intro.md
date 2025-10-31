@@ -12,7 +12,7 @@ It uses `systemd-nspawn` for sandboxing when building or running containers.
 
 ~~~admonish tip title="~Eagle..~ err, eager to get started?"
 Start by [installing raptor](install.md), then head over to the
-[Debian Liveboot walkthrough](/walkthrough/debian/index.md) to get a
+[Debian Liveboot walkthrough](walkthrough/debian/index.md) to get a
 hands-on introduction to building a bootable iso.
 ~~~
 
@@ -22,7 +22,7 @@ Raptor builds *layers* from *`.rapt`* files. If you are familiar with Docker,
 this is similar to how Docker builds *containers* from a *`Dockerfile`*.
 
 ~~~pikchr
-{{#include ../images/raptor-layers.pikchr}}
+{{#include images/raptor-layers.pikchr}}
 ~~~
 
 However, Raptor has a different scope, and can do considerably different things
