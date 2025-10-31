@@ -73,7 +73,7 @@ pub fn escape_colon(path: &Utf8Path) -> String {
     path.as_str().replace(':', "\\:")
 }
 
-#[derive(Copy, Clone, Default, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum BindMode {
     #[default]
     NoIdmap,
@@ -86,7 +86,7 @@ impl BindMode {
     const DEFAULT: Self = Self::NoIdmap;
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct BindMount {
     src: Utf8PathBuf,
     dst: Utf8PathBuf,
@@ -132,7 +132,7 @@ impl BindMount {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct SpawnBuilder {
     sudo: bool,
     quiet: bool,
@@ -423,5 +423,97 @@ impl SpawnBuilder {
         cmd.args(&args[1..]);
 
         cmd
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use maplit::hashmap;
+    use raptor_parser::ast::{InstMount, MountOptions, MountType};
+
+    use crate::build::RaptorBuilder;
+    use crate::program::Loader;
+    use crate::runner::AddMounts;
+    use crate::sandbox::{Sandbox, SpawnBuilder};
+    use crate::{RaptorError, RaptorResult};
+
+    #[test]
+    fn add_mounts() -> RaptorResult<()> {
+        let loader = Loader::new()?;
+        let builder = RaptorBuilder::new(loader, Sandbox::find_falcon_dev()?, false);
+
+        let mut mount = InstMount {
+            opts: MountOptions {
+                mtype: MountType::File,
+                readonly: false,
+                optional: false,
+            },
+            name: "foo1".into(),
+            dest: "bar".into(),
+        };
+
+        let mounts1 = hashmap! { "foo1" => vec!["foo-src"] };
+        let mounts2 = hashmap! { "foo2" => vec!["foo-src"] };
+
+        // required mount (exists)
+        let sb = SpawnBuilder::new().add_mounts(&[&mount], &builder, &mounts1, "/tmp")?;
+        assert_eq!(sb.bind.len(), 1);
+
+        // required mount (missing)
+        let sb = SpawnBuilder::new().add_mounts(&[&mount], &builder, &mounts2, "/tmp");
+        assert!(matches!(sb.unwrap_err(), RaptorError::MountMissing(_)));
+
+        // optional mounts below
+        mount.opts.optional = true;
+
+        // optional mount (exists)
+        let sb = SpawnBuilder::new().add_mounts(&[&mount], &builder, &mounts1, "/tmp")?;
+        assert_eq!(sb.bind.len(), 1);
+
+        // optional mount (missing)
+        let sb = SpawnBuilder::new().add_mounts(&[&mount], &builder, &mounts2, "/tmp")?;
+        assert_eq!(sb.bind.len(), 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn add_mounts_ro() -> RaptorResult<()> {
+        let loader = Loader::new()?;
+        let builder = RaptorBuilder::new(loader, Sandbox::find_falcon_dev()?, false);
+
+        let mut mount = InstMount {
+            opts: MountOptions {
+                mtype: MountType::File,
+                readonly: true,
+                optional: false,
+            },
+            name: "foo1".into(),
+            dest: "bar".into(),
+        };
+
+        let mounts1 = hashmap! { "foo1" => vec!["foo-src"] };
+        let mounts2 = hashmap! { "foo2" => vec!["foo-src"] };
+
+        // required mount (exists)
+        let sb = SpawnBuilder::new().add_mounts(&[&mount], &builder, &mounts1, "/tmp")?;
+        assert_eq!(sb.bind_ro.len(), 1);
+
+        // required mount (missing)
+        let sb = SpawnBuilder::new().add_mounts(&[&mount], &builder, &mounts2, "/tmp");
+        assert!(matches!(sb.unwrap_err(), RaptorError::MountMissing(_)));
+
+        // optional mounts below
+        mount.opts.optional = true;
+
+        // optional mount (exists)
+        let sb = SpawnBuilder::new().add_mounts(&[&mount], &builder, &mounts1, "/tmp")?;
+        assert_eq!(sb.bind_ro.len(), 1);
+
+        // optional mount (missing)
+        let sb = SpawnBuilder::new().add_mounts(&[&mount], &builder, &mounts2, "/tmp")?;
+        assert_eq!(sb.bind_ro.len(), 0);
+
+        Ok(())
     }
 }

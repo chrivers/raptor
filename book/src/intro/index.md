@@ -49,11 +49,13 @@ discussion](https://github.com/chrivers/raptor/discussions).
 Raptor uses a syntax similar to `Dockerfile`. Statements start with uppercase
 keywords, and are terminated by end of line.
 
-All lines starting with `#` are treated as comments:
+Anything after `#` is treated as a comment
 
 ```raptor
 # This copies "foo" from the host to "/bar" inside the build target
-COPY foo /bar
+COPY file1 /file1
+
+COPY file2 /file2 # comments can appear here too
 ```
 
 ## Raptor files

@@ -429,6 +429,8 @@ fn parse_mount01() -> RaptorResult<()> {
         Instruction::Mount(InstMount {
             opts: MountOptions {
                 mtype: MountType::Simple,
+                readonly: false,
+                optional: false,
             },
             name: "foo".into(),
             dest: "/bar".into(),

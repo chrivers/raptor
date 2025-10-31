@@ -383,6 +383,8 @@ impl<'src> Parser<'src> {
     pub fn parse_mount_options(&mut self) -> ParseResult<MountOptions> {
         let mut opts = MountOptions {
             mtype: MountType::Simple,
+            readonly: false,
+            optional: false,
         };
 
         while self.accept(&Token::Minus)? {
@@ -394,8 +396,13 @@ impl<'src> Parser<'src> {
                 "simple" => opts.mtype = MountType::Simple,
                 "layers" => opts.mtype = MountType::Layers,
                 "overlay" => opts.mtype = MountType::Overlay,
+                "optional" => opts.optional = true,
+                "required" => opts.optional = false,
+                "readonly" => opts.readonly = true,
+                "readwrite" => opts.readonly = false,
                 _ => return Err(ParseError::Expected("mount option")),
             }
+            self.trim()?;
         }
 
         self.trim()?;
@@ -748,7 +755,7 @@ mod tests {
     use serde_json::json;
 
     use crate::ParseResult;
-    use crate::ast::Chown;
+    use crate::ast::{Chown, MountOptions, MountType};
     use crate::lexer::Token;
     use crate::parser::Parser;
     use crate::util::module_name::ModuleRoot;
@@ -845,6 +852,21 @@ mod tests {
                 )
             );
             assert_eq!(parent, $parent);
+        };
+    }
+
+    macro_rules! mount_opts_test {
+        ($src:expr, $mtype:expr, $readonly:expr, $optional:expr) => {
+            let mut parser = make_parser($src);
+
+            assert_eq!(
+                parser.parse_mount_options()?,
+                MountOptions {
+                    mtype: $mtype,
+                    readonly: $readonly,
+                    optional: $optional,
+                }
+            );
         };
     }
 
@@ -963,6 +985,61 @@ mod tests {
             Some("user"),
             Some("group"),
             true
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    #[allow(clippy::cognitive_complexity)]
+    fn parse_mountopts() -> ParseResult<()> {
+        mount_opts_test!("", MountType::Simple, false, false);
+
+        mount_opts_test!("--file", MountType::File, false, false);
+        mount_opts_test!("--simple", MountType::Simple, false, false);
+        mount_opts_test!("--layers", MountType::Layers, false, false);
+        mount_opts_test!("--overlay", MountType::Overlay, false, false);
+
+        mount_opts_test!("--optional --file", MountType::File, false, true);
+        mount_opts_test!("--optional --simple", MountType::Simple, false, true);
+        mount_opts_test!("--optional --layers", MountType::Layers, false, true);
+        mount_opts_test!("--optional --overlay", MountType::Overlay, false, true);
+
+        mount_opts_test!("--readonly --file", MountType::File, true, false);
+        mount_opts_test!("--readonly --simple", MountType::Simple, true, false);
+        mount_opts_test!("--readonly --layers", MountType::Layers, true, false);
+        mount_opts_test!("--readonly --overlay", MountType::Overlay, true, false);
+
+        mount_opts_test!("--optional --file", MountType::File, false, true);
+        mount_opts_test!("--optional --simple", MountType::Simple, false, true);
+        mount_opts_test!("--optional --layers", MountType::Layers, false, true);
+        mount_opts_test!("--optional --overlay", MountType::Overlay, false, true);
+
+        mount_opts_test!("--optional --readonly --file", MountType::File, true, true);
+        mount_opts_test!(
+            "--optional --readonly --simple",
+            MountType::Simple,
+            true,
+            true
+        );
+        mount_opts_test!(
+            "--optional --readonly --layers",
+            MountType::Layers,
+            true,
+            true
+        );
+        mount_opts_test!(
+            "--optional --readonly --overlay",
+            MountType::Overlay,
+            true,
+            true
+        );
+
+        mount_opts_test!(
+            "--optional --readonly --file --required --readwrite",
+            MountType::File,
+            false,
+            false
         );
 
         Ok(())
