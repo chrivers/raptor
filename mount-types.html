@@ -12,8 +12,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon-de23e50b.svg">
-        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="icon" href="favicon-542b72c9.svg">
         <link rel="stylesheet" href="css/variables-3865ffda.css">
         <link rel="stylesheet" href="css/general-4c35105a.css">
         <link rel="stylesheet" href="css/chrome-c0e702bf.css">
@@ -37,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "ayu";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "searchindex-3d29b0c9.js";
+            window.path_to_searchindex_js = "searchindex-151b788f.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-9fe4942a.js"></script>
@@ -222,6 +221,25 @@ environment, at a specified location in the container.</p>
 <li><a href="mount-types/layers.html"><code>--layers</code></a></li>
 <li><a href="mount-types/overlay.html"><code>--overlay</code></a></li>
 </ul>
+<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<p>All mount types take two optional arguments:</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Argument</th><th style="text-align: left">Description</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>--readonly</code></td><td style="text-align: left">Mount the file or directory read-only.<br>(for <code>--layers</code>/<code>--overlay</code> this is <strong>always implied</strong>).</td></tr>
+<tr><td style="text-align: left"><code>--readwrite</code></td><td style="text-align: left">Mount the file or directory read-write.<br>(for <code>--layers</code>/<code>--overlay</code> this is <strong>invalid</strong>).</td></tr>
+<tr><td style="text-align: left"><code>--optional</code></td><td style="text-align: left">Allow starting the container, <strong>even if</strong> this mount is <strong>not specified</strong>.</td></tr>
+<tr><td style="text-align: left"><code>--required</code></td><td style="text-align: left">Deny starting the container, <strong>unless</strong> this mount <strong>is specified</strong>.</td></tr>
+</tbody></table>
+</div>
+<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<pre><code class="language-raptor"># Both options can be combined:
+MOUNT --readonly --optional --simple input /input
+
+# Optional layers mount:
+MOUNT --optional --layers input /data
+
+# Later --required overrides previous --optional:
+MOUNT --optional --required --layers input /data
+</code></pre>
 
                     </main>
 

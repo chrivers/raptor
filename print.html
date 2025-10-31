@@ -13,8 +13,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon-de23e50b.svg">
-        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="icon" href="favicon-542b72c9.svg">
         <link rel="stylesheet" href="css/variables-3865ffda.css">
         <link rel="stylesheet" href="css/general-4c35105a.css">
         <link rel="stylesheet" href="css/chrome-c0e702bf.css">
@@ -38,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "ayu";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "searchindex-3d29b0c9.js";
+            window.path_to_searchindex_js = "searchindex-151b788f.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-9fe4942a.js"></script>
@@ -252,9 +251,11 @@ discussion</a>.</p>
 <h2 id="syntax"><a class="header" href="#syntax">Syntax</a></h2>
 <p>Raptor uses a syntax similar to <code>Dockerfile</code>. Statements start with uppercase
 keywords, and are terminated by end of line.</p>
-<p>All lines starting with <code>#</code> are treated as comments:</p>
+<p>Anything after <code>#</code> is treated as a comment</p>
 <pre><code class="language-raptor"># This copies "foo" from the host to "/bar" inside the build target
-COPY foo /bar
+COPY file1 /file1
+
+COPY file2 /file2 # comments can appear here too
 </code></pre>
 <h2 id="raptor-files"><a class="header" href="#raptor-files">Raptor files</a></h2>
 <p>Before being parsed as raptor files, <code>.rapt</code> files are processed through
@@ -1124,6 +1125,25 @@ environment, at a specified location in the container.</p>
 <li><a href="mount-types/layers.html"><code>--layers</code></a></li>
 <li><a href="mount-types/overlay.html"><code>--overlay</code></a></li>
 </ul>
+<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<p>All mount types take two optional arguments:</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Argument</th><th style="text-align: left">Description</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>--readonly</code></td><td style="text-align: left">Mount the file or directory read-only.<br>(for <code>--layers</code>/<code>--overlay</code> this is <strong>always implied</strong>).</td></tr>
+<tr><td style="text-align: left"><code>--readwrite</code></td><td style="text-align: left">Mount the file or directory read-write.<br>(for <code>--layers</code>/<code>--overlay</code> this is <strong>invalid</strong>).</td></tr>
+<tr><td style="text-align: left"><code>--optional</code></td><td style="text-align: left">Allow starting the container, <strong>even if</strong> this mount is <strong>not specified</strong>.</td></tr>
+<tr><td style="text-align: left"><code>--required</code></td><td style="text-align: left">Deny starting the container, <strong>unless</strong> this mount <strong>is specified</strong>.</td></tr>
+</tbody></table>
+</div>
+<h2 id="examples-1"><a class="header" href="#examples-1">Examples</a></h2>
+<pre><code class="language-raptor"># Both options can be combined:
+MOUNT --readonly --optional --simple input /input
+
+# Optional layers mount:
+MOUNT --optional --layers input /data
+
+# Later --required overrides previous --optional:
+MOUNT --optional --required --layers input /data
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="mount-type---simple"><a class="header" href="#mount-type---simple">Mount type <code>--simple</code></a></h2>
 <p>This is the default mount type.</p>
 <p>A <code>--simple</code> mount will mount a directory from the host into the
@@ -1594,7 +1614,7 @@ FROM base
 <p>However, unlike docker files, raptor can point to raptor files in other
 directories, or even other packages. See <a href="inst/../module-name.html">module names</a> for
 an overview.</p>
-<h4 id="examples-1"><a class="header" href="#examples-1">Examples</a></h4>
+<h4 id="examples-2"><a class="header" href="#examples-2">Examples</a></h4>
 <pre><code class="language-raptor"># This will depend on `base.rapt`
 FROM base
 </code></pre>
