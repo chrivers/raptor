@@ -492,15 +492,15 @@ impl<'src> Parser<'src> {
                 Ok(Value::from_serialize(value))
             }
             Token::Number => {
-                self.expect(&Token::Number)?;
+                self.next()?;
                 Ok(Value::from_serialize(self.token().parse::<i64>()?))
             }
             Token::True => {
-                self.expect(&Token::True)?;
+                self.next()?;
                 Ok(Value::from_serialize(true))
             }
             Token::False => {
-                self.expect(&Token::False)?;
+                self.next()?;
                 Ok(Value::from_serialize(false))
             }
 
