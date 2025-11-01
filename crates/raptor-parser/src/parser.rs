@@ -504,7 +504,7 @@ impl<'src> Parser<'src> {
                 Ok(Value::from_serialize(false))
             }
 
-            _ => Err(ParseError::Expected("value4")),
+            _ => Err(ParseError::Expected("value (list, map, number, or bool)")),
         }
     }
 
