@@ -43,7 +43,7 @@ impl DockerSource {
         if let Some(ns) = namespace {
             format!("{ns}/{}", &self.repository)
         } else {
-            self.repository.to_string()
+            self.repository.clone()
         }
     }
 

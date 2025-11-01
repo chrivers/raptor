@@ -38,7 +38,7 @@ impl<'a> Maker<'a> {
 
     pub fn add_links(&self, loader: &Loader) {
         for (name, link) in &self.make.raptor.link {
-            loader.add_package(name.to_string(), Utf8PathBuf::from(&link.source));
+            loader.add_package(name.clone(), Utf8PathBuf::from(&link.source));
         }
     }
 
