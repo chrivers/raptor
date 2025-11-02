@@ -1,0 +1,8 @@
+FROM docker://debian:trixie
+
+RUN apt-get update
+RUN apt-get install -qy iputils-ping
+
+ENTRYPOINT /bin/ping
+
+CMD 8.8.8.8
