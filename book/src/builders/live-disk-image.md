@@ -7,11 +7,11 @@ It should work for Debian derivatives (Ubuntu, etc), as long as the
 prerequisite packages are installed.
 ~~~
 
-| Mount name | Type   | Usage                                                                                                                      |
-|:-----------|:-------|:---------------------------------------------------------------------------------------------------------------------------|
-| `cache`    | Simple | Contains cache of previously built `.squashfs` files.<br>(to avoid repeating the rather expensive build process for these) |
-| `input`    | Layers | The Raptor build target(s) that will be put on the generated image                                                         |
-| `output`   | File   | Points to the resulting output file.                                                                                       |
+| Mount name | Type   | Usage                                                                                  |
+|:-----------|:-------|:---------------------------------------------------------------------------------------|
+| `cache`    | Simple | Contains cache of previously built `.squashfs` files.<br>(to avoid expensive rebuilds) |
+| `input`    | Layers | The Raptor build target(s) that will be put on the generated image                     |
+| `output`   | File   | Points to the resulting output file.                                                   |
 
 ## Compatibility
 

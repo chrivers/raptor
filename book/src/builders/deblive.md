@@ -11,11 +11,11 @@ This builder generates an `iso` file suitable for live booting. All layers are
 packed into read-only squashfs files, which are mounted using overlayfs, on
 boot.
 
-| Mount    | Type   | Usage                                                                                                                      |
-|:---------|:-------|:---------------------------------------------------------------------------------------------------------------------------|
-| `cache`  | Simple | Contains cache of previously built `.squashfs` files.<br>(to avoid repeating the rather expensive build process for these) |
-| `input`  | Layers | The Raptor build target(s) that will be put on the iso                                                                     |
-| `output` | File   | Points to the resulting output file.                                                                                       |
+| Mount    | Type   | Usage                                                                                  |
+|:---------|:-------|:---------------------------------------------------------------------------------------|
+| `cache`  | Simple | Contains cache of previously built `.squashfs` files.<br>(to avoid expensive rebuilds) |
+| `input`  | Layers | The Raptor build target(s) that will be put on the iso                                 |
+| `output` | File   | Points to the resulting output file.                                                   |
 
 ~~~admonish tip
 This builder has a 📕 [detailed walkthrough](../walkthrough/debian/).

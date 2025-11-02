@@ -1,9 +1,9 @@
 # Partition Image generator:<br>**`part-image`**
 
-| Mount name | Type    | Usage                                                                                                                  |
-|:-----------|:--------|:-----------------------------------------------------------------------------------------------------------------------|
-| `input`    | Overlay | The Raptor build target that will be put into the generated image                                                      |
-| `output`   | File    | Points to the resulting output file.                                                                                   |
+| Mount name | Type    | Usage                                                             |
+|:-----------|:--------|:------------------------------------------------------------------|
+| `input`    | Overlay | The Raptor build target that will be put into the generated image |
+| `output`   | File    | Points to the resulting output file.                              |
 
 ## Compatibility
 
