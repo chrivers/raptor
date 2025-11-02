@@ -1,3 +1,15 @@
-/target
+# Editor backup files
 *~
+
+# Rust build dir
+/target/
+
+# Raptor outputs
 /tests/output/
+/layers/
+/cache*/
+
+# Development notes and files
+/notes/
+/rbuild/
+/.emacs.*
