@@ -12,7 +12,7 @@ unified filesystem.
 For build containers that need to operate on this combined view of a build
 target, the `--overlay` mount type is available.
 
-For example, the `disk-image` builder[^deblive] uses this mount type, in order to
+For example, the [`disk-image` builder](../builders/disk-image.md) uses this mount type, in order to
 build disk images for virtual (or physical) machines.
 
 ~~~admonish note title="overlay-lister.rapt"
