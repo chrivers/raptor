@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>--layers - Raptor Manual</title>
+        <title>Environment settings - Raptor Manual</title>
 
 
         <!-- Custom HTML head -->
@@ -178,117 +178,91 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h2 id="mount-type---layers"><a class="header" href="#mount-type---layers">Mount type <code>--layers</code></a></h2>
-<p>The <code>--simple</code> and <code>--file</code> mount types both present content from the host
-filesystem inside the container, and both have equivalents in Docker.</p>
-<p>This is not the case for <code>--layers</code>, which is specific to Raptor.</p>
-<p>When using a <code>--layers</code> mount, the input argument when running Raptor is not a
-file path, but a set of <em>Raptor build targets</em>.</p>
-<p>Let us take a look at a target, that lists the files in a <code>--layers</code> mounts:</p>
-<div id="admonition-layers-listerrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-layers-listerrapt-title">
-<div class="admonition-title">
-<div id="admonition-layers-listerrapt-title">
-<p>layers-lister.rapt</p>
-</div>
-<a class="admonition-anchor-link" href="#admonition-layers-listerrapt"></a>
-</div>
-<div>
-<pre><code class="language-raptor">FROM docker://debian:trixie
+                        <h1 id="environment-variables"><a class="header" href="#environment-variables">Environment variables</a></h1>
+<p>Several settings can be adjusted via environment variables. These can be specified either on the command line:</p>
+<pre><code class="language-sh">sudo raptor run -e OUTPUT_FORMAT=qcow2 ...
+</code></pre>
+<p>or in <code>Raptor.toml</code>:</p>
+<pre><code class="language-toml">[run.example-target]
+target = "example"
 
-MOUNT --layers input /input
-
-CMD "ls -l /input"
+# notice the `env.` prefix!
+env.OUTPUT_FORMAT = "qcow2"
 </code></pre>
+<h2 id="environment-reference"><a class="header" href="#environment-reference">Environment reference</a></h2>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Variable</th><th><code>deblive</code></th><th><code>live-disk-image</code></th><th><code>disk-image</code></th><th><code>part-image</code></th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>GRUB_TIMEOUT</code></td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
+<tr><td style="text-align: left"><code>OUTPUT_FORMAT</code></td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td style="text-align: left"><code>EFI_MB</code></td><td>❌</td><td>✅</td><td>✅</td><td>❌</td></tr>
+<tr><td style="text-align: left"><code>BOOT_MB</code></td><td>❌</td><td>✅</td><td>✅</td><td>❌</td></tr>
+<tr><td style="text-align: left"><code>FREE_MB</code></td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td style="text-align: left"><code>USED_MB</code></td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td style="text-align: left"><code>SIZE_MB</code></td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+</tbody></table>
 </div>
-</div>
-<p>Let’s try running this, using the previous <code>file-lister.rapt</code> target as input:</p>
-<pre><code class="language-sh">$ sudo raptor run layers-lister -I file-lister
-total 12
-drwxr-xr-x  2 root root 4096 Oct 17 13:37 file-lister-16689594BA5D2989
-drwxr-xr-x 17 root root 4096 Sep 29 00:00 index.docker.io-library-debian-trixie-675DE2C3A4D8CD82
--rw-r--r--  1 root root  200 Oct 17 13:37 raptor.json
-</code></pre>
-<p>We see that each layer in the input is available as a directory, but also a
-<code>raptor.json</code> file.</p>
-<p>Think of this file as a manifest of the contents in the <code>--layers</code> mount. It
-contains useful metadata about the inputs, including which targets have been
-specified, as well as the stacking order for each target:</p>
-<div id="admonition-raptorjson" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptorjson-title">
-<div class="admonition-title">
-<div id="admonition-raptorjson-title">
-<p>raptor.json</p>
-</div>
-<a class="admonition-anchor-link" href="#admonition-raptorjson"></a>
-</div>
-<div>
-<pre><code class="language-json">{
-  "targets": [
-    "file-lister"
-  ],
-  "layers": {
-    "file-lister": [
-      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
-      "file-lister-16689594BA5D2989"
-    ]
-  }
-}
-</code></pre>
-</div>
-</div>
-<p>At first, this might seem like overly complicated. If we just needed the layer
-order, surely a simple text file would suffice?</p>
-<p>In fact, <em>multiple</em> build targets can be specified at the same time:</p>
-<pre><code class="language-sh">$ sudo raptor run layers-lister -I file-lister -I file-lister-output
-total 16
-drwxr-xr-x  2 root root 4096 Oct 17 11:33 file-lister-16689594BA5D2989
-drwxr-xr-x  2 root root 4096 Oct 17 11:31 file-lister-output-2CFDE4FEBD507157
-drwxr-xr-x 17 root root 4096 Sep 29 00:00 index.docker.io-library-debian-trixie-675DE2C3A4D8CD82
--rw-r--r--  1 root root  381 Oct 17 11:45 raptor.json
-</code></pre>
-<p>We now have multiple build targets, and the Docker layer is shared between both
-inputs.</p>
-<p>However, we can still make sense of this using <code>raptor.json</code>:</p>
-<div id="admonition-raptorjson-1" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptorjson-1-title">
-<div class="admonition-title">
-<div id="admonition-raptorjson-1-title">
-<p>raptor.json</p>
-</div>
-<a class="admonition-anchor-link" href="#admonition-raptorjson-1"></a>
-</div>
-<div>
-<pre><code class="language-json">{
-  "targets": [
-    "file-lister",
-    "file-lister-output"
-  ],
-  "layers": {
-    "file-lister-output": [
-      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
-      "file-lister-output-2CFDE4FEBD507157"
-    ],
-    "file-lister": [
-      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
-      "file-lister-16689594BA5D2989"
-    ]
-  }
-}
-</code></pre>
-</div>
-</div>
-<p>This mount type is useful for any build container that needs to work the
-contents of individual layers.</p>
-<p>For example, the <a href="../builders/deblive.html"><code>deblive</code> builder</a> uses this mount type, in order to
-build Debian liveboot images.</p>
+<h3 id="grub_timeout"><a class="header" href="#grub_timeout"><strong><code>GRUB_TIMEOUT</code></strong></a></h3>
+<ul>
+<li>Default: <code>5</code></li>
+<li>Supported by: <code>deblive</code>, <code>live-disk-image</code></li>
+</ul>
+<p>The auto-generated GRUB boot menu will use <code>GRUB_TIMEOUT</code> as the countdown until
+automatically booting the first target.</p>
+<p>Setting this to <code>0</code> will boot without showing the GRUB menu.</p>
+<h3 id="output_format"><a class="header" href="#output_format"><strong><code>OUTPUT_FORMAT</code></strong></a></h3>
+<ul>
+<li>Default: <code>raw</code></li>
+<li>Supported by: <code>live-disk-image</code>, <code>disk-image</code>, <code>part-image</code></li>
+</ul>
+<p>Output format of the image. Common values include <code>raw</code> and <code>qcow2</code>.</p>
+<p>See <code>qemu-img --help</code> for the complete list</p>
+<h3 id="efi_mb"><a class="header" href="#efi_mb"><strong><code>EFI_MB</code></strong></a></h3>
+<ul>
+<li>Default: <code>32</code></li>
+<li>Supported by: <code>live-disk-image</code>, <code>disk-image</code></li>
+</ul>
+<p>Size of ESP, the EFI System Partition (<code>/boot/efi</code>).</p>
+<h3 id="boot_mb"><a class="header" href="#boot_mb"><strong><code>BOOT_MB</code></strong></a></h3>
+<ul>
+<li>Default: <code>512</code></li>
+<li>Supported by: <code>live-disk-image</code>, <code>disk-image</code></li>
+</ul>
+<p>Size of the boot partition (<code>/boot</code>)</p>
+<h3 id="free_mb"><a class="header" href="#free_mb"><strong><code>FREE_MB</code></strong></a></h3>
+<ul>
+<li>Default: <code>512</code></li>
+<li>Supported by: <code>live-disk-image</code>, <code>disk-image</code>, <code>part-image</code></li>
+</ul>
+<p>How much free space to target in the resulting image.</p>
+<h3 id="used_mb"><a class="header" href="#used_mb"><strong><code>USED_MB</code></strong></a></h3>
+<ul>
+<li>Default: <strong>none</strong></li>
+<li>Supported by: <code>live-disk-image</code>, <code>disk-image</code>, <code>part-image</code></li>
+</ul>
+<p>Total disk space of all files in the root filesystem.</p>
+<p>Calculated when building the image, unless specified manually.</p>
+<h3 id="size_mb"><a class="header" href="#size_mb"><strong><code>SIZE_MB</code></strong></a></h3>
+<ul>
+<li>Default: <strong>none</strong></li>
+<li>Supported by: <code>live-disk-image</code>, <code>disk-image</code>, <code>part-image</code></li>
+</ul>
+<p>The size of the resulting image.</p>
+<p>Calculated as:</p>
+<ul>
+<li><code>live-disk-image</code>: <code>EFI_MB + BOOT_MB + USED_MB + FREE_MB</code></li>
+<li><code>disk-image</code>: <code>EFI_MB + BOOT_MB + USED_MB + FREE_MB</code></li>
+<li><code>part-image</code>: <code>USED_MB + FREE_MB</code></li>
+</ul>
+<p>unless specified manually for exact control.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../mount-types/file.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../builders/part-image.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../mount-types/overlay.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../module-name.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -298,11 +272,11 @@ build Debian liveboot images.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../mount-types/file.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../builders/part-image.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../mount-types/overlay.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../module-name.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

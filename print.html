@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "ayu";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "searchindex-7babd544.js";
+            window.path_to_searchindex_js = "searchindex-d5d35205.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-39e7d6e9.js"></script>
+        <script src="toc-a5ed802d.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -680,6 +680,404 @@ input = "$example.ssh"
 <p>Now that we have encoded all the arguments, we can use a much simpler <code>raptor make</code> command to run this build job:</p>
 <pre><code class="language-sh">sudo raptor make book-ssh
 </code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="raptor-builders"><a class="header" href="#raptor-builders">Raptor Builders</a></h1>
+<p>After carefully building a set of layers with Raptor, they are ready to process
+into more useful build artifacts.</p>
+<p>The way this is done in Raptor, is through <em>build containers</em>. These are,
+themselves, Raptor containers, made specifically for producing a certain kind of
+output.</p>
+<p>Raptor itself does not come with any build containers, but the <em>companion
+project</em>, <a href="https://github.com/chrivers/raptor-builders">raptor-builders</a>
+does. It’s called the “companion” project to highlight the fact that it is not
+above other Raptor projects. Anyone can make build containers, and if you need
+to build something that is uncommon, or specialized to a niche situtation, you
+might have to.</p>
+<p>Most people, however, should be able to get started quickly, and save a lot of
+time, by using the build containers from
+<a href="https://github.com/chrivers/raptor-builders">raptor-builders</a>.</p>
+<h2 id="meet-the-builders"><a class="header" href="#meet-the-builders">Meet the builders</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Builder</th><th>Output</th><th>Supported output formats</th></tr></thead><tbody>
+<tr><td><a href="builders/deblive.html"><code>deblive</code></a></td><td>Debian Liveboot iso</td><td><code>iso</code></td></tr>
+<tr><td><a href="builders/live-disk-image.html"><code>live-disk-image</code></a></td><td>Debian Liveboot disk image</td><td><code>raw</code>, <code>qcow2</code>, <code>vmdk</code>, …</td></tr>
+<tr><td><a href="builders/disk-image.html"><code>disk-image</code></a></td><td>Disk image</td><td><code>raw</code>, <code>qcow2</code>, <code>vmdk</code>, …</td></tr>
+<tr><td><a href="builders/part-image.html"><code>part-image</code></a></td><td>Partition (filesystem) image</td><td><code>raw</code>, <code>qcow2</code>, <code>vmdk</code>, …</td></tr>
+</tbody></table>
+</div>
+<h2 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h2>
+<p>The various builders can construct a wide variety of outputs, suitable for use
+with both containers (<code>systemd-nspawn</code>), virtual machines (e.g. <code>qemu</code>), and
+physical hardware.</p>
+<p>However, not all combinations are possible. For example, a physical machine will
+not boot a <code>qcow2</code> image for virtual machines, but <code>qemu</code> will be able to boot
+either <code>qcow2</code> or <code>raw</code> images.</p>
+<p>The table below provides an overview of the possible options.</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Builder</th><th>Format</th><th style="text-align: left">nspawn</th><th style="text-align: left">Virtual Machine</th><th style="text-align: left">Physical Machine</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>deblive</code></td><td><code>iso</code></td><td style="text-align: left">❌</td><td style="text-align: left">UEFI:✅ – BIOS:✅</td><td style="text-align: left">UEFI:✅ – BIOS:✅</td></tr>
+<tr><td style="text-align: left"><code>live-disk-image</code></td><td><code>qcow2</code></td><td style="text-align: left">❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td></tr>
+<tr><td style="text-align: left"><code>disk-image</code></td><td><code>qcow2</code></td><td style="text-align: left">❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td></tr>
+<tr><td style="text-align: left"><code>live-disk-image</code></td><td><code>raw</code></td><td style="text-align: left">❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td></tr>
+<tr><td style="text-align: left"><code>disk-image</code></td><td><code>raw</code></td><td style="text-align: left">✅</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td></tr>
+<tr><td style="text-align: left"><code>part-image</code></td><td><code>raw</code></td><td style="text-align: left">✅</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td></tr>
+</tbody></table>
+</div>
+<p>Currently, booting in BIOS mode is only supported by the <code>deblive</code> builder, but
+the <code>live-disk-image</code> and <code>disk-image</code> builders could possibly be extended to
+support this, in the future.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="debian-liveboot-iso-generatordeblive"><a class="header" href="#debian-liveboot-iso-generatordeblive">Debian Liveboot iso generator:<br><strong><code>deblive</code></strong></a></h1>
+<div id="admonition-important" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-title">
+<div class="admonition-title">
+<div id="admonition-important-title">
+<p>Important</p>
+</div>
+<a class="admonition-anchor-link" href="builders/deblive.html#admonition-important"></a>
+</div>
+<div>
+<p><strong>This builder requires an input from the Debian family.</strong></p>
+<p>It should work for Debian derivatives (Ubuntu, etc), as long as the
+prerequisite packages are installed.</p>
+</div>
+</div>
+<p>This builder generates an <code>iso</code> file suitable for live booting. All layers are
+packed into read-only squashfs files, which are mounted using overlayfs, on
+boot.</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Mount</th><th style="text-align: left">Type</th><th style="text-align: left">Usage</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>cache</code></td><td style="text-align: left">Simple</td><td style="text-align: left">Contains cache of previously built <code>.squashfs</code> files.<br>(to avoid expensive rebuilds)</td></tr>
+<tr><td style="text-align: left"><code>input</code></td><td style="text-align: left">Layers</td><td style="text-align: left">The Raptor build target(s) that will be put on the iso</td></tr>
+<tr><td style="text-align: left"><code>output</code></td><td style="text-align: left">File</td><td style="text-align: left">Points to the resulting output file.</td></tr>
+</tbody></table>
+</div><div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="builders/deblive.html#admonition-tip"></a>
+</div>
+<div>
+<p>This builder has a 📕 <a href="builders/../walkthrough/debian/">detailed walkthrough</a>.</p>
+</div>
+</div>
+<p><img src="builders/../images/deblive-grub.png" alt="example screenshot" /></p>
+<p>If multiple targets are specified, each will get its own GRUB menu entry in the
+boot menu.</p>
+<p>The menu order will be the same as the order the <code>input</code> targets are specified
+in, and the first input will be the default boot option.</p>
+<h2 id="compatibility-1"><a class="header" href="#compatibility-1">Compatibility</a></h2>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Target</th><th style="text-align: left">Compatible?</th></tr></thead><tbody>
+<tr><td style="text-align: left">Container (<code>systemd-nspawn</code>)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Virtual Machine (UEFI)</td><td style="text-align: left">✅</td></tr>
+<tr><td style="text-align: left">Virtual Machine (BIOS)</td><td style="text-align: left">✅</td></tr>
+<tr><td style="text-align: left">Physical Machine (UEFI)</td><td style="text-align: left">✅</td></tr>
+<tr><td style="text-align: left">Physical Machine (BIOS)</td><td style="text-align: left">✅</td></tr>
+</tbody></table>
+</div>
+<p>Debian liveboot ISOs are widely compatible with both physical and virtual
+machines, including UEFI and BIOS-based platforms.</p>
+<p>The <code>deblive</code> builder is not compatible with <code>systemd-nspawn</code>, since liveboot
+requires <code>initrd</code> support to perform <code>overlayfs</code> mounting.</p>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<p>Prerequisites:</p>
+<ul>
+<li><a href="https://github.com/chrivers/raptor-builders">raptor-builders</a> is cloned to <code>raptor-builders</code></li>
+<li>An input target called <code>test.rapt</code></li>
+</ul>
+<div id="admonition-raptortoml" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-title">
+<div class="admonition-title">
+<div id="admonition-raptortoml-title">
+<p>Raptor.toml</p>
+</div>
+<a class="admonition-anchor-link" href="builders/deblive.html#admonition-raptortoml"></a>
+</div>
+<div>
+<pre><code class="language-toml">[raptor.link]
+rbuild = "raptor-builders"
+
+[run.iso1]
+target = "$rbuild.deblive" # &lt;-- builder is specified here
+cache = "cache2"
+input = ["test"]
+output = "live.iso"
+env.GRUB_TIMEOUT = "0"
+</code></pre>
+</div>
+</div>
+<p>After this <code>Raptor.toml</code> is in place, call <code>raptor make</code> to build:</p>
+<pre><code class="language-sh">sudo raptor make iso1
+</code></pre>
+<p>When the process is complete, <code>live.iso</code> will be ready for use.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="debian-liveboot-disk-image-generatorlive-disk-image"><a class="header" href="#debian-liveboot-disk-image-generatorlive-disk-image">Debian Liveboot Disk Image generator:<br><strong><code>live-disk-image</code></strong></a></h1>
+<div id="admonition-important" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-title">
+<div class="admonition-title">
+<div id="admonition-important-title">
+<p>Important</p>
+</div>
+<a class="admonition-anchor-link" href="builders/live-disk-image.html#admonition-important"></a>
+</div>
+<div>
+<p><strong>This builder requires an input from the Debian family.</strong></p>
+<p>It should work for Debian derivatives (Ubuntu, etc), as long as the
+prerequisite packages are installed.</p>
+</div>
+</div>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Mount name</th><th style="text-align: left">Type</th><th style="text-align: left">Usage</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>cache</code></td><td style="text-align: left">Simple</td><td style="text-align: left">Contains cache of previously built <code>.squashfs</code> files.<br>(to avoid expensive rebuilds)</td></tr>
+<tr><td style="text-align: left"><code>input</code></td><td style="text-align: left">Layers</td><td style="text-align: left">The Raptor build target(s) that will be put on the generated image</td></tr>
+<tr><td style="text-align: left"><code>output</code></td><td style="text-align: left">File</td><td style="text-align: left">Points to the resulting output file.</td></tr>
+</tbody></table>
+</div>
+<h2 id="compatibility-2"><a class="header" href="#compatibility-2">Compatibility</a></h2>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Target</th><th style="text-align: left">Compatible?</th></tr></thead><tbody>
+<tr><td style="text-align: left">Container (<code>systemd-nspawn</code>)</td><td style="text-align: left">✅ (<code>raw</code>)</td></tr>
+<tr><td style="text-align: left">Virtual Machine (UEFI)</td><td style="text-align: left">✅ (<code>raw</code>, <code>qcow2</code>)</td></tr>
+<tr><td style="text-align: left">Virtual Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Physical Machine (UEFI)</td><td style="text-align: left">✅ (<code>raw</code>)</td></tr>
+<tr><td style="text-align: left">Physical Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
+</tbody></table>
+</div>
+<p>This builder also generates Debian Liveboot image, but instead of generating a
+<code>.iso</code> file, it generates a disk image, including a partition table, and
+separate partitions for <code>/</code>, <code>/boot</code> and <code>/boot/efi</code>.</p>
+<p>The result is a disk image that allows a physical or virtual machine to boot
+normally, but with the root file system mounted as <code>overlayfs</code> backed by the
+<code>squashfs</code> files for each layer.</p>
+<p>It uses the Discoverable Partitions Specification<sup class="footnote-reference" id="fr-dps-1"><a href="#footnote-dps">1</a></sup> to make the images
+compatible with both physical hardware, virtual machines, and <code>systemd-nspawn</code>.</p>
+<h2 id="example-1"><a class="header" href="#example-1">Example</a></h2>
+<p>Prerequisites:</p>
+<ul>
+<li><a href="https://github.com/chrivers/raptor-builders">raptor-builders</a> is cloned to <code>raptor-builders</code></li>
+<li>An input target called <code>test.rapt</code></li>
+</ul>
+<div id="admonition-raptortoml" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-title">
+<div class="admonition-title">
+<div id="admonition-raptortoml-title">
+<p>Raptor.toml</p>
+</div>
+<a class="admonition-anchor-link" href="builders/live-disk-image.html#admonition-raptortoml"></a>
+</div>
+<div>
+<pre><code class="language-toml">[raptor.link]
+rbuild = "raptor-builders"
+
+# Live disk image (raw)
+[run.live1]
+target = "$rbuild.live-disk-image" # &lt;-- builder is specified here
+cache = "cache2"
+input = ["test"]
+output = "live.img"
+## implied default:
+## env.GRUB_TIMEOUT = "5"
+## env.OUTPUT_FORMAT = "raw"
+
+# Live disk image (qcow2, no boot delay)
+[run.live2]
+target = "$rbuild.live-disk-image" # &lt;-- builder is specified here
+cache = "cache2"
+input = ["test"]
+output = "live.qcow2"
+env.GRUB_TIMEOUT = "0"
+env.OUTPUT_FORMAT = "qcow2"
+</code></pre>
+</div>
+</div>
+<p>After this <code>Raptor.toml</code> is in place, call <code>raptor make</code> to build:</p>
+<pre><code class="language-sh">sudo raptor make live1 live2
+</code></pre>
+<p>When the process is complete, <code>live.img</code> and <code>live.qcow2</code> will be ready for use.</p>
+<hr>
+<ol class="footnote-definition"><li id="footnote-dps">
+<p><a href="https://uapi-group.org/specifications/specs/discoverable_partitions_specification/">Discoverable Partitions Specification</a> <a href="#fr-dps-1">↩</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><h1 id="disk-image-generatordisk-image"><a class="header" href="#disk-image-generatordisk-image">Disk Image generator:<br><strong><code>disk-image</code></strong></a></h1>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Mount name</th><th style="text-align: left">Type</th><th style="text-align: left">Usage</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>input</code></td><td style="text-align: left">Overlay</td><td style="text-align: left">The Raptor build target that will be put into the generated image</td></tr>
+<tr><td style="text-align: left"><code>output</code></td><td style="text-align: left">File</td><td style="text-align: left">Points to the resulting output file.</td></tr>
+</tbody></table>
+</div>
+<h2 id="compatibility-3"><a class="header" href="#compatibility-3">Compatibility</a></h2>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Target</th><th style="text-align: left">Compatible?</th></tr></thead><tbody>
+<tr><td style="text-align: left">Container (<code>systemd-nspawn</code>)</td><td style="text-align: left">✅ (<code>raw</code>)</td></tr>
+<tr><td style="text-align: left">Virtual Machine (UEFI)</td><td style="text-align: left">✅ (<code>raw</code>, <code>qcow2</code>)</td></tr>
+<tr><td style="text-align: left">Virtual Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Physical Machine (UEFI)</td><td style="text-align: left">✅ (<code>raw</code>)</td></tr>
+<tr><td style="text-align: left">Physical Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
+</tbody></table>
+</div>
+<p>This builder generates disk images, including a partition table, and separate
+partitions for <code>/</code>, <code>/boot</code> and <code>/boot/efi</code>.</p>
+<p>It uses the Discoverable Partitions Specification<sup class="footnote-reference" id="fr-dps-1"><a href="#footnote-dps">1</a></sup> to make the images
+compatible with both physical hardware, virtual machines, and <code>systemd-nspawn</code>.</p>
+<h2 id="example-2"><a class="header" href="#example-2">Example</a></h2>
+<p>Prerequisites:</p>
+<ul>
+<li><a href="https://github.com/chrivers/raptor-builders">raptor-builders</a> is cloned to <code>raptor-builders</code></li>
+<li>An input target called <code>test.rapt</code></li>
+</ul>
+<div id="admonition-raptortoml" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-title">
+<div class="admonition-title">
+<div id="admonition-raptortoml-title">
+<p>Raptor.toml</p>
+</div>
+<a class="admonition-anchor-link" href="builders/disk-image.html#admonition-raptortoml"></a>
+</div>
+<div>
+<pre><code class="language-toml">[raptor.link]
+rbuild = "raptor-builders"
+
+# Disk image (raw)
+[run.disk1]
+target = "$rbuild.disk-image" # &lt;-- builder is specified here
+input = ["test"]
+output = "disk.img"
+## implied default:
+## env.OUTPUT_FORMAT = "raw"
+
+# Disk image (qcow2)
+[run.disk2]
+target = "$rbuild.disk-image" # &lt;-- builder is specified here
+input = ["test"]
+output = "disk.qcow2"
+env.OUTPUT_FORMAT = "qcow2"
+</code></pre>
+</div>
+</div>
+<p>After this <code>Raptor.toml</code> is in place, call <code>raptor make</code> to build:</p>
+<pre><code class="language-sh">sudo raptor make disk1 disk2
+</code></pre>
+<p>When the process is complete, <code>disk.img</code> and <code>disk.qcow2</code> will be ready for use.</p>
+<hr>
+<ol class="footnote-definition"><li id="footnote-dps">
+<p><a href="https://uapi-group.org/specifications/specs/discoverable_partitions_specification/">Discoverable Partitions Specification</a> <a href="#fr-dps-1">↩</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><h1 id="partition-image-generatorpart-image"><a class="header" href="#partition-image-generatorpart-image">Partition Image generator:<br><strong><code>part-image</code></strong></a></h1>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Mount name</th><th style="text-align: left">Type</th><th style="text-align: left">Usage</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>input</code></td><td style="text-align: left">Overlay</td><td style="text-align: left">The Raptor build target that will be put into the generated image</td></tr>
+<tr><td style="text-align: left"><code>output</code></td><td style="text-align: left">File</td><td style="text-align: left">Points to the resulting output file.</td></tr>
+</tbody></table>
+</div>
+<h2 id="compatibility-4"><a class="header" href="#compatibility-4">Compatibility</a></h2>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Target</th><th style="text-align: left">Compatible?</th></tr></thead><tbody>
+<tr><td style="text-align: left">Container (<code>systemd-nspawn</code>)</td><td style="text-align: left">✅</td></tr>
+<tr><td style="text-align: left">Virtual Machine (UEFI)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Virtual Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Physical Machine (UEFI)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Physical Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
+</tbody></table>
+</div>
+<p>This builder generates partition images, containing a single filesystem.</p>
+<p>In other words, this image can be <strong>put into</strong> a partition, but <strong>does not</strong>
+contain a <em>partition table</em>.</p>
+<p>The primary use case is for building <code>systemd-nspawn</code> images, but this builder
+is also useful in other specialty applications – for example,
+<a href="https://github.com/siemens/efibootguard">efibootguard</a>, a bootloader that
+supports A/B partitions for upgrade and recovery.</p>
+<p>Since efibootguard uses <a href="https://github.com/siemens/efibootguard/blob/master/docs/UNIFIED-KERNEL.md">Unified Kernel
+Images</a>,
+an update image typically consists of just a single filesystem. Such an image
+could be produced by this builder.</p>
+<h2 id="example-3"><a class="header" href="#example-3">Example</a></h2>
+<p>Prerequisites:</p>
+<ul>
+<li><a href="https://github.com/chrivers/raptor-builders">raptor-builders</a> is cloned to <code>raptor-builders</code></li>
+<li>An input target called <code>test.rapt</code></li>
+</ul>
+<div id="admonition-raptortoml" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-title">
+<div class="admonition-title">
+<div id="admonition-raptortoml-title">
+<p>Raptor.toml</p>
+</div>
+<a class="admonition-anchor-link" href="builders/part-image.html#admonition-raptortoml"></a>
+</div>
+<div>
+<pre><code class="language-toml">[raptor.link]
+rbuild = "raptor-builders"
+
+# Partition (filesystem) image
+[run.part1]
+target = "$rbuild.part-image" # &lt;-- builder is specified here
+input = "test"
+output = "part.img"
+</code></pre>
+</div>
+</div>
+<p>After this <code>Raptor.toml</code> is in place, call <code>raptor make</code> to build:</p>
+<pre><code class="language-sh">sudo raptor make part1
+</code></pre>
+<p>When the process is complete, <code>part.img</code> will be ready for use.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="environment-variables"><a class="header" href="#environment-variables">Environment variables</a></h1>
+<p>Several settings can be adjusted via environment variables. These can be specified either on the command line:</p>
+<pre><code class="language-sh">sudo raptor run -e OUTPUT_FORMAT=qcow2 ...
+</code></pre>
+<p>or in <code>Raptor.toml</code>:</p>
+<pre><code class="language-toml">[run.example-target]
+target = "example"
+
+# notice the `env.` prefix!
+env.OUTPUT_FORMAT = "qcow2"
+</code></pre>
+<h2 id="environment-reference"><a class="header" href="#environment-reference">Environment reference</a></h2>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Variable</th><th><code>deblive</code></th><th><code>live-disk-image</code></th><th><code>disk-image</code></th><th><code>part-image</code></th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>GRUB_TIMEOUT</code></td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
+<tr><td style="text-align: left"><code>OUTPUT_FORMAT</code></td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td style="text-align: left"><code>EFI_MB</code></td><td>❌</td><td>✅</td><td>✅</td><td>❌</td></tr>
+<tr><td style="text-align: left"><code>BOOT_MB</code></td><td>❌</td><td>✅</td><td>✅</td><td>❌</td></tr>
+<tr><td style="text-align: left"><code>FREE_MB</code></td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td style="text-align: left"><code>USED_MB</code></td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td style="text-align: left"><code>SIZE_MB</code></td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+</tbody></table>
+</div>
+<h3 id="grub_timeout"><a class="header" href="#grub_timeout"><strong><code>GRUB_TIMEOUT</code></strong></a></h3>
+<ul>
+<li>Default: <code>5</code></li>
+<li>Supported by: <code>deblive</code>, <code>live-disk-image</code></li>
+</ul>
+<p>The auto-generated GRUB boot menu will use <code>GRUB_TIMEOUT</code> as the countdown until
+automatically booting the first target.</p>
+<p>Setting this to <code>0</code> will boot without showing the GRUB menu.</p>
+<h3 id="output_format"><a class="header" href="#output_format"><strong><code>OUTPUT_FORMAT</code></strong></a></h3>
+<ul>
+<li>Default: <code>raw</code></li>
+<li>Supported by: <code>live-disk-image</code>, <code>disk-image</code>, <code>part-image</code></li>
+</ul>
+<p>Output format of the image. Common values include <code>raw</code> and <code>qcow2</code>.</p>
+<p>See <code>qemu-img --help</code> for the complete list</p>
+<h3 id="efi_mb"><a class="header" href="#efi_mb"><strong><code>EFI_MB</code></strong></a></h3>
+<ul>
+<li>Default: <code>32</code></li>
+<li>Supported by: <code>live-disk-image</code>, <code>disk-image</code></li>
+</ul>
+<p>Size of ESP, the EFI System Partition (<code>/boot/efi</code>).</p>
+<h3 id="boot_mb"><a class="header" href="#boot_mb"><strong><code>BOOT_MB</code></strong></a></h3>
+<ul>
+<li>Default: <code>512</code></li>
+<li>Supported by: <code>live-disk-image</code>, <code>disk-image</code></li>
+</ul>
+<p>Size of the boot partition (<code>/boot</code>)</p>
+<h3 id="free_mb"><a class="header" href="#free_mb"><strong><code>FREE_MB</code></strong></a></h3>
+<ul>
+<li>Default: <code>512</code></li>
+<li>Supported by: <code>live-disk-image</code>, <code>disk-image</code>, <code>part-image</code></li>
+</ul>
+<p>How much free space to target in the resulting image.</p>
+<h3 id="used_mb"><a class="header" href="#used_mb"><strong><code>USED_MB</code></strong></a></h3>
+<ul>
+<li>Default: <strong>none</strong></li>
+<li>Supported by: <code>live-disk-image</code>, <code>disk-image</code>, <code>part-image</code></li>
+</ul>
+<p>Total disk space of all files in the root filesystem.</p>
+<p>Calculated when building the image, unless specified manually.</p>
+<h3 id="size_mb"><a class="header" href="#size_mb"><strong><code>SIZE_MB</code></strong></a></h3>
+<ul>
+<li>Default: <strong>none</strong></li>
+<li>Supported by: <code>live-disk-image</code>, <code>disk-image</code>, <code>part-image</code></li>
+</ul>
+<p>The size of the resulting image.</p>
+<p>Calculated as:</p>
+<ul>
+<li><code>live-disk-image</code>: <code>EFI_MB + BOOT_MB + USED_MB + FREE_MB</code></li>
+<li><code>disk-image</code>: <code>EFI_MB + BOOT_MB + USED_MB + FREE_MB</code></li>
+<li><code>part-image</code>: <code>USED_MB + FREE_MB</code></li>
+</ul>
+<p>unless specified manually for exact control.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="module-names"><a class="header" href="#module-names">Module names</a></h1>
 <p>In Raptor, “module names” are the names Raptor files use to refer to other
 Raptor files.</p>
@@ -1148,7 +1546,7 @@ MOUNT --optional --required --layers input /data
 <p>This is the default mount type.</p>
 <p>A <code>--simple</code> mount will mount a directory from the host into the
 container. Docker users are likely to be familiar with this concept.</p>
-<h3 id="example"><a class="header" href="#example">Example</a></h3>
+<h3 id="example-4"><a class="header" href="#example-4">Example</a></h3>
 <div id="admonition-file-listerrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-file-listerrapt-title">
 <div class="admonition-title">
 <div id="admonition-file-listerrapt-title">
@@ -1182,7 +1580,7 @@ CMD "ls -l /input"
 <p>When running a raptor container with a <code>--file</code> mount, the target file will be created if it does not exist.</p>
 </div>
 </div>
-<h3 id="example-1"><a class="header" href="#example-1">Example</a></h3>
+<h3 id="example-5"><a class="header" href="#example-5">Example</a></h3>
 <p>Let us expand on the earlier example, to make the file lister provide output to a file.</p>
 <div id="admonition-file-lister-outputrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-file-lister-outputrapt-title">
 <div class="admonition-title">
@@ -1211,6 +1609,8 @@ $ sudo cat /tmp/filelist.txt
 <p>The above example would generate a file listing of <code>/etc</code> <strong>from the host</strong>, and
 place it in <code>/tmp/filelist.txt</code>. However, the execution of <code>ls</code> takes place in
 the container.</p>
+<p>For example, multiple targets in the <a href="mount-types/../builders/index.html">raptor builders</a>
+project uses this mount type for output files.</p>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="mount-type---layers"><a class="header" href="#mount-type---layers">Mount type <code>--layers</code></a></h2>
 <p>The <code>--simple</code> and <code>--file</code> mount types both present content from the host
 filesystem inside the container, and both have equivalents in Docker.</p>
@@ -1310,14 +1710,9 @@ inputs.</p>
 </div>
 <p>This mount type is useful for any build container that needs to work the
 contents of individual layers.</p>
-<p>For example, the <code>deblive</code> builder<sup class="footnote-reference" id="fr-deblive-1"><a href="#footnote-deblive">1</a></sup> uses this mount type, in order to
+<p>For example, the <a href="mount-types/../builders/deblive.html"><code>deblive</code> builder</a> uses this mount type, in order to
 build Debian liveboot images.</p>
-<hr>
-<ol class="footnote-definition"><li id="footnote-deblive">
-<p>From the <a href="https://github.com/chrivers/raptor-builders">raptor-builders</a>
-companion project. <a href="#fr-deblive-1">↩</a></p>
-</li>
-</ol><div style="break-before: page; page-break-before: always;"></div><h2 id="mount-type---overlay"><a class="header" href="#mount-type---overlay">Mount type <code>--overlay</code></a></h2>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="mount-type---overlay"><a class="header" href="#mount-type---overlay">Mount type <code>--overlay</code></a></h2>
 <p>Like <code>--layers</code>, this is a Raptor-specific mount type.</p>
 <p>Raptor targets are almost always built from a set of layers (i.e., there’s at
 least one <code>FROM</code> instruction).</p>
@@ -1326,7 +1721,7 @@ least one <code>FROM</code> instruction).</p>
 unified filesystem.</p>
 <p>For build containers that need to operate on this combined view of a build
 target, the <code>--overlay</code> mount type is available.</p>
-<p>For example, the <code>disk-image</code> builder[^deblive] uses this mount type, in order to
+<p>For example, the <a href="mount-types/../builders/disk-image.html"><code>disk-image</code> builder</a> uses this mount type, in order to
 build disk images for virtual (or physical) machines.</p>
 <div id="admonition-overlay-listerrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-overlay-listerrapt-title">
 <div class="admonition-title">
@@ -1750,7 +2145,7 @@ namespace. This affects all subsequent relative paths, including the <code>RUN</
 instruction.</p>
 <p>The workdir is <strong>not</strong> inherited through <code>FROM</code>.</p>
 <p>The initial workdir is always <code>/</code>.</p>
-<h2 id="example-2"><a class="header" href="#example-2">Example</a></h2>
+<h2 id="example-6"><a class="header" href="#example-6">Example</a></h2>
 <pre><code class="language-raptor"># This will copy "program" to "/bin/program" (since initial directory is "/")
 COPY program bin/program
 
@@ -1852,7 +2247,7 @@ to write a short value, and <code>COPY</code> might feel like overkill.</p>
 <p>However, using <code>RUN mkdir</code> requires the <code>mkdir</code> command to be available and
 executable inside the build target. This is not always the case, especially when
 building things from scratch.</p>
-<h2 id="example-3"><a class="header" href="#example-3">Example</a></h2>
+<h2 id="example-7"><a class="header" href="#example-7">Example</a></h2>
 <pre><code class="language-raptor">MKDIR /data
 
 MKDIR -p --chown babelfish:daemon /usr/local/translate/

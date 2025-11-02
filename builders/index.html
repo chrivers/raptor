@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>--layers - Raptor Manual</title>
+        <title>Overview - Raptor Manual</title>
 
 
         <!-- Custom HTML head -->
@@ -178,117 +178,59 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h2 id="mount-type---layers"><a class="header" href="#mount-type---layers">Mount type <code>--layers</code></a></h2>
-<p>The <code>--simple</code> and <code>--file</code> mount types both present content from the host
-filesystem inside the container, and both have equivalents in Docker.</p>
-<p>This is not the case for <code>--layers</code>, which is specific to Raptor.</p>
-<p>When using a <code>--layers</code> mount, the input argument when running Raptor is not a
-file path, but a set of <em>Raptor build targets</em>.</p>
-<p>Let us take a look at a target, that lists the files in a <code>--layers</code> mounts:</p>
-<div id="admonition-layers-listerrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-layers-listerrapt-title">
-<div class="admonition-title">
-<div id="admonition-layers-listerrapt-title">
-<p>layers-lister.rapt</p>
+                        <h1 id="raptor-builders"><a class="header" href="#raptor-builders">Raptor Builders</a></h1>
+<p>After carefully building a set of layers with Raptor, they are ready to process
+into more useful build artifacts.</p>
+<p>The way this is done in Raptor, is through <em>build containers</em>. These are,
+themselves, Raptor containers, made specifically for producing a certain kind of
+output.</p>
+<p>Raptor itself does not come with any build containers, but the <em>companion
+project</em>, <a href="https://github.com/chrivers/raptor-builders">raptor-builders</a>
+does. It’s called the “companion” project to highlight the fact that it is not
+above other Raptor projects. Anyone can make build containers, and if you need
+to build something that is uncommon, or specialized to a niche situtation, you
+might have to.</p>
+<p>Most people, however, should be able to get started quickly, and save a lot of
+time, by using the build containers from
+<a href="https://github.com/chrivers/raptor-builders">raptor-builders</a>.</p>
+<h2 id="meet-the-builders"><a class="header" href="#meet-the-builders">Meet the builders</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Builder</th><th>Output</th><th>Supported output formats</th></tr></thead><tbody>
+<tr><td><a href="deblive.html"><code>deblive</code></a></td><td>Debian Liveboot iso</td><td><code>iso</code></td></tr>
+<tr><td><a href="live-disk-image.html"><code>live-disk-image</code></a></td><td>Debian Liveboot disk image</td><td><code>raw</code>, <code>qcow2</code>, <code>vmdk</code>, …</td></tr>
+<tr><td><a href="disk-image.html"><code>disk-image</code></a></td><td>Disk image</td><td><code>raw</code>, <code>qcow2</code>, <code>vmdk</code>, …</td></tr>
+<tr><td><a href="part-image.html"><code>part-image</code></a></td><td>Partition (filesystem) image</td><td><code>raw</code>, <code>qcow2</code>, <code>vmdk</code>, …</td></tr>
+</tbody></table>
 </div>
-<a class="admonition-anchor-link" href="#admonition-layers-listerrapt"></a>
+<h2 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h2>
+<p>The various builders can construct a wide variety of outputs, suitable for use
+with both containers (<code>systemd-nspawn</code>), virtual machines (e.g. <code>qemu</code>), and
+physical hardware.</p>
+<p>However, not all combinations are possible. For example, a physical machine will
+not boot a <code>qcow2</code> image for virtual machines, but <code>qemu</code> will be able to boot
+either <code>qcow2</code> or <code>raw</code> images.</p>
+<p>The table below provides an overview of the possible options.</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Builder</th><th>Format</th><th style="text-align: left">nspawn</th><th style="text-align: left">Virtual Machine</th><th style="text-align: left">Physical Machine</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>deblive</code></td><td><code>iso</code></td><td style="text-align: left">❌</td><td style="text-align: left">UEFI:✅ – BIOS:✅</td><td style="text-align: left">UEFI:✅ – BIOS:✅</td></tr>
+<tr><td style="text-align: left"><code>live-disk-image</code></td><td><code>qcow2</code></td><td style="text-align: left">❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td></tr>
+<tr><td style="text-align: left"><code>disk-image</code></td><td><code>qcow2</code></td><td style="text-align: left">❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td></tr>
+<tr><td style="text-align: left"><code>live-disk-image</code></td><td><code>raw</code></td><td style="text-align: left">❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td></tr>
+<tr><td style="text-align: left"><code>disk-image</code></td><td><code>raw</code></td><td style="text-align: left">✅</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td></tr>
+<tr><td style="text-align: left"><code>part-image</code></td><td><code>raw</code></td><td style="text-align: left">✅</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td></tr>
+</tbody></table>
 </div>
-<div>
-<pre><code class="language-raptor">FROM docker://debian:trixie
-
-MOUNT --layers input /input
-
-CMD "ls -l /input"
-</code></pre>
-</div>
-</div>
-<p>Let’s try running this, using the previous <code>file-lister.rapt</code> target as input:</p>
-<pre><code class="language-sh">$ sudo raptor run layers-lister -I file-lister
-total 12
-drwxr-xr-x  2 root root 4096 Oct 17 13:37 file-lister-16689594BA5D2989
-drwxr-xr-x 17 root root 4096 Sep 29 00:00 index.docker.io-library-debian-trixie-675DE2C3A4D8CD82
--rw-r--r--  1 root root  200 Oct 17 13:37 raptor.json
-</code></pre>
-<p>We see that each layer in the input is available as a directory, but also a
-<code>raptor.json</code> file.</p>
-<p>Think of this file as a manifest of the contents in the <code>--layers</code> mount. It
-contains useful metadata about the inputs, including which targets have been
-specified, as well as the stacking order for each target:</p>
-<div id="admonition-raptorjson" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptorjson-title">
-<div class="admonition-title">
-<div id="admonition-raptorjson-title">
-<p>raptor.json</p>
-</div>
-<a class="admonition-anchor-link" href="#admonition-raptorjson"></a>
-</div>
-<div>
-<pre><code class="language-json">{
-  "targets": [
-    "file-lister"
-  ],
-  "layers": {
-    "file-lister": [
-      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
-      "file-lister-16689594BA5D2989"
-    ]
-  }
-}
-</code></pre>
-</div>
-</div>
-<p>At first, this might seem like overly complicated. If we just needed the layer
-order, surely a simple text file would suffice?</p>
-<p>In fact, <em>multiple</em> build targets can be specified at the same time:</p>
-<pre><code class="language-sh">$ sudo raptor run layers-lister -I file-lister -I file-lister-output
-total 16
-drwxr-xr-x  2 root root 4096 Oct 17 11:33 file-lister-16689594BA5D2989
-drwxr-xr-x  2 root root 4096 Oct 17 11:31 file-lister-output-2CFDE4FEBD507157
-drwxr-xr-x 17 root root 4096 Sep 29 00:00 index.docker.io-library-debian-trixie-675DE2C3A4D8CD82
--rw-r--r--  1 root root  381 Oct 17 11:45 raptor.json
-</code></pre>
-<p>We now have multiple build targets, and the Docker layer is shared between both
-inputs.</p>
-<p>However, we can still make sense of this using <code>raptor.json</code>:</p>
-<div id="admonition-raptorjson-1" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptorjson-1-title">
-<div class="admonition-title">
-<div id="admonition-raptorjson-1-title">
-<p>raptor.json</p>
-</div>
-<a class="admonition-anchor-link" href="#admonition-raptorjson-1"></a>
-</div>
-<div>
-<pre><code class="language-json">{
-  "targets": [
-    "file-lister",
-    "file-lister-output"
-  ],
-  "layers": {
-    "file-lister-output": [
-      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
-      "file-lister-output-2CFDE4FEBD507157"
-    ],
-    "file-lister": [
-      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
-      "file-lister-16689594BA5D2989"
-    ]
-  }
-}
-</code></pre>
-</div>
-</div>
-<p>This mount type is useful for any build container that needs to work the
-contents of individual layers.</p>
-<p>For example, the <a href="../builders/deblive.html"><code>deblive</code> builder</a> uses this mount type, in order to
-build Debian liveboot images.</p>
+<p>Currently, booting in BIOS mode is only supported by the <code>deblive</code> builder, but
+the <code>live-disk-image</code> and <code>disk-image</code> builders could possibly be extended to
+support this, in the future.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../mount-types/file.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../walkthrough/debian/make.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../mount-types/overlay.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../builders/deblive.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -298,11 +240,11 @@ build Debian liveboot images.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../mount-types/file.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../walkthrough/debian/make.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../mount-types/overlay.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../builders/deblive.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

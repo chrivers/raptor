@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>--layers - Raptor Manual</title>
+        <title>disk-image - Raptor Manual</title>
 
 
         <!-- Custom HTML head -->
@@ -178,117 +178,77 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h2 id="mount-type---layers"><a class="header" href="#mount-type---layers">Mount type <code>--layers</code></a></h2>
-<p>The <code>--simple</code> and <code>--file</code> mount types both present content from the host
-filesystem inside the container, and both have equivalents in Docker.</p>
-<p>This is not the case for <code>--layers</code>, which is specific to Raptor.</p>
-<p>When using a <code>--layers</code> mount, the input argument when running Raptor is not a
-file path, but a set of <em>Raptor build targets</em>.</p>
-<p>Let us take a look at a target, that lists the files in a <code>--layers</code> mounts:</p>
-<div id="admonition-layers-listerrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-layers-listerrapt-title">
-<div class="admonition-title">
-<div id="admonition-layers-listerrapt-title">
-<p>layers-lister.rapt</p>
+                        <h1 id="disk-image-generatordisk-image"><a class="header" href="#disk-image-generatordisk-image">Disk Image generator:<br><strong><code>disk-image</code></strong></a></h1>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Mount name</th><th style="text-align: left">Type</th><th style="text-align: left">Usage</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>input</code></td><td style="text-align: left">Overlay</td><td style="text-align: left">The Raptor build target that will be put into the generated image</td></tr>
+<tr><td style="text-align: left"><code>output</code></td><td style="text-align: left">File</td><td style="text-align: left">Points to the resulting output file.</td></tr>
+</tbody></table>
 </div>
-<a class="admonition-anchor-link" href="#admonition-layers-listerrapt"></a>
+<h2 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h2>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Target</th><th style="text-align: left">Compatible?</th></tr></thead><tbody>
+<tr><td style="text-align: left">Container (<code>systemd-nspawn</code>)</td><td style="text-align: left">✅ (<code>raw</code>)</td></tr>
+<tr><td style="text-align: left">Virtual Machine (UEFI)</td><td style="text-align: left">✅ (<code>raw</code>, <code>qcow2</code>)</td></tr>
+<tr><td style="text-align: left">Virtual Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Physical Machine (UEFI)</td><td style="text-align: left">✅ (<code>raw</code>)</td></tr>
+<tr><td style="text-align: left">Physical Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
+</tbody></table>
+</div>
+<p>This builder generates disk images, including a partition table, and separate
+partitions for <code>/</code>, <code>/boot</code> and <code>/boot/efi</code>.</p>
+<p>It uses the Discoverable Partitions Specification<sup class="footnote-reference" id="fr-dps-1"><a href="#footnote-dps">1</a></sup> to make the images
+compatible with both physical hardware, virtual machines, and <code>systemd-nspawn</code>.</p>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<p>Prerequisites:</p>
+<ul>
+<li><a href="https://github.com/chrivers/raptor-builders">raptor-builders</a> is cloned to <code>raptor-builders</code></li>
+<li>An input target called <code>test.rapt</code></li>
+</ul>
+<div id="admonition-raptortoml" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-title">
+<div class="admonition-title">
+<div id="admonition-raptortoml-title">
+<p>Raptor.toml</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-raptortoml"></a>
 </div>
 <div>
-<pre><code class="language-raptor">FROM docker://debian:trixie
+<pre><code class="language-toml">[raptor.link]
+rbuild = "raptor-builders"
 
-MOUNT --layers input /input
+# Disk image (raw)
+[run.disk1]
+target = "$rbuild.disk-image" # &lt;-- builder is specified here
+input = ["test"]
+output = "disk.img"
+## implied default:
+## env.OUTPUT_FORMAT = "raw"
 
-CMD "ls -l /input"
+# Disk image (qcow2)
+[run.disk2]
+target = "$rbuild.disk-image" # &lt;-- builder is specified here
+input = ["test"]
+output = "disk.qcow2"
+env.OUTPUT_FORMAT = "qcow2"
 </code></pre>
 </div>
 </div>
-<p>Let’s try running this, using the previous <code>file-lister.rapt</code> target as input:</p>
-<pre><code class="language-sh">$ sudo raptor run layers-lister -I file-lister
-total 12
-drwxr-xr-x  2 root root 4096 Oct 17 13:37 file-lister-16689594BA5D2989
-drwxr-xr-x 17 root root 4096 Sep 29 00:00 index.docker.io-library-debian-trixie-675DE2C3A4D8CD82
--rw-r--r--  1 root root  200 Oct 17 13:37 raptor.json
+<p>After this <code>Raptor.toml</code> is in place, call <code>raptor make</code> to build:</p>
+<pre><code class="language-sh">sudo raptor make disk1 disk2
 </code></pre>
-<p>We see that each layer in the input is available as a directory, but also a
-<code>raptor.json</code> file.</p>
-<p>Think of this file as a manifest of the contents in the <code>--layers</code> mount. It
-contains useful metadata about the inputs, including which targets have been
-specified, as well as the stacking order for each target:</p>
-<div id="admonition-raptorjson" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptorjson-title">
-<div class="admonition-title">
-<div id="admonition-raptorjson-title">
-<p>raptor.json</p>
-</div>
-<a class="admonition-anchor-link" href="#admonition-raptorjson"></a>
-</div>
-<div>
-<pre><code class="language-json">{
-  "targets": [
-    "file-lister"
-  ],
-  "layers": {
-    "file-lister": [
-      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
-      "file-lister-16689594BA5D2989"
-    ]
-  }
-}
-</code></pre>
-</div>
-</div>
-<p>At first, this might seem like overly complicated. If we just needed the layer
-order, surely a simple text file would suffice?</p>
-<p>In fact, <em>multiple</em> build targets can be specified at the same time:</p>
-<pre><code class="language-sh">$ sudo raptor run layers-lister -I file-lister -I file-lister-output
-total 16
-drwxr-xr-x  2 root root 4096 Oct 17 11:33 file-lister-16689594BA5D2989
-drwxr-xr-x  2 root root 4096 Oct 17 11:31 file-lister-output-2CFDE4FEBD507157
-drwxr-xr-x 17 root root 4096 Sep 29 00:00 index.docker.io-library-debian-trixie-675DE2C3A4D8CD82
--rw-r--r--  1 root root  381 Oct 17 11:45 raptor.json
-</code></pre>
-<p>We now have multiple build targets, and the Docker layer is shared between both
-inputs.</p>
-<p>However, we can still make sense of this using <code>raptor.json</code>:</p>
-<div id="admonition-raptorjson-1" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptorjson-1-title">
-<div class="admonition-title">
-<div id="admonition-raptorjson-1-title">
-<p>raptor.json</p>
-</div>
-<a class="admonition-anchor-link" href="#admonition-raptorjson-1"></a>
-</div>
-<div>
-<pre><code class="language-json">{
-  "targets": [
-    "file-lister",
-    "file-lister-output"
-  ],
-  "layers": {
-    "file-lister-output": [
-      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
-      "file-lister-output-2CFDE4FEBD507157"
-    ],
-    "file-lister": [
-      "index.docker.io-library-debian-trixie-675DE2C3A4D8CD82",
-      "file-lister-16689594BA5D2989"
-    ]
-  }
-}
-</code></pre>
-</div>
-</div>
-<p>This mount type is useful for any build container that needs to work the
-contents of individual layers.</p>
-<p>For example, the <a href="../builders/deblive.html"><code>deblive</code> builder</a> uses this mount type, in order to
-build Debian liveboot images.</p>
-
+<p>When the process is complete, <code>disk.img</code> and <code>disk.qcow2</code> will be ready for use.</p>
+<hr>
+<ol class="footnote-definition"><li id="footnote-dps">
+<p><a href="https://uapi-group.org/specifications/specs/discoverable_partitions_specification/">Discoverable Partitions Specification</a> <a href="#fr-dps-1">↩</a></p>
+</li>
+</ol>
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../mount-types/file.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../builders/live-disk-image.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../mount-types/overlay.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../builders/part-image.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -298,11 +258,11 @@ build Debian liveboot images.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../mount-types/file.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../builders/live-disk-image.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../mount-types/overlay.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../builders/part-image.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
