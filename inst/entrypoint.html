@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "ayu";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "../searchindex-d5d35205.js";
+            window.path_to_searchindex_js = "../searchindex-758960b7.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-a5ed802d.js"></script>
@@ -179,6 +179,18 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="instruction-entrypoint"><a class="header" href="#instruction-entrypoint">Instruction <code>ENTRYPOINT</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-summary"></a>
+</div>
+<div>
+<pre><code class="language-raptor">ENTRYPOINT &lt;command&gt; [...&lt;arg&gt;]
+</code></pre>
+</div>
+</div>
 <div id="admonition-build-time-instruction" class="admonition admonish-tip" role="note" aria-labelledby="admonition-build-time-instruction-title">
 <div class="admonition-title">
 <div id="admonition-build-time-instruction-title">
@@ -187,10 +199,15 @@
 <a class="admonition-anchor-link" href="#admonition-build-time-instruction"></a>
 </div>
 <div>
-<p>The <code>MOUNT</code> instructions only affects <em>running</em> a container, not <em>building</em> a
+<p>The <code>ENTRYPOINT</code> instructions only affects <em>running</em> a container, not <em>building</em> a
 container.</p>
 </div>
 </div>
+<p>This instruction sets the entrypoint for the container, which is used when
+running commands in it.</p>
+<p>The default value is <code>["/bin/sh", "-c"]</code>.</p>
+<p>See the <a href="cmd.html"><code>CMD</code> instruction</a> for details, including the relationship
+between <code>ENTRYPOINT</code> and <code>CMD</code>.</p>
 
                     </main>
 

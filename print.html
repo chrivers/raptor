@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "ayu";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "searchindex-d5d35205.js";
+            window.path_to_searchindex_js = "searchindex-758960b7.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-a5ed802d.js"></script>
@@ -2470,6 +2470,18 @@ available using the <code>MOUNT</code> instruction.</p>
 <p>To learn more about different mount types, please see the <a href="inst/../mount-types.html">mount
 types</a> section.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-entrypoint"><a class="header" href="#instruction-entrypoint">Instruction <code>ENTRYPOINT</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="inst/entrypoint.html#admonition-summary"></a>
+</div>
+<div>
+<pre><code class="language-raptor">ENTRYPOINT &lt;command&gt; [...&lt;arg&gt;]
+</code></pre>
+</div>
+</div>
 <div id="admonition-build-time-instruction" class="admonition admonish-tip" role="note" aria-labelledby="admonition-build-time-instruction-title">
 <div class="admonition-title">
 <div id="admonition-build-time-instruction-title">
@@ -2478,11 +2490,28 @@ types</a> section.</p>
 <a class="admonition-anchor-link" href="inst/entrypoint.html#admonition-build-time-instruction"></a>
 </div>
 <div>
-<p>The <code>MOUNT</code> instructions only affects <em>running</em> a container, not <em>building</em> a
+<p>The <code>ENTRYPOINT</code> instructions only affects <em>running</em> a container, not <em>building</em> a
 container.</p>
 </div>
 </div>
+<p>This instruction sets the entrypoint for the container, which is used when
+running commands in it.</p>
+<p>The default value is <code>["/bin/sh", "-c"]</code>.</p>
+<p>See the <a href="inst/cmd.html"><code>CMD</code> instruction</a> for details, including the relationship
+between <code>ENTRYPOINT</code> and <code>CMD</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instruction-cmd"><a class="header" href="#instruction-cmd">Instruction <code>CMD</code></a></h1>
+<div id="admonition-summary" class="admonition admonish-abstract" role="note" aria-labelledby="admonition-summary-title">
+<div class="admonition-title">
+<div id="admonition-summary-title">
+<p>Summary</p>
+</div>
+<a class="admonition-anchor-link" href="inst/cmd.html#admonition-summary"></a>
+</div>
+<div>
+<pre><code class="language-raptor">CMD &lt;command&gt; [...&lt;arg&gt;]
+</code></pre>
+</div>
+</div>
 <div id="admonition-build-time-instruction" class="admonition admonish-tip" role="note" aria-labelledby="admonition-build-time-instruction-title">
 <div class="admonition-title">
 <div id="admonition-build-time-instruction-title">
@@ -2491,10 +2520,89 @@ container.</p>
 <a class="admonition-anchor-link" href="inst/cmd.html#admonition-build-time-instruction"></a>
 </div>
 <div>
-<p>The <code>MOUNT</code> instructions only affects <em>running</em> a container, not <em>building</em> a
+<p>The <code>CMD</code> instructions only affects <em>running</em> a container, not <em>building</em> a
 container.</p>
 </div>
 </div>
+<p>This instruction sets the default command for the container, which is used when
+running commands in it.</p>
+<p>Unlike <code>ENTRYPOINT</code>, this instruction does not have a default value.</p>
+<p>The semantics of the <code>ENTRYPOINT</code> and <code>CMD</code> instructions are heavily inspired by
+Docker.</p>
+<details id="admonition-about-the-docker-design" class="admonition admonish-info" role="note" aria-labelledby="admonition-about-the-docker-design-title">
+<summary class="admonition-title">
+<div id="admonition-about-the-docker-design-title">
+<p>About the Docker design…</p>
+</div>
+<a class="admonition-anchor-link" href="inst/cmd.html#admonition-about-the-docker-design"></a>
+</summary>
+<div>
+<p>Many people find the Docker design of <code>ENTRYPOINT</code> and <code>CMD</code> confusing, and
+unneccessarily complicated. So why duplicate it in Raptor?</p>
+<p>We considered other options, but in the end, a redesign would have meant more
+complexity for people familiar with Docker, and the risk of confusing the
+semantics would increase.</p>
+<p>So we are leaning towards what is familiar to some people, even though Raptor
+does not have the <a href="https://docs.docker.com/reference/dockerfile/#shell-and-exec-form">distinction
+between</a>
+“shell form” and “exec form” that Docker has.</p>
+</div>
+</details>
+<p>When running a container, the <strong>command</strong> will be run through the <strong>entrypoint</strong>.</p>
+<p>The <strong>command</strong> can be specified on the command line. If no command is given,
+the <code>CMD</code> instruction provides the fallback value. If no <code>CMD</code> instruction is
+found either, the run will fail with an error.</p>
+<p>The <strong>entrypoint</strong> is taken from the <code>ENTRYPOINT</code> instruction, if
+present. Otherwise, the default value is used.</p>
+<h2 id="example-8"><a class="header" href="#example-8">Example</a></h2>
+<p>As an example, let us consider a simple Raptor container:</p>
+<div id="admonition-pingrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-pingrapt-title">
+<div class="admonition-title">
+<div id="admonition-pingrapt-title">
+<p>ping.rapt</p>
+</div>
+<a class="admonition-anchor-link" href="inst/cmd.html#admonition-pingrapt"></a>
+</div>
+<div>
+<pre><code class="language-raptor">FROM docker://debian:trixie
+
+RUN apt-get update
+RUN apt-get install -qy iputils-ping
+
+ENTRYPOINT /bin/ping
+
+CMD 8.8.8.8
+</code></pre>
+</div>
+</div>
+<p>This container will install the <code>iptutils-ping</code> package, containing the <code>ping</code>
+command. Since <code>/bin/ping</code> is set as the entrypoint, the container can be
+invoked to ping destinations:</p>
+<pre><code class="language-sh">$ sudo raptor run -L book book/example/ '$book.ping' 1.1.1.1
+[*] Completed [675DE2C3A4D8CD82] index.docker.io-library-debian-trixie
+[*] Completed [20D13F4B24A66D8B] ping
+PING 1.1.1.1 (1.1.1.1) 56(84) bytes of data.
+64 bytes from 1.1.1.1: icmp_seq=1 ttl=52 time=13.9 ms
+64 bytes from 1.1.1.1: icmp_seq=2 ttl=52 time=15.2 ms
+64 bytes from 1.1.1.1: icmp_seq=3 ttl=52 time=11.8 ms
+^C
+--- 1.1.1.1 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 11.762/13.613/15.190/1.412 ms
+</code></pre>
+<p>However, if no arguments are provided, we fall back to <code>8.8.8.8</code> (specified with
+the <code>CMD</code> instruction):</p>
+<pre><code class="language-sh">$ sudo raptor run -L book book/example/ '$book.ping'
+[*] Completed [675DE2C3A4D8CD82] index.docker.io-library-debian-trixie
+[*] Completed [20D13F4B24A66D8B] ping
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=117 time=9.04 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=117 time=9.24 ms
+^C
+--- 8.8.8.8 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1000ms
+rtt min/avg/max/mdev = 9.039/9.137/9.235/0.098 ms
+</code></pre>
 
                     </main>
 
