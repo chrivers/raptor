@@ -92,8 +92,5 @@ However, we can still make sense of this using `raptor.json`:
 This mount type is useful for any build container that needs to work the
 contents of individual layers.
 
-For example, the `deblive` builder[^deblive] uses this mount type, in order to
+For example, the [`deblive` builder](../builders/deblive.md) uses this mount type, in order to
 build Debian liveboot images.
-
-[^deblive]: From the [raptor-builders](https://github.com/chrivers/raptor-builders)
-    companion project.

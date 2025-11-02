@@ -29,3 +29,6 @@ $ sudo cat /tmp/filelist.txt
 The above example would generate a file listing of `/etc` **from the host**, and
 place it in `/tmp/filelist.txt`. However, the execution of `ls` takes place in
 the container.
+
+For example, multiple targets in the [raptor builders](../builders/index.md)
+project uses this mount type for output files.
