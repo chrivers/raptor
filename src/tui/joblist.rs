@@ -7,6 +7,7 @@ use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Padding, Paragraph, StatefulWidget, Widget};
 
+use crate::batch::JobController;
 use crate::make::planner::{Job, Planner};
 use crate::tui::jobstate::JobState;
 use crate::tui::ptyctrl::PtyJobController;
@@ -62,7 +63,7 @@ impl JobList {
     }
 
     #[must_use]
-    pub fn stats(&self, ctrl: &PtyJobController) -> JobStats {
+    pub fn stats(&self, ctrl: &impl JobController) -> JobStats {
         let mut stats = JobStats::default();
         for key in self.targetlist.keys() {
             match ctrl.job_state(*key) {

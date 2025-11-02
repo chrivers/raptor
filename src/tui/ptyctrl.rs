@@ -16,6 +16,7 @@ use tui_term::vt100;
 use tui_term::widget::PseudoTerminal;
 
 use crate::RaptorResult;
+use crate::batch::JobController;
 use crate::make::planner::Job;
 use crate::tui::jobstate::JobState;
 use crate::util::tty::TtyIoctl;
@@ -69,6 +70,12 @@ pub struct PtyJobController {
     tasks: HashMap<Pid, u64>,
 }
 
+impl JobController for PtyJobController {
+    fn job_state(&self, id: u64) -> JobState {
+        *self.states.get(&id).unwrap_or(&JobState::Planned)
+    }
+}
+
 impl PtyJobController {
     #[must_use]
     pub fn new() -> Self {
@@ -84,11 +91,6 @@ impl PtyJobController {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.jobs.is_empty()
-    }
-
-    #[must_use]
-    pub fn job_state(&self, id: u64) -> JobState {
-        *self.states.get(&id).unwrap_or(&JobState::Planned)
     }
 
     fn poll_fds(&self) -> RaptorResult<Vec<RawFd>> {
