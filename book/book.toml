@@ -29,4 +29,4 @@ hash-files = true
 #
 # node ./tools/build.js -t browser plaintext dockerfile raptorfile rust diff json yaml ini bnf
 #
-# cp highlight.js/build/highlight.js theme/highlight.js
+# cp build/highlight.min.js ../theme/highlight.js
