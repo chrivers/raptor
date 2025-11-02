@@ -92,6 +92,9 @@ pub enum RaptorError {
     #[error("Layer build error")]
     LayerBuildError,
 
+    #[error("Missing command (specify command arguments and/or add `CMD` instruction)")]
+    NoCommandSpecified,
+
     #[error("Package not found: ${0}")]
     PackageNotFound(String, Origin),
 
@@ -128,6 +131,7 @@ impl RaptorError {
             Self::FromPathBufError(_) => "PathBuf conversion error",
             Self::LayerCacheParseError => "Layer cache parse error",
             Self::LayerBuildError => "Layer build error",
+            Self::NoCommandSpecified => "No command specified error",
             Self::PackageNotFound(_, _) => "Package not found",
             Self::UnknownJob(_) => "Unknown job",
         }

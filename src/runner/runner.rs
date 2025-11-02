@@ -241,7 +241,10 @@ impl<'a> Runner<'a> {
             command.extend(self.args.iter().map(String::as_str));
         } else if let Some(cmd) = program.cmd() {
             command.extend(cmd.cmd.iter().map(String::as_str));
+        } else {
+            return Err(RaptorError::NoCommandSpecified);
         }
+
         trace!("Command {command:?}");
 
         let console_mode = if stdout().is_terminal() {
