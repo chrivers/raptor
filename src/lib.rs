@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate log;
 
+pub mod batch;
 pub mod build;
 pub mod dsl;
 pub mod make;
