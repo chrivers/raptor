@@ -8,6 +8,7 @@ use clap_complete::Shell;
 use colored::Colorize;
 use log::{LevelFilter, debug, error, info};
 use nix::unistd::Uid;
+use raptor::batch::ParallelRunner;
 use raptor::tui::TerminalParallelRunner;
 
 use raptor::build::{BuildTargetStats, Presenter, RaptorBuilder};
@@ -113,6 +114,9 @@ enum Mode {
         file: Utf8PathBuf,
 
         targets: Vec<MakeTarget>,
+
+        #[arg(short = 'b', long, help = "Batch mode (disable text user interface)")]
+        batch: bool,
     },
 
     /// Completions mode: generate shell completion scripts
@@ -346,7 +350,11 @@ fn raptor() -> RaptorResult<()> {
             Presenter::new(&stats).present()?;
         }
 
-        Mode::Make { file, targets } => {
+        Mode::Make {
+            file,
+            targets,
+            batch,
+        } => {
             let maker = Maker::load(&builder, file)?;
 
             maker.add_links(builder.loader());
@@ -357,15 +365,16 @@ fn raptor() -> RaptorResult<()> {
                 planner.add(target)?;
             }
 
-            let mut terminal = ratatui::init();
-
-            let mut trunner = TerminalParallelRunner::new(&maker, &mut terminal);
-
-            let res = trunner.execute(planner);
-
-            ratatui::restore();
-
-            res?;
+            if *batch {
+                let mut brunner = ParallelRunner::new(&maker);
+                brunner.execute(planner)?;
+            } else {
+                let mut terminal = ratatui::init();
+                let mut trunner = TerminalParallelRunner::new(&maker, &mut terminal);
+                let res = trunner.execute(planner);
+                ratatui::restore();
+                res?;
+            }
         }
 
         Mode::Completion { shell } => {
