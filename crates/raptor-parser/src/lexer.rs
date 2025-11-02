@@ -52,6 +52,12 @@ pub enum Token {
     #[token("@")]
     At,
 
+    #[token("true")]
+    True,
+
+    #[token("false")]
+    False,
+
     #[regex("[a-zA-Z_][^\\]@/. \n\t\",=:{}\\[-]*")]
     Bareword,
 
@@ -117,6 +123,8 @@ impl Token {
             Self::Minus => "-",
             Self::Dollar => "$",
             Self::At => "@",
+            Self::True => "true",
+            Self::False => "false",
             Self::Bareword => "<bareword>",
             Self::Number => "<number>",
             Self::Newline => "\\n",
@@ -142,6 +150,8 @@ impl Token {
             Self::Minus => "'-' (minus)",
             Self::Dollar => "'$' (dollar)",
             Self::At => "'@' (at)",
+            Self::True => "true (keyword)",
+            Self::False => "false (keyword)",
             Self::Bareword => "<bareword>",
             Self::Number => "<number>",
             Self::Newline => "\\n (newline)",

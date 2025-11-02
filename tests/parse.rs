@@ -7,8 +7,8 @@ use minijinja::{Value, context};
 use pretty_assertions::assert_eq;
 
 use raptor::RaptorResult;
-use raptor::dsl::Item;
-use raptor::{dsl::Program, program::Loader};
+use raptor::dsl::{Item, Program};
+use raptor::program::Loader;
 use raptor_parser::ast::{
     Chown, FromSource, IncludeArg, InstEnvAssign, InstFrom, InstMkdir, InstMount, Instruction,
     MountOptions, MountType, Origin,

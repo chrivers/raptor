@@ -492,20 +492,19 @@ impl<'src> Parser<'src> {
                 Ok(Value::from_serialize(value))
             }
             Token::Number => {
-                self.expect(&Token::Number)?;
+                self.next()?;
                 Ok(Value::from_serialize(self.token().parse::<i64>()?))
             }
-            Token::Bareword => {
-                self.expect(&Token::Bareword)?;
-                let value = match self.token() {
-                    "true" => true,
-                    "false" => false,
-                    _ => return Err(ParseError::Expected("boolean")),
-                };
-                Ok(Value::from_serialize(value))
+            Token::True => {
+                self.next()?;
+                Ok(Value::from_serialize(true))
+            }
+            Token::False => {
+                self.next()?;
+                Ok(Value::from_serialize(false))
             }
 
-            _ => Err(ParseError::Expected("value4")),
+            _ => Err(ParseError::Expected("value (list, map, number, or bool)")),
         }
     }
 

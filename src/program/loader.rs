@@ -73,7 +73,7 @@ impl Loader<'_> {
             ModuleRoot::Package(pkg) => {
                 let package = self
                     .get_package(pkg)
-                    .ok_or_else(|| RaptorError::PackageNotFound(pkg.to_string(), origin.clone()))?;
+                    .ok_or_else(|| RaptorError::PackageNotFound(pkg.clone(), origin.clone()))?;
                 package.join(end)
             }
         };
