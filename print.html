@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "ayu";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "searchindex-758960b7.js";
+            window.path_to_searchindex_js = "searchindex-8589c2bf.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-a5ed802d.js"></script>
+        <script src="toc-254a841c.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -701,6 +701,7 @@ time, by using the build containers from
 <tr><td><a href="builders/live-disk-image.html"><code>live-disk-image</code></a></td><td>Debian Liveboot disk image</td><td><code>raw</code>, <code>qcow2</code>, <code>vmdk</code>, …</td></tr>
 <tr><td><a href="builders/disk-image.html"><code>disk-image</code></a></td><td>Disk image</td><td><code>raw</code>, <code>qcow2</code>, <code>vmdk</code>, …</td></tr>
 <tr><td><a href="builders/part-image.html"><code>part-image</code></a></td><td>Partition (filesystem) image</td><td><code>raw</code>, <code>qcow2</code>, <code>vmdk</code>, …</td></tr>
+<tr><td><a href="builders/docker-image.html"><code>docker-image</code></a></td><td>Docker image</td><td><code>tar</code></td></tr>
 </tbody></table>
 </div>
 <h2 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h2>
@@ -710,20 +711,41 @@ physical hardware.</p>
 <p>However, not all combinations are possible. For example, a physical machine will
 not boot a <code>qcow2</code> image for virtual machines, but <code>qemu</code> will be able to boot
 either <code>qcow2</code> or <code>raw</code> images.</p>
-<p>The table below provides an overview of the possible options.</p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Builder</th><th>Format</th><th style="text-align: left">nspawn</th><th style="text-align: left">Virtual Machine</th><th style="text-align: left">Physical Machine</th></tr></thead><tbody>
-<tr><td style="text-align: left"><code>deblive</code></td><td><code>iso</code></td><td style="text-align: left">❌</td><td style="text-align: left">UEFI:✅ – BIOS:✅</td><td style="text-align: left">UEFI:✅ – BIOS:✅</td></tr>
-<tr><td style="text-align: left"><code>live-disk-image</code></td><td><code>qcow2</code></td><td style="text-align: left">❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td></tr>
-<tr><td style="text-align: left"><code>disk-image</code></td><td><code>qcow2</code></td><td style="text-align: left">❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td></tr>
-<tr><td style="text-align: left"><code>live-disk-image</code></td><td><code>raw</code></td><td style="text-align: left">❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td></tr>
-<tr><td style="text-align: left"><code>disk-image</code></td><td><code>raw</code></td><td style="text-align: left">✅</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td></tr>
-<tr><td style="text-align: left"><code>part-image</code></td><td><code>raw</code></td><td style="text-align: left">✅</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td></tr>
+<p>The tables below provides an overview of the possible options.</p>
+<p>Machines:</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Builder</th><th>Format</th><th style="text-align: left">Virtual Machine</th><th style="text-align: left">Physical Machine</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>deblive</code></td><td><code>iso</code></td><td style="text-align: left">UEFI:✅ – BIOS:✅</td><td style="text-align: left">UEFI:✅ – BIOS:✅</td></tr>
+<tr><td style="text-align: left"><code>live-disk-image</code></td><td><code>qcow2</code></td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td></tr>
+<tr><td style="text-align: left"><code>disk-image</code></td><td><code>qcow2</code></td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td></tr>
+<tr><td style="text-align: left"><code>live-disk-image</code></td><td><code>raw</code></td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td></tr>
+<tr><td style="text-align: left"><code>disk-image</code></td><td><code>raw</code></td><td style="text-align: left">UEFI:✅ – BIOS:❌</td><td style="text-align: left">UEFI:✅ – BIOS:❌</td></tr>
+<tr><td style="text-align: left"><code>part-image</code></td><td><code>raw</code></td><td style="text-align: left">UEFI:❌ – BIOS:❌</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td></tr>
+<tr><td style="text-align: left"><code>docker-image</code></td><td><code>tar</code></td><td style="text-align: left">UEFI:❌ – BIOS:❌</td><td style="text-align: left">UEFI:❌ – BIOS:❌</td></tr>
 </tbody></table>
+</div><div id="admonition-note" class="admonition admonish-note" role="note" aria-labelledby="admonition-note-title">
+<div class="admonition-title">
+<div id="admonition-note-title">
+<p>Note</p>
 </div>
+<a class="admonition-anchor-link" href="builders/index.html#admonition-note"></a>
+</div>
+<div>
 <p>Currently, booting in BIOS mode is only supported by the <code>deblive</code> builder, but
 the <code>live-disk-image</code> and <code>disk-image</code> builders could possibly be extended to
 support this, in the future.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="debian-liveboot-iso-generatordeblive"><a class="header" href="#debian-liveboot-iso-generatordeblive">Debian Liveboot iso generator:<br><strong><code>deblive</code></strong></a></h1>
+</div>
+</div>
+<p>Containers:</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Builder</th><th>Format</th><th style="text-align: left"><code>systemd-nspawn</code></th><th style="text-align: left"><code>docker</code></th><th><code>podman</code></th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>deblive</code></td><td><code>iso</code></td><td style="text-align: left">❌</td><td style="text-align: left">❌</td><td>❌</td></tr>
+<tr><td style="text-align: left"><code>live-disk-image</code></td><td><code>qcow2</code></td><td style="text-align: left">❌</td><td style="text-align: left">❌</td><td>❌</td></tr>
+<tr><td style="text-align: left"><code>disk-image</code></td><td><code>qcow2</code></td><td style="text-align: left">❌</td><td style="text-align: left">❌</td><td>❌</td></tr>
+<tr><td style="text-align: left"><code>live-disk-image</code></td><td><code>raw</code></td><td style="text-align: left">❌</td><td style="text-align: left">❌</td><td>❌</td></tr>
+<tr><td style="text-align: left"><code>disk-image</code></td><td><code>raw</code></td><td style="text-align: left">✅</td><td style="text-align: left">❌</td><td>❌</td></tr>
+<tr><td style="text-align: left"><code>part-image</code></td><td><code>raw</code></td><td style="text-align: left">✅</td><td style="text-align: left">❌</td><td>❌</td></tr>
+<tr><td style="text-align: left"><code>docker-image</code></td><td><code>tar</code></td><td style="text-align: left">❌</td><td style="text-align: left">✅</td><td>✅</td></tr>
+</tbody></table>
+</div><div style="break-before: page; page-break-before: always;"></div><h1 id="debian-liveboot-iso-generatordeblive"><a class="header" href="#debian-liveboot-iso-generatordeblive">Debian Liveboot iso generator:<br><strong><code>deblive</code></strong></a></h1>
 <div id="admonition-important" class="admonition admonish-tip" role="note" aria-labelledby="admonition-important-title">
 <div class="admonition-title">
 <div id="admonition-important-title">
@@ -763,7 +785,9 @@ boot menu.</p>
 in, and the first input will be the default boot option.</p>
 <h2 id="compatibility-1"><a class="header" href="#compatibility-1">Compatibility</a></h2>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Target</th><th style="text-align: left">Compatible?</th></tr></thead><tbody>
-<tr><td style="text-align: left">Container (<code>systemd-nspawn</code>)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Container: <code>systemd-nspawn</code></td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Container: <code>docker</code></td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Container: <code>podman</code></td><td style="text-align: left">❌</td></tr>
 <tr><td style="text-align: left">Virtual Machine (UEFI)</td><td style="text-align: left">✅</td></tr>
 <tr><td style="text-align: left">Virtual Machine (BIOS)</td><td style="text-align: left">✅</td></tr>
 <tr><td style="text-align: left">Physical Machine (UEFI)</td><td style="text-align: left">✅</td></tr>
@@ -826,7 +850,9 @@ prerequisite packages are installed.</p>
 </div>
 <h2 id="compatibility-2"><a class="header" href="#compatibility-2">Compatibility</a></h2>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Target</th><th style="text-align: left">Compatible?</th></tr></thead><tbody>
-<tr><td style="text-align: left">Container (<code>systemd-nspawn</code>)</td><td style="text-align: left">✅ (<code>raw</code>)</td></tr>
+<tr><td style="text-align: left">Container: <code>systemd-nspawn</code></td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Container: <code>docker</code></td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Container: <code>podman</code></td><td style="text-align: left">❌</td></tr>
 <tr><td style="text-align: left">Virtual Machine (UEFI)</td><td style="text-align: left">✅ (<code>raw</code>, <code>qcow2</code>)</td></tr>
 <tr><td style="text-align: left">Virtual Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
 <tr><td style="text-align: left">Physical Machine (UEFI)</td><td style="text-align: left">✅ (<code>raw</code>)</td></tr>
@@ -895,7 +921,9 @@ env.OUTPUT_FORMAT = "qcow2"
 </div>
 <h2 id="compatibility-3"><a class="header" href="#compatibility-3">Compatibility</a></h2>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Target</th><th style="text-align: left">Compatible?</th></tr></thead><tbody>
-<tr><td style="text-align: left">Container (<code>systemd-nspawn</code>)</td><td style="text-align: left">✅ (<code>raw</code>)</td></tr>
+<tr><td style="text-align: left">Container: <code>systemd-nspawn</code></td><td style="text-align: left">✅ (<code>raw</code>)</td></tr>
+<tr><td style="text-align: left">Container: <code>docker</code></td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Container: <code>podman</code></td><td style="text-align: left">❌</td></tr>
 <tr><td style="text-align: left">Virtual Machine (UEFI)</td><td style="text-align: left">✅ (<code>raw</code>, <code>qcow2</code>)</td></tr>
 <tr><td style="text-align: left">Virtual Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
 <tr><td style="text-align: left">Physical Machine (UEFI)</td><td style="text-align: left">✅ (<code>raw</code>)</td></tr>
@@ -956,7 +984,9 @@ env.OUTPUT_FORMAT = "qcow2"
 </div>
 <h2 id="compatibility-4"><a class="header" href="#compatibility-4">Compatibility</a></h2>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Target</th><th style="text-align: left">Compatible?</th></tr></thead><tbody>
-<tr><td style="text-align: left">Container (<code>systemd-nspawn</code>)</td><td style="text-align: left">✅</td></tr>
+<tr><td style="text-align: left">Container: <code>systemd-nspawn</code></td><td style="text-align: left">✅</td></tr>
+<tr><td style="text-align: left">Container: <code>docker</code></td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Container: <code>podman</code></td><td style="text-align: left">❌</td></tr>
 <tr><td style="text-align: left">Virtual Machine (UEFI)</td><td style="text-align: left">❌</td></tr>
 <tr><td style="text-align: left">Virtual Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
 <tr><td style="text-align: left">Physical Machine (UEFI)</td><td style="text-align: left">❌</td></tr>
@@ -1003,6 +1033,63 @@ output = "part.img"
 <pre><code class="language-sh">sudo raptor make part1
 </code></pre>
 <p>When the process is complete, <code>part.img</code> will be ready for use.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="docker-image-generatordocker-image"><a class="header" href="#docker-image-generatordocker-image">Docker Image generator:<br><strong><code>docker-image</code></strong></a></h1>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Mount name</th><th style="text-align: left">Type</th><th style="text-align: left">Usage</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>input</code></td><td style="text-align: left">Layers</td><td style="text-align: left">The Raptor build target to genrate as a docker image.</td></tr>
+<tr><td style="text-align: left"><code>output</code></td><td style="text-align: left">File</td><td style="text-align: left">Points to the resulting docker image file.</td></tr>
+</tbody></table>
+</div>
+<p>This builder generates a Docker image from a Raptor target.</p>
+<p>Each layer in Raptor (one for the target, plus one for each <code>FROM</code>) becomes a
+Docker layer in the generated image. This allows shared Raptor layers to stay
+shared when converted to Docker images.</p>
+<h2 id="compatibility-5"><a class="header" href="#compatibility-5">Compatibility</a></h2>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Target</th><th style="text-align: left">Compatible?</th></tr></thead><tbody>
+<tr><td style="text-align: left">Container: <code>systemd-nspawn</code></td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Container: <code>docker</code></td><td style="text-align: left">✅</td></tr>
+<tr><td style="text-align: left">Container: <code>podman</code></td><td style="text-align: left">✅</td></tr>
+<tr><td style="text-align: left">Virtual Machine (UEFI)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Virtual Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Physical Machine (UEFI)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Physical Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
+</tbody></table>
+</div>
+<h2 id="example-4"><a class="header" href="#example-4">Example</a></h2>
+<p>Prerequisites:</p>
+<ul>
+<li><a href="https://github.com/chrivers/raptor-builders">raptor-builders</a> is cloned to <code>raptor-builders</code></li>
+<li>An input target called <code>test.rapt</code></li>
+</ul>
+<div id="admonition-raptortoml" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-title">
+<div class="admonition-title">
+<div id="admonition-raptortoml-title">
+<p>Raptor.toml</p>
+</div>
+<a class="admonition-anchor-link" href="builders/docker-image.html#admonition-raptortoml"></a>
+</div>
+<div>
+<pre><code class="language-toml">[raptor.link]
+rbuild = "raptor-builders"
+
+# Docker image
+[run.docker1]
+target = "$rbuild.docker-image" # &lt;-- builder is specified here
+input = ["test"]
+output = "test.tar"
+</code></pre>
+</div>
+</div>
+<p>After this <code>Raptor.toml</code> is in place, call <code>raptor make</code> to build:</p>
+<pre><code class="language-sh">sudo raptor make docker1
+</code></pre>
+<p>When the process is complete, <code>test.tar</code> will be ready for use.</p>
+<p>It can be imported:</p>
+<pre><code class="language-sh"># import to Docker
+docker load -i test.tar
+
+# import to Podman
+podman load -i test.tar
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="environment-variables"><a class="header" href="#environment-variables">Environment variables</a></h1>
 <p>Several settings can be adjusted via environment variables. These can be specified either on the command line:</p>
 <pre><code class="language-sh">sudo raptor run -e OUTPUT_FORMAT=qcow2 ...
@@ -1546,7 +1633,7 @@ MOUNT --optional --required --layers input /data
 <p>This is the default mount type.</p>
 <p>A <code>--simple</code> mount will mount a directory from the host into the
 container. Docker users are likely to be familiar with this concept.</p>
-<h3 id="example-4"><a class="header" href="#example-4">Example</a></h3>
+<h3 id="example-5"><a class="header" href="#example-5">Example</a></h3>
 <div id="admonition-file-listerrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-file-listerrapt-title">
 <div class="admonition-title">
 <div id="admonition-file-listerrapt-title">
@@ -1580,7 +1667,7 @@ CMD "ls -l /input"
 <p>When running a raptor container with a <code>--file</code> mount, the target file will be created if it does not exist.</p>
 </div>
 </div>
-<h3 id="example-5"><a class="header" href="#example-5">Example</a></h3>
+<h3 id="example-6"><a class="header" href="#example-6">Example</a></h3>
 <p>Let us expand on the earlier example, to make the file lister provide output to a file.</p>
 <div id="admonition-file-lister-outputrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-file-lister-outputrapt-title">
 <div class="admonition-title">
@@ -2145,7 +2232,7 @@ namespace. This affects all subsequent relative paths, including the <code>RUN</
 instruction.</p>
 <p>The workdir is <strong>not</strong> inherited through <code>FROM</code>.</p>
 <p>The initial workdir is always <code>/</code>.</p>
-<h2 id="example-6"><a class="header" href="#example-6">Example</a></h2>
+<h2 id="example-7"><a class="header" href="#example-7">Example</a></h2>
 <pre><code class="language-raptor"># This will copy "program" to "/bin/program" (since initial directory is "/")
 COPY program bin/program
 
@@ -2247,7 +2334,7 @@ to write a short value, and <code>COPY</code> might feel like overkill.</p>
 <p>However, using <code>RUN mkdir</code> requires the <code>mkdir</code> command to be available and
 executable inside the build target. This is not always the case, especially when
 building things from scratch.</p>
-<h2 id="example-7"><a class="header" href="#example-7">Example</a></h2>
+<h2 id="example-8"><a class="header" href="#example-8">Example</a></h2>
 <pre><code class="language-raptor">MKDIR /data
 
 MKDIR -p --chown babelfish:daemon /usr/local/translate/
@@ -2554,7 +2641,7 @@ the <code>CMD</code> instruction provides the fallback value. If no <code>CMD</c
 found either, the run will fail with an error.</p>
 <p>The <strong>entrypoint</strong> is taken from the <code>ENTRYPOINT</code> instruction, if
 present. Otherwise, the default value is used.</p>
-<h2 id="example-8"><a class="header" href="#example-8">Example</a></h2>
+<h2 id="example-9"><a class="header" href="#example-9">Example</a></h2>
 <p>As an example, let us consider a simple Raptor container:</p>
 <div id="admonition-pingrapt" class="admonition admonish-note" role="note" aria-labelledby="admonition-pingrapt-title">
 <div class="admonition-title">

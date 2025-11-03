@@ -3,8 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Page not found - Raptor Manual</title>
-        <base href="/">
+        <title>docker-image - Raptor Manual</title>
 
 
         <!-- Custom HTML head -->
@@ -13,34 +12,34 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon-542b72c9.svg">
-        <link rel="stylesheet" href="css/variables-3865ffda.css">
-        <link rel="stylesheet" href="css/general-4c35105a.css">
-        <link rel="stylesheet" href="css/chrome-c0e702bf.css">
-        <link rel="stylesheet" href="css/print-ad67d350.css" media="print">
+        <link rel="icon" href="../favicon-542b72c9.svg">
+        <link rel="stylesheet" href="../css/variables-3865ffda.css">
+        <link rel="stylesheet" href="../css/general-4c35105a.css">
+        <link rel="stylesheet" href="../css/chrome-c0e702bf.css">
+        <link rel="stylesheet" href="../css/print-ad67d350.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome-799aeb25.css">
-        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome-799aeb25.css">
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight-603240e9.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight-ab2f8e6f.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight-603240e9.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight-ab2f8e6f.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="./mdbook-admonish.css">
+        <link rel="stylesheet" href=".././mdbook-admonish.css">
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "";
+            const path_to_root = "../";
             const default_light_theme = "ayu";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "searchindex-8589c2bf.js";
+            window.path_to_searchindex_js = "../searchindex-8589c2bf.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-254a841c.js"></script>
+        <script src="../toc-254a841c.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -107,7 +106,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
             </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -142,7 +141,7 @@
                     <h1 class="menu-title">Raptor Manual</h1>
 
                     <div class="right-buttons">
-                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
                         <a href="https://github.com/chrivers/raptor" title="Git repository" aria-label="Git repository">
@@ -179,14 +178,75 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="document-not-found-404"><a class="header" href="#document-not-found-404">Document not found (404)</a></h1>
-<p>This URL is invalid, sorry. Please use the navigation bar or search to continue.</p>
+                        <h1 id="docker-image-generatordocker-image"><a class="header" href="#docker-image-generatordocker-image">Docker Image generator:<br><strong><code>docker-image</code></strong></a></h1>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Mount name</th><th style="text-align: left">Type</th><th style="text-align: left">Usage</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>input</code></td><td style="text-align: left">Layers</td><td style="text-align: left">The Raptor build target to genrate as a docker image.</td></tr>
+<tr><td style="text-align: left"><code>output</code></td><td style="text-align: left">File</td><td style="text-align: left">Points to the resulting docker image file.</td></tr>
+</tbody></table>
+</div>
+<p>This builder generates a Docker image from a Raptor target.</p>
+<p>Each layer in Raptor (one for the target, plus one for each <code>FROM</code>) becomes a
+Docker layer in the generated image. This allows shared Raptor layers to stay
+shared when converted to Docker images.</p>
+<h2 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h2>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Target</th><th style="text-align: left">Compatible?</th></tr></thead><tbody>
+<tr><td style="text-align: left">Container: <code>systemd-nspawn</code></td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Container: <code>docker</code></td><td style="text-align: left">✅</td></tr>
+<tr><td style="text-align: left">Container: <code>podman</code></td><td style="text-align: left">✅</td></tr>
+<tr><td style="text-align: left">Virtual Machine (UEFI)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Virtual Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Physical Machine (UEFI)</td><td style="text-align: left">❌</td></tr>
+<tr><td style="text-align: left">Physical Machine (BIOS)</td><td style="text-align: left">❌</td></tr>
+</tbody></table>
+</div>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<p>Prerequisites:</p>
+<ul>
+<li><a href="https://github.com/chrivers/raptor-builders">raptor-builders</a> is cloned to <code>raptor-builders</code></li>
+<li>An input target called <code>test.rapt</code></li>
+</ul>
+<div id="admonition-raptortoml" class="admonition admonish-note" role="note" aria-labelledby="admonition-raptortoml-title">
+<div class="admonition-title">
+<div id="admonition-raptortoml-title">
+<p>Raptor.toml</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-raptortoml"></a>
+</div>
+<div>
+<pre><code class="language-toml">[raptor.link]
+rbuild = "raptor-builders"
+
+# Docker image
+[run.docker1]
+target = "$rbuild.docker-image" # &lt;-- builder is specified here
+input = ["test"]
+output = "test.tar"
+</code></pre>
+</div>
+</div>
+<p>After this <code>Raptor.toml</code> is in place, call <code>raptor make</code> to build:</p>
+<pre><code class="language-sh">sudo raptor make docker1
+</code></pre>
+<p>When the process is complete, <code>test.tar</code> will be ready for use.</p>
+<p>It can be imported:</p>
+<pre><code class="language-sh"># import to Docker
+docker load -i test.tar
+
+# import to Podman
+podman load -i test.tar
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../builders/part-image.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
 
+                            <a rel="next prefetch" href="../builders/environment.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -194,7 +254,13 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../builders/part-image.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
 
+                    <a rel="next prefetch" href="../builders/environment.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>
@@ -207,13 +273,13 @@
         </script>
 
 
-        <script src="elasticlunr-ef4e11c1.min.js"></script>
-        <script src="mark-09e88c2c.min.js"></script>
-        <script src="searcher-9aeb6ddf.js"></script>
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-9aeb6ddf.js"></script>
 
-        <script src="clipboard-1626706a.min.js"></script>
-        <script src="highlight-960edf28.js"></script>
-        <script src="book-9576a2db.js"></script>
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-960edf28.js"></script>
+        <script src="../book-9576a2db.js"></script>
 
         <!-- Custom JS scripts -->
 
