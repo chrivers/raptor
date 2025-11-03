@@ -33,7 +33,9 @@ in, and the first input will be the default boot option.
 
 | Target                       | Compatible? |
 |:-----------------------------|:------------|
-| Container (`systemd-nspawn`) | ❌          |
+| Container: `systemd-nspawn`  | ❌          |
+| Container: `docker`          | ❌          |
+| Container: `podman`          | ❌          |
 | Virtual Machine (UEFI)       | ✅          |
 | Virtual Machine (BIOS)       | ✅          |
 | Physical Machine (UEFI)      | ✅          |

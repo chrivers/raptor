@@ -19,6 +19,7 @@
   - [live-disk-image](builders/live-disk-image.md)
   - [disk-image](builders/disk-image.md)
   - [part-image](builders/part-image.md)
+  - [docker-image](builders/docker-image.md)
 - [Environment settings](builders/environment.md)
 
 ---

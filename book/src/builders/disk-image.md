@@ -9,7 +9,9 @@
 
 | Target                       | Compatible?         |
 |:-----------------------------|:--------------------|
-| Container (`systemd-nspawn`) | ✅ (`raw`)          |
+| Container: `systemd-nspawn`  | ✅ (`raw`)          |
+| Container: `docker`          | ❌                  |
+| Container: `podman`          | ❌                  |
 | Virtual Machine (UEFI)       | ✅ (`raw`, `qcow2`) |
 | Virtual Machine (BIOS)       | ❌                  |
 | Physical Machine (UEFI)      | ✅ (`raw`)          |

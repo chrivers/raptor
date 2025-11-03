@@ -15,13 +15,15 @@ prerequisite packages are installed.
 
 ## Compatibility
 
-| Target                       | Compatible?         |
-|:-----------------------------|:--------------------|
-| Container (`systemd-nspawn`) | ✅ (`raw`)          |
-| Virtual Machine (UEFI)       | ✅ (`raw`, `qcow2`) |
-| Virtual Machine (BIOS)       | ❌                  |
-| Physical Machine (UEFI)      | ✅ (`raw`)          |
-| Physical Machine (BIOS)      | ❌                  |
+| Target                      | Compatible?         |
+|:----------------------------|:--------------------|
+| Container: `systemd-nspawn` | ❌                  |
+| Container: `docker`         | ❌                  |
+| Container: `podman`         | ❌                  |
+| Virtual Machine (UEFI)      | ✅ (`raw`, `qcow2`) |
+| Virtual Machine (BIOS)      | ❌                  |
+| Physical Machine (UEFI)     | ✅ (`raw`)          |
+| Physical Machine (BIOS)     | ❌                  |
 
 This builder also generates Debian Liveboot image, but instead of generating a
 `.iso` file, it generates a disk image, including a partition table, and
