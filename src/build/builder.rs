@@ -1,7 +1,8 @@
-use std::fs;
+use std::fs::{self, File};
 use std::hash::{Hash, Hasher};
 use std::process::Command;
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
@@ -224,6 +225,7 @@ impl<'a> RaptorBuilder<'a> {
                 self.build(prog, layers, &layer.work_path())?;
 
                 debug!("Layer {layer_name} finished. Moving {work_path} -> {done_path}");
+                File::open(&work_path)?.set_modified(SystemTime::now())?;
                 fs::rename(&work_path, &done_path)?;
             }
         }
