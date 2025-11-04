@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "ayu";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "../searchindex-8589c2bf.js";
+            window.path_to_searchindex_js = "../searchindex-30ffcb5b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-254a841c.js"></script>
@@ -182,6 +182,7 @@
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Mount name</th><th style="text-align: left">Type</th><th style="text-align: left">Usage</th></tr></thead><tbody>
 <tr><td style="text-align: left"><code>input</code></td><td style="text-align: left">Layers</td><td style="text-align: left">The Raptor build target to genrate as a docker image.</td></tr>
 <tr><td style="text-align: left"><code>output</code></td><td style="text-align: left">File</td><td style="text-align: left">Points to the resulting docker image file.</td></tr>
+<tr><td style="text-align: left"><code>cache</code><br><strong>(Optional)</strong></td><td style="text-align: left">Simple</td><td style="text-align: left">Cache for tar files of built layers.<br>Will save time when repeating layers between builds.</td></tr>
 </tbody></table>
 </div>
 <p>This builder generates a Docker image from a Raptor target.</p>
@@ -221,6 +222,9 @@ rbuild = "raptor-builders"
 target = "$rbuild.docker-image" # &lt;-- builder is specified here
 input = ["test"]
 output = "test.tar"
+## to speed up builds with shared layers,
+## specify a cache directory:
+# cache = "/tmp/docker-image-cache"
 </code></pre>
 </div>
 </div>
