@@ -1,9 +1,10 @@
 # Docker Image generator:<br>**`docker-image`**
 
-| Mount name | Type   | Usage                                                 |
-|:-----------|:-------|:------------------------------------------------------|
-| `input`    | Layers | The Raptor build target to genrate as a docker image. |
-| `output`   | File   | Points to the resulting docker image file.            |
+| Mount name                | Type   | Usage                                                                                        |
+|:--------------------------|:-------|:---------------------------------------------------------------------------------------------|
+| `input`                   | Layers | The Raptor build target to genrate as a docker image.                                        |
+| `output`                  | File   | Points to the resulting docker image file.                                                   |
+| `cache`<br>**(Optional)** | Simple | Cache for tar files of built layers.<br>Will save time when repeating layers between builds. |
 
 This builder generates a Docker image from a Raptor target.
 
@@ -40,6 +41,9 @@ rbuild = "raptor-builders"
 target = "$rbuild.docker-image" # <-- builder is specified here
 input = ["test"]
 output = "test.tar"
+## to speed up builds with shared layers,
+## specify a cache directory:
+# cache = "/tmp/docker-image-cache"
 ```
 ~~~
 
