@@ -6,6 +6,7 @@ use std::time::SystemTime;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
+use dashmap::DashSet;
 use dregistry::downloader::DockerDownloader;
 use dregistry::source::DockerSource;
 use siphasher::sip::SipHasher13;
@@ -20,6 +21,7 @@ use raptor_parser::util::module_name::ModuleName;
 
 pub struct RaptorBuilder<'a> {
     loader: Loader<'a>,
+    done: DashSet<u64>,
     falcon_path: Utf8PathBuf,
     dry_run: bool,
 }
@@ -55,9 +57,10 @@ impl DockerSourceExt for DockerSource {
 }
 
 impl<'a> RaptorBuilder<'a> {
-    pub const fn new(loader: Loader<'a>, falcon_path: Utf8PathBuf, dry_run: bool) -> Self {
+    pub fn new(loader: Loader<'a>, falcon_path: Utf8PathBuf, dry_run: bool) -> Self {
         Self {
             loader,
+            done: DashSet::new(),
             falcon_path,
             dry_run,
         }
@@ -103,6 +106,7 @@ impl<'a> RaptorBuilder<'a> {
     }
 
     pub fn clear_cache(&mut self) {
+        self.done.clear();
         self.loader.clear_cache();
     }
 
@@ -200,9 +204,14 @@ impl<'a> RaptorBuilder<'a> {
         prog: &BuildTarget,
         layer: &LayerInfo,
     ) -> RaptorResult<Utf8PathBuf> {
+        let done_path = layer.done_path();
+
+        if self.done.contains(&layer.hash_value()) {
+            return Ok(done_path);
+        }
+
         let layer_name = layer.name().to_string();
         let work_path = layer.work_path();
-        let done_path = layer.done_path();
 
         if fs::exists(layer.done_path())? {
             info!(
@@ -229,6 +238,8 @@ impl<'a> RaptorBuilder<'a> {
                 fs::rename(&work_path, &done_path)?;
             }
         }
+
+        self.done.insert(layer.hash_value());
 
         Ok(done_path)
     }
