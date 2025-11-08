@@ -18,8 +18,8 @@ impl Display for InstWrite {
         f.keyword("WRITE")?;
         f.chmod(&self.chmod)?;
         f.chown(&self.chown)?;
-        f.dest(&self.dest)?;
         f.value(&self.body)?;
+        f.dest(&self.dest)?;
         Ok(())
     }
 }
