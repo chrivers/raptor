@@ -7,7 +7,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use itertools::Itertools;
 use siphasher::sip::SipHasher13;
 
-use crate::build::RaptorBuilder;
+use crate::build::{BuildTarget, RaptorBuilder};
 use crate::dsl::{Item, Program};
 use crate::{RaptorError, RaptorResult};
 use raptor_parser::ast::{FromSource, Instruction, Statement};
@@ -85,6 +85,39 @@ impl Cacher {
                 | Instruction::Workdir(_)
                 | Instruction::Entrypoint(_)
                 | Instruction::Cmd(_) => {}
+            }
+
+            Ok(())
+        })?;
+
+        Ok(data.into_iter().sorted().collect())
+    }
+
+    pub fn all_sources(prog: &Program, builder: &RaptorBuilder) -> RaptorResult<Vec<Utf8PathBuf>> {
+        let mut data = Self::sources(prog)?;
+
+        data.push(prog.path.clone());
+
+        prog.traverse(&mut |stmt| {
+            match &stmt.inst {
+                Instruction::Include(inst) => {
+                    let path = builder.loader().to_include_path(&inst.src, &stmt.origin)?;
+                    data.push(path);
+                }
+
+                Instruction::From(inst) => match &inst.from {
+                    FromSource::Raptor(from) => {
+                        let path = builder.loader().to_program_path(from, &stmt.origin)?;
+                        data.push(path);
+                    }
+                    FromSource::Docker(src) => {
+                        let source = RaptorBuilder::parse_docker_source(src)?;
+                        let info = builder.layer_info(&BuildTarget::DockerSource(source))?;
+                        data.push(info.done_path());
+                    }
+                },
+
+                _ => {}
             }
 
             Ok(())
