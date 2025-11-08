@@ -115,6 +115,17 @@ impl<'a> RaptorBuilder<'a> {
         self.loader.clear_cache();
     }
 
+    pub fn parse_docker_source(src: &str) -> RaptorResult<DockerSource> {
+        let image = if src.contains('/') {
+            src.to_string()
+        } else {
+            format!("library/{src}")
+        };
+        let source = dregistry::reference::parse(&image)?;
+
+        Ok(source)
+    }
+
     pub fn stack(&self, program: Arc<Program>) -> RaptorResult<Vec<BuildTarget>> {
         let mut data: Vec<BuildTarget> = vec![];
 
@@ -129,12 +140,7 @@ impl<'a> RaptorBuilder<'a> {
 
             match source {
                 FromSource::Docker(src) => {
-                    let image = if src.contains('/') {
-                        src.clone()
-                    } else {
-                        format!("library/{src}")
-                    };
-                    let source = dregistry::reference::parse(&image)?;
+                    let source = Self::parse_docker_source(src)?;
                     data.push(BuildTarget::DockerSource(source));
                 }
 
