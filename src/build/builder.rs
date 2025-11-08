@@ -79,6 +79,11 @@ impl<'a> RaptorBuilder<'a> {
         &mut self.loader
     }
 
+    #[must_use]
+    pub const fn dry_run(&self) -> bool {
+        self.dry_run
+    }
+
     pub fn layer_info(&self, target: &BuildTarget) -> RaptorResult<LayerInfo> {
         let name;
         let hash;
