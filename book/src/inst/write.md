@@ -29,12 +29,16 @@ For text files, it is almost always preferred to end with a newline.
 To do this, add `\n` at the end of the quoted string:
 
 ```raptor
-WRITE "hostname\n" /etc/hostname
+WRITE "hello world\n" hello.txt
 ```
 ~~~
 
 The same file options as `COPY` and `RENDER` are accepted:
 
 ```raptor
-WRITE --chmod 0600 --chown service:root "API-TOKEN" /etc/service/token.conf
+# make sure /etc/hostname is world-readable
+WRITE --chmod 0644 "heart-of-gold\n" /etc/hostname
+
+# this private file should only be readable by "service"
+WRITE --chmod 0600 --chown service:root "SECRET-API-TOKEN" /etc/some-service/token.conf
 ```
