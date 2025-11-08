@@ -2,7 +2,6 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::io::Read;
-use std::os::unix::fs::MetadataExt;
 use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
@@ -71,26 +70,18 @@ impl Cacher {
             }
         }
 
-        for stmt in &program.code {
-            if !matches!(
-                stmt,
-                Item::Statement(Statement {
-                    inst: Instruction::Include(_),
-                    ..
-                })
-            ) {
-                stmt.hash(&mut state);
-            }
-        }
+        let mut code = vec![];
+        Self::flatten_program(program, &mut code);
+
+        code.iter()
+            .as_ref()
+            .iter()
+            .filter(|stmt| Self::include_in_build_hash(stmt))
+            .for_each(|stmt| stmt.inst.hash(&mut state));
 
         for source in &Self::sources(program)? {
             trace!("Checking source [{source}]");
-            let md = source
-                .metadata()
-                .map_err(|err| RaptorError::CacheIoError(source.into(), err))?;
-
-            md.mtime().hash(&mut state);
-            md.mtime_nsec().hash(&mut state);
+            Self::hash_file(source, &mut state)?;
         }
 
         Ok(state.finish())
@@ -114,12 +105,8 @@ impl Cacher {
                     data.insert(stmt.origin.path_for(&inst.src)?);
                 }
 
-                Instruction::Include(_inst) => {
-                    /* let path = loader.to_include_path(&inst.src, &stmt.origin)?; */
-                    /* data.insert(path); */
-                }
-
-                Instruction::Mount(_)
+                Instruction::Include(_)
+                | Instruction::Mount(_)
                 | Instruction::Write(_)
                 | Instruction::Mkdir(_)
                 | Instruction::From(_)

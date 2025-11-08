@@ -42,8 +42,8 @@ impl<'a> Maker<'a> {
         }
     }
 
-    fn program_mtime(program: &Program, _loader: &Loader) -> RaptorResult<SystemTime> {
-        let sources = Cacher::sources(program)?;
+    fn program_mtime(program: &Program, builder: &RaptorBuilder) -> RaptorResult<SystemTime> {
+        let sources = Cacher::all_sources(program, builder)?;
 
         let res = sources
             .into_iter()
@@ -76,7 +76,7 @@ impl<'a> Maker<'a> {
 
         let program = builder.load(&job.target)?;
 
-        let mut newest = Self::program_mtime(&program, builder.loader())?;
+        let mut newest = Self::program_mtime(&program, builder)?;
 
         for input in &job.input {
             let prog = builder.load(&ModuleName::from(input))?;
@@ -84,7 +84,7 @@ impl<'a> Maker<'a> {
             for st in stack {
                 match st {
                     BuildTarget::Program(program) => {
-                        newest = newest.max(Self::program_mtime(&program, builder.loader())?);
+                        newest = newest.max(Self::program_mtime(&program, builder)?);
                     }
                     BuildTarget::DockerSource(_) => {}
                 }

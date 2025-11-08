@@ -206,7 +206,7 @@ impl Tester {
 fn dep_copy() -> RaptorResult<()> {
     let mut test = Tester::setup(["COPY a a"], |test| test.write("a", "1234"))?;
 
-    test.expect_new("COPY src", |test| test.touch("a"))?;
+    test.expect_same("COPY src", |test| test.touch("a"))?;
 
     Ok(())
 }
@@ -215,7 +215,8 @@ fn dep_copy() -> RaptorResult<()> {
 fn dep_render() -> RaptorResult<()> {
     let mut test = Tester::setup(["RENDER a a"], |test| test.write("a", "1234"))?;
 
-    test.expect_new("RENDER src", |test| test.touch("a"))?;
+    test.expect_same("RENDER src", |test| test.touch("a"))?;
+    test.expect_new("RENDER src", |test| test.append("a", "more"))?;
 
     Ok(())
 }
