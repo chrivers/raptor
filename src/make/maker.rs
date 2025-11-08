@@ -105,6 +105,26 @@ impl<'a> Maker<'a> {
             return Ok(ExitStatus::default());
         }
 
+        if builder.dry_run() {
+            let input = job
+                .input
+                .iter()
+                .map(|input| format!(" -I {input}"))
+                .join("");
+            let output = job
+                .output
+                .iter()
+                .map(|output| format!(" -O {output}"))
+                .join("");
+            let cache = job
+                .cache
+                .iter()
+                .map(|output| format!(" -C {output}"))
+                .join("");
+            info!("Would run {}{cache}{input}{output}", job.target);
+            return Ok(ExitStatus::default());
+        }
+
         builder.build_program(program.clone())?;
 
         let mut layers = vec![];
