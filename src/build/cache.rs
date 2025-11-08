@@ -1,5 +1,7 @@
 use std::collections::HashSet;
+use std::fs::File;
 use std::hash::{Hash, Hasher};
+use std::io::Read;
 use std::os::unix::fs::MetadataExt;
 use std::sync::Arc;
 
@@ -15,6 +17,47 @@ use raptor_parser::ast::{FromSource, Instruction, Statement};
 pub struct Cacher;
 
 impl Cacher {
+    fn hash_file(path: &Utf8Path, state: &mut impl Hasher) -> RaptorResult<()> {
+        let mut file = File::open(path)?;
+
+        let mut buf = vec![0; 128 * 1024];
+        loop {
+            match file.read(&mut buf)? {
+                0 => break,
+                n => &buf[..n].hash(state),
+            };
+        }
+
+        Ok(())
+    }
+
+    const fn include_in_build_hash(stmt: &Statement) -> bool {
+        match stmt.inst {
+            Instruction::Copy(_)
+            | Instruction::Render(_)
+            | Instruction::Write(_)
+            | Instruction::Mkdir(_)
+            | Instruction::Run(_)
+            | Instruction::Env(_)
+            | Instruction::Workdir(_) => true,
+
+            Instruction::From(_)
+            | Instruction::Mount(_)
+            | Instruction::Include(_)
+            | Instruction::Entrypoint(_)
+            | Instruction::Cmd(_) => false,
+        }
+    }
+
+    fn flatten_program<'a>(program: &'a Program, out: &mut Vec<&'a Statement>) {
+        for item in &program.code {
+            match item {
+                Item::Statement(stmt) => out.push(stmt),
+                Item::Program(prgm) => Self::flatten_program(prgm, out),
+            }
+        }
+    }
+
     pub fn cache_key(program: &Arc<Program>, builder: &RaptorBuilder<'_>) -> RaptorResult<u64> {
         let mut state = SipHasher13::new();
 
