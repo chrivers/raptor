@@ -399,3 +399,85 @@ fn dep_instance3() -> RaptorResult<()> {
 
     Ok(())
 }
+
+#[test]
+fn basedir_sources() -> RaptorResult<()> {
+    let test = Tester::setup(["INCLUDE inc.a"], |test| {
+        test.mkdir("inc")?;
+        test.write("inc/a", "data")?;
+        test.write("inc/c", "data")?;
+        test.write("inc/b", "data")?;
+        test.write("inc/a.rinc", "INCLUDE b")?;
+        test.write(
+            "inc/b.rinc",
+            ["COPY a /dest1", "RENDER b /dest2", "RENDER c /dest3"],
+        )?;
+        Ok(())
+    })?;
+
+    let program = test.builder.load(&test.program_name)?;
+    let sources = Cacher::sources(&program)?;
+
+    // sources must be sorted, to have predictable cache key
+    let mut sorted_sources = sources.clone();
+    sorted_sources.sort();
+    assert_eq!(sources, sorted_sources);
+
+    // remaining relative path should be complete
+    assert_eq!(sources, &["inc/a", "inc/b", "inc/c"]);
+
+    Ok(())
+}
+
+#[test]
+fn basedir_all_sources() -> RaptorResult<()> {
+    std::env::set_current_dir("/tmp")?;
+
+    let mut test = Tester::setup(["FROM a", "INCLUDE inc.a"], |test| {
+        test.mkdir("inc")?;
+        test.write("a.rapt", "COPY x /destx")?;
+        test.write("x", "data")?;
+        test.write("inc/a", "data")?;
+        test.write("inc/c", "data")?;
+        test.write("inc/b", "data")?;
+        test.write("inc/a.rinc", "INCLUDE b")?;
+        test.write(
+            "inc/b.rinc",
+            ["COPY a /dest1", "RENDER b /dest2", "RENDER c /dest3"],
+        )?;
+        Ok(())
+    })?;
+
+    let base = test.tempdir.path().file_name().unwrap();
+    test.builder.loader_mut().set_base(base)?;
+
+    let program = test.builder.load(&test.program_name)?;
+    let sources = Cacher::all_sources(&program, &test.builder)?;
+
+    // sources must be sorted, to have predictable cache key
+    let mut sorted_sources = sources.clone();
+    sorted_sources.sort();
+    assert_eq!(sources, sorted_sources);
+
+    // sources should all start with tempdir prefix
+    let relative_sources: Vec<&Utf8Path> = sources
+        .iter()
+        .map(|src| src.strip_prefix(base).unwrap())
+        .collect();
+
+    // remaining relative path should be complete
+    assert_eq!(
+        relative_sources,
+        &[
+            "a.rapt",
+            "inc/a",
+            "inc/a.rinc",
+            "inc/b",
+            "inc/b.rinc",
+            "inc/c",
+            "program.rapt",
+        ]
+    );
+
+    Ok(())
+}
