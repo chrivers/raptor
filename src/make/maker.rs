@@ -143,19 +143,19 @@ impl<'a> Maker<'a> {
             layers.push(builder.layer_info(&target)?.done_path());
         }
 
-        let mut mounts = HashMap::<&str, Vec<String>>::new();
+        let mut mounts = HashMap::<String, Vec<String>>::new();
 
-        let mount_cache = mounts.entry("cache").or_default();
+        let mount_cache = mounts.entry("cache".into()).or_default();
         for cache in &job.cache {
             mount_cache.push(resolver.resolve_logical_path(cache)?.to_string());
         }
 
-        let mount_input = mounts.entry("input").or_default();
+        let mount_input = mounts.entry("input".into()).or_default();
         for input in &job.input {
             mount_input.push(resolver.resolve_logical_path(input)?.to_string());
         }
 
-        let mount_output = mounts.entry("output").or_default();
+        let mount_output = mounts.entry("output".into()).or_default();
         for output in &job.output {
             mount_output.push(resolver.resolve_logical_path(output)?.to_string());
         }
@@ -165,16 +165,6 @@ impl<'a> Maker<'a> {
             .iter()
             .map(|(k, v)| format!("{k}={v}"))
             .collect_vec();
-
-        let mounts = {
-            let mut res = HashMap::new();
-
-            for (key, vals) in &mounts {
-                res.insert(*key, vals.iter().map(String::as_str).collect());
-            }
-
-            res
-        };
 
         let mut runner = Runner::new()?;
         runner

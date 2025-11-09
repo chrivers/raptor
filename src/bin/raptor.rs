@@ -216,23 +216,23 @@ impl Mode {
 }
 
 impl RunCmd {
-    fn mounts(&self) -> HashMap<&str, Vec<&str>> {
-        let mut res: HashMap<&str, Vec<&str>> = HashMap::new();
+    fn mounts(&self) -> HashMap<String, Vec<String>> {
+        let mut res: HashMap<String, Vec<String>> = HashMap::new();
 
         for kv in self.mount.chunks_exact(2) {
-            res.entry(&kv[0]).or_default().push(&kv[1]);
+            res.entry(kv[0].clone()).or_default().push(kv[1].clone());
         }
 
         for cache in &self.cache {
-            res.entry("cache").or_default().push(cache);
+            res.entry("cache".into()).or_default().push(cache.clone());
         }
 
         for input in &self.input {
-            res.entry("input").or_default().push(input);
+            res.entry("input".into()).or_default().push(input.clone());
         }
 
         if let Some(output) = &self.output {
-            res.entry("output").or_default().push(output);
+            res.entry("output".into()).or_default().push(output.clone());
         }
 
         res

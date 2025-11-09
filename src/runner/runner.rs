@@ -36,7 +36,7 @@ pub trait AddMounts: Sized {
         self,
         prog_mounts: &[&InstMount],
         builder: &RaptorBuilder,
-        mounts: &HashMap<&str, Vec<&str>, S>,
+        mounts: &HashMap<String, Vec<String>, S>,
         tempdir: impl AsRef<Utf8Path>,
     ) -> RaptorResult<Self>;
 }
@@ -46,11 +46,11 @@ impl AddMounts for SpawnBuilder {
         mut self,
         prog_mounts: &[&InstMount],
         builder: &RaptorBuilder,
-        mounts: &HashMap<&str, Vec<&str>, S>,
+        mounts: &HashMap<String, Vec<String>, S>,
         tempdir: impl AsRef<Utf8Path>,
     ) -> RaptorResult<Self> {
         for mount in prog_mounts {
-            let mount_list = mounts.get(&mount.name.as_str());
+            let mount_list = mounts.get(&mount.name);
 
             if mount.opts.optional && mount_list.is_none() {
                 continue;
@@ -170,7 +170,7 @@ pub struct Runner<'a> {
     args: &'a [String],
     entrypoint: &'a [String],
     state_dir: Option<Utf8PathBuf>,
-    mounts: HashMap<&'a str, Vec<&'a str>>,
+    mounts: HashMap<String, Vec<String>>,
 }
 
 impl<'a> Runner<'a> {
@@ -196,7 +196,7 @@ impl<'a> Runner<'a> {
         self
     }
 
-    pub fn with_mounts(&mut self, mounts: HashMap<&'a str, Vec<&'a str>>) -> &mut Self {
+    pub fn with_mounts(&mut self, mounts: HashMap<String, Vec<String>>) -> &mut Self {
         self.mounts = mounts;
         self
     }
