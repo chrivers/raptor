@@ -184,6 +184,8 @@ impl Loader<'_> {
                                 err.detail().unwrap_or("error"),
                                 err.range().unwrap_or_else(|| last.span.clone()),
                             );
+                        } else {
+                            error!("Error happened in {}", last.path);
                         }
                     } else {
                         error!("Cannot provide error context: {err}");
