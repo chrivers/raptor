@@ -35,7 +35,7 @@ fn assert_single_inst_eq(path: &Utf8Path, size: usize, res: &Program, inst: Inst
 #[allow(clippy::cast_possible_truncation)]
 fn test_single_inst_parse(filename: &str, inst: Instruction) -> RaptorResult<()> {
     let program = load_file(filename)?;
-    let size = std::fs::File::open(base_path().join(filename))?
+    let size = std::fs::File::open(base_path().join(&program.path))?
         .metadata()?
         .size();
     assert_single_inst_eq(filename.into(), size as usize, &program, inst);
