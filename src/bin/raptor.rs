@@ -356,7 +356,10 @@ fn raptor() -> RaptorResult<()> {
             targets,
             batch,
         } => {
-            builder.loader_mut().set_base(file.try_parent()?)?;
+            builder
+                .loader_mut()
+                .resolver_mut()
+                .set_base(file.try_parent()?);
             let maker = Maker::load(&builder, file)?;
 
             maker.add_links(builder.loader());

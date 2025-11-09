@@ -6,6 +6,7 @@ use std::time::SystemTime;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use camino_tempfile::Utf8TempDir;
+use tap::Tap;
 
 use raptor::RaptorResult;
 use raptor::build::{Cacher, RaptorBuilder};
@@ -61,7 +62,7 @@ impl Tester {
         init: impl Fn(&Self) -> RaptorResult<()>,
     ) -> RaptorResult<Self> {
         let tempdir = Utf8TempDir::new()?;
-        let loader = Loader::new()?.with_base(&tempdir);
+        let loader = Loader::new()?.tap_mut(|ldr| ldr.resolver_mut().set_base(&tempdir));
         let builder = RaptorBuilder::new(loader, Sandbox::find_falcon_dev().unwrap(), true);
 
         let mut res = Self {
@@ -450,7 +451,7 @@ fn basedir_all_sources() -> RaptorResult<()> {
     })?;
 
     let base = test.tempdir.path().file_name().unwrap();
-    test.builder.loader_mut().set_base(base)?;
+    test.builder.loader_mut().resolver_mut().set_base(base);
 
     let program = test.builder.load(&test.program_name)?;
     let sources = Cacher::all_sources(&program, &test.builder)?;

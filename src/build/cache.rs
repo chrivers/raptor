@@ -81,7 +81,7 @@ impl Cacher {
 
         for source in &Self::sources(program)? {
             trace!("Checking source [{source}]");
-            let path = builder.loader().base().join(source);
+            let path = builder.loader().resolver().base().join(source);
             Self::hash_file(&path, &mut state)?;
         }
 
@@ -125,7 +125,7 @@ impl Cacher {
     }
 
     pub fn all_sources(prog: &Program, builder: &RaptorBuilder) -> RaptorResult<Vec<Utf8PathBuf>> {
-        let base = builder.loader().base();
+        let base = builder.loader().resolver().base();
         let mut data: Vec<_> = Self::sources(prog)?.iter().map(|x| base.join(x)).collect();
 
         data.push(base.join(&prog.path));

@@ -5,6 +5,7 @@ use std::sync::Arc;
 use camino::{Utf8Path, Utf8PathBuf};
 use minijinja::{Value, context};
 use pretty_assertions::assert_eq;
+use tap::Tap;
 
 use raptor::RaptorResult;
 use raptor::dsl::{Item, Program};
@@ -19,7 +20,7 @@ fn base_path() -> Utf8PathBuf {
 }
 
 fn load_file(path: impl AsRef<Utf8Path>) -> RaptorResult<Arc<Program>> {
-    let loader = Loader::new()?.with_base(base_path());
+    let loader = Loader::new()?.tap_mut(|ldr| ldr.resolver_mut().set_base(base_path()));
 
     let mut origins = vec![Origin::inline()];
 

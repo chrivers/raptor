@@ -38,28 +38,18 @@ impl Loader<'_> {
     }
 
     #[must_use]
-    pub fn with_base(mut self, base: impl AsRef<Utf8Path>) -> Self {
-        self.resolver.set_base(base);
-        self
-    }
-
-    pub fn set_base(&mut self, base: impl AsRef<Utf8Path>) -> RaptorResult<()> {
-        self.resolver.set_base(base);
-        Ok(())
-    }
-
-    #[must_use]
     pub fn with_dump(self, dump: bool) -> Self {
         Self { dump, ..self }
-    }
-
-    pub fn base(&self) -> &Utf8Path {
-        self.resolver.base()
     }
 
     #[must_use]
     pub const fn resolver(&self) -> &Resolver {
         &self.resolver
+    }
+
+    #[must_use]
+    pub const fn resolver_mut(&mut self) -> &mut Resolver {
+        &mut self.resolver
     }
 
     pub fn clear_cache(&mut self) {
