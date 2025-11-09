@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::process::ExitStatus;
 use std::time::SystemTime;
 
@@ -143,21 +142,18 @@ impl<'a> Maker<'a> {
             layers.push(builder.layer_info(&target)?.done_path());
         }
 
-        let mut mounts = HashMap::<String, Vec<String>>::new();
+        let mut runner = Runner::new()?;
 
-        let mount_cache = mounts.entry("cache".into()).or_default();
         for cache in &job.cache {
-            mount_cache.push(resolver.resolve_logical_path(cache)?.to_string());
+            runner.add_mount("cache", resolver.resolve_logical_path(cache)?.to_string());
         }
 
-        let mount_input = mounts.entry("input".into()).or_default();
         for input in &job.input {
-            mount_input.push(resolver.resolve_logical_path(input)?.to_string());
+            runner.add_mount("input", resolver.resolve_logical_path(input)?.to_string());
         }
 
-        let mount_output = mounts.entry("output".into()).or_default();
         for output in &job.output {
-            mount_output.push(resolver.resolve_logical_path(output)?.to_string());
+            runner.add_mount("output", resolver.resolve_logical_path(output)?.to_string());
         }
 
         let env = job
@@ -166,11 +162,7 @@ impl<'a> Maker<'a> {
             .map(|(k, v)| format!("{k}={v}"))
             .collect_vec();
 
-        let mut runner = Runner::new()?;
-        runner
-            .with_mounts(mounts)
-            .with_env(&env)
-            .with_args(&job.args);
+        runner.with_env(&env).with_args(&job.args);
 
         if !job.entrypoint.is_empty() {
             runner.with_entrypoint(&job.entrypoint);
