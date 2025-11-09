@@ -92,12 +92,21 @@ impl<'a> Maker<'a> {
             }
         }
 
-        let oldest = job
-            .output
-            .iter()
-            .map(Utf8Path::new)
-            .flat_map(Utf8Path::metadata)
-            .flat_map(|md| md.modified())
+        let mut output_times = Vec::new();
+
+        let resolver = builder.loader().resolver();
+        for output in &job.output {
+            let name = resolver.resolve_logical_path(output)?;
+            let md = name
+                .metadata()
+                .and_then(|md| md.modified())
+                .unwrap_or(SystemTime::UNIX_EPOCH);
+
+            output_times.push(md);
+        }
+
+        let oldest = output_times
+            .into_iter()
             .min()
             .unwrap_or(SystemTime::UNIX_EPOCH);
 
@@ -134,28 +143,38 @@ impl<'a> Maker<'a> {
             layers.push(builder.layer_info(&target)?.done_path());
         }
 
-        let mut mounts = HashMap::<&str, Vec<&str>>::new();
+        let mut mounts = HashMap::<&str, Vec<String>>::new();
 
-        mounts
-            .entry("cache")
-            .or_default()
-            .extend(job.cache.iter().map(String::as_str));
+        let mount_cache = mounts.entry("cache").or_default();
+        for cache in &job.cache {
+            mount_cache.push(resolver.resolve_logical_path(cache)?.to_string());
+        }
 
-        mounts
-            .entry("input")
-            .or_default()
-            .extend(job.input.iter().map(String::as_str));
+        let mount_input = mounts.entry("input").or_default();
+        for input in &job.input {
+            mount_input.push(resolver.resolve_logical_path(input)?.to_string());
+        }
 
-        mounts
-            .entry("output")
-            .or_default()
-            .extend(job.output.iter().map(String::as_str));
+        let mount_output = mounts.entry("output").or_default();
+        for output in &job.output {
+            mount_output.push(resolver.resolve_logical_path(output)?.to_string());
+        }
 
         let env = job
             .env
             .iter()
             .map(|(k, v)| format!("{k}={v}"))
             .collect_vec();
+
+        let mounts = {
+            let mut res = HashMap::new();
+
+            for (key, vals) in &mounts {
+                res.insert(*key, vals.iter().map(String::as_str).collect());
+            }
+
+            res
+        };
 
         let mut runner = Runner::new()?;
         runner
