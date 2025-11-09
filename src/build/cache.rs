@@ -133,14 +133,20 @@ impl Cacher {
         prog.traverse(&mut |stmt| {
             match &stmt.inst {
                 Instruction::Include(inst) => {
-                    let path = builder.loader().to_include_path(&inst.src, &stmt.origin)?;
+                    let path = builder
+                        .loader()
+                        .resolver()
+                        .to_include_path(&inst.src, &stmt.origin)?;
                     let path = base.join(path);
                     data.push(path);
                 }
 
                 Instruction::From(inst) => match &inst.from {
                     FromSource::Raptor(from) => {
-                        let path = builder.loader().to_program_path(from, &stmt.origin)?;
+                        let path = builder
+                            .loader()
+                            .resolver()
+                            .to_program_path(from, &stmt.origin)?;
                         let path = base.join(path);
                         data.push(path);
                     }

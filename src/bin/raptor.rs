@@ -285,7 +285,7 @@ fn raptor() -> RaptorResult<()> {
     let loader = Loader::new()?.with_dump(args.mode.dump());
 
     for [name, path] in args.link.as_chunks().0 {
-        loader.add_package(name.into(), path.into());
+        loader.resolver().add_package(name.into(), path.into());
     }
 
     let mut builder = RaptorBuilder::new(loader, falcon_path, args.no_act);

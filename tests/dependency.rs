@@ -151,6 +151,7 @@ impl Tester {
         let program = self
             .builder
             .loader()
+            .resolver()
             .to_program_path(&self.program_name, &Origin::inline())
             .unwrap();
 
