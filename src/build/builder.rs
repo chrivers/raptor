@@ -90,7 +90,10 @@ impl<'a> RaptorBuilder<'a> {
 
         match target {
             BuildTarget::Program(prog) => {
-                debug!("Calculating hash for layer {}", prog.path);
+                debug!(
+                    "Calculating hash for layer {}",
+                    &self.loader.base().join(&prog.path)
+                );
 
                 name = prog.path.file_stem().unwrap().into();
                 hash = Cacher::cache_key(prog, self)?;

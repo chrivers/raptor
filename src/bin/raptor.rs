@@ -19,6 +19,7 @@ use raptor::program::Loader;
 use raptor::runner::Runner;
 use raptor::sandbox::Sandbox;
 use raptor::{RaptorError, RaptorResult};
+use raptor_parser::util::SafeParent;
 use raptor_parser::util::module_name::ModuleName;
 
 #[derive(clap::Parser, Debug)]
@@ -287,7 +288,7 @@ fn raptor() -> RaptorResult<()> {
         loader.add_package(name.into(), path.into());
     }
 
-    let builder = RaptorBuilder::new(loader, falcon_path, args.no_act);
+    let mut builder = RaptorBuilder::new(loader, falcon_path, args.no_act);
 
     match &args.mode {
         Mode::Dump { targets } | Mode::Check { targets } | Mode::Build { targets } => {
@@ -355,6 +356,7 @@ fn raptor() -> RaptorResult<()> {
             targets,
             batch,
         } => {
+            builder.loader_mut().set_base(file.try_parent()?)?;
             let maker = Maker::load(&builder, file)?;
 
             maker.add_links(builder.loader());

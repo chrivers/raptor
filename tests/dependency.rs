@@ -4,7 +4,7 @@ use std::io::Write;
 use std::sync::Arc;
 use std::time::SystemTime;
 
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use camino_tempfile::Utf8TempDir;
 
 use raptor::RaptorResult;
@@ -143,16 +143,18 @@ impl Tester {
         Ok(hash)
     }
 
-    fn path(&self, name: &str) -> Utf8PathBuf {
+    fn path(&self, name: impl AsRef<Utf8Path>) -> Utf8PathBuf {
         self.tempdir.path().join(name)
     }
 
     fn program_path(&self) -> String {
-        self.builder
+        let program = self
+            .builder
             .loader()
             .to_program_path(&self.program_name, &Origin::inline())
-            .unwrap()
-            .to_string()
+            .unwrap();
+
+        self.path(program).to_string()
     }
 
     fn program_write(&self, value: impl Writable) -> RaptorResult<()> {

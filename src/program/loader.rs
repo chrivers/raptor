@@ -74,7 +74,7 @@ impl Loader<'_> {
     ) -> RaptorResult<Utf8PathBuf> {
         let res = match root {
             ModuleRoot::Relative => origin.path_for(end)?,
-            ModuleRoot::Absolute => self.base.join(end),
+            ModuleRoot::Absolute => end.into(),
             ModuleRoot::Package(pkg) => {
                 let package = self
                     .get_package(pkg)
