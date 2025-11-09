@@ -76,4 +76,73 @@ impl Resolver {
         end.set_extension("rinc");
         self.to_path(name.root(), origin, &end)
     }
+
+    pub fn resolve_logical_path(&self, path: impl AsRef<Utf8Path>) -> RaptorResult<Utf8PathBuf> {
+        let mut comps = vec![];
+        for comp in path.as_ref().components() {
+            let name = comp.as_str();
+            if let Some(suffix) = name.strip_prefix('$') {
+                if let Some(link) = self.get_package(suffix) {
+                    comps.push(link.to_string());
+                } else {
+                    return Err(RaptorError::MissingLink(name.to_string()));
+                }
+            } else {
+                comps.push(name.to_string());
+            }
+        }
+
+        Ok(Utf8PathBuf::from_iter(comps))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use camino::{Utf8Path, Utf8PathBuf};
+    use raptor_parser::ast::Origin;
+    use raptor_parser::util::module_name::ModuleRoot;
+
+    use crate::RaptorResult;
+    use crate::program::Resolver;
+
+    macro_rules! path_test {
+        ($resolver:expr, $origin:expr, $name:expr, [$a:expr, $b:expr, $c:expr]) => {
+            let rel = &ModuleRoot::Relative;
+            let abs = &ModuleRoot::Absolute;
+            let pkg = &ModuleRoot::Package(String::from("pkg"));
+            assert_eq!($resolver.to_path(rel, &$origin, &$name)?, $a);
+            assert_eq!($resolver.to_path(abs, &$origin, &$name)?, $b);
+            assert_eq!($resolver.to_path(pkg, &$origin, &$name)?, $c);
+        };
+    }
+
+    #[test]
+    fn resolve_inline() -> RaptorResult<()> {
+        let mut resolv = Resolver::new(Utf8PathBuf::new());
+        resolv.add_package("pkg".into(), "pkgpath".into());
+
+        let inline = Origin::inline();
+        let name = Utf8Path::new("name");
+
+        path_test!(resolv, inline, name, ["name", "name", "pkgpath/name"]);
+        resolv.set_base("base");
+        path_test!(resolv, inline, name, ["name", "name", "pkgpath/name"]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn resolve_base() -> RaptorResult<()> {
+        let mut resolv = Resolver::new(Utf8PathBuf::new());
+        resolv.add_package("pkg".into(), "pkgpath".into());
+
+        let inline = Origin::make("base/foo.rapt", 0..0);
+        let name = Utf8Path::new("name");
+
+        path_test!(resolv, inline, name, ["base/name", "name", "pkgpath/name"]);
+        resolv.set_base("base");
+        path_test!(resolv, inline, name, ["base/name", "name", "pkgpath/name"]);
+
+        Ok(())
+    }
 }
