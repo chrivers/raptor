@@ -201,6 +201,16 @@ impl<'a> Runner<'a> {
         self
     }
 
+    pub fn add_mount(&mut self, name: &str, mount: String) -> &mut Self {
+        if let Some(map) = self.mounts.get_mut(name) {
+            map.push(mount);
+        } else {
+            self.mounts.insert(name.to_string(), vec![mount]);
+        }
+
+        self
+    }
+
     pub const fn with_entrypoint(&mut self, entrypoint: &'a [String]) -> &mut Self {
         self.entrypoint = entrypoint;
         self
