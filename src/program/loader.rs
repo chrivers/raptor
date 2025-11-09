@@ -48,6 +48,11 @@ impl Loader<'_> {
         }
     }
 
+    pub fn set_base(&mut self, base: impl AsRef<Utf8Path>) -> RaptorResult<()> {
+        self.base = base.as_ref().to_path_buf();
+        Ok(())
+    }
+
     #[must_use]
     pub fn with_dump(self, dump: bool) -> Self {
         Self { dump, ..self }
