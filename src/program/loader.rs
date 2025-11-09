@@ -5,6 +5,8 @@ use colored::Colorize;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use minijinja::{Environment, ErrorKind, Value, context};
+use raptor_parser::ast::{Instruction, Origin, Statement};
+use raptor_parser::parser;
 use raptor_parser::util::module_name::{ModuleName, ModuleRoot};
 
 use crate::dsl::{Item, Program};
@@ -14,8 +16,6 @@ use crate::program::{
 };
 use crate::template::make_environment;
 use crate::{RaptorError, RaptorResult};
-use raptor_parser::ast::{Instruction, Origin, Statement};
-use raptor_parser::parser;
 
 pub struct Loader<'source> {
     env: Environment<'source>,
