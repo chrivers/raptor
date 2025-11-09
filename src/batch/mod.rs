@@ -74,14 +74,14 @@ impl<'a> ParallelRunner<'a> {
                     jobctrl.add_job(id);
                 }
 
-                Ok(BatchEvent::JobEnd(id, status)) => {
-                    if status.is_ok() {
-                        trace!("[{id:016X}] Job finished");
-                        jobctrl.end_job(id);
-                    } else {
-                        trace!("[{id:016X}] Job failed!");
-                        jobctrl.fail_job(id);
-                    }
+                Ok(BatchEvent::JobEnd(id, Ok(()))) => {
+                    trace!("[{id:016X}] Job finished");
+                    jobctrl.end_job(id);
+                }
+
+                Ok(BatchEvent::JobEnd(id, Err(err))) => {
+                    error!("[{id:016X}] Job failed: {err}!");
+                    jobctrl.fail_job(id);
                 }
 
                 Err(TryRecvError::Empty) => break,
