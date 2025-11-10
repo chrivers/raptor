@@ -366,8 +366,14 @@ fn raptor() -> RaptorResult<()> {
 
             let mut planner = Planner::new(&maker, &builder);
 
-            for target in targets {
-                planner.add(target)?;
+            if targets.is_empty() {
+                for target in maker.rules().run.keys() {
+                    planner.add_named_run_job(target)?;
+                }
+            } else {
+                for target in targets {
+                    planner.add(target)?;
+                }
             }
 
             if *batch {
