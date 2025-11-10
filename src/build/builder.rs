@@ -92,7 +92,7 @@ impl<'a> RaptorBuilder<'a> {
             BuildTarget::Program(prog) => {
                 debug!(
                     "Calculating hash for layer {}",
-                    &self.loader.resolver().base().join(&prog.path)
+                    &self.loader.resolver().path(&prog.path)
                 );
 
                 name = prog.path.file_stem().unwrap().into();

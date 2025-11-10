@@ -81,7 +81,7 @@ impl Cacher {
 
         for source in &Self::sources(program)? {
             trace!("Checking source [{source}]");
-            let path = builder.loader().resolver().base().join(source);
+            let path = builder.loader().resolver().path(source);
             Self::hash_file(&path, &mut state)?;
         }
 
@@ -125,10 +125,13 @@ impl Cacher {
     }
 
     pub fn all_sources(prog: &Program, builder: &RaptorBuilder) -> RaptorResult<Vec<Utf8PathBuf>> {
-        let base = builder.loader().resolver().base();
-        let mut data: Vec<_> = Self::sources(prog)?.iter().map(|x| base.join(x)).collect();
+        let resolver = builder.loader().resolver();
+        let mut data: Vec<_> = Self::sources(prog)?
+            .iter()
+            .map(|x| resolver.path(x))
+            .collect();
 
-        data.push(base.join(&prog.path));
+        data.push(resolver.path(&prog.path));
 
         prog.traverse(&mut |stmt| {
             match &stmt.inst {
@@ -137,7 +140,7 @@ impl Cacher {
                         .loader()
                         .resolver()
                         .to_include_path(&inst.src, &stmt.origin)?;
-                    let path = base.join(path);
+                    let path = resolver.path(path);
                     data.push(path);
                 }
 
@@ -147,7 +150,7 @@ impl Cacher {
                             .loader()
                             .resolver()
                             .to_program_path(from, &stmt.origin)?;
-                        let path = base.join(path);
+                        let path = resolver.path(path);
                         data.push(path);
                     }
                     FromSource::Docker(src) => {
