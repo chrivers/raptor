@@ -7,15 +7,16 @@
 
 ## Compatibility
 
-| Target                       | Compatible? |
-|:-----------------------------|:------------|
-| Container: `systemd-nspawn`  | ✅          |
-| Container: `docker`          | ❌          |
-| Container: `podman`          | ❌          |
-| Virtual Machine (UEFI)       | ❌          |
-| Virtual Machine (BIOS)       | ❌          |
-| Physical Machine (UEFI)      | ❌          |
-| Physical Machine (BIOS)      | ❌          |
+| Target                      | Compatible? |
+|:----------------------------|:------------|
+| Container: `systemd-nspawn` | ✅          |
+| Container: `portablectl`    | ✅          |
+| Container: `docker`         | ❌          |
+| Container: `podman`         | ❌          |
+| Virtual Machine (UEFI)      | ❌          |
+| Virtual Machine (BIOS)      | ❌          |
+| Physical Machine (UEFI)     | ❌          |
+| Physical Machine (BIOS)     | ❌          |
 
 This builder generates partition images, containing a single filesystem.
 

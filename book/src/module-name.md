@@ -8,11 +8,11 @@ This is the case both for the `FROM` instruction (where the modules have the
 
 There are three types of module names; Relative, Absolute and Package names.
 
-| Type     | Example     | Description                                                 |
-|:---------|:------------|-------------------------------------------------------------|
-| Relative | `foo.bar`   | Used to refer to paths at or below the current directory    |
-| Absolute | `$.foo.bar` | Used to refer to paths from the root of the current package |
-| Package  | `$foo.bar`  | Used to refer to paths in other packages                    |
+| Type     | Example     | Description                                                   |
+|:---------|:------------|---------------------------------------------------------------|
+| Relative | `foo.bar`   | Used to refer to paths *at or below* the current directory    |
+| Absolute | `$.foo.bar` | Used to refer to paths *from the root* of the current package |
+| Package  | `$foo.bar`  | Used to refer to paths *in other packages*                    |
 
 The difference between these forms is how they resolve to paths in the
 filesystem. For a detailed explanation of each, see the following sections.

@@ -31,15 +31,16 @@ in, and the first input will be the default boot option.
 
 ## Compatibility
 
-| Target                       | Compatible? |
-|:-----------------------------|:------------|
-| Container: `systemd-nspawn`  | ❌          |
-| Container: `docker`          | ❌          |
-| Container: `podman`          | ❌          |
-| Virtual Machine (UEFI)       | ✅          |
-| Virtual Machine (BIOS)       | ✅          |
-| Physical Machine (UEFI)      | ✅          |
-| Physical Machine (BIOS)      | ✅          |
+| Target                      | Compatible? |
+|:----------------------------|:------------|
+| Container: `systemd-nspawn` | ❌          |
+| Container: `portablectl`    | ❌          |
+| Container: `docker`         | ❌          |
+| Container: `podman`         | ❌          |
+| Virtual Machine (UEFI)      | ✅          |
+| Virtual Machine (BIOS)      | ✅          |
+| Physical Machine (UEFI)     | ✅          |
+| Physical Machine (BIOS)     | ✅          |
 
 Debian liveboot ISOs are widely compatible with both physical and virtual
 machines, including UEFI and BIOS-based platforms.
