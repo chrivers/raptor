@@ -1,140 +1,180 @@
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rapt:1:1
+ --> tests/cases/error/error_recursive_include.rapt:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Error while evaluating INCLUDE
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ (included here)
-2 |
+3 | # line 3
+4 |
   |
 error: Script Error
- --> tests/cases/error/error_recursive_include.rinc:1:1
+ --> tests/cases/error/error_recursive_include.rinc:2:1
   |
-1 | INCLUDE error_recursive_include
+1 | # line 1
+2 | INCLUDE error_recursive_include
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Script error: Too many nested includes
-2 |
+3 | # line 3
+4 |
   |

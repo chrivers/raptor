@@ -1,7 +1,9 @@
 error: Error while loading source file
- --> tests/cases/error/error_missing_include.rapt:1:1
+ --> tests/cases/error/error_missing_include.rapt:2:1
   |
-1 | INCLUDE missing_file
+1 | # line 1
+2 | INCLUDE missing_file
   | ^^^^^^^^^^^^^^^^^^^^ Could not open [tests/cases/error/missing_file.rinc]: No such file or directory (os error 2)
-2 |
+3 | # line 3
+4 |
   |
