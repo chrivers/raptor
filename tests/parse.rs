@@ -107,6 +107,14 @@ fn parse_write02() -> RaptorResult<()> {
 }
 
 #[test]
+fn parse_write03() -> RaptorResult<()> {
+    test_single_inst_parse(
+        "write03.rapt",
+        Instruction::write("#!/bin/sh\necho \"Hello World\"\n", "/bin/example"),
+    )
+}
+
+#[test]
 fn parse_mkdir01() -> RaptorResult<()> {
     test_single_inst_parse("mkdir01.rapt", Instruction::mkdir("/foo"))
 }
