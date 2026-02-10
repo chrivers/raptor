@@ -18,6 +18,7 @@ prerequisite packages are installed.
 | Target                      | Compatible?         |
 |:----------------------------|:--------------------|
 | Container: `systemd-nspawn` | ❌                  |
+| Container: `portablectl`    | ❌                  |
 | Container: `docker`         | ❌                  |
 | Container: `podman`         | ❌                  |
 | Virtual Machine (UEFI)      | ✅ (`raw`, `qcow2`) |

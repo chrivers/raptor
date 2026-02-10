@@ -7,15 +7,16 @@
 
 ## Compatibility
 
-| Target                       | Compatible?         |
-|:-----------------------------|:--------------------|
-| Container: `systemd-nspawn`  | ✅ (`raw`)          |
-| Container: `docker`          | ❌                  |
-| Container: `podman`          | ❌                  |
-| Virtual Machine (UEFI)       | ✅ (`raw`, `qcow2`) |
-| Virtual Machine (BIOS)       | ❌                  |
-| Physical Machine (UEFI)      | ✅ (`raw`)          |
-| Physical Machine (BIOS)      | ❌                  |
+| Target                      | Compatible?         |
+|:----------------------------|:--------------------|
+| Container: `systemd-nspawn` | ✅ (`raw`)          |
+| Container: `portablectl`    | ✅ (`raw`)          |
+| Container: `docker`         | ❌                  |
+| Container: `podman`         | ❌                  |
+| Virtual Machine (UEFI)      | ✅ (`raw`, `qcow2`) |
+| Virtual Machine (BIOS)      | ❌                  |
+| Physical Machine (UEFI)     | ✅ (`raw`)          |
+| Physical Machine (BIOS)     | ❌                  |
 
 This builder generates disk images, including a partition table, and separate
 partitions for `/`, `/boot` and `/boot/efi`.

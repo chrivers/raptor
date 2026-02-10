@@ -17,6 +17,7 @@ shared when converted to Docker images.
 | Target                      | Compatible? |
 |:----------------------------|:------------|
 | Container: `systemd-nspawn` | ❌          |
+| Container: `portablectl`    | ❌          |
 | Container: `docker`         | ✅          |
 | Container: `podman`         | ✅          |
 | Virtual Machine (UEFI)      | ❌          |

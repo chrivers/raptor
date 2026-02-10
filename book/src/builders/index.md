@@ -60,12 +60,12 @@ support this, in the future.
 
 Containers:
 
-| Builder           | Format  | `systemd-nspawn` | `docker` | `podman` |
-|:------------------|---------|:-----------------|:---------|----------|
-| `deblive`         | `iso`   | ❌               | ❌       | ❌       |
-| `live-disk-image` | `qcow2` | ❌               | ❌       | ❌       |
-| `disk-image`      | `qcow2` | ❌               | ❌       | ❌       |
-| `live-disk-image` | `raw`   | ❌               | ❌       | ❌       |
-| `disk-image`      | `raw`   | ✅               | ❌       | ❌       |
-| `part-image`      | `raw`   | ✅               | ❌       | ❌       |
-| `docker-image`    | `tar`   | ❌               | ✅       | ✅       |
+| Builder           | Format  | `systemd-nspawn` | `portablectl` | `docker` | `podman` |
+|:------------------|---------|:-----------------|:--------------|:---------|----------|
+| `deblive`         | `iso`   | ❌               | ❌            | ❌       | ❌       |
+| `live-disk-image` | `qcow2` | ❌               | ❌            | ❌       | ❌       |
+| `disk-image`      | `qcow2` | ❌               | ❌            | ❌       | ❌       |
+| `live-disk-image` | `raw`   | ❌               | ❌            | ❌       | ❌       |
+| `disk-image`      | `raw`   | ✅               | ✅            | ❌       | ❌       |
+| `part-image`      | `raw`   | ✅               | ✅            | ❌       | ❌       |
+| `docker-image`    | `tar`   | ❌               | ❌            | ✅       | ✅       |
