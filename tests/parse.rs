@@ -95,14 +95,14 @@ fn parse_run03() -> RaptorResult<()> {
 
 #[test]
 fn parse_write01() -> RaptorResult<()> {
-    test_single_inst_parse("write01.rinc", Instruction::write("/foo", "bar"))
+    test_single_inst_parse("write01.rinc", Instruction::write("bar", "/foo"))
 }
 
 #[test]
 fn parse_write02() -> RaptorResult<()> {
     test_single_inst_parse(
         "write02.rapt",
-        Instruction::write("/foo", "bar").chown(Some(Chown::new("user", "group"))),
+        Instruction::write("bar", "/foo").chown(Some(Chown::new("user", "group"))),
     )
 }
 
@@ -255,7 +255,7 @@ fn parse_include01() -> RaptorResult<()> {
             ),
             Item::program(
                 [Item::statement(
-                    Instruction::write("/foo", "bar"),
+                    Instruction::write("bar", "/foo"),
                     Origin::make("write01.rinc", 0..16)
                 )],
                 context! {},
@@ -286,7 +286,7 @@ fn parse_include02() -> RaptorResult<()> {
                     ),
                     Item::program(
                         [Item::statement(
-                            Instruction::write("/foo", "bar"),
+                            Instruction::write("bar", "/foo"),
                             Origin::make("write01.rinc", 0..16)
                         )],
                         context! {},
