@@ -19,6 +19,7 @@ use raptor::program::Loader;
 use raptor::runner::Runner;
 use raptor::sandbox::Sandbox;
 use raptor::{RaptorError, RaptorResult};
+use raptor_parser::util::SafeParent;
 use raptor_parser::util::module_name::ModuleName;
 
 #[derive(clap::Parser, Debug)]
@@ -215,23 +216,23 @@ impl Mode {
 }
 
 impl RunCmd {
-    fn mounts(&self) -> HashMap<&str, Vec<&str>> {
-        let mut res: HashMap<&str, Vec<&str>> = HashMap::new();
+    fn mounts(&self) -> HashMap<String, Vec<String>> {
+        let mut res: HashMap<String, Vec<String>> = HashMap::new();
 
         for kv in self.mount.chunks_exact(2) {
-            res.entry(&kv[0]).or_default().push(&kv[1]);
+            res.entry(kv[0].clone()).or_default().push(kv[1].clone());
         }
 
         for cache in &self.cache {
-            res.entry("cache").or_default().push(cache);
+            res.entry("cache".into()).or_default().push(cache.clone());
         }
 
         for input in &self.input {
-            res.entry("input").or_default().push(input);
+            res.entry("input".into()).or_default().push(input.clone());
         }
 
         if let Some(output) = &self.output {
-            res.entry("output").or_default().push(output);
+            res.entry("output".into()).or_default().push(output.clone());
         }
 
         res
@@ -284,10 +285,10 @@ fn raptor() -> RaptorResult<()> {
     let loader = Loader::new()?.with_dump(args.mode.dump());
 
     for [name, path] in args.link.as_chunks().0 {
-        loader.add_package(name.into(), path.into());
+        loader.resolver().add_package(name.into(), path.into());
     }
 
-    let builder = RaptorBuilder::new(loader, falcon_path, args.no_act);
+    let mut builder = RaptorBuilder::new(loader, falcon_path, args.no_act);
 
     match &args.mode {
         Mode::Dump { targets } | Mode::Check { targets } | Mode::Build { targets } => {
@@ -355,14 +356,24 @@ fn raptor() -> RaptorResult<()> {
             targets,
             batch,
         } => {
+            builder
+                .loader_mut()
+                .resolver_mut()
+                .set_base(file.try_parent()?);
             let maker = Maker::load(&builder, file)?;
 
             maker.add_links(builder.loader());
 
             let mut planner = Planner::new(&maker, &builder);
 
-            for target in targets {
-                planner.add(target)?;
+            if targets.is_empty() {
+                for target in maker.rules().run.keys() {
+                    planner.add_named_run_job(target)?;
+                }
+            } else {
+                for target in targets {
+                    planner.add(target)?;
+                }
             }
 
             if *batch {

@@ -93,7 +93,6 @@ pub enum MediaType {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
 pub struct DockerLayer {
     #[serde(default)]
     pub data: Option<String>,
@@ -106,7 +105,6 @@ pub struct DockerLayer {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
 pub struct DockerManifest {
     #[serde(default)]
     pub annotations: BTreeMap<String, String>,
@@ -119,7 +117,6 @@ pub struct DockerManifest {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
 pub struct DockerManifestPlatform {
     pub architecture: String,
     pub os: String,

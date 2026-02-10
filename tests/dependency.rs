@@ -4,8 +4,9 @@ use std::io::Write;
 use std::sync::Arc;
 use std::time::SystemTime;
 
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use camino_tempfile::Utf8TempDir;
+use tap::Tap;
 
 use raptor::RaptorResult;
 use raptor::build::{Cacher, RaptorBuilder};
@@ -61,7 +62,7 @@ impl Tester {
         init: impl Fn(&Self) -> RaptorResult<()>,
     ) -> RaptorResult<Self> {
         let tempdir = Utf8TempDir::new()?;
-        let loader = Loader::new()?.with_base(&tempdir);
+        let loader = Loader::new()?.tap_mut(|ldr| ldr.resolver_mut().set_base(&tempdir));
         let builder = RaptorBuilder::new(loader, Sandbox::find_falcon_dev().unwrap(), true);
 
         let mut res = Self {
@@ -143,16 +144,19 @@ impl Tester {
         Ok(hash)
     }
 
-    fn path(&self, name: &str) -> Utf8PathBuf {
+    fn path(&self, name: impl AsRef<Utf8Path>) -> Utf8PathBuf {
         self.tempdir.path().join(name)
     }
 
     fn program_path(&self) -> String {
-        self.builder
+        let program = self
+            .builder
             .loader()
+            .resolver()
             .to_program_path(&self.program_name, &Origin::inline())
-            .unwrap()
-            .to_string()
+            .unwrap();
+
+        self.path(program).to_string()
     }
 
     fn program_write(&self, value: impl Writable) -> RaptorResult<()> {
@@ -206,7 +210,7 @@ impl Tester {
 fn dep_copy() -> RaptorResult<()> {
     let mut test = Tester::setup(["COPY a a"], |test| test.write("a", "1234"))?;
 
-    test.expect_new("COPY src", |test| test.touch("a"))?;
+    test.expect_same("COPY src", |test| test.touch("a"))?;
 
     Ok(())
 }
@@ -215,7 +219,8 @@ fn dep_copy() -> RaptorResult<()> {
 fn dep_render() -> RaptorResult<()> {
     let mut test = Tester::setup(["RENDER a a"], |test| test.write("a", "1234"))?;
 
-    test.expect_new("RENDER src", |test| test.touch("a"))?;
+    test.expect_same("RENDER src", |test| test.touch("a"))?;
+    test.expect_new("RENDER src", |test| test.append("a", "more"))?;
 
     Ok(())
 }
@@ -393,6 +398,88 @@ fn dep_instance3() -> RaptorResult<()> {
     test.program_name = ModuleName::from("$.program@one");
     test.builder.clear_cache();
     assert_eq!(orig, test.program_hash()?);
+
+    Ok(())
+}
+
+#[test]
+fn basedir_sources() -> RaptorResult<()> {
+    let test = Tester::setup(["INCLUDE inc.a"], |test| {
+        test.mkdir("inc")?;
+        test.write("inc/a", "data")?;
+        test.write("inc/c", "data")?;
+        test.write("inc/b", "data")?;
+        test.write("inc/a.rinc", "INCLUDE b")?;
+        test.write(
+            "inc/b.rinc",
+            ["COPY a /dest1", "RENDER b /dest2", "RENDER c /dest3"],
+        )?;
+        Ok(())
+    })?;
+
+    let program = test.builder.load(&test.program_name)?;
+    let sources = Cacher::sources(&program)?;
+
+    // sources must be sorted, to have predictable cache key
+    let mut sorted_sources = sources.clone();
+    sorted_sources.sort();
+    assert_eq!(sources, sorted_sources);
+
+    // remaining relative path should be complete
+    assert_eq!(sources, &["inc/a", "inc/b", "inc/c"]);
+
+    Ok(())
+}
+
+#[test]
+fn basedir_all_sources() -> RaptorResult<()> {
+    std::env::set_current_dir("/tmp")?;
+
+    let mut test = Tester::setup(["FROM a", "INCLUDE inc.a"], |test| {
+        test.mkdir("inc")?;
+        test.write("a.rapt", "COPY x /destx")?;
+        test.write("x", "data")?;
+        test.write("inc/a", "data")?;
+        test.write("inc/c", "data")?;
+        test.write("inc/b", "data")?;
+        test.write("inc/a.rinc", "INCLUDE b")?;
+        test.write(
+            "inc/b.rinc",
+            ["COPY a /dest1", "RENDER b /dest2", "RENDER c /dest3"],
+        )?;
+        Ok(())
+    })?;
+
+    let base = test.tempdir.path().file_name().unwrap();
+    test.builder.loader_mut().resolver_mut().set_base(base);
+
+    let program = test.builder.load(&test.program_name)?;
+    let sources = Cacher::all_sources(&program, &test.builder)?;
+
+    // sources must be sorted, to have predictable cache key
+    let mut sorted_sources = sources.clone();
+    sorted_sources.sort();
+    assert_eq!(sources, sorted_sources);
+
+    // sources should all start with tempdir prefix
+    let relative_sources: Vec<&Utf8Path> = sources
+        .iter()
+        .map(|src| src.strip_prefix(base).unwrap())
+        .collect();
+
+    // remaining relative path should be complete
+    assert_eq!(
+        relative_sources,
+        &[
+            "a.rapt",
+            "inc/a",
+            "inc/a.rinc",
+            "inc/b",
+            "inc/b.rinc",
+            "inc/c",
+            "program.rapt",
+        ]
+    );
 
     Ok(())
 }

@@ -3,26 +3,24 @@ use std::sync::Arc;
 use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
 use dashmap::DashMap;
-use dashmap::mapref::one::Ref;
 use minijinja::{Environment, ErrorKind, Value, context};
-use raptor_parser::util::module_name::{ModuleName, ModuleRoot};
+use raptor_parser::ast::{Instruction, Origin, Statement};
+use raptor_parser::parser;
+use raptor_parser::util::module_name::ModuleName;
 
 use crate::dsl::{Item, Program};
 use crate::program::{
-    ResolveArgs, show_error_context, show_jinja_error_context, show_origin_error_context,
+    ResolveArgs, Resolver, show_error_context, show_jinja_error_context, show_origin_error_context,
     show_parse_error_context,
 };
 use crate::template::make_environment;
 use crate::{RaptorError, RaptorResult};
-use raptor_parser::ast::{Instruction, Origin, Statement};
-use raptor_parser::parser;
 
 pub struct Loader<'source> {
     env: Environment<'source>,
     dump: bool,
     sources: DashMap<String, String>,
-    base: Utf8PathBuf,
-    packages: DashMap<String, Utf8PathBuf>,
+    resolver: Resolver,
     programs: DashMap<Utf8PathBuf, Arc<Program>>,
 }
 
@@ -33,19 +31,10 @@ impl Loader<'_> {
         Ok(Self {
             env: make_environment()?,
             dump: false,
-            base: Utf8PathBuf::new(),
+            resolver: Resolver::new(Utf8PathBuf::new()),
             sources: DashMap::new(),
-            packages: DashMap::new(),
             programs: DashMap::new(),
         })
-    }
-
-    #[must_use]
-    pub fn with_base(self, base: impl AsRef<Utf8Path>) -> Self {
-        Self {
-            base: base.as_ref().into(),
-            ..self
-        }
     }
 
     #[must_use]
@@ -53,50 +42,14 @@ impl Loader<'_> {
         Self { dump, ..self }
     }
 
-    pub fn add_package(&self, name: String, path: Utf8PathBuf) {
-        self.packages.insert(name, path);
+    #[must_use]
+    pub const fn resolver(&self) -> &Resolver {
+        &self.resolver
     }
 
-    pub fn get_package(&self, name: &str) -> Option<Ref<'_, String, Utf8PathBuf>> {
-        self.packages.get(name)
-    }
-
-    fn to_path(
-        &self,
-        root: &ModuleRoot,
-        origin: &Origin,
-        end: &Utf8Path,
-    ) -> RaptorResult<Utf8PathBuf> {
-        let res = match root {
-            ModuleRoot::Relative => origin.path_for(end)?,
-            ModuleRoot::Absolute => self.base.join(end),
-            ModuleRoot::Package(pkg) => {
-                let package = self
-                    .get_package(pkg)
-                    .ok_or_else(|| RaptorError::PackageNotFound(pkg.clone(), origin.clone()))?;
-                package.join(end)
-            }
-        };
-
-        Ok(res)
-    }
-
-    pub fn to_program_path(&self, name: &ModuleName, origin: &Origin) -> RaptorResult<Utf8PathBuf> {
-        let mut end = Utf8PathBuf::new();
-        end.extend(name.parts());
-        end.set_extension("rapt");
-        self.to_path(name.root(), origin, &end)
-    }
-
-    pub fn to_include_path(&self, name: &ModuleName, origin: &Origin) -> RaptorResult<Utf8PathBuf> {
-        let mut end = Utf8PathBuf::new();
-        end.extend(name.parts());
-        end.set_extension("rinc");
-        self.to_path(name.root(), origin, &end)
-    }
-
-    pub fn base(&self) -> &Utf8Path {
-        &self.base
+    #[must_use]
+    pub const fn resolver_mut(&mut self) -> &mut Resolver {
+        &mut self.resolver
     }
 
     pub fn clear_cache(&mut self) {
@@ -122,7 +75,7 @@ impl Loader<'_> {
             }
 
             let mut context = Value::from(prog.ctx.resolve_args(&include.args)?);
-            let src = self.to_include_path(&include.src, &origin)?;
+            let src = self.resolver.to_include_path(&include.src, &origin)?;
 
             if let Some(instance) = include.src.instance() {
                 context = context! { instance, ..context };
@@ -179,6 +132,8 @@ impl Loader<'_> {
                                 err.detail().unwrap_or("error"),
                                 err.range().unwrap_or_else(|| last.span.clone()),
                             );
+                        } else {
+                            error!("Error happened in {}", last.path);
                         }
                     } else {
                         error!("Cannot provide error context: {err}");
@@ -234,7 +189,7 @@ impl Loader<'_> {
         origins: &mut Vec<Origin>,
         ctx: Value,
     ) -> RaptorResult<Arc<Program>> {
-        let tmpl = self.env.get_template(self.base.join(&path).as_str())?;
+        let tmpl = self.env.get_template(self.resolver.path(&path).as_str())?;
         let (source, state) = tmpl
             .render_and_return_state(ctx.clone())
             .map(|(src, state)| (src + "\n", state))?;
@@ -290,7 +245,7 @@ impl Loader<'_> {
     }
 
     pub fn load_program(&self, name: &ModuleName, origin: Origin) -> RaptorResult<Arc<Program>> {
-        let path = self.to_program_path(name, &origin)?;
+        let path = self.resolver.to_program_path(name, &origin)?;
         let context = name
             .instance()
             .as_ref()

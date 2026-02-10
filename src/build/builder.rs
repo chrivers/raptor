@@ -1,10 +1,12 @@
-use std::fs;
+use std::fs::{self, File};
 use std::hash::{Hash, Hasher};
 use std::process::Command;
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
+use dashmap::DashSet;
 use dregistry::downloader::DockerDownloader;
 use dregistry::source::DockerSource;
 use siphasher::sip::SipHasher13;
@@ -19,6 +21,7 @@ use raptor_parser::util::module_name::ModuleName;
 
 pub struct RaptorBuilder<'a> {
     loader: Loader<'a>,
+    done: DashSet<u64>,
     falcon_path: Utf8PathBuf,
     dry_run: bool,
 }
@@ -54,9 +57,10 @@ impl DockerSourceExt for DockerSource {
 }
 
 impl<'a> RaptorBuilder<'a> {
-    pub const fn new(loader: Loader<'a>, falcon_path: Utf8PathBuf, dry_run: bool) -> Self {
+    pub fn new(loader: Loader<'a>, falcon_path: Utf8PathBuf, dry_run: bool) -> Self {
         Self {
             loader,
+            done: DashSet::new(),
             falcon_path,
             dry_run,
         }
@@ -75,13 +79,21 @@ impl<'a> RaptorBuilder<'a> {
         &mut self.loader
     }
 
+    #[must_use]
+    pub const fn dry_run(&self) -> bool {
+        self.dry_run
+    }
+
     pub fn layer_info(&self, target: &BuildTarget) -> RaptorResult<LayerInfo> {
         let name;
         let hash;
 
         match target {
             BuildTarget::Program(prog) => {
-                debug!("Calculating hash for layer {}", prog.path);
+                debug!(
+                    "Calculating hash for layer {}",
+                    &self.loader.resolver().path(&prog.path)
+                );
 
                 name = prog.path.file_stem().unwrap().into();
                 hash = Cacher::cache_key(prog, self)?;
@@ -102,7 +114,19 @@ impl<'a> RaptorBuilder<'a> {
     }
 
     pub fn clear_cache(&mut self) {
+        self.done.clear();
         self.loader.clear_cache();
+    }
+
+    pub fn parse_docker_source(src: &str) -> RaptorResult<DockerSource> {
+        let image = if src.contains('/') {
+            src.to_string()
+        } else {
+            format!("library/{src}")
+        };
+        let source = dregistry::reference::parse(&image)?;
+
+        Ok(source)
     }
 
     pub fn stack(&self, program: Arc<Program>) -> RaptorResult<Vec<BuildTarget>> {
@@ -119,12 +143,7 @@ impl<'a> RaptorBuilder<'a> {
 
             match source {
                 FromSource::Docker(src) => {
-                    let image = if src.contains('/') {
-                        src.clone()
-                    } else {
-                        format!("library/{src}")
-                    };
-                    let source = dregistry::reference::parse(&image)?;
+                    let source = Self::parse_docker_source(src)?;
                     data.push(BuildTarget::DockerSource(source));
                 }
 
@@ -199,9 +218,14 @@ impl<'a> RaptorBuilder<'a> {
         prog: &BuildTarget,
         layer: &LayerInfo,
     ) -> RaptorResult<Utf8PathBuf> {
+        let done_path = layer.done_path();
+
+        if self.done.contains(&layer.hash_value()) {
+            return Ok(done_path);
+        }
+
         let layer_name = layer.name().to_string();
         let work_path = layer.work_path();
-        let done_path = layer.done_path();
 
         if fs::exists(layer.done_path())? {
             info!(
@@ -224,9 +248,12 @@ impl<'a> RaptorBuilder<'a> {
                 self.build(prog, layers, &layer.work_path())?;
 
                 debug!("Layer {layer_name} finished. Moving {work_path} -> {done_path}");
+                File::open(&work_path)?.set_modified(SystemTime::now())?;
                 fs::rename(&work_path, &done_path)?;
             }
         }
+
+        self.done.insert(layer.hash_value());
 
         Ok(done_path)
     }

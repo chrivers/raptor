@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+use log::trace;
 use reqwest::blocking::{Client, RequestBuilder, Response};
 use reqwest::header::{ACCEPT, HeaderValue, WWW_AUTHENTICATE};
 use reqwest::{IntoUrl, Method, StatusCode};
@@ -80,17 +81,19 @@ impl DockerClient {
     }
 
     fn get<T: DeserializeOwned>(&mut self, url: impl IntoUrl, accept: &str) -> DResult<T> {
-        /* eprintln!( */
-        /*     "curl -H 'Authorization: Bearer {}' {}", */
-        /*     &self.token.as_deref().unwrap_or(""), */
-        /*     url.as_str() */
-        /* ); */
+        let auth_header = &self.token.as_deref().map_or_else(String::new, |tok| {
+            format!(" -H 'Authorization: Bearer {tok}'")
+        });
+
+        trace!("curl{auth_header} -H 'Accept: {accept}' {}", url.as_str());
 
         let url = url.into_url()?;
         let resp = self
             .request(Method::GET, url.clone())
             .header(ACCEPT, accept)
             .send()?;
+
+        trace!("Response: {resp:?}");
 
         if let Some(header) = resp.headers().get(WWW_AUTHENTICATE)
             && resp.status() == StatusCode::UNAUTHORIZED

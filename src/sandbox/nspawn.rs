@@ -452,8 +452,8 @@ mod tests {
             dest: "bar".into(),
         };
 
-        let mounts1 = hashmap! { "foo1" => vec!["foo-src"] };
-        let mounts2 = hashmap! { "foo2" => vec!["foo-src"] };
+        let mounts1 = hashmap! { "foo1".into() => vec!["/dev/null".into()] };
+        let mounts2 = hashmap! { "foo2".into() => vec!["/dev/null".into()] };
 
         // required mount (exists)
         let sb = SpawnBuilder::new().add_mounts(&[&mount], &builder, &mounts1, "/tmp")?;
@@ -492,8 +492,8 @@ mod tests {
             dest: "bar".into(),
         };
 
-        let mounts1 = hashmap! { "foo1" => vec!["foo-src"] };
-        let mounts2 = hashmap! { "foo2" => vec!["foo-src"] };
+        let mounts1 = hashmap! { "foo1".into() => vec!["/dev/null".into()] };
+        let mounts2 = hashmap! { "foo2".into() => vec!["/dev/null".into()] };
 
         // required mount (exists)
         let sb = SpawnBuilder::new().add_mounts(&[&mount], &builder, &mounts1, "/tmp")?;

@@ -68,6 +68,11 @@ impl<'a> Planner<'a> {
     }
 
     #[must_use]
+    pub const fn builder(&self) -> &RaptorBuilder {
+        self.builder
+    }
+
+    #[must_use]
     pub const fn edges(&self) -> &HashMap<u64, Node<u64>> {
         &self.nodes
     }

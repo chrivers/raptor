@@ -1,13 +1,14 @@
 use std::collections::HashSet;
+use std::fs::File;
 use std::hash::{Hash, Hasher};
-use std::os::unix::fs::MetadataExt;
+use std::io::Read;
 use std::sync::Arc;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use itertools::Itertools;
 use siphasher::sip::SipHasher13;
 
-use crate::build::RaptorBuilder;
+use crate::build::{BuildTarget, RaptorBuilder};
 use crate::dsl::{Item, Program};
 use crate::{RaptorError, RaptorResult};
 use raptor_parser::ast::{FromSource, Instruction, Statement};
@@ -15,6 +16,47 @@ use raptor_parser::ast::{FromSource, Instruction, Statement};
 pub struct Cacher;
 
 impl Cacher {
+    fn hash_file(path: &Utf8Path, state: &mut impl Hasher) -> RaptorResult<()> {
+        let mut file = File::open(path)?;
+
+        let mut buf = vec![0; 128 * 1024];
+        loop {
+            match file.read(&mut buf)? {
+                0 => break,
+                n => &buf[..n].hash(state),
+            };
+        }
+
+        Ok(())
+    }
+
+    const fn include_in_build_hash(stmt: &Statement) -> bool {
+        match stmt.inst {
+            Instruction::Copy(_)
+            | Instruction::Render(_)
+            | Instruction::Write(_)
+            | Instruction::Mkdir(_)
+            | Instruction::Run(_)
+            | Instruction::Env(_)
+            | Instruction::Workdir(_) => true,
+
+            Instruction::From(_)
+            | Instruction::Mount(_)
+            | Instruction::Include(_)
+            | Instruction::Entrypoint(_)
+            | Instruction::Cmd(_) => false,
+        }
+    }
+
+    fn flatten_program<'a>(program: &'a Program, out: &mut Vec<&'a Statement>) {
+        for item in &program.code {
+            match item {
+                Item::Statement(stmt) => out.push(stmt),
+                Item::Program(prgm) => Self::flatten_program(prgm, out),
+            }
+        }
+    }
+
     pub fn cache_key(program: &Arc<Program>, builder: &RaptorBuilder<'_>) -> RaptorResult<u64> {
         let mut state = SipHasher13::new();
 
@@ -28,26 +70,19 @@ impl Cacher {
             }
         }
 
-        for stmt in &program.code {
-            if !matches!(
-                stmt,
-                Item::Statement(Statement {
-                    inst: Instruction::Include(_),
-                    ..
-                })
-            ) {
-                stmt.hash(&mut state);
-            }
-        }
+        let mut code = vec![];
+        Self::flatten_program(program, &mut code);
+
+        code.iter()
+            .as_ref()
+            .iter()
+            .filter(|stmt| Self::include_in_build_hash(stmt))
+            .for_each(|stmt| stmt.inst.hash(&mut state));
 
         for source in &Self::sources(program)? {
             trace!("Checking source [{source}]");
-            let md = source
-                .metadata()
-                .map_err(|err| RaptorError::CacheIoError(source.into(), err))?;
-
-            md.mtime().hash(&mut state);
-            md.mtime_nsec().hash(&mut state);
+            let path = builder.loader().resolver().path(source);
+            Self::hash_file(&path, &mut state)?;
         }
 
         Ok(state.finish())
@@ -71,12 +106,8 @@ impl Cacher {
                     data.insert(stmt.origin.path_for(&inst.src)?);
                 }
 
-                Instruction::Include(_inst) => {
-                    /* let path = loader.to_include_path(&inst.src, &stmt.origin)?; */
-                    /* data.insert(path); */
-                }
-
-                Instruction::Mount(_)
+                Instruction::Include(_)
+                | Instruction::Mount(_)
                 | Instruction::Write(_)
                 | Instruction::Mkdir(_)
                 | Instruction::From(_)
@@ -85,6 +116,51 @@ impl Cacher {
                 | Instruction::Workdir(_)
                 | Instruction::Entrypoint(_)
                 | Instruction::Cmd(_) => {}
+            }
+
+            Ok(())
+        })?;
+
+        Ok(data.into_iter().sorted().collect())
+    }
+
+    pub fn all_sources(prog: &Program, builder: &RaptorBuilder) -> RaptorResult<Vec<Utf8PathBuf>> {
+        let resolver = builder.loader().resolver();
+        let mut data: Vec<_> = Self::sources(prog)?
+            .iter()
+            .map(|x| resolver.path(x))
+            .collect();
+
+        data.push(resolver.path(&prog.path));
+
+        prog.traverse(&mut |stmt| {
+            match &stmt.inst {
+                Instruction::Include(inst) => {
+                    let path = builder
+                        .loader()
+                        .resolver()
+                        .to_include_path(&inst.src, &stmt.origin)?;
+                    let path = resolver.path(path);
+                    data.push(path);
+                }
+
+                Instruction::From(inst) => match &inst.from {
+                    FromSource::Raptor(from) => {
+                        let path = builder
+                            .loader()
+                            .resolver()
+                            .to_program_path(from, &stmt.origin)?;
+                        let path = resolver.path(path);
+                        data.push(path);
+                    }
+                    FromSource::Docker(src) => {
+                        let source = RaptorBuilder::parse_docker_source(src)?;
+                        let info = builder.layer_info(&BuildTarget::DockerSource(source))?;
+                        data.push(info.done_path());
+                    }
+                },
+
+                _ => {}
             }
 
             Ok(())

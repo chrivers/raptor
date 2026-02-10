@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::process::ExitStatus;
 use std::time::SystemTime;
 
@@ -37,13 +36,14 @@ impl<'a> Maker<'a> {
     }
 
     pub fn add_links(&self, loader: &Loader) {
+        let resolver = loader.resolver();
         for (name, link) in &self.make.raptor.link {
-            loader.add_package(name.clone(), Utf8PathBuf::from(&link.source));
+            resolver.add_package(name.clone(), Utf8PathBuf::from(&link.source));
         }
     }
 
-    fn program_mtime(program: &Program, _loader: &Loader) -> RaptorResult<SystemTime> {
-        let sources = Cacher::sources(program)?;
+    fn program_mtime(program: &Program, builder: &RaptorBuilder) -> RaptorResult<SystemTime> {
+        let sources = Cacher::all_sources(program, builder)?;
 
         let res = sources
             .into_iter()
@@ -76,7 +76,7 @@ impl<'a> Maker<'a> {
 
         let program = builder.load(&job.target)?;
 
-        let mut newest = Self::program_mtime(&program, builder.loader())?;
+        let mut newest = Self::program_mtime(&program, builder)?;
 
         for input in &job.input {
             let prog = builder.load(&ModuleName::from(input))?;
@@ -84,24 +84,53 @@ impl<'a> Maker<'a> {
             for st in stack {
                 match st {
                     BuildTarget::Program(program) => {
-                        newest = newest.max(Self::program_mtime(&program, builder.loader())?);
+                        newest = newest.max(Self::program_mtime(&program, builder)?);
                     }
                     BuildTarget::DockerSource(_) => {}
                 }
             }
         }
 
-        let oldest = job
-            .output
-            .iter()
-            .map(Utf8Path::new)
-            .flat_map(Utf8Path::metadata)
-            .flat_map(|md| md.modified())
+        let mut output_times = Vec::new();
+
+        let resolver = builder.loader().resolver();
+        for output in &job.output {
+            let name = resolver.resolve_logical_path(output)?;
+            let md = name
+                .metadata()
+                .and_then(|md| md.modified())
+                .unwrap_or(SystemTime::UNIX_EPOCH);
+
+            output_times.push(md);
+        }
+
+        let oldest = output_times
+            .into_iter()
             .min()
             .unwrap_or(SystemTime::UNIX_EPOCH);
 
         if oldest >= newest && newest != SystemTime::UNIX_EPOCH {
             info!("Output is up to date");
+            return Ok(ExitStatus::default());
+        }
+
+        if builder.dry_run() {
+            let input = job
+                .input
+                .iter()
+                .map(|input| format!(" -I {input}"))
+                .join("");
+            let output = job
+                .output
+                .iter()
+                .map(|output| format!(" -O {output}"))
+                .join("");
+            let cache = job
+                .cache
+                .iter()
+                .map(|output| format!(" -C {output}"))
+                .join("");
+            info!("Would run {}{cache}{input}{output}", job.target);
             return Ok(ExitStatus::default());
         }
 
@@ -113,22 +142,19 @@ impl<'a> Maker<'a> {
             layers.push(builder.layer_info(&target)?.done_path());
         }
 
-        let mut mounts = HashMap::<&str, Vec<&str>>::new();
+        let mut runner = Runner::new()?;
 
-        mounts
-            .entry("cache")
-            .or_default()
-            .extend(job.cache.iter().map(String::as_str));
+        for cache in &job.cache {
+            runner.add_mount("cache", resolver.resolve_logical_path(cache)?.to_string());
+        }
 
-        mounts
-            .entry("input")
-            .or_default()
-            .extend(job.input.iter().map(String::as_str));
+        for input in &job.input {
+            runner.add_mount("input", resolver.resolve_logical_path(input)?.to_string());
+        }
 
-        mounts
-            .entry("output")
-            .or_default()
-            .extend(job.output.iter().map(String::as_str));
+        for output in &job.output {
+            runner.add_mount("output", resolver.resolve_logical_path(output)?.to_string());
+        }
 
         let env = job
             .env
@@ -136,11 +162,7 @@ impl<'a> Maker<'a> {
             .map(|(k, v)| format!("{k}={v}"))
             .collect_vec();
 
-        let mut runner = Runner::new()?;
-        runner
-            .with_mounts(mounts)
-            .with_env(&env)
-            .with_args(&job.args);
+        runner.with_env(&env).with_args(&job.args);
 
         if !job.entrypoint.is_empty() {
             runner.with_entrypoint(&job.entrypoint);
