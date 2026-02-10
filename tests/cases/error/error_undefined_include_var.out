@@ -1,7 +1,9 @@
 error: Script Error
- --> tests/cases/error/error_undefined_include_var.rapt:1:19
+ --> tests/cases/error/error_undefined_include_var.rapt:2:19
   |
-1 | INCLUDE dummy foo=bar
+1 | # line 1
+2 | INCLUDE dummy foo=bar
   |                   ^^^ Undefined variable: bar
-2 |
+3 | # line 3
+4 |
   |

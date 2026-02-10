@@ -1,9 +1,10 @@
 error: Parse error
- --> tests/cases/error/error_invalid_instruction.rapt:1:1
+ --> tests/cases/error/error_invalid_instruction.rapt:2:1
   |
-1 | FLORG --foo "bar"
+1 | # line 1
+2 | FLORG --foo "bar"
   | ^^^^^ Expected statement
-2 | RUN ls -l
 3 | RUN ls -l
 4 | RUN ls -l
+5 | RUN ls -l
   |

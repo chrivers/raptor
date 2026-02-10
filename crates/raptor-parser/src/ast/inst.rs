@@ -78,7 +78,7 @@ impl Instruction {
         })
     }
 
-    pub fn write(dest: impl AsRef<Utf8Path>, body: impl AsRef<str>) -> Self {
+    pub fn write(body: impl AsRef<str>, dest: impl AsRef<Utf8Path>) -> Self {
         Self::Write(InstWrite {
             dest: dest.as_ref().to_path_buf(),
             body: body.as_ref().to_string(),

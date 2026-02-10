@@ -1,0 +1,1 @@
+WRITE "#!/bin/sh\necho \"Hello World\"\n" /bin/example
